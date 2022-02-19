@@ -9,6 +9,7 @@ namespace Shel.Interpreting;
 class Interpreter
 {
     private Scope _scope;
+    private Redirector _redirector = new();
 
     public Interpreter()
     {
@@ -60,6 +61,15 @@ class Interpreter
 
     private IRuntimeValue Visit(BinaryExpr expr)
     {
+        if (expr.Operator == TokenKind.Pipe)
+        {
+            _redirector.Open();
+            _redirector.Send(Next(expr.Left));
+            var result = Next(expr.Right);
+
+            return result;
+        }
+
         var left = Next(expr.Left);
         var right = Next(expr.Right);
 
@@ -103,15 +113,31 @@ class Interpreter
             {
                 FileName = expr.Identifier.Value,
                 Arguments = string.Join(" ", expr.Arguments.Select(x => Next(x).ToString())),
-                RedirectStandardOutput = true,
+                RedirectStandardOutput = _redirector.Status == RedirectorStatus.Send,
+                RedirectStandardInput = _redirector.Status == RedirectorStatus.Receive,
             }
         };
         process.Start();
-        process.WaitForExit();
-        string output = process.ExitCode == 0
-            ? process.StandardOutput.ReadToEnd()
-            : process.StandardError.ReadToEnd();
 
-        return new RuntimeString(output);
+        if (_redirector.Status == RedirectorStatus.Receive)
+        {
+            using var streamWriter = process.StandardInput;
+            streamWriter.Write(_redirector.Receive());
+        }
+
+        process.WaitForExit();
+
+        if (_redirector.Status == RedirectorStatus.Send)
+        {
+            string output = process.ExitCode == 0
+                ? process.StandardOutput.ReadToEnd()
+                : process.StandardError.ReadToEnd();
+
+            return new RuntimeString(output);
+        }
+        else
+        {
+            return new RuntimeNil();
+        }
     }
 }
