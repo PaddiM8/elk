@@ -10,13 +10,14 @@ class Repl
 {
     public static void Run()
     {
+        var interpreter = new Interpreter();
         while (true)
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(">> ");
             Console.ResetColor();
             string input = Console.ReadLine() ?? "";
-            var result = Interpreter.Interpret(input).ToString() ?? "";
+            var result = interpreter.Interpret(input).ToString() ?? "";
             if (result == "" || result.EndsWith('\n'))
             {
                 Console.Write(result);
