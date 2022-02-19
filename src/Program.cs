@@ -1,3 +1,18 @@
-﻿using Shel;
+﻿using System.IO;
+using CommandLine;
+using Shel;
+using Shel.Interpreting;
 
-Repl.Run();
+CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
+    .WithParsed(options =>
+    {
+        if (options.FilePath == null)
+        {
+            Repl.Run();
+        }
+        else
+        {
+            var content = File.ReadAllText(options.FilePath);
+            new Interpreter().Interpret(content);
+        }
+    });
