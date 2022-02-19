@@ -54,6 +54,8 @@ class Interpreter
         {
             TokenKind.NumberLiteral => new RuntimeNumber(double.Parse(expr.Value.Value)),
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
+            TokenKind.True => new RuntimeBoolean(true),
+            TokenKind.False => new RuntimeBoolean(false),
             TokenKind.Nil => new RuntimeNil(),
             _ => throw new NotImplementedException(),
         };
@@ -84,7 +86,9 @@ class Interpreter
             or TokenKind.Less
             or TokenKind.LessEquals
             or TokenKind.EqualsEquals
-            or TokenKind.NotEquals => left.Operation(expr.Operator, right),
+            or TokenKind.NotEquals
+            or TokenKind.And
+            or TokenKind.Or => left.Operation(expr.Operator, right),
             _ => throw new NotImplementedException(),
         };
     }
