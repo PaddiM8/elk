@@ -44,7 +44,7 @@ class Parser
             return ParseLet();
         }
 
-        return ParseOr();
+        return ParsePipe();
     }
 
     private Expr ParseLet()
@@ -54,6 +54,21 @@ class Parser
         _scope.AddVariable(identifier.Value, new RuntimeNil());
 
         return new LetExpr(identifier, ParseExpr());
+    }
+
+    private Expr ParsePipe()
+    {
+        var left = ParseOr();
+
+        while (Match(TokenKind.Pipe))
+        {
+            var op = Eat().Kind;
+            var right = ParseOr();
+
+            left = new BinaryExpr(left, op, right);
+        }
+
+        return left;
     }
 
     private Expr ParseOr()
