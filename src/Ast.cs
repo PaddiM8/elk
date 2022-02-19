@@ -16,6 +16,20 @@ abstract class Expr
     }
 }
 
+class LetExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public Expr Value { get; }
+
+    public LetExpr(Token identifier, Expr value)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Value = value;
+    }
+}
+
 class LiteralExpr : Expr
 {
     public Token Value { get; }
@@ -55,6 +69,17 @@ class UnaryExpr : Expr
     {
         Operator = op;
         Value = value;
+    }
+}
+
+class VariableExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public VariableExpr(Token identifier)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
     }
 }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Shel.Interpreting;
 using Shel.Lexing;
 
 namespace Shel.Parsing;
@@ -10,6 +11,7 @@ class Parser
 {
     private readonly List<Token> _tokens;
     private int _index;
+    private Scope _scope;
 
     private Token? Current => _index < _tokens.Count
         ? _tokens[_index]
@@ -17,14 +19,15 @@ class Parser
 
     private bool ReachedEnd => _index >= _tokens.Count;
 
-    private Parser(List<Token> tokens)
+    private Parser(List<Token> tokens, Scope scope)
     {
         _tokens = tokens;
+        _scope = scope;
     }
 
-    public static List<Expr> Parse(string input)
+    public static List<Expr> Parse(string input, Scope scope)
     {
-        var parser = new Parser(Lexer.Lex(input));
+        var parser = new Parser(Lexer.Lex(input), scope);
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
@@ -36,7 +39,21 @@ class Parser
 
     private Expr ParseExpr()
     {
+        if (AdvanceIf(TokenKind.Let))
+        {
+            return ParseLet();
+        }
+
         return ParseOr();
+    }
+
+    private Expr ParseLet()
+    {
+        var identifier = EatExpected(TokenKind.Identifier);
+        EatExpected(TokenKind.Equals);
+        _scope.AddVariable(identifier.Value, new RuntimeNil());
+
+        return new LetExpr(identifier, ParseExpr());
     }
 
     private Expr ParseOr()
@@ -174,6 +191,10 @@ class Parser
             EatExpected(TokenKind.ClosedParenthesis);
 
             return new CallExpr(identifier, arguments);
+        }
+        else if (_scope.ContainsVariable(identifier.Value))
+        {
+            return new VariableExpr(identifier);
         }
         else
         {
