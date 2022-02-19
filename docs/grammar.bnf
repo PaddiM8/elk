@@ -1,0 +1,74 @@
+<expr> ::= <fn>
+    | <let>
+    | <if>
+    | <for>
+    | <or>
+
+<fn> ::= fn <identifier> <parameters> <blockOrSingle>
+<let> ::= let <identifier> = <expr>
+<if> ::= if <expr> <blockOrSingle>
+    | if <expr> <blockOrSingle>  else <expr>
+<for> ::= for <identifier> in <expr> <blockOrSingle>
+
+<parameters> ::= ( <parameters>, <identifier> )
+    | ( <identifier> )
+    | ( )
+<blockOrSingle> ::= <block>
+    | : <expr>
+
+<or> ::= <and> || <and>
+<and> ::= <comparison> && <comparison>
+<comparison> ::= <term> \> <term>
+    | <term> \>= <term>
+    | <term> \< <term>
+    | <term> \<= <term>
+    | <term> == <term>
+    | <term> != <term>
+<term> ::= <term> + <factor>
+    | <term> - <factor>
+    | <factor>
+<factor> ::= <factor> * <unary>
+    | <factor> / <unary>
+    | <unary>
+<power> ::= <unary> ^ <power>
+    | <unary>
+<unary> ::= - <primary>
+    | <primary>
+<primary> ::= <number>
+    | <string>
+    | nil
+    | true
+    | false
+    | ( <expr> )
+    | <var>
+    | <call>
+
+# This part is unfortunately context-dependent, which seems
+# to be necessary in order to avoid a variable prefix like $.
+# In order to figure out whether it's a variable or function
+# call, a parser would do a (variable) symbol table look-up.
+# Even though this is a bit slow and awkward, it is deemed
+# to be worth it in order to get a cleaner syntax. Due to
+# the nature of the language, performance is not a big
+# priority anyway.
+<var> ::= <identifier>
+<call> ::= <path> <arguments>
+    | <identifier> text
+
+<arguments> ::= ( <arguments>, <expr> )
+    | ( <expr> )
+    | ( )
+<textArguments> ::= <textArguments> <textArgument>
+    | <textArgument>
+<path> ::= <identifier> / <pathLatter>
+    | <pathLatter>
+<pathLatter> ::= / <pathLatter>
+    | ./ <pathLatter>
+    | ../ <pathLatter>
+    | ~/ <pathLatter>
+    | <identifier>
+
+<textArgument> ::= /[^|)}\n\s]*/
+<identifier> ::= /[A-Za-z_][A-Za-z0-9_]*/
+<number> ::= /\d+(\.\d+)?/
+<string> ::= /"[^\"]"/
