@@ -1,0 +1,41 @@
+#!/bin/shel
+
+# execute programs
+/usr/bin/something -a b
+./something -a b
+../something -a b
+~/something -a b
+
+# function definition
+let prod = 0
+fn square_range(a, b) {
+    let squares = [1]
+    for i in a..b {
+        sum += if abs(i) > 0 {
+            i^2 | push(squares)
+            i
+        } else {
+            1
+        }
+    }
+
+    squares
+}
+
+# strings and function calls
+print Prod: (prod)      #=>Prod: 3628800
+print "Prod:" (prod)    #=>Prod: 3628800
+
+print hello world | append file.txt
+
+let squares = square_range(args[1], args[2])
+print (squares) #=>
+# 1
+# 4
+# 9
+# 16
+# 25
+# 36
+# 49
+# 64
+# 81
