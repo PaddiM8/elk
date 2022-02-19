@@ -8,15 +8,20 @@ namespace Shel.Interpreting;
 
 class Interpreter
 {
-    public static IRuntimeValue Interpret(string input)
+    private Scope _scope;
+
+    public Interpreter()
     {
-        var ast = Parser.Parse(input);
-        var interpreter = new Interpreter();
+        _scope = new Scope(null);
+    }
+
+    public IRuntimeValue Interpret(string input)
+    {
+        var ast = Parser.Parse(input, _scope);
+
         IRuntimeValue lastResult = new RuntimeNil();
         foreach (var expr in ast)
-        {
-            lastResult = interpreter.Next(expr);
-        }
+            lastResult = Next(expr);
 
         return lastResult;
     }
@@ -25,12 +30,21 @@ class Interpreter
     {
         return expr switch
         {
+            LetExpr e => Visit(e),
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
+            VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
             _ => throw new NotImplementedException(),
         };
+    }
+
+    private IRuntimeValue Visit(LetExpr expr)
+    {
+        _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
+
+        return new RuntimeNil();
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)
@@ -74,6 +88,11 @@ class Interpreter
             TokenKind.Minus or TokenKind.Exclamation => value.Operation(expr.Operator),
             _ => throw new NotImplementedException(),
         };
+    }
+
+    private IRuntimeValue Visit(VariableExpr expr)
+    {
+        return _scope.FindVariable(expr.Identifier.Value) ?? new RuntimeNil();
     }
 
     private IRuntimeValue Visit(CallExpr expr)
