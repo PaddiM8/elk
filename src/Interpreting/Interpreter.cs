@@ -32,6 +32,8 @@ class Interpreter
         return expr switch
         {
             LetExpr e => Visit(e),
+            IfExpr e => Visit(e),
+            BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
@@ -46,6 +48,32 @@ class Interpreter
         _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
 
         return new RuntimeNil();
+    }
+
+    private IRuntimeValue Visit(IfExpr expr)
+    {
+        var condition = Next(expr.Condition);
+        var conditionValue = (RuntimeBoolean)condition.Cast(RuntimeType.Boolean);
+
+        if (conditionValue.Value)
+        {
+            return Next(expr.ThenBranch);
+        }
+        else
+        {
+            return expr.ElseBranch == null
+                ? new RuntimeNil()
+                : Next(expr.ElseBranch);
+        }
+    }
+
+    private IRuntimeValue Visit(BlockExpr expr)
+    {
+        IRuntimeValue? last = null;
+        foreach (var child in expr.Expressions)
+            last = Next(child);
+
+        return last ?? new RuntimeNil();
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)

@@ -5,7 +5,7 @@ enum TokenKind
     Unknown,
 
     // Keywords
-    Fn, Let, If, For,
+    Fn, Let, If, Else, For,
     Nil, True, False,
 
     // Operators
@@ -20,7 +20,7 @@ enum TokenKind
     OpenBrace, ClosedBrace,
 
     // Punctuation
-    Comma,
+    Comma, Colon,
 
     // Other
     NumberLiteral, StringLiteral,

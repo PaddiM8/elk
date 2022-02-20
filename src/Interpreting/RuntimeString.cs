@@ -7,11 +7,11 @@ class RuntimeString : IRuntimeValue
 {
     public RuntimeType DataType => RuntimeType.String;
 
-    private string _value;
+    public string Value { get; }
 
     public RuntimeString(string value)
     {
-        _value = value;
+        Value = value;
     }
 
     public IRuntimeValue Cast(RuntimeType type)
@@ -19,8 +19,8 @@ class RuntimeString : IRuntimeValue
         return type switch
         {
             RuntimeType.String => this,
-            RuntimeType.Number => new RuntimeNumber(double.Parse(_value)),
-            RuntimeType.Boolean => new RuntimeBoolean(_value.Length != 0),
+            RuntimeType.Number => new RuntimeNumber(double.Parse(Value)),
+            RuntimeType.Boolean => new RuntimeBoolean(Value.Length != 0),
             _ => throw new NotImplementedException(),
         };
     }
@@ -29,7 +29,7 @@ class RuntimeString : IRuntimeValue
         => kind switch
         {
             TokenKind.Minus => Cast(RuntimeType.Number).Operation(kind),
-            TokenKind.Exclamation => new RuntimeBoolean(_value.Length == 0),
+            TokenKind.Exclamation => new RuntimeBoolean(Value.Length == 0),
             _ => throw new NotImplementedException(),
         };
 
@@ -43,17 +43,17 @@ class RuntimeString : IRuntimeValue
         var otherString = (RuntimeString)other.Cast(DataType);
         return kind switch
         {
-            TokenKind.Plus => new RuntimeString(_value + otherString._value),
-            TokenKind.Greater => new RuntimeBoolean(string.Compare(_value, otherString._value) > 0),
-            TokenKind.GreaterEquals => new RuntimeBoolean(string.Compare(_value, otherString._value) >= 0),
-            TokenKind.Less => new RuntimeBoolean(string.Compare(_value, otherString._value) < 0),
-            TokenKind.LessEquals => new RuntimeBoolean(string.Compare(_value, otherString._value) <= 0),
-            TokenKind.EqualsEquals => new RuntimeBoolean(_value == otherString._value),
-            TokenKind.NotEquals => new RuntimeBoolean(_value != otherString._value),
+            TokenKind.Plus => new RuntimeString(Value + otherString.Value),
+            TokenKind.Greater => new RuntimeBoolean(string.Compare(Value, otherString.Value) > 0),
+            TokenKind.GreaterEquals => new RuntimeBoolean(string.Compare(Value, otherString.Value) >= 0),
+            TokenKind.Less => new RuntimeBoolean(string.Compare(Value, otherString.Value) < 0),
+            TokenKind.LessEquals => new RuntimeBoolean(string.Compare(Value, otherString.Value) <= 0),
+            TokenKind.EqualsEquals => new RuntimeBoolean(Value == otherString.Value),
+            TokenKind.NotEquals => new RuntimeBoolean(Value != otherString.Value),
             _ => throw new NotImplementedException(),
         };
     }
 
     public override string ToString()
-        => _value;
+        => Value;
 }
