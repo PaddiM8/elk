@@ -22,6 +22,8 @@ class Lexer
         ? _source[_index - 1]
         : '\0';
 
+    private bool ReachedEnd => _index >= _source.Length;
+
     private Lexer(string input)
     {
         _source = input;
@@ -82,6 +84,11 @@ class Lexer
         {
             return NextWhiteSpace();
         }
+        else if (Current == '#')
+        {
+            var c = NextComment();
+            return c;
+        }
         else if (IsValidIdentifierStart(Current))
         {
             return NextIdentifier();
@@ -113,6 +120,21 @@ class Lexer
 
         return Build(
             TokenKind.WhiteSpace,
+            value.ToString(),
+            new(_pos.line, _pos.column - value.Length)
+        );
+    }
+
+    private Token NextComment()
+    {
+        var value = new StringBuilder();
+        while (!ReachedEnd && Current != '\n')
+        {
+            value.Append(Eat());
+        }
+
+        return Build(
+            TokenKind.Comment,
             value.ToString(),
             new(_pos.line, _pos.column - value.Length)
         );
@@ -167,7 +189,7 @@ class Lexer
         Eat(); // Initial quote
 
         var value = new StringBuilder();
-        while (!(Current == '"' && Previous != '\\'))
+        while (!ReachedEnd && !(Current == '"' && Previous != '\\'))
         {
             value.Append(Eat());
         }
