@@ -16,7 +16,10 @@ class Scope
 
     public void AddVariable(string name, IRuntimeValue value)
     {
-        _variables.Add(name, value);
+        if (!_variables.TryAdd(name, value))
+        {
+            UpdateVariable(name, value);
+        }
     }
 
     public bool ContainsVariable(string name)

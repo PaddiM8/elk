@@ -55,6 +55,10 @@ class Interpreter
         var condition = Next(expr.Condition);
         var conditionValue = (RuntimeBoolean)condition.Cast(RuntimeType.Boolean);
 
+        expr.ThenBranch.IsRoot = expr.IsRoot;
+        if (expr.ElseBranch != null)
+            expr.ElseBranch.IsRoot = expr.IsRoot;
+
         if (conditionValue.Value)
         {
             return Next(expr.ThenBranch);
@@ -69,11 +73,23 @@ class Interpreter
 
     private IRuntimeValue Visit(BlockExpr expr)
     {
-        IRuntimeValue? last = null;
+        int i = 0;
         foreach (var child in expr.Expressions)
-            last = Next(child);
+        {
+            // If last
+            if (i == expr.Expressions.Count - 1)
+            {
+                child.IsRoot = expr.IsRoot;
 
-        return last ?? new RuntimeNil();
+                return Next(child);
+            }
+
+            child.IsRoot = true;
+            Next(child);
+            i++;
+        }
+
+        return new RuntimeNil();
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)

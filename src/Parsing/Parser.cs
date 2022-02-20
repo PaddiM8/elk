@@ -213,7 +213,7 @@ class Parser
             return ParseIdentifier();
         }
 
-        throw new NotImplementedException();
+        throw new NotImplementedException(Current?.Value ?? "");
     }
 
     private Expr ParseBlockOrSingle()
