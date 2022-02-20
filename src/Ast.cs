@@ -32,6 +32,35 @@ class LetExpr : Expr
     }
 }
 
+class IfExpr : Expr
+{
+    public Expr Condition { get; }
+
+    public Expr ThenBranch { get; }
+
+    public Expr? ElseBranch { get; }
+
+    public IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch)
+        : base(condition.Position)
+    {
+        Condition = condition;
+        ThenBranch = thenBranch;
+        ElseBranch = elseBranch;
+    }
+}
+
+
+class BlockExpr : Expr
+{
+    public List<Expr> Expressions { get; }
+
+    public BlockExpr(List<Expr> expressions, TextPos pos)
+        : base(pos)
+    {
+        Expressions = expressions;
+    }
+}
+
 class LiteralExpr : Expr
 {
     public Token Value { get; }

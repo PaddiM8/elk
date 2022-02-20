@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Shel.Interpreting;
@@ -8,7 +9,7 @@ namespace Shel;
 
 class Repl
 {
-    public static void Run()
+    public static Task Run()
     {
         // TODO: 'exit' command
         var interpreter = new Interpreter();
