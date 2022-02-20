@@ -9,7 +9,7 @@ namespace Shel.Interpreting;
 class Interpreter
 {
     private Scope _scope;
-    private Redirector _redirector = new();
+    private readonly Redirector _redirector = new();
 
     public Interpreter()
     {
@@ -111,19 +111,23 @@ class Interpreter
 
     private IRuntimeValue Visit(CallExpr expr)
     {
-        var process = new Process()
+        var arguments = expr.Arguments.Select(x => Next(x).ToString());
+        bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
+        using var process = new Process()
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = expr.Identifier.Value,
-                Arguments = string.Join(" ", expr.Arguments.Select(x => Next(x).ToString())),
-                RedirectStandardOutput = _redirector.Status == RedirectorStatus.Send,
-                RedirectStandardInput = _redirector.Status == RedirectorStatus.Receive,
+                Arguments = string.Join(" ", arguments),
+                RedirectStandardOutput = stealOutput,
+                RedirectStandardError = stealOutput,
+                RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
             }
         };
+
         process.Start();
 
-        if (_redirector.Status == RedirectorStatus.Receive)
+        if (_redirector.Status == RedirectorStatus.HasData)
         {
             using var streamWriter = process.StandardInput;
             streamWriter.Write(_redirector.Receive());
@@ -131,7 +135,7 @@ class Interpreter
 
         process.WaitForExit();
 
-        if (_redirector.Status == RedirectorStatus.Send)
+        if (stealOutput)
         {
             string output = process.ExitCode == 0
                 ? process.StandardOutput.ReadToEnd()

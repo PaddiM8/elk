@@ -31,7 +31,9 @@ class Parser
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
-            expressions.Add(parser.ParseExpr());
+            var expr = parser.ParseExpr();
+            expr.IsRoot = true;
+            expressions.Add(expr);
         }
 
         return expressions;
