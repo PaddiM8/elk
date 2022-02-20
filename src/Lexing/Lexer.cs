@@ -69,6 +69,7 @@ class Lexer
             ')' => Build(TokenKind.ClosedParenthesis, Eat()),
             '{' => Build(TokenKind.OpenBrace, Eat()),
             '}' => Build(TokenKind.ClosedBrace, Eat()),
+            ':' => Build(TokenKind.Colon, Eat()),
             ',' => Build(TokenKind.Comma, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
@@ -130,6 +131,8 @@ class Lexer
         {
             "fn" => TokenKind.Fn,
             "let" => TokenKind.Let,
+            "if" => TokenKind.If,
+            "else" => TokenKind.Else,
             "for" => TokenKind.For,
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,

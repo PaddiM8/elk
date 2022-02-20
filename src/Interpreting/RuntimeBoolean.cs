@@ -7,11 +7,11 @@ class RuntimeBoolean : IRuntimeValue
 {
     public RuntimeType DataType => RuntimeType.Boolean;
 
-    private bool _value;
+    public bool Value { get; }
 
     public RuntimeBoolean(bool value)
     {
-        _value = value;
+        Value = value;
     }
 
     public IRuntimeValue Cast(RuntimeType type)
@@ -19,23 +19,23 @@ class RuntimeBoolean : IRuntimeValue
         return type switch
         {
             RuntimeType.Boolean => this,
-            RuntimeType.String => new RuntimeString(_value.ToString()),
+            RuntimeType.String => new RuntimeString(Value.ToString()),
             _ => throw new NotImplementedException(),
         };
     }
 
     public IRuntimeValue Operation(TokenKind kind)
-        => new RuntimeBoolean(!_value);
+        => new RuntimeBoolean(!Value);
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
     {
         var otherNumber = (RuntimeBoolean)other.Cast(DataType);
         var newValue = kind switch
         {
-            TokenKind.EqualsEquals => _value == otherNumber._value,
-            TokenKind.NotEquals => _value != otherNumber._value,
-            TokenKind.And => _value && otherNumber._value,
-            TokenKind.Or => _value || otherNumber._value,
+            TokenKind.EqualsEquals => Value == otherNumber.Value,
+            TokenKind.NotEquals => Value != otherNumber.Value,
+            TokenKind.And => Value && otherNumber.Value,
+            TokenKind.Or => Value || otherNumber.Value,
             _ => throw new NotImplementedException(),
         };
 
@@ -43,5 +43,5 @@ class RuntimeBoolean : IRuntimeValue
     }
 
     public override string ToString()
-        => _value.ToString();
+        => Value.ToString();
 }

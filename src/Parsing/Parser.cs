@@ -41,9 +41,13 @@ class Parser
 
     private Expr ParseExpr()
     {
-        if (AdvanceIf(TokenKind.Let))
+        if (Match(TokenKind.Let))
         {
             return ParseLet();
+        }
+        else if (Match(TokenKind.If))
+        {
+            return ParseIf();
         }
 
         return ParsePipe();
@@ -51,11 +55,26 @@ class Parser
 
     private Expr ParseLet()
     {
+        EatExpected(TokenKind.Let);
+
         var identifier = EatExpected(TokenKind.Identifier);
         EatExpected(TokenKind.Equals);
         _scope.AddVariable(identifier.Value, new RuntimeNil());
 
         return new LetExpr(identifier, ParseExpr());
+    }
+
+    private Expr ParseIf()
+    {
+        EatExpected(TokenKind.If);
+
+        var condition = ParseExpr();
+        var thenBranch = ParseBlockOrSingle();
+        var elseBranch = AdvanceIf(TokenKind.Else)
+            ? ParseExpr()
+            : null;
+        
+        return new IfExpr(condition, thenBranch, elseBranch);
     }
 
     private Expr ParsePipe()
@@ -185,12 +204,40 @@ class Parser
 
             return expr;
         }
+        else if (Match(TokenKind.OpenBrace))
+        {
+            return ParseBlock();
+        }
         else if (Match(TokenKind.Identifier))
         {
             return ParseIdentifier();
         }
 
         throw new NotImplementedException();
+    }
+
+    private Expr ParseBlockOrSingle()
+    {
+        if (AdvanceIf(TokenKind.Colon))
+            return ParseExpr();
+
+        return ParseBlock();
+    }
+
+    private Expr ParseBlock()
+    {
+        EatExpected(TokenKind.OpenBrace);
+
+        var pos = Current!.Position;
+        _scope = new Scope(_scope);
+
+        var expressions = new List<Expr>();
+        while (!AdvanceIf(TokenKind.ClosedBrace))
+            expressions.Add(ParseExpr());
+
+        _scope = _scope.Parent!;
+
+        return new BlockExpr(expressions, pos);
     }
 
     private Expr ParseIdentifier()
