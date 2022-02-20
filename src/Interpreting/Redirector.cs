@@ -3,8 +3,8 @@ namespace Shel.Interpreting;
 enum RedirectorStatus
 {
     Closed,
-    Send,
-    Receive,
+    ExpectingInput,
+    HasData,
 }
 
 class Redirector
@@ -16,12 +16,12 @@ class Redirector
 
     public void Open()
     {
-        _status = RedirectorStatus.Send;
+        _status = RedirectorStatus.ExpectingInput;
     }
 
     public void Send(IRuntimeValue input)
     {
-        _status = RedirectorStatus.Receive;
+        _status = RedirectorStatus.HasData;
         _buffer = input;
     }
 

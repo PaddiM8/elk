@@ -10,6 +10,8 @@ abstract class Expr
     [JsonIgnore]
     public TextPos Position { get; }
 
+    public bool IsRoot { get; set; }
+
     public Expr(TextPos pos)
     {
         Position = pos;
