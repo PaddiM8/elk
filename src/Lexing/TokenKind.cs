@@ -20,11 +20,12 @@ enum TokenKind
     OpenBrace, ClosedBrace,
 
     // Punctuation
-    Comma, Colon,
+    Comma, Colon, Hash,
 
     // Other
     NumberLiteral, StringLiteral,
     NewLine, WhiteSpace,
+    Comment,
     Identifier,
     EndOfFile,
 }

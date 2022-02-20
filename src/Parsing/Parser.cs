@@ -343,7 +343,11 @@ class Parser
 
     private void SkipWhiteSpace()
     {
-        while (Current?.Kind == TokenKind.WhiteSpace || Current?.Kind == TokenKind.NewLine)
+        while (Current?.Kind == TokenKind.WhiteSpace ||
+            Current?.Kind == TokenKind.NewLine ||
+            Current?.Kind == TokenKind.Comment)
+        {
             Eat();
+        }
     }
 }
