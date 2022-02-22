@@ -124,7 +124,7 @@ class Parser
 
     private Expr ParseComparison()
     {
-        var left = ParseTerm();
+        var left = ParseAdditive();
 
         while (Match(
             TokenKind.Greater, 
@@ -135,7 +135,7 @@ class Parser
             TokenKind.NotEquals))
         {
             var op = Eat().Kind;
-            var right = ParseTerm();
+            var right = ParseAdditive();
 
             left = new BinaryExpr(left, op, right);
         }
@@ -143,14 +143,14 @@ class Parser
         return left;
     }
 
-    private Expr ParseTerm()
+    private Expr ParseAdditive()
     {
-        var left = ParseFactor();
+        var left = ParseMultiplicative();
 
         while (Match(TokenKind.Plus, TokenKind.Minus))
         {
             var op = Eat().Kind;
-            var right = ParseFactor();
+            var right = ParseMultiplicative();
 
             left = new BinaryExpr(left, op, right);
         }
@@ -158,7 +158,7 @@ class Parser
         return left;
     }
 
-    private Expr ParseFactor()
+    private Expr ParseMultiplicative()
     {
         var left = ParseUnary();
 
