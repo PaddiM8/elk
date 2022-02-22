@@ -4,68 +4,104 @@
     | <for>
     | <or>
 
-<fn> ::= fn <identifier> <parameters> <blockOrSingle>
+<fn> ::= fn <identifier> ( <identifierList> ) <blockOrSingle>
 <let> ::= let <identifier> = <expr>
 <if> ::= if <expr> <blockOrSingle>
-    | if <expr> <blockOrSingle>  else <expr>
+    | if <expr> <blockOrSingle> else <expr>
 <for> ::= for <identifier> in <expr> <blockOrSingle>
 
-<parameters> ::= ( <parameters>, <identifier> )
-    | ( <identifier> )
-    | ( )
+<identifierList> ::= <identifierList> , <identifier>
+    | <identifier>
+    | <empty>
 <blockOrSingle> ::= <block>
     | : <expr>
+<block> ::= { <blockContent> }
+<blockContent> ::= <blockContent> <block>
+    | <block>
+    | <empty>
 
-<or> ::= <and> || <and>
-<and> ::= <comparison> && <comparison>
-<comparison> ::= <term> \> <term>
-    | <term> \>= <term>
-    | <term> \< <term>
-    | <term> \<= <term>
-    | <term> == <term>
-    | <term> != <term>
-<term> ::= <term> + <factor>
-    | <term> - <factor>
-    | <factor>
-<factor> ::= <factor> * <unary>
-    | <factor> / <unary>
-    | <unary>
+<pipe> ::= <assignment>
+    | <pipe> | <assignment>
+<binaryIf> ::= <assignment> if <assignment>
+    | <assignment>
+<assignment> ::= <identifier> = <or>
+    | <identifier> += <or>
+    | <identifier> -= <or>
+    | <identifier> *= <or>
+    | <identifier> /= <or>
+    | <or>
+<or> ::= <and>
+    | <or> || <and>
+<and> ::= <comparison>
+    | <and> && <comparison>
+<comparison> ::= <range>
+    | <range> \> <range>
+    | <range> \>= <range>
+    | <range> \< <range>
+    | <range> \<= <range>
+    | <range> == <range>
+    | <range> != <range>
+<range> ::= <coalescing>..<coalescing>
+    | <coalescing>..=<coalescing>
+    | ..<coalescing>
+    | <coalescing>..
+    | <coalescing>
+<coalescing> ::= <additive> ?? <additive>
+    | <additive>
+<additive> ::= <multiplicative>
+    | <additive> + <multiplicative>
+    | <additive> - <multiplicative>
+<multiplicative> ::= <unary>
+    | <multiplicative> * <unary>
+    | <multiplicative> / <unary>
+    | <multiplicative> % <unary>
 <power> ::= <unary> ^ <power>
     | <unary>
-<unary> ::= - <primary>
+<unary> ::= - <indexer>
+    | ! <indexer>
+    | <indexer>
+<indexer> ::= <primary> [ <expr> ]
     | <primary>
 <primary> ::= <number>
     | <string>
     | nil
     | true
     | false
+    | break
+    | continue
     | ( <expr> )
+    | <list>
+    | <dict>
     | <var>
     | <call>
+<list> ::= [ <exprList> ]
+<dict> ::= { <dictEntries> }
+    | { <dictEntries> , }
+<dictEntries> ::= <dictEntries> , <dictEntry>
+    | <dictEntry>
+<dictEntry> ::= <identifier> : expr
 
 # This part is unfortunately context-dependent, which seems
 # to be necessary in order to avoid a variable prefix like $.
 # In order to figure out whether it's a variable or function
 # call, a parser would do a (variable) symbol table look-up.
 # Even though this is a bit slow and awkward, it is deemed
-# to be worth it in order to get a cleaner syntax. Due to
-# the nature of the language, performance is not a big
-# priority anyway.
+# to be worth the cost in order to get a cleaner syntax. Due
+# to the nature of the language, performance is not a big
+# priority.
 <var> ::= <identifier>
-<call> ::= <path> <arguments>
-    | <identifier> text
+<call> ::= <path> ( <exprList> )
+    | <path> text
 
-<arguments> ::= ( <arguments>, <expr> )
-    | ( <expr> )
-    | ( )
+<exprList> ::= <exprList> , <expr>
+    | <expr>
+    | <empty>
 <textArguments> ::= <textArguments> <textArgument>
     | <textArgument>
-<path> ::= <identifier> / <pathLatter>
-    | <pathLatter>
-<pathLatter> ::= / <pathLatter>
-    | ./ <pathLatter>
-    | ../ <pathLatter>
-    | ~/ <pathLatter>
+<path> ::= / <path>
+    | ./ <path>
+    | ../ <path>
+    | ~/ <path>
     | <identifier>
 
 <textArgument> ::= /[^|)}\n\s]*/
