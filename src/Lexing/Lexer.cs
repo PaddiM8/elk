@@ -156,6 +156,7 @@ class Lexer
             "if" => TokenKind.If,
             "else" => TokenKind.Else,
             "for" => TokenKind.For,
+            "return" => TokenKind.Return,
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,
             "false" => TokenKind.False,

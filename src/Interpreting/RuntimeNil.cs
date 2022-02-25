@@ -5,6 +5,8 @@ namespace Shel.Interpreting;
 
 class RuntimeNil : IRuntimeValue
 {
+    public static RuntimeNil Value = new();
+
     public RuntimeType DataType => RuntimeType.Nil;
 
     public IRuntimeValue Cast(RuntimeType type)

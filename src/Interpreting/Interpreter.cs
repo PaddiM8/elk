@@ -10,17 +10,18 @@ class Interpreter
 {
     private Scope _scope;
     private readonly Redirector _redirector = new();
+    private IRuntimeValue? _functionReturnValue = null;
 
     public Interpreter()
     {
-        _scope = new Scope(null);
+        _scope = new GlobalScope();
     }
 
     public IRuntimeValue Interpret(string input)
     {
-        var ast = Parser.Parse(input, _scope);
+        var ast = Parser.Parse(input, _scope.GlobalScope);
 
-        IRuntimeValue lastResult = new RuntimeNil();
+        IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
             lastResult = Next(expr);
 
@@ -29,9 +30,14 @@ class Interpreter
 
     private IRuntimeValue Next(Expr expr)
     {
+        if (_functionReturnValue != null)
+            return RuntimeNil.Value;
+
         return expr switch
         {
+            FunctionExpr e => Visit(e),
             LetExpr e => Visit(e),
+            ReturnExpr e => Visit(e),
             IfExpr e => Visit(e),
             BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
@@ -43,11 +49,23 @@ class Interpreter
         };
     }
 
+    private IRuntimeValue Visit(FunctionExpr expr)
+    {
+        return RuntimeNil.Value;
+    }
+
     private IRuntimeValue Visit(LetExpr expr)
     {
         _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
 
-        return new RuntimeNil();
+        return RuntimeNil.Value;
+    }
+
+    private IRuntimeValue Visit(ReturnExpr expr)
+    {
+        _functionReturnValue = Next(expr.Value);
+
+        return RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(IfExpr expr)
@@ -66,22 +84,33 @@ class Interpreter
         else
         {
             return expr.ElseBranch == null
-                ? new RuntimeNil()
+                ? RuntimeNil.Value
                 : Next(expr.ElseBranch);
         }
     }
 
-    private IRuntimeValue Visit(BlockExpr expr)
+    private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)
     {
+        _scope = scope ?? new LocalScope(_scope);
+
         int i = 0;
+        IRuntimeValue lastValue = RuntimeNil.Value;
         foreach (var child in expr.Expressions)
         {
+            // If there is a value to be returned, stop immediately
+            // and make sure it's passed upwards.
+            if (_functionReturnValue != null)
+            {
+                lastValue = _functionReturnValue;
+                break;
+            }
+
             // If last
             if (i == expr.Expressions.Count - 1)
             {
                 child.IsRoot = expr.IsRoot;
-
-                return Next(child);
+                lastValue = Next(child);
+                break;
             }
 
             child.IsRoot = true;
@@ -89,7 +118,9 @@ class Interpreter
             i++;
         }
 
-        return new RuntimeNil();
+        _scope = _scope.Parent!;
+
+        return lastValue;
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)
@@ -100,7 +131,7 @@ class Interpreter
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.True => new RuntimeBoolean(true),
             TokenKind.False => new RuntimeBoolean(false),
-            TokenKind.Nil => new RuntimeNil(),
+            TokenKind.Nil => RuntimeNil.Value,
             _ => throw new NotImplementedException(),
         };
     }
@@ -150,10 +181,38 @@ class Interpreter
 
     private IRuntimeValue Visit(VariableExpr expr)
     {
-        return _scope.FindVariable(expr.Identifier.Value) ?? new RuntimeNil();
+        return _scope.FindVariable(expr.Identifier.Value) ?? RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(CallExpr expr)
+    {
+        var function = _scope.GlobalScope.FindFunction(expr.Identifier.Value);
+
+        return function == null
+            ? EvaluateProgramCall(expr)
+            : EvaluateFunctionCall(expr, function);
+    }
+
+    private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
+    {
+        if (call.Arguments.Count != function.Parameters.Count)
+        {
+            throw new RuntimeException($"Expected {function.Parameters.Count} arguments but got {call.Arguments.Count}");
+        }
+
+        var functionScope = new LocalScope(_scope);
+        foreach (var (parameter, argument) in function.Parameters.Zip(call.Arguments))
+        {
+            functionScope.AddVariable(parameter.Value, Next(argument));
+        }
+
+        var returnValue = Visit(function.Block, functionScope);
+        _functionReturnValue = null;
+
+        return returnValue;
+    }
+
+    private IRuntimeValue EvaluateProgramCall(CallExpr expr)
     {
         var arguments = expr.Arguments.Select(x => Next(x).ToString());
         bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
@@ -189,7 +248,7 @@ class Interpreter
         }
         else
         {
-            return new RuntimeNil();
+            return RuntimeNil.Value;
         }
     }
 }
