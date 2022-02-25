@@ -1,16 +1,25 @@
+using System;
 using System.Collections.Generic;
 using Shel.Interpreting;
 
 namespace Shel;
 
-class Scope
+abstract class Scope
 {
-    public Scope? Parent;
+    public GlobalScope GlobalScope { get; }
+
+    public Scope? Parent { get; }
 
     public Dictionary<string, IRuntimeValue> _variables = new();
 
     public Scope(Scope? parent)
     {
+        GlobalScope = parent switch
+        {
+            GlobalScope scope => scope,
+            LocalScope scope => scope.GlobalScope,
+            _ => (GlobalScope)this,
+        };
         Parent = parent;
     }
 

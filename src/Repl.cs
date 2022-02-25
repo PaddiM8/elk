@@ -9,7 +9,7 @@ namespace Shel;
 
 class Repl
 {
-    public static Task Run()
+    public static void Run()
     {
         // TODO: 'exit' command
         var interpreter = new Interpreter();

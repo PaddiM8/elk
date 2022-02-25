@@ -18,6 +18,23 @@ abstract class Expr
     }
 }
 
+class FunctionExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public List<Token> Parameters { get; }
+
+    public BlockExpr Block { get; }
+
+    public FunctionExpr(Token identifier, List<Token> parameters, BlockExpr block)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Parameters = parameters;
+        Block = block;
+    }
+}
+
 class LetExpr : Expr
 {
     public Token Identifier { get; }
@@ -32,40 +49,11 @@ class LetExpr : Expr
     }
 }
 
-class IfExpr : Expr
+class ReturnExpr : Expr
 {
-    public Expr Condition { get; }
+    public Expr Value { get; }
 
-    public Expr ThenBranch { get; }
-
-    public Expr? ElseBranch { get; }
-
-    public IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch)
-        : base(condition.Position)
-    {
-        Condition = condition;
-        ThenBranch = thenBranch;
-        ElseBranch = elseBranch;
-    }
-}
-
-
-class BlockExpr : Expr
-{
-    public List<Expr> Expressions { get; }
-
-    public BlockExpr(List<Expr> expressions, TextPos pos)
-        : base(pos)
-    {
-        Expressions = expressions;
-    }
-}
-
-class LiteralExpr : Expr
-{
-    public Token Value { get; }
-
-    public LiteralExpr(Token value)
+    public ReturnExpr(Expr value)
         : base(value.Position)
     {
         Value = value;
@@ -125,5 +113,45 @@ class CallExpr : Expr
     {
         Identifier = identifier;
         Arguments = arguments;
+    }
+}
+
+class IfExpr : Expr
+{
+    public Expr Condition { get; }
+
+    public Expr ThenBranch { get; }
+
+    public Expr? ElseBranch { get; }
+
+    public IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch)
+        : base(condition.Position)
+    {
+        Condition = condition;
+        ThenBranch = thenBranch;
+        ElseBranch = elseBranch;
+    }
+}
+
+
+class BlockExpr : Expr
+{
+    public List<Expr> Expressions { get; }
+
+    public BlockExpr(List<Expr> expressions, TextPos pos)
+        : base(pos)
+    {
+        Expressions = expressions;
+    }
+}
+
+class LiteralExpr : Expr
+{
+    public Token Value { get; }
+
+    public LiteralExpr(Token value)
+        : base(value.Position)
+    {
+        Value = value;
     }
 }

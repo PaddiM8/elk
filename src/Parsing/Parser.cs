@@ -19,13 +19,13 @@ class Parser
 
     private bool ReachedEnd => _index >= _tokens.Count;
 
-    private Parser(List<Token> tokens, Scope scope)
+    private Parser(List<Token> tokens, GlobalScope scope)
     {
         _tokens = tokens;
         _scope = scope;
     }
 
-    public static List<Expr> Parse(string input, Scope scope)
+    public static List<Expr> Parse(string input, GlobalScope scope)
     {
         var parser = new Parser(Lexer.Lex(input), scope);
         var expressions = new List<Expr>();
@@ -41,40 +41,59 @@ class Parser
 
     private Expr ParseExpr()
     {
-        if (Match(TokenKind.Let))
+        if (Match(TokenKind.Fn))
         {
-            return ParseLet();
+            return ParseFn();
         }
-        else if (Match(TokenKind.If))
+        else if (Match(TokenKind.Return))
         {
-            return ParseIf();
+            return ParseReturn();
         }
 
         return ParsePipe();
     }
 
-    private Expr ParseLet()
+    private Expr ParseFn()
     {
-        EatExpected(TokenKind.Let);
-
+        EatExpected(TokenKind.Fn);
         var identifier = EatExpected(TokenKind.Identifier);
-        EatExpected(TokenKind.Equals);
-        _scope.AddVariable(identifier.Value, new RuntimeNil());
 
-        return new LetExpr(identifier, ParseExpr());
+        var parameters = ParseParameterList();
+        var functionScope = new LocalScope(_scope);
+        foreach (var parameter in parameters)
+        {
+            functionScope.AddVariable(parameter.Value, RuntimeNil.Value);
+        }
+
+        var block = ParseBlockOrSingle(functionScope);
+        var function = new FunctionExpr(identifier, parameters, block);
+
+        _scope.GlobalScope.AddFunction(function);
+
+        return function;
     }
 
-    private Expr ParseIf()
+    private Expr ParseReturn()
     {
-        EatExpected(TokenKind.If);
+        EatExpected(TokenKind.Return);
 
-        var condition = ParseExpr();
-        var thenBranch = ParseBlockOrSingle();
-        var elseBranch = AdvanceIf(TokenKind.Else)
-            ? ParseExpr()
-            : null;
-        
-        return new IfExpr(condition, thenBranch, elseBranch);
+        return new ReturnExpr(ParseExpr());
+    }
+
+    private List<Token> ParseParameterList()
+    {
+        EatExpected(TokenKind.OpenParenthesis);
+        var parameters = new List<Token>();
+
+        do
+        {
+            parameters.Add(EatExpected(TokenKind.Identifier));
+        }
+        while(AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedParenthesis));
+
+        EatExpected(TokenKind.ClosedParenthesis);
+
+        return parameters;
     }
 
     private Expr ParsePipe()
@@ -204,6 +223,14 @@ class Parser
 
             return expr;
         }
+        else if (Match(TokenKind.Let))
+        {
+            return ParseLet();
+        }
+        else if (Match(TokenKind.If))
+        {
+            return ParseIf();
+        }
         else if (Match(TokenKind.OpenBrace))
         {
             return ParseBlock();
@@ -216,20 +243,53 @@ class Parser
         throw new NotImplementedException(Current?.Value ?? "");
     }
 
-    private Expr ParseBlockOrSingle()
+    private Expr ParseLet()
     {
-        if (AdvanceIf(TokenKind.Colon))
-            return ParseExpr();
+        EatExpected(TokenKind.Let);
 
-        return ParseBlock();
+        var identifier = EatExpected(TokenKind.Identifier);
+        EatExpected(TokenKind.Equals);
+        _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+
+        return new LetExpr(identifier, ParseExpr());
     }
 
-    private Expr ParseBlock()
+    private Expr ParseIf()
+    {
+        EatExpected(TokenKind.If);
+
+        var condition = ParseExpr();
+        var thenBranch = ParseBlockOrSingle();
+        var elseBranch = AdvanceIf(TokenKind.Else)
+            ? ParseExpr()
+            : null;
+        
+        return new IfExpr(condition, thenBranch, elseBranch);
+    }
+
+    private BlockExpr ParseBlockOrSingle(LocalScope? scope = null)
+    {
+        if (AdvanceIf(TokenKind.Colon))
+        {
+            _scope = scope ?? new LocalScope(_scope);
+            var expr = ParseExpr();
+            _scope = _scope.Parent!;
+
+            return new BlockExpr(
+                new() { expr },
+                expr.Position
+            );
+        }
+
+        return ParseBlock(scope);
+    }
+
+    private BlockExpr ParseBlock(LocalScope? scope = null)
     {
         EatExpected(TokenKind.OpenBrace);
 
         var pos = Current!.Position;
-        _scope = new Scope(_scope);
+        _scope = scope ?? new LocalScope(_scope);
 
         var expressions = new List<Expr>();
         while (!AdvanceIf(TokenKind.ClosedBrace))
