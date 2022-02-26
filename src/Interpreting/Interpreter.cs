@@ -129,8 +129,8 @@ class Interpreter
         {
             TokenKind.NumberLiteral => new RuntimeNumber(double.Parse(expr.Value.Value)),
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
-            TokenKind.True => new RuntimeBoolean(true),
-            TokenKind.False => new RuntimeBoolean(false),
+            TokenKind.True => RuntimeBoolean.True,
+            TokenKind.False => RuntimeBoolean.False,
             TokenKind.Nil => RuntimeNil.Value,
             _ => throw new NotImplementedException(),
         };

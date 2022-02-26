@@ -20,7 +20,7 @@ class RuntimeString : IRuntimeValue
         {
             RuntimeType.String => this,
             RuntimeType.Number => new RuntimeNumber(double.Parse(Value)),
-            RuntimeType.Boolean => new RuntimeBoolean(Value.Length != 0),
+            RuntimeType.Boolean => RuntimeBoolean.From(Value.Length != 0),
             _ => throw new NotImplementedException(),
         };
     }
@@ -29,7 +29,7 @@ class RuntimeString : IRuntimeValue
         => kind switch
         {
             TokenKind.Minus => Cast(RuntimeType.Number).Operation(kind),
-            TokenKind.Exclamation => new RuntimeBoolean(Value.Length == 0),
+            TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new NotImplementedException(),
         };
 
@@ -44,12 +44,12 @@ class RuntimeString : IRuntimeValue
         return kind switch
         {
             TokenKind.Plus => new RuntimeString(Value + otherString.Value),
-            TokenKind.Greater => new RuntimeBoolean(string.Compare(Value, otherString.Value) > 0),
-            TokenKind.GreaterEquals => new RuntimeBoolean(string.Compare(Value, otherString.Value) >= 0),
-            TokenKind.Less => new RuntimeBoolean(string.Compare(Value, otherString.Value) < 0),
-            TokenKind.LessEquals => new RuntimeBoolean(string.Compare(Value, otherString.Value) <= 0),
-            TokenKind.EqualsEquals => new RuntimeBoolean(Value == otherString.Value),
-            TokenKind.NotEquals => new RuntimeBoolean(Value != otherString.Value),
+            TokenKind.Greater => RuntimeBoolean.From(string.Compare(Value, otherString.Value) > 0),
+            TokenKind.GreaterEquals => RuntimeBoolean.From(string.Compare(Value, otherString.Value) >= 0),
+            TokenKind.Less => RuntimeBoolean.From(string.Compare(Value, otherString.Value) < 0),
+            TokenKind.LessEquals => RuntimeBoolean.From(string.Compare(Value, otherString.Value) <= 0),
+            TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
+            TokenKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
             _ => throw new NotImplementedException(),
         };
     }

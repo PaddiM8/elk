@@ -5,11 +5,14 @@ namespace Shel.Interpreting;
 
 class RuntimeBoolean : IRuntimeValue
 {
+    public static RuntimeBoolean True => new(true);
+    public static RuntimeBoolean False => new(false);
+
     public RuntimeType DataType => RuntimeType.Boolean;
 
     public bool Value { get; }
 
-    public RuntimeBoolean(bool value)
+    private RuntimeBoolean(bool value)
     {
         Value = value;
     }
@@ -23,6 +26,9 @@ class RuntimeBoolean : IRuntimeValue
             _ => throw new NotImplementedException(),
         };
     }
+
+    public static RuntimeBoolean From(bool value)
+        => value ? RuntimeBoolean.True : RuntimeBoolean.False;
 
     public IRuntimeValue Operation(TokenKind kind)
         => new RuntimeBoolean(!Value);
