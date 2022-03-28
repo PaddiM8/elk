@@ -39,7 +39,20 @@ class Interpreter
     }
 
     public IRuntimeValue Interpret(string input)
-        => Interpret(Parser.Parse(Lexer.Lex(input), _scope.GlobalScope));
+    {
+        try
+        {
+            var ast = Parser.Parse(Lexer.Lex(input), _scope.GlobalScope);
+
+            return Interpret(ast);
+        }
+        catch (ParseException e)
+        {
+            Console.WriteLine($"[{e.Position.Line}:{e.Position.Column}] {e.Message}");
+
+            return new RuntimeNil();
+        }
+    }
 
     private IRuntimeValue Next(Expr expr)
     {

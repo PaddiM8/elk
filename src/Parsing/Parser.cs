@@ -240,7 +240,9 @@ internal class Parser
             return ParseIdentifier();
         }
 
-        throw new ParseException($"Unexpected token: '{Current?.Kind}'");
+        throw Current == null
+            ? Error($"Unexpected end of expression")
+            : Error($"Unexpected token: '{Current?.Kind}'");
     }
 
     private Expr ParseLet()
@@ -308,7 +310,8 @@ internal class Parser
             var arguments = new List<Expr>();
             do
             {
-                arguments.Add(ParseExpr());
+                if (!Match(TokenKind.ClosedParenthesis))
+                    arguments.Add(ParseExpr());
             }
             while (AdvanceIf(TokenKind.Comma));
 
@@ -381,7 +384,7 @@ internal class Parser
             return Eat();
         }
 
-        throw new ParseException($"Expected '{kind}' but got '{Current?.Kind}'");
+        throw Error($"Expected '{kind}' but got '{Current?.Kind}'");
     }
 
     private Token Eat()
@@ -403,9 +406,12 @@ internal class Parser
     }
 
     private bool MatchInclWhiteSpace(params TokenKind[] kinds)
-    {
-        return Current != null && kinds.Contains(Current.Kind);
-    }
+        => Current != null && kinds.Contains(Current.Kind);
+
+    private ParseException Error(string message)
+        => Current == null && _index > 0
+            ? new(_tokens[_index - 1].Position, message)
+            : new(Current?.Position ?? new TextPos(0, 0), message);
 
     private void SkipWhiteSpace()
     {
