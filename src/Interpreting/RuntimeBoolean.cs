@@ -23,7 +23,7 @@ class RuntimeBoolean : IRuntimeValue
         {
             RuntimeType.Boolean => this,
             RuntimeType.String => new RuntimeString(Value.ToString()),
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeCastException(DataType, type),
         };
     }
 
