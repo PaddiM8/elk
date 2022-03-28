@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Shel.Lexing;
 
-class Lexer
+internal class Lexer
 {
     private readonly string _source;
     private int _index;
