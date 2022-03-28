@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Shel.Lexing;
@@ -17,16 +18,17 @@ class Interpreter
         _scope = new GlobalScope();
     }
 
-    public IRuntimeValue Interpret(string input)
+    public IRuntimeValue Interpret(List<Expr> ast)
     {
-        var ast = Parser.Parse(input, _scope.GlobalScope);
-
         IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
             lastResult = Next(expr);
 
         return lastResult;
     }
+
+    public IRuntimeValue Interpret(string input)
+        => Interpret(Parser.Parse(Lexer.Lex(input), _scope.GlobalScope));
 
     private IRuntimeValue Next(Expr expr)
     {
@@ -49,7 +51,7 @@ class Interpreter
         };
     }
 
-    private IRuntimeValue Visit(FunctionExpr expr)
+    private IRuntimeValue Visit(FunctionExpr _)
     {
         return RuntimeNil.Value;
     }
