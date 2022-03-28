@@ -12,6 +12,7 @@ class Interpreter
     private Scope _scope;
     private readonly Redirector _redirector = new();
     private IRuntimeValue? _functionReturnValue = null;
+    private Expr? _lastExpr = null;
 
     public Interpreter()
     {
@@ -22,7 +23,17 @@ class Interpreter
     {
         IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
-            lastResult = Next(expr);
+        {
+            try
+            {
+                lastResult = Next(expr);
+            }
+            catch (RuntimeException e)
+            {
+                var pos = _lastExpr?.Position ?? new TextPos(0, 0);
+                Console.WriteLine($"[{pos.Line}:{pos.Column}] {e.Message}");
+            }
+        }
 
         return lastResult;
     }
@@ -34,6 +45,8 @@ class Interpreter
     {
         if (_functionReturnValue != null)
             return RuntimeNil.Value;
+
+        _lastExpr = expr;
 
         return expr switch
         {
@@ -230,7 +243,14 @@ class Interpreter
             }
         };
 
-        process.Start();
+        try
+        {
+            process.Start();
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            throw new RuntimeNotFoundException(expr.Identifier.Value);
+        }
 
         if (_redirector.Status == RedirectorStatus.HasData)
         {
