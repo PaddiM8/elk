@@ -11,7 +11,6 @@ class Repl
 {
     public static void Run()
     {
-        // TODO: 'exit' command
         var interpreter = new Interpreter();
         while (true)
         {
@@ -19,6 +18,9 @@ class Repl
             Console.Write(">> ");
             Console.ResetColor();
             string input = Console.ReadLine() ?? "";
+            if (input == "exit")
+                break;
+
             var result = interpreter.Interpret(input).ToString() ?? "";
             if (result == "" || result.EndsWith('\n'))
             {
@@ -28,13 +30,13 @@ class Repl
             {
                 Console.WriteLine(result);
             }
-            /*var expressions = Parser.Parse(input);
+            var expressions = Parsing.Parser.Parse(Lexing.Lexer.Lex(input), new GlobalScope());
             var settings = new JsonSerializerSettings {
                 Formatting = Formatting.Indented,
                 TypeNameHandling = TypeNameHandling.Objects,
                 Converters = { new StringEnumConverter() },
             };
-            Console.WriteLine(JsonConvert.SerializeObject(expressions, settings));*/
+            Console.WriteLine(JsonConvert.SerializeObject(expressions, settings));
         }
     }
 }
