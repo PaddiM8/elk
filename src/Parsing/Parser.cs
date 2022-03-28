@@ -240,7 +240,7 @@ internal class Parser
             return ParseIdentifier();
         }
 
-        throw new NotImplementedException(Current?.Value ?? "");
+        throw new ParseException($"Unexpected token: '{Current?.Kind}'");
     }
 
     private Expr ParseLet()
@@ -381,7 +381,7 @@ internal class Parser
             return Eat();
         }
 
-        throw new ParseException($"Expected '{kind}' but got '{Current?.Kind}'.");
+        throw new ParseException($"Expected '{kind}' but got '{Current?.Kind}'");
     }
 
     private Token Eat()

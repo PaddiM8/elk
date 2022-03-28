@@ -19,9 +19,11 @@ class RuntimeString : IRuntimeValue
         return type switch
         {
             RuntimeType.String => this,
-            RuntimeType.Number => new RuntimeNumber(double.Parse(Value)),
+            RuntimeType.Number => double.TryParse(Value, out double number)
+                ? new RuntimeNumber(number)
+                : throw new RuntimeCastException(DataType, type),
             RuntimeType.Boolean => RuntimeBoolean.From(Value.Length != 0),
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeCastException(DataType, type),
         };
     }
 

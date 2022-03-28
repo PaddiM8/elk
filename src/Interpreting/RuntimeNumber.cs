@@ -21,7 +21,7 @@ class RuntimeNumber : IRuntimeValue
             RuntimeType.Number => this,
             RuntimeType.String => new RuntimeString(Value.ToString()),
             RuntimeType.Boolean => RuntimeBoolean.From(Value != 0),
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeCastException(DataType, type),
         };
     }
 
