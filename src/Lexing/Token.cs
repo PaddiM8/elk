@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 
 namespace Shel.Lexing;
 
-record struct TextPos(int Line, int Column);
+internal record struct TextPos(int Line, int Column);
 
 [JsonConverter(typeof(TokenConverter))]
-record Token(TokenKind Kind, string Value, TextPos Position);
+internal record Token(TokenKind Kind, string Value, TextPos Position);
 
 class TokenConverter : JsonConverter<Token>
 {

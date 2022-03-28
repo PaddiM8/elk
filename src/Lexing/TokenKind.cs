@@ -1,6 +1,6 @@
 namespace Shel.Lexing;
 
-enum TokenKind
+internal enum TokenKind
 {
     Unknown,
 

@@ -7,7 +7,7 @@ using Shel.Lexing;
 
 namespace Shel.Parsing;
 
-class Parser
+internal class Parser
 {
     private readonly List<Token> _tokens;
     private int _index;
@@ -25,9 +25,9 @@ class Parser
         _scope = scope;
     }
 
-    public static List<Expr> Parse(string input, GlobalScope scope)
+    public static List<Expr> Parse(List<Token> tokens, GlobalScope scope)
     {
-        var parser = new Parser(Lexer.Lex(input), scope);
+        var parser = new Parser(tokens, scope);
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
@@ -338,8 +338,14 @@ class Parser
                 currentText.Append(Eat().Value);
             }
 
-            var finalToken = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
-            textArguments.Add(new LiteralExpr(finalToken));
+            // There will still be some text left that needs to be added since
+            // currentText is only moved to textArguments when encountering a space,
+            // which normally are not present at the end.
+            if (currentText.Length > 0)
+            {
+                var finalToken = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
+                textArguments.Add(new LiteralExpr(finalToken));
+            }
 
             return new CallExpr(identifier, textArguments);
         }
