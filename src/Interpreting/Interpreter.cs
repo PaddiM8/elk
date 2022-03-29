@@ -53,7 +53,7 @@ class Interpreter
         {
             Console.WriteLine($"[{e.Position.Line}:{e.Position.Column}] {e.Message}");
 
-            return new RuntimeNil();
+            return RuntimeNil.Value;
         }
     }
 
@@ -217,7 +217,8 @@ class Interpreter
 
     private IRuntimeValue Visit(CallExpr expr)
     {
-        if (expr.Identifier.Value == "cd")
+        string name = expr.Identifier.Value;
+        if (name == "cd")
         {
             var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>());
             string path = expr.Arguments.Any()
@@ -225,10 +226,15 @@ class Interpreter
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             WorkingDirectory = GetAbsolutePath(path);
 
-            return new RuntimeNil();
+            return RuntimeNil.Value;
+        }
+        
+        if (StdGateway.Contains(name))
+        {
+            return StdGateway.Call(name, expr.Arguments.Select(x => Next(x)).ToArray());
         }
 
-        var function = _scope.GlobalScope.FindFunction(expr.Identifier.Value);
+        var function = _scope.GlobalScope.FindFunction(name);
 
         return function == null
             ? EvaluateProgramCall(expr)
