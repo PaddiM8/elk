@@ -14,8 +14,15 @@ class Repl
         var interpreter = new Interpreter();
         while (true)
         {
+            string workingDirectory = interpreter.WorkingDirectory;
+            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (workingDirectory.StartsWith(homePath))
+            {
+                workingDirectory = "~" + workingDirectory[homePath.Length..];
+            }
+            Console.Write(workingDirectory);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write(">> ");
+            Console.Write(" >> ");
             Console.ResetColor();
             string input = Console.ReadLine() ?? "";
             if (input == "exit")

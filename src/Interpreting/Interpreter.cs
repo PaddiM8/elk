@@ -14,12 +14,12 @@ class Interpreter
     private readonly Redirector _redirector = new();
     private IRuntimeValue? _functionReturnValue = null;
     private Expr? _lastExpr = null;
-    private string _workingDirectory;
+    public string WorkingDirectory { get; private set; }
 
     public Interpreter()
     {
         _scope = new GlobalScope();
-        _workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     }
 
     public IRuntimeValue Interpret(List<Expr> ast)
@@ -223,9 +223,9 @@ class Interpreter
             string path = expr.Arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            _workingDirectory = path.StartsWith("/")
+            WorkingDirectory = path.StartsWith("/")
                 ? path
-                : Path.Join(_workingDirectory, path);
+                : Path.Join(WorkingDirectory, path);
 
             return new RuntimeNil();
         }
@@ -269,7 +269,7 @@ class Interpreter
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
-                WorkingDirectory = _workingDirectory,
+                WorkingDirectory = WorkingDirectory,
             }
         };
 
