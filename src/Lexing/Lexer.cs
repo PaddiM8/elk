@@ -73,6 +73,8 @@ internal class Lexer
             '}' => Build(TokenKind.ClosedBrace, Eat()),
             ':' => Build(TokenKind.Colon, Eat()),
             ',' => Build(TokenKind.Comma, Eat()),
+            '.' => Build(TokenKind.Dot, Eat()),
+            '~' => Build(TokenKind.Tilde, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
         };
