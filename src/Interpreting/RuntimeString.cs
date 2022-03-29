@@ -5,8 +5,6 @@ namespace Shel.Interpreting;
 
 class RuntimeString : IRuntimeValue
 {
-    public RuntimeType DataType => RuntimeType.String;
-
     public string Value { get; }
 
     public RuntimeString(string value)
@@ -14,23 +12,28 @@ class RuntimeString : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue Cast(RuntimeType type)
+    public T As<T>()
+        where T : IRuntimeValue
     {
-        return type switch
+        IRuntimeValue converted = typeof(T) switch
         {
-            RuntimeType.String => this,
-            RuntimeType.Number => double.TryParse(Value, out double number)
-                ? new RuntimeNumber(number)
-                : throw new RuntimeCastException(DataType, type),
-            RuntimeType.Boolean => RuntimeBoolean.From(Value.Length != 0),
-            _ => throw new RuntimeCastException(DataType, type),
+            var type when type == typeof(RuntimeString)
+                => this,
+            var type when type == typeof(RuntimeNumber) && double.TryParse(Value, out double number)
+                => new RuntimeNumber(number),
+            var type when type == typeof(RuntimeBoolean)
+                => RuntimeBoolean.From(Value.Length != 0),
+            _
+                => throw new RuntimeCastException<RuntimeString, T>(),
         };
+
+        return (T)converted;
     }
 
     public IRuntimeValue Operation(TokenKind kind)
         => kind switch
         {
-            TokenKind.Minus => Cast(RuntimeType.Number).Operation(kind),
+            TokenKind.Minus => As<RuntimeNumber>().Operation(kind),
             TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new NotImplementedException(),
         };
@@ -39,10 +42,10 @@ class RuntimeString : IRuntimeValue
     {
         if (kind is TokenKind.Minus or TokenKind.Star or TokenKind.Slash)
         {
-            return Cast(RuntimeType.Number).Operation(kind, other);
+            return As<RuntimeNumber>().Operation(kind, other);
         }
 
-        var otherString = (RuntimeString)other.Cast(DataType);
+        var otherString = other.As<RuntimeString>();
         return kind switch
         {
             TokenKind.Plus => new RuntimeString(Value + otherString.Value),

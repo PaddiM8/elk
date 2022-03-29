@@ -7,14 +7,19 @@ class RuntimeNil : IRuntimeValue
 {
     public static RuntimeNil Value = new();
 
-    public RuntimeType DataType => RuntimeType.Nil;
-
-    public IRuntimeValue Cast(RuntimeType type)
-        => type switch
+    public T As<T>()
+        where T : IRuntimeValue
+    {
+        IRuntimeValue converted = typeof(T) switch
         {
-            RuntimeType.Boolean => RuntimeBoolean.False,
-            _ => this,
+            var type when type == typeof(RuntimeBoolean)
+                => RuntimeBoolean.False,
+            _
+                => this,
         };
+
+        return (T)converted;
+    }
 
     public IRuntimeValue Operation(TokenKind kind)
         => kind == TokenKind.Exclamation

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
@@ -8,8 +9,6 @@ class RuntimeBoolean : IRuntimeValue
     public static RuntimeBoolean True => new(true);
     public static RuntimeBoolean False => new(false);
 
-    public RuntimeType DataType => RuntimeType.Boolean;
-
     public bool Value { get; }
 
     private RuntimeBoolean(bool value)
@@ -17,14 +16,20 @@ class RuntimeBoolean : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue Cast(RuntimeType type)
+    public T As<T>()
+        where T : IRuntimeValue
     {
-        return type switch
+        IRuntimeValue converted = typeof(T) switch
         {
-            RuntimeType.Boolean => this,
-            RuntimeType.String => new RuntimeString(Value.ToString()),
-            _ => throw new RuntimeCastException(DataType, type),
+            var type when type == typeof(RuntimeBoolean)
+                => this,
+            var type when type == typeof(RuntimeString)
+                => new RuntimeString(Value.ToString()),
+            _
+                => throw new RuntimeCastException<RuntimeBoolean, T>(),
         };
+
+        return (T)converted;
     }
 
     public static RuntimeBoolean From(bool value)
@@ -35,13 +40,13 @@ class RuntimeBoolean : IRuntimeValue
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
     {
-        var otherNumber = (RuntimeBoolean)other.Cast(DataType);
+        var otherBoolean = (RuntimeBoolean)other;
         var newValue = kind switch
         {
-            TokenKind.EqualsEquals => Value == otherNumber.Value,
-            TokenKind.NotEquals => Value != otherNumber.Value,
-            TokenKind.And => Value && otherNumber.Value,
-            TokenKind.Or => Value || otherNumber.Value,
+            TokenKind.EqualsEquals => Value == otherBoolean.Value,
+            TokenKind.NotEquals => Value != otherBoolean.Value,
+            TokenKind.And => Value && otherBoolean.Value,
+            TokenKind.Or => Value || otherBoolean.Value,
             _ => throw new NotImplementedException(),
         };
 
