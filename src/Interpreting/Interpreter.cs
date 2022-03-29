@@ -223,9 +223,7 @@ class Interpreter
             string path = expr.Arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            WorkingDirectory = path.StartsWith("/")
-                ? path
-                : Path.Join(WorkingDirectory, path);
+            WorkingDirectory = GetAbsolutePath(path);
 
             return new RuntimeNil();
         }
@@ -258,13 +256,29 @@ class Interpreter
 
     private IRuntimeValue EvaluateProgramCall(CallExpr expr)
     {
-        var arguments = expr.Arguments.Select(x => Next(x).ToString());
+        var arguments = expr.Arguments.Select(x => Next(x).ToString()).ToList();
         bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
+
+        // Read potential shebang
+        string fileName = expr.Identifier.Value;
+        if (File.Exists(GetAbsolutePath(fileName)))
+        {
+            using var streamReader = new StreamReader(GetAbsolutePath(fileName));
+            var firstChars = new char[2];
+            streamReader.ReadBlock(firstChars, 0, 2);
+
+            if (firstChars[0] == '#' && firstChars[1] == '!')
+            {
+                arguments.Insert(0, fileName);
+                fileName = streamReader.ReadLine() ?? "";
+            }
+        }
+
         using var process = new Process()
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = expr.Identifier.Value,
+                FileName = fileName,
                 Arguments = string.Join(" ", arguments),
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
@@ -303,4 +317,9 @@ class Interpreter
             return RuntimeNil.Value;
         }
     }
+
+    private string GetAbsolutePath(string relativePath)
+        => relativePath.StartsWith("/")
+            ? relativePath
+            : Path.Join(WorkingDirectory, relativePath);
 }
