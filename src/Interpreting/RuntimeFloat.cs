@@ -12,10 +12,8 @@ class RuntimeFloat : IRuntimeValue
         Value = value;
     }
 
-    public T As<T>()
-        where T : IRuntimeValue
-    {
-        IRuntimeValue converted = typeof(T) switch
+    public IRuntimeValue As(Type toType)
+        => toType switch
         {
             var type when type == typeof(RuntimeFloat)
                 => this,
@@ -26,11 +24,8 @@ class RuntimeFloat : IRuntimeValue
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value != 0),
             _
-                => throw new RuntimeCastException<RuntimeFloat, T>(),
+                => throw new RuntimeCastException<RuntimeFloat>(toType),
         };
-
-        return (T)converted;
-    }
 
     public IRuntimeValue Operation(TokenKind kind)
         => kind switch

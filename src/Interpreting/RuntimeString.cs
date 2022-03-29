@@ -12,10 +12,8 @@ class RuntimeString : IRuntimeValue
         Value = value;
     }
 
-    public T As<T>()
-        where T : IRuntimeValue
-    {
-        IRuntimeValue converted = typeof(T) switch
+    public IRuntimeValue As(Type toType)
+        => toType switch
         {
             var type when type == typeof(RuntimeString)
                 => this,
@@ -26,16 +24,13 @@ class RuntimeString : IRuntimeValue
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value.Length != 0),
             _
-                => throw new RuntimeCastException<RuntimeString, T>(),
+                => throw new RuntimeCastException<RuntimeString>(toType),
         };
-
-        return (T)converted;
-    }
 
     public IRuntimeValue Operation(TokenKind kind)
         => kind switch
         {
-            TokenKind.Minus => As<RuntimeFloat>().Operation(kind),
+            TokenKind.Minus => ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind),
             TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new NotImplementedException(),
         };
@@ -44,7 +39,7 @@ class RuntimeString : IRuntimeValue
     {
         if (kind is TokenKind.Minus or TokenKind.Star or TokenKind.Slash)
         {
-            return As<RuntimeFloat>().Operation(kind, other);
+            return ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind, other);
         }
 
         var otherString = other.As<RuntimeString>();
