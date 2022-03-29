@@ -2,10 +2,10 @@ using System;
 
 namespace Shel.Interpreting;
 
-class RuntimeCastException : RuntimeException
+class RuntimeCastException<T, K> : RuntimeException
 {
-    public RuntimeCastException(RuntimeType from, RuntimeType to)
-        : base($"Cannot cast from {from} to {to}")
+    public RuntimeCastException()
+        : base($"Cannot cast from {typeof(T).Name[7..]} to {typeof(K).Name[7..]}")
     {
     }
 }

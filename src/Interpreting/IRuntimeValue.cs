@@ -3,19 +3,10 @@ using Shel.Lexing;
 
 namespace Shel.Interpreting;
 
-enum RuntimeType
-{
-    Nil,
-    Number,
-    String,
-    Boolean,
-}
-
 interface IRuntimeValue
 {
-    public RuntimeType DataType { get; }
-
-    public IRuntimeValue Cast(RuntimeType type);
+    public T As<T>()
+        where T : IRuntimeValue;
 
     public IRuntimeValue Operation(TokenKind kind);
 

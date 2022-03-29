@@ -5,8 +5,6 @@ namespace Shel.Interpreting;
 
 class RuntimeNumber : IRuntimeValue
 {
-    public RuntimeType DataType => RuntimeType.Number;
-
     public double Value { get; }
 
     public RuntimeNumber(double value)
@@ -14,15 +12,22 @@ class RuntimeNumber : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue Cast(RuntimeType type)
+    public T As<T>()
+        where T : IRuntimeValue
     {
-        return type switch
+        IRuntimeValue converted = typeof(T) switch
         {
-            RuntimeType.Number => this,
-            RuntimeType.String => new RuntimeString(Value.ToString()),
-            RuntimeType.Boolean => RuntimeBoolean.From(Value != 0),
-            _ => throw new RuntimeCastException(DataType, type),
+            var type when type == typeof(RuntimeNumber)
+                => this,
+            var type when type == typeof(RuntimeString)
+                => new RuntimeString(Value.ToString()),
+            var type when type == typeof(RuntimeBoolean)
+                => RuntimeBoolean.From(Value != 0),
+            _
+                => throw new RuntimeCastException<RuntimeNumber, T>(),
         };
+
+        return (T)converted;
     }
 
     public IRuntimeValue Operation(TokenKind kind)
@@ -35,7 +40,7 @@ class RuntimeNumber : IRuntimeValue
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
     {
-        var otherNumber = (RuntimeNumber)other.Cast(DataType);
+        var otherNumber = other.As<RuntimeNumber>();
         return kind switch
         {
             TokenKind.Plus => new RuntimeNumber(Value + otherNumber.Value),

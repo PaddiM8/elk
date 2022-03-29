@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -13,10 +14,12 @@ class Interpreter
     private readonly Redirector _redirector = new();
     private IRuntimeValue? _functionReturnValue = null;
     private Expr? _lastExpr = null;
+    private string _workingDirectory;
 
     public Interpreter()
     {
         _scope = new GlobalScope();
+        _workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     }
 
     public IRuntimeValue Interpret(List<Expr> ast)
@@ -99,7 +102,7 @@ class Interpreter
     private IRuntimeValue Visit(IfExpr expr)
     {
         var condition = Next(expr.Condition);
-        var conditionValue = (RuntimeBoolean)condition.Cast(RuntimeType.Boolean);
+        var conditionValue = condition.As<RuntimeBoolean>();
 
         expr.ThenBranch.IsRoot = expr.IsRoot;
         if (expr.ElseBranch != null)
@@ -214,6 +217,19 @@ class Interpreter
 
     private IRuntimeValue Visit(CallExpr expr)
     {
+        if (expr.Identifier.Value == "cd")
+        {
+            var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>());
+            string path = expr.Arguments.Any()
+                ? string.Join(" ", arguments)
+                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _workingDirectory = path.StartsWith("/")
+                ? path
+                : Path.Join(_workingDirectory, path);
+
+            return new RuntimeNil();
+        }
+
         var function = _scope.GlobalScope.FindFunction(expr.Identifier.Value);
 
         return function == null
@@ -253,6 +269,7 @@ class Interpreter
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
+                WorkingDirectory = _workingDirectory,
             }
         };
 
