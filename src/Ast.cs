@@ -155,3 +155,25 @@ class LiteralExpr : Expr
         Value = value;
     }
 }
+
+class IntegerLiteralExpr : LiteralExpr
+{
+    public int NumberValue { get; }
+
+    public IntegerLiteralExpr(Token value)
+        : base(value)
+    {
+        NumberValue = int.Parse(value.Value);
+    }
+}
+
+class FloatLiteralExpr : LiteralExpr
+{
+    public double NumberValue { get; }
+
+    public FloatLiteralExpr(Token value)
+        : base(value)
+    {
+        NumberValue = double.Parse(value.Value);
+    }
+}

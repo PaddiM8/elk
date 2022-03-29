@@ -69,9 +69,9 @@ internal class InterpreterTests
         {
             true => RuntimeBoolean.True,
             false => RuntimeBoolean.False,
-            int x => new RuntimeNumber(x),
-            double x => new RuntimeNumber(x),
+            int x => new RuntimeInteger(x),
+            double x => new RuntimeFloat(x),
             string x => new RuntimeString(x),
-            _ => new RuntimeNil(),
+            _ => RuntimeNil.Value,
         };
 }

@@ -45,8 +45,8 @@ static class AstBuilder
             null => new(Token(TokenKind.Nil, "nil")),
             true => new(Token(TokenKind.True, "true")),
             false => new(Token(TokenKind.False, "false")),
-            int x => new(Token(TokenKind.NumberLiteral, x.ToString())),
-            double x => new(Token(TokenKind.NumberLiteral, x.ToString())),
+            int x => new IntegerLiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
+            double x => new FloatLiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
             string x => new(Token(TokenKind.StringLiteral, x)),
             _ => new(Token(TokenKind.Unknown, value?.ToString() ?? "")),
         };

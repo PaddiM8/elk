@@ -175,13 +175,17 @@ internal class Lexer
     private Token NextNumber()
     {
         var value = new StringBuilder();
+        bool isFloat = false;
         while (char.IsDigit(Current) || Current == '.')
         {
+            if (Current == '.')
+                isFloat = true;
+
             value.Append(Eat());
         }
 
         return Build(
-            TokenKind.NumberLiteral,
+            isFloat ? TokenKind.FloatLiteral : TokenKind.IntegerLiteral,
             value.ToString(),
             new(_pos.line, _pos.column - value.Length)
         );

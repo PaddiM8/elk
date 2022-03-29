@@ -19,8 +19,10 @@ class RuntimeString : IRuntimeValue
         {
             var type when type == typeof(RuntimeString)
                 => this,
-            var type when type == typeof(RuntimeNumber) && double.TryParse(Value, out double number)
-                => new RuntimeNumber(number),
+            var type when type == typeof(RuntimeInteger) && int.TryParse(Value, out int number)
+                => new RuntimeInteger(number),
+            var type when type == typeof(RuntimeFloat) && double.TryParse(Value, out double number)
+                => new RuntimeFloat(number),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value.Length != 0),
             _
@@ -33,7 +35,7 @@ class RuntimeString : IRuntimeValue
     public IRuntimeValue Operation(TokenKind kind)
         => kind switch
         {
-            TokenKind.Minus => As<RuntimeNumber>().Operation(kind),
+            TokenKind.Minus => As<RuntimeFloat>().Operation(kind),
             TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new NotImplementedException(),
         };
@@ -42,7 +44,7 @@ class RuntimeString : IRuntimeValue
     {
         if (kind is TokenKind.Minus or TokenKind.Star or TokenKind.Slash)
         {
-            return As<RuntimeNumber>().Operation(kind, other);
+            return As<RuntimeFloat>().Operation(kind, other);
         }
 
         var otherString = other.As<RuntimeString>();
