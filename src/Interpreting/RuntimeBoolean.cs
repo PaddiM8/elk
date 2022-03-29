@@ -16,21 +16,16 @@ class RuntimeBoolean : IRuntimeValue
         Value = value;
     }
 
-    public T As<T>()
-        where T : IRuntimeValue
-    {
-        IRuntimeValue converted = typeof(T) switch
+    public IRuntimeValue As(Type toType)
+        => toType switch
         {
             var type when type == typeof(RuntimeBoolean)
                 => this,
             var type when type == typeof(RuntimeString)
                 => new RuntimeString(Value.ToString()),
             _
-                => throw new RuntimeCastException<RuntimeBoolean, T>(),
+                => throw new RuntimeCastException<RuntimeBoolean>(toType),
         };
-
-        return (T)converted;
-    }
 
     public static RuntimeBoolean From(bool value)
         => value ? RuntimeBoolean.True : RuntimeBoolean.False;

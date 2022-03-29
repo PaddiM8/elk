@@ -5,8 +5,13 @@ namespace Shel.Interpreting;
 
 interface IRuntimeValue
 {
+    public IRuntimeValue As(Type toType);
+
     public T As<T>()
-        where T : IRuntimeValue;
+        where T : IRuntimeValue
+    {
+        return (T)As(typeof(T));
+    }
 
     public IRuntimeValue Operation(TokenKind kind);
 
