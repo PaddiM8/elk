@@ -6,10 +6,10 @@ som objektreferenser. Varje block-sats har sitt egna scope.
 
 ## Specialfall
 ### Funktionsanrop
-Funktionsanrop kan ske både med eller utan paranteser. Anrop
-utan paranteser tolkas precis som programanrop i bash, till exempel
+Funktionsanrop kan ske både med eller utan parenteser. Anrop
+utan parenteser tolkas precis som programanrop i bash, till exempel
 `echo hello world` där allt efter `echo` tolkas som strängar.
-Anrop med paranteser fungerar som vanliga funktionsanrop. I
+Anrop med parenteser fungerar som vanliga funktionsanrop. I
 slutändan är det ingen semantisk skillnad på de olika
 syntaxerna. Om det inte finns en funktion med det angivna
 namnet sker ett programanrop istället.
@@ -64,7 +64,7 @@ let num = ~/.scripts/get_num.sh
 let rows = []
 for i in 0..num {
     let row = if i % 2 == 0: num else "-"
-    row | append rows
+    row | append(rows)
     echo(row)
 }
 
