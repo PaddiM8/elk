@@ -14,12 +14,13 @@ class Interpreter
     private readonly Redirector _redirector = new();
     private IRuntimeValue? _functionReturnValue = null;
     private Expr? _lastExpr = null;
-    public string WorkingDirectory { get; private set; }
+
+    public ShellEnvironment ShellEnvironment { get; }
 
     public Interpreter()
     {
         _scope = new GlobalScope();
-        WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        ShellEnvironment = new ShellEnvironment();
     }
 
     public IRuntimeValue Interpret(List<Expr> ast)
@@ -225,14 +226,20 @@ class Interpreter
             string path = expr.Arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            WorkingDirectory = GetAbsolutePath(path);
+            ShellEnvironment.WorkingDirectory = ShellEnvironment.GetAbsolutePath(path);
 
             return RuntimeNil.Value;
         }
         
         if (StdGateway.Contains(name))
         {
-            return StdGateway.Call(name, expr.Arguments.Select(x => Next(x)).ToArray());
+            var arguments = expr.Arguments.Select(x => (object)Next(x)).ToList();
+            if (_redirector.Status == RedirectorStatus.HasData)
+            {
+                arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
+            }
+
+            return StdGateway.Call(name, arguments, ShellEnvironment);
         }
 
         var function = _scope.GlobalScope.FindFunction(name);
@@ -268,9 +275,9 @@ class Interpreter
 
         // Read potential shebang
         string fileName = expr.Identifier.Value;
-        if (File.Exists(GetAbsolutePath(fileName)))
+        if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
         {
-            using var streamReader = new StreamReader(GetAbsolutePath(fileName));
+            using var streamReader = new StreamReader(ShellEnvironment.GetAbsolutePath(fileName));
             var firstChars = new char[2];
             streamReader.ReadBlock(firstChars, 0, 2);
 
@@ -290,7 +297,7 @@ class Interpreter
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
-                WorkingDirectory = WorkingDirectory,
+                WorkingDirectory = ShellEnvironment.WorkingDirectory,
             }
         };
 
@@ -324,9 +331,4 @@ class Interpreter
             return RuntimeNil.Value;
         }
     }
-
-    private string GetAbsolutePath(string relativePath)
-        => relativePath.StartsWith("/")
-            ? relativePath
-            : Path.Join(WorkingDirectory, relativePath);
 }

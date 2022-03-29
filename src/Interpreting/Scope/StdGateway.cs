@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Shel.Attributes;
 
 namespace Shel.Interpreting;
 
@@ -17,7 +18,7 @@ static class StdGateway
         return _methods.ContainsKey(name);
     }
 
-    public static IRuntimeValue Call(string name, IRuntimeValue[] arguments)
+    public static IRuntimeValue Call(string name, List<object> arguments, ShellEnvironment shellEnvironment)
     {
         if (!_methods.Any())
             Initialize();
@@ -27,7 +28,20 @@ static class StdGateway
         if (methodInfo == null)
             return RuntimeNil.Value;
 
-        return methodInfo.Invoke(null, (object[])arguments) as IRuntimeValue
+        var parameters = methodInfo.GetParameters();
+        if (parameters.LastOrDefault()?.ParameterType == typeof(ShellEnvironment))
+            arguments.Add(shellEnvironment);
+
+        foreach (var (parameter, i) in parameters.WithIndex())
+        {
+            var parameterType = parameter.GetType();
+            if (parameterType != typeof(IRuntimeValue) && arguments[i] is not ShellEnvironment)
+            {
+                arguments[i] = ((IRuntimeValue)arguments[i]).As(parameter.ParameterType);
+            }
+        }
+
+        return methodInfo.Invoke(null, arguments.ToArray()) as IRuntimeValue
             ?? RuntimeNil.Value;
     }
 

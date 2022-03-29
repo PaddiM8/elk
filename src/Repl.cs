@@ -14,7 +14,7 @@ class Repl
         var interpreter = new Interpreter();
         while (true)
         {
-            string workingDirectory = interpreter.WorkingDirectory;
+            string workingDirectory = interpreter.ShellEnvironment.WorkingDirectory;
             string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             if (workingDirectory.StartsWith(homePath))
             {
