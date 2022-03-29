@@ -20,6 +20,7 @@ class Repl
             {
                 workingDirectory = "~" + workingDirectory[homePath.Length..];
             }
+
             Console.Write(workingDirectory);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(" >> ");

@@ -235,7 +235,7 @@ internal class Parser
         {
             return ParseBlock();
         }
-        else if (Match(TokenKind.Identifier))
+        else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.Slash, TokenKind.Tilde))
         {
             return ParseIdentifier();
         }
@@ -304,7 +304,8 @@ internal class Parser
 
     private Expr ParseIdentifier()
     {
-        var identifier = Eat();
+        var pos = Current?.Position ?? new TextPos(0, 0);
+        var identifier = new Token(TokenKind.Identifier, ParsePath(), pos);
         if (AdvanceIf(TokenKind.OpenParenthesis))
         {
             var arguments = new List<Expr>();
@@ -338,7 +339,17 @@ internal class Parser
                     continue;
                 }
 
-                currentText.Append(Eat().Value);
+                var next = Peek();
+                if (Match(TokenKind.Tilde) &&
+                    (next == null || next.Kind == TokenKind.Slash || next.Kind == TokenKind.WhiteSpace))
+                {
+                    Eat();
+                    currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                }
+                else
+                {
+                    currentText.Append(Eat().Value);
+                }
             }
 
             // There will still be some text left that needs to be added since
@@ -354,9 +365,25 @@ internal class Parser
         }
     }
 
+    private string ParsePath()
+    {
+        var value = new StringBuilder();
+        while (!ReachedTextEnd() && !MatchInclWhiteSpace(TokenKind.WhiteSpace, TokenKind.OpenParenthesis))
+        {
+            var token = Eat();
+            value.Append(
+                token.Kind == TokenKind.Tilde
+                    ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                    : token.Value
+            );
+        }
+
+        return value.ToString();
+    }
+
     private bool ReachedTextEnd()
     {
-        return MatchInclWhiteSpace(
+        return ReachedEnd || MatchInclWhiteSpace(
             TokenKind.ClosedParenthesis,
             TokenKind.ClosedBrace,
             TokenKind.Pipe,
@@ -404,6 +431,11 @@ internal class Parser
 
         return MatchInclWhiteSpace(kinds);
     }
+
+    private Token? Peek(int length = 1)
+        => _tokens.Count > _index + length
+            ? _tokens[_index + length]
+            : null;
 
     private bool MatchInclWhiteSpace(params TokenKind[] kinds)
         => Current != null && kinds.Contains(Current.Kind);
