@@ -208,13 +208,19 @@ internal class Parser
     private Expr ParsePrimary()
     {
         if (Match(
-            TokenKind.NumberLiteral,
+            TokenKind.IntegerLiteral,
+            TokenKind.FloatLiteral,
             TokenKind.StringLiteral,
             TokenKind.Nil,
             TokenKind.True,
             TokenKind.False))
         {
-            return new LiteralExpr(Eat());
+            return Current!.Kind switch
+            {
+                TokenKind.IntegerLiteral => new IntegerLiteralExpr(Eat()),
+                TokenKind.FloatLiteral => new FloatLiteralExpr(Eat()),
+                _ => new LiteralExpr(Eat()),
+            };
         }
         else if (AdvanceIf(TokenKind.OpenParenthesis))
         {

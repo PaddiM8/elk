@@ -158,7 +158,8 @@ class Interpreter
     {
         return expr.Value.Kind switch
         {
-            TokenKind.NumberLiteral => new RuntimeNumber(double.Parse(expr.Value.Value)),
+            TokenKind.IntegerLiteral => new RuntimeInteger(((IntegerLiteralExpr)expr).NumberValue),
+            TokenKind.FloatLiteral => new RuntimeFloat(((FloatLiteralExpr)expr).NumberValue),
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
