@@ -12,10 +12,8 @@ class RuntimeInteger : IRuntimeValue
         Value = value;
     }
 
-    public T As<T>()
-        where T : IRuntimeValue
-    {
-        IRuntimeValue converted = typeof(T) switch
+    public IRuntimeValue As(Type toType)
+        => toType switch
         {
             var type when type == typeof(RuntimeInteger)
                 => this,
@@ -26,11 +24,8 @@ class RuntimeInteger : IRuntimeValue
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value != 0),
             _
-                => throw new RuntimeCastException<RuntimeInteger, T>(),
+                => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
-
-        return (T)converted;
-    }
 
     public IRuntimeValue Operation(TokenKind kind)
         => kind switch
@@ -44,7 +39,7 @@ class RuntimeInteger : IRuntimeValue
     {
         if (other is RuntimeFloat)
         {
-            return As<RuntimeFloat>().Operation(kind, other);
+            return ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind, other);
         }
 
         var otherNumber = other.As<RuntimeInteger>();
