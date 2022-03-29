@@ -23,7 +23,7 @@ internal enum TokenKind
     Comma, Colon, Hash, Dot, Tilde,
 
     // Other
-    NumberLiteral, StringLiteral,
+    IntegerLiteral, FloatLiteral, StringLiteral,
     NewLine, WhiteSpace,
     Comment,
     Identifier,

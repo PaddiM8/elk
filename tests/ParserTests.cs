@@ -23,15 +23,15 @@ internal class ParserTests
     {
         var tokens = new List<Token>()
         {
-            Token(TokenKind.NumberLiteral, "2"),
+            Token(TokenKind.IntegerLiteral, "2"),
             Token(TokenKind.Plus, "+"),
-            Token(TokenKind.NumberLiteral, "3"),
+            Token(TokenKind.IntegerLiteral, "3"),
             Token(TokenKind.Star, "*"),
-            Token(TokenKind.NumberLiteral, "7"),
+            Token(TokenKind.IntegerLiteral, "7"),
             Token(TokenKind.EqualsEquals, "=="),
-            Token(TokenKind.NumberLiteral, "11"),
+            Token(TokenKind.IntegerLiteral, "11"),
             Token(TokenKind.Minus, "/"),
-            Token(TokenKind.NumberLiteral, "13"),
+            Token(TokenKind.IntegerLiteral, "13"),
         };
         dynamic ast = Parser.Parse(tokens, _scope);
         Assert.AreEqual("7", ast[0].Left.Right.Right.Value.Value);
@@ -44,7 +44,7 @@ internal class ParserTests
         var tokens = new List<Token>()
         {
             Token(TokenKind.Minus, "-"),
-            Token(TokenKind.NumberLiteral, "2"),
+            Token(TokenKind.IntegerLiteral, "2"),
         };
         dynamic ast = Parser.Parse(tokens, _scope);
         Assert.AreEqual(TokenKind.Minus, ast[0].Operator);
@@ -58,7 +58,7 @@ internal class ParserTests
         {
             Token(TokenKind.Identifier, "var"),
         };
-        _scope.AddVariable("var", new RuntimeNil());
+        _scope.AddVariable("var", RuntimeNil.Value);
         dynamic ast = Parser.Parse(tokens, _scope);
         Assert.IsInstanceOf<VariableExpr>(ast[0]);
         Assert.AreEqual("var", ast[0].Identifier.Value);
@@ -120,10 +120,10 @@ internal class ParserTests
             Token(TokenKind.If, "if"),
             Token(TokenKind.True, "true"),
             Token(TokenKind.Colon, ":"),
-            Token(TokenKind.NumberLiteral, "2"),
+            Token(TokenKind.IntegerLiteral, "2"),
             Token(TokenKind.Else, "else"),
             Token(TokenKind.OpenBrace, "{"),
-            Token(TokenKind.NumberLiteral, "3"),
+            Token(TokenKind.IntegerLiteral, "3"),
             Token(TokenKind.ClosedBrace, "}"),
         };
         dynamic ast = Parser.Parse(tokens, _scope);
@@ -146,7 +146,7 @@ internal class ParserTests
             Token(TokenKind.Identifier, "y"),
             Token(TokenKind.ClosedParenthesis, ")"),
             Token(TokenKind.Colon, ":"),
-            Token(TokenKind.NumberLiteral, "2"),
+            Token(TokenKind.IntegerLiteral, "2"),
         };
         dynamic ast = Parser.Parse(tokens, _scope);
         Assert.IsInstanceOf<FunctionExpr>(ast[0]);

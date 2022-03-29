@@ -61,11 +61,11 @@ internal class LexerTests
         var gotTokens = Lexer.Lex("123.456 789 1");
         var expectedValues = new (TokenKind, string)[]
         {
-            (TokenKind.NumberLiteral, "123.456"),
+            (TokenKind.FloatLiteral, "123.456"),
             (TokenKind.WhiteSpace, " "),
-            (TokenKind.NumberLiteral, "789"),
+            (TokenKind.IntegerLiteral, "789"),
             (TokenKind.WhiteSpace, " "),
-            (TokenKind.NumberLiteral, "1"),
+            (TokenKind.IntegerLiteral, "1"),
         };
 
         foreach (var (got, (expectedKind, expectedValue)) in gotTokens.Zip(expectedValues))
