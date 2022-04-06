@@ -34,15 +34,22 @@ static class StdGateway
 
         foreach (var (parameter, i) in parameters.WithIndex())
         {
-            var parameterType = parameter.GetType();
+            var parameterType = parameter.ParameterType;
             if (parameterType != typeof(IRuntimeValue) && arguments[i] is not ShellEnvironment)
             {
                 arguments[i] = ((IRuntimeValue)arguments[i]).As(parameter.ParameterType);
             }
         }
 
-        return methodInfo.Invoke(null, arguments.ToArray()) as IRuntimeValue
-            ?? RuntimeNil.Value;
+        try
+        {
+            return methodInfo.Invoke(null, arguments.ToArray()) as IRuntimeValue
+                ?? RuntimeNil.Value;
+        }
+        catch(TargetInvocationException e)
+        {
+            throw e.InnerException ?? new RuntimeException("Unknown error");
+        }
     }
 
     private static void Initialize()
