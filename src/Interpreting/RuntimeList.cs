@@ -46,5 +46,5 @@ class RuntimeList : IRuntimeValue
     }
 
     public override string ToString()
-        => $"[{string.Join(", ", Values.Select(x => x.As<RuntimeString>().Value))}]";
+        => $"[{string.Join(", ", Values.Select(x => x.ToString()))}]";
 }
