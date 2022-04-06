@@ -237,6 +237,10 @@ internal class Parser
         {
             return ParseIf();
         }
+        else if (Match(TokenKind.OpenSquareBracket))
+        {
+            return ParseList();
+        }
         else if (Match(TokenKind.OpenBrace))
         {
             return ParseBlock();
@@ -273,6 +277,25 @@ internal class Parser
             : null;
         
         return new IfExpr(condition, thenBranch, elseBranch);
+    }
+
+    private Expr ParseList()
+    {
+        var pos = EatExpected(TokenKind.OpenSquareBracket).Position;
+
+        var expressions = new List<Expr>();
+        do
+        {
+            if (Match(TokenKind.ClosedSquareBracket))
+                break;
+
+            expressions.Add(ParseExpr());
+        }
+        while (AdvanceIf(TokenKind.Comma));
+
+        EatExpected(TokenKind.ClosedSquareBracket);
+
+        return new ListExpr(expressions, pos);
     }
 
     private BlockExpr ParseBlockOrSingle(LocalScope? scope = null)

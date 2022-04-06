@@ -133,6 +133,16 @@ class IfExpr : Expr
     }
 }
 
+class ListExpr : Expr
+{
+    public List<Expr> Values { get; }
+
+    public ListExpr(List<Expr> values, TextPos position)
+        : base(position)
+    {
+        Values = values;
+    }
+}
 
 class BlockExpr : Expr
 {

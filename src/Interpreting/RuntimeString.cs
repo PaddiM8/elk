@@ -52,7 +52,7 @@ class RuntimeString : IRuntimeValue
             TokenKind.LessEquals => RuntimeBoolean.From(string.Compare(Value, otherString.Value) <= 0),
             TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
             TokenKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "String"),
         };
     }
 
