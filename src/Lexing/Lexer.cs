@@ -198,8 +198,23 @@ internal class Lexer
         Eat(); // Initial quote
 
         var value = new StringBuilder();
-        while (!ReachedEnd && !(Current == '"' && Previous != '\\'))
+        while (!ReachedEnd && Current != '"')
         {
+            if (AdvanceIf('\\'))
+            {
+                char c = Current switch
+                {
+                    'n' => '\n',
+                    't' => '\t',
+                    'r' => '\r',
+                    '\\' => '\\',
+                    _ => Current
+                };
+                Eat();
+
+                value.Append(c);
+            }
+
             value.Append(Eat());
         }
 
