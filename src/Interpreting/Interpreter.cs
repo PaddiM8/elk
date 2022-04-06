@@ -71,6 +71,7 @@ class Interpreter
             LetExpr e => Visit(e),
             ReturnExpr e => Visit(e),
             IfExpr e => Visit(e),
+            ListExpr e => Visit(e),
             BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
@@ -119,6 +120,17 @@ class Interpreter
                 ? RuntimeNil.Value
                 : Next(expr.ElseBranch);
         }
+    }
+
+    private IRuntimeValue Visit(ListExpr expr)
+    {
+        var values = new List<IRuntimeValue>();
+        foreach (var subExpr in expr.Values)
+        {
+            values.Add(Next(subExpr));
+        }
+
+        return new RuntimeList(values);
     }
 
     private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)

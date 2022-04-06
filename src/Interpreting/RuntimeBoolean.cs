@@ -35,14 +35,14 @@ class RuntimeBoolean : IRuntimeValue
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
     {
-        var otherBoolean = (RuntimeBoolean)other;
+        var otherBoolean = other.As<RuntimeBoolean>();
         var newValue = kind switch
         {
             TokenKind.EqualsEquals => Value == otherBoolean.Value,
             TokenKind.NotEquals => Value != otherBoolean.Value,
             TokenKind.And => Value && otherBoolean.Value,
             TokenKind.Or => Value || otherBoolean.Value,
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Boolean"),
         };
 
         return new RuntimeBoolean(newValue);

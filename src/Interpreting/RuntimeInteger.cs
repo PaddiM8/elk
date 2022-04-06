@@ -55,7 +55,7 @@ class RuntimeInteger : IRuntimeValue
             TokenKind.LessEquals => RuntimeBoolean.From(Value <= otherNumber.Value),
             TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherNumber.Value),
             TokenKind.NotEquals => RuntimeBoolean.From(Value != otherNumber.Value),
-            _ => throw new NotImplementedException(),
+            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Integer"),
         };
     }
 

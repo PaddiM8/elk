@@ -17,6 +17,7 @@ internal enum TokenKind
 
     // Brackets
     OpenParenthesis, ClosedParenthesis,
+    OpenSquareBracket, ClosedSquareBracket,
     OpenBrace, ClosedBrace,
 
     // Punctuation
