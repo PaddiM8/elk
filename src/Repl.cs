@@ -29,14 +29,18 @@ class Repl
             if (input == "exit")
                 break;
 
-            var result = interpreter.Interpret(input).ToString() ?? "";
-            if (result == "" || result.EndsWith('\n'))
+            var result = interpreter.Interpret(input);
+            if (result is RuntimeNil)
+                continue;
+
+            string resultString = result.ToString() ?? "";
+            if (resultString == "" || resultString.EndsWith('\n'))
             {
-                Console.Write(result);
+                Console.Write(resultString);
             }
             else
             {
-                Console.WriteLine(result);
+                Console.WriteLine(resultString);
             }
 
             /*var expressions = Parsing.Parser.Parse(Lexing.Lexer.Lex(input), new GlobalScope());

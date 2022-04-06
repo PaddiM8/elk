@@ -30,5 +30,5 @@ class RuntimeNil : IRuntimeValue
         };
 
     public override string ToString()
-        => "";
+        => "nil";
 }
