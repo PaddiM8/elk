@@ -12,11 +12,11 @@ static class IO
         => new(File.ReadAllText(env.GetAbsolutePath(path.Value)));
 
     [ShellFunction("write")]
-    public static void WriteToFile(RuntimeString path, RuntimeString content, ShellEnvironment env)
+    public static void WriteToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
         => File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
 
     [ShellFunction("append")]
-    public static void AppendToFile(RuntimeString path, RuntimeString content, ShellEnvironment env)
+    public static void AppendToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
         => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
 
     [ShellFunction("input")]

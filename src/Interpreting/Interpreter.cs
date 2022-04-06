@@ -245,11 +245,15 @@ class Interpreter
         
         if (StdGateway.Contains(name))
         {
-            var arguments = expr.Arguments.Select(x => (object)Next(x)).ToList();
+            var arguments = new List<object?>(expr.Arguments.Count + 1);
             if (_redirector.Status == RedirectorStatus.HasData)
             {
                 arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
             }
+
+            foreach (var argument in expr.Arguments)
+                arguments.Add(Next(argument));
+
 
             return StdGateway.Call(name, arguments, ShellEnvironment);
         }
