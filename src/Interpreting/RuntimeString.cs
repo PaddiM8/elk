@@ -57,5 +57,5 @@ class RuntimeString : IRuntimeValue
     }
 
     public override string ToString()
-        => Value;
+        => $"\"{Value}\"";
 }
