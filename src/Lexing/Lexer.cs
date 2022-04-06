@@ -69,6 +69,8 @@ internal class Lexer
                 : Build(TokenKind.Pipe, Eat()),
             '(' => Build(TokenKind.OpenParenthesis, Eat()),
             ')' => Build(TokenKind.ClosedParenthesis, Eat()),
+            '[' => Build(TokenKind.OpenSquareBracket, Eat()),
+            ']' => Build(TokenKind.ClosedSquareBracket, Eat()),
             '{' => Build(TokenKind.OpenBrace, Eat()),
             '}' => Build(TokenKind.ClosedBrace, Eat()),
             ':' => Build(TokenKind.Colon, Eat()),
