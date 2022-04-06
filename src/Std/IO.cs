@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Shel.Attributes;
 using Shel.Interpreting;
@@ -12,7 +13,23 @@ static class IO
 
     [ShellFunction("write")]
     public static void WriteToFile(RuntimeString path, RuntimeString content, ShellEnvironment env)
+        => File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
+
+    [ShellFunction("append")]
+    public static void AppendToFile(RuntimeString path, RuntimeString content, ShellEnvironment env)
+        => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
+
+    [ShellFunction("input")]
+    public static RuntimeString Input(RuntimeString prompt)
     {
-        File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
+        Console.Write(prompt.Value);
+
+        return new RuntimeString(Console.ReadLine() ?? "");
+    }
+
+    [ShellFunction("print")]
+    public static void Print(RuntimeString input)
+    {
+        Console.Write(input.Value);
     }
 }
