@@ -18,7 +18,7 @@ static class StdGateway
         return _methods.ContainsKey(name);
     }
 
-    public static IRuntimeValue Call(string name, List<object> arguments, ShellEnvironment shellEnvironment)
+    public static IRuntimeValue Call(string name, List<object?> arguments, ShellEnvironment shellEnvironment)
     {
         if (!_methods.Any())
             Initialize();
@@ -34,10 +34,24 @@ static class StdGateway
 
         foreach (var (parameter, i) in parameters.WithIndex())
         {
-            var parameterType = parameter.ParameterType;
-            if (parameterType != typeof(IRuntimeValue) && arguments[i] is not ShellEnvironment)
+            if (i >= arguments.Count)
             {
-                arguments[i] = ((IRuntimeValue)arguments[i]).As(parameter.ParameterType);
+                if (parameter.HasDefaultValue)
+                {
+                    arguments.Add(null);
+                }
+                else
+                {
+                    throw new RuntimeWrongNumberOfArgumentsException(parameters.Count(), arguments.Count);
+                }
+            }
+
+            var parameterType = parameter.ParameterType;
+            if (arguments[i] != null &&
+                parameterType != typeof(IRuntimeValue) &&
+                arguments[i] is not ShellEnvironment)
+            {
+                arguments[i] = ((IRuntimeValue)arguments[i]!).As(parameter.ParameterType);
             }
         }
 
