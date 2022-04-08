@@ -18,6 +18,14 @@ abstract class Expr
     }
 }
 
+class EmptyExpr : Expr
+{
+    public EmptyExpr()
+        : base(new(0, 0))
+    {
+    }
+}
+
 class FunctionExpr : Expr
 {
     public Token Identifier { get; }
@@ -88,6 +96,20 @@ class UnaryExpr : Expr
     {
         Operator = op;
         Value = value;
+    }
+}
+
+class RangeExpr : Expr
+{
+    public Expr? From { get; }
+
+    public Expr? To { get; }
+
+    public RangeExpr(Expr? from, Expr? to)
+        : base(from?.Position ?? to!.Position)
+    {
+        From = from;
+        To = to;
     }
 }
 

@@ -76,6 +76,7 @@ class Interpreter
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
+            RangeExpr e => Visit(e),
             IndexerExpr e => Visit(e),
             VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
@@ -223,6 +224,18 @@ class Interpreter
             TokenKind.Minus or TokenKind.Exclamation => value.Operation(expr.Operator),
             _ => throw new NotImplementedException(),
         };
+    }
+
+    private IRuntimeValue Visit(RangeExpr expr)
+    {
+        int? from = expr.From == null
+            ? null
+            : Next(expr.From).As<RuntimeInteger>().Value;
+        int? to = expr.To == null
+            ? null
+            : Next(expr.To).As<RuntimeInteger>().Value;
+
+        return new RuntimeRange(from, to);
     }
 
     private IRuntimeValue Visit(IndexerExpr expr)

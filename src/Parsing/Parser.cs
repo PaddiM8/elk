@@ -12,9 +12,14 @@ internal class Parser
     private readonly List<Token> _tokens;
     private int _index;
     private Scope _scope;
+    private bool _allowEndOfExpression = false;
 
     private Token? Current => _index < _tokens.Count
         ? _tokens[_index]
+        : null;
+
+    private Token? Previous => _index - 1 > 0
+        ? _tokens[_index - 1]
         : null;
 
     private bool ReachedEnd => _index >= _tokens.Count;
@@ -143,7 +148,7 @@ internal class Parser
 
     private Expr ParseComparison()
     {
-        var left = ParseAdditive();
+        var left = ParseRange();
 
         while (Match(
             TokenKind.Greater, 
@@ -154,9 +159,35 @@ internal class Parser
             TokenKind.NotEquals))
         {
             var op = Eat().Kind;
-            var right = ParseAdditive();
+            var right = ParseRange();
 
             left = new BinaryExpr(left, op, right);
+        }
+
+        return left;
+    }
+
+    private Expr ParseRange()
+    {
+        if (AdvanceIf(TokenKind.DotDot))
+        {
+            return new RangeExpr(null, ParseAdditive());
+        }
+
+        var left = ParseAdditive();
+        if (AdvanceIf(TokenKind.DotDot))
+        {
+            bool allowedEnd = _allowEndOfExpression;
+            _allowEndOfExpression = true;
+            var right = ParseAdditive();
+            _allowEndOfExpression = allowedEnd;
+
+            if (right is EmptyExpr)
+            {
+                return new RangeExpr(left, null);
+            }
+
+            return new RangeExpr(left, right);
         }
 
         return left;
@@ -264,9 +295,16 @@ internal class Parser
             return ParseIdentifier();
         }
 
-        throw Current == null
-            ? Error($"Unexpected end of expression")
-            : Error($"Unexpected token: '{Current?.Kind}'");
+        if (_allowEndOfExpression)
+        {
+            return new EmptyExpr();
+        }
+        else
+        {
+            throw Current == null
+                ? Error($"Unexpected end of expression")
+                : Error($"Unexpected token: '{Current?.Kind}'");
+        }
     }
 
     private Expr ParseLet()
@@ -414,6 +452,15 @@ internal class Parser
         while (!ReachedTextEnd() &&
                !MatchInclWhiteSpace(TokenKind.WhiteSpace, TokenKind.OpenParenthesis, TokenKind.OpenSquareBracket))
         {
+            // If ".." is not before/after a slash, it is not a part of a path
+            // and the loop should be stopped.
+            if (Match(TokenKind.DotDot) &&
+                Previous?.Kind is not TokenKind.Slash &&
+                Peek()?.Kind is not TokenKind.Slash)
+            {
+                break;
+            }
+
             var token = Eat();
             value.Append(
                 token.Kind == TokenKind.Tilde
