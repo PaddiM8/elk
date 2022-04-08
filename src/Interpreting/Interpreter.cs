@@ -76,6 +76,7 @@ class Interpreter
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
+            IndexerExpr e => Visit(e),
             VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
             _ => throw new NotImplementedException(),
@@ -224,6 +225,19 @@ class Interpreter
         };
     }
 
+    private IRuntimeValue Visit(IndexerExpr expr)
+    {
+        var value = Next(expr.Value);
+        if (value is IIndexable<IRuntimeValue> indexableValue)
+        {
+            var index = Next(expr.Index).As<RuntimeInteger>().Value;
+
+            return indexableValue[index];
+        }
+
+        throw new RuntimeUnableToIndexException(value.GetType());
+    }
+
     private IRuntimeValue Visit(VariableExpr expr)
     {
         return _scope.FindVariable(expr.Identifier.Value) ?? RuntimeNil.Value;
@@ -235,7 +249,7 @@ class Interpreter
         if (name == "cd")
         {
             var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>());
-            string path = expr.Arguments.Any()
+            string path = arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             ShellEnvironment.WorkingDirectory = ShellEnvironment.GetAbsolutePath(path);
