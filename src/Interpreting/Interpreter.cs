@@ -71,6 +71,7 @@ class Interpreter
             LetExpr e => Visit(e),
             ReturnExpr e => Visit(e),
             IfExpr e => Visit(e),
+            ForExpr e => Visit(e),
             ListExpr e => Visit(e),
             BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
@@ -122,6 +123,25 @@ class Interpreter
                 ? RuntimeNil.Value
                 : Next(expr.ElseBranch);
         }
+    }
+
+    private IRuntimeValue Visit(ForExpr expr)
+    {
+        var value = Next(expr.Value);
+
+        if (value is not IEnumerable<IRuntimeValue> enumerableValue)
+            throw new RuntimeIterationException(value.GetType());
+
+        var enumerator = enumerableValue.GetEnumerator();
+        var scope = new LocalScope(_scope);
+        while (enumerator.MoveNext())
+        {
+            scope.AddVariable(expr.Identifier.Value, enumerator.Current);
+            Visit(expr.Branch, scope);
+            scope.Clear();
+        }
+
+        return RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(ListExpr expr)
