@@ -75,7 +75,9 @@ internal class Lexer
             '}' => Build(TokenKind.ClosedBrace, Eat()),
             ':' => Build(TokenKind.Colon, Eat()),
             ',' => Build(TokenKind.Comma, Eat()),
-            '.' => Build(TokenKind.Dot, Eat()),
+            '.' => Peek == '.'
+                ? Build(TokenKind.DotDot, Eat(2))
+                : Build(TokenKind.Dot, Eat()),
             '~' => Build(TokenKind.Tilde, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
@@ -178,7 +180,7 @@ internal class Lexer
     {
         var value = new StringBuilder();
         bool isFloat = false;
-        while (char.IsDigit(Current) || Current == '.')
+        while (char.IsDigit(Current) || (Current == '.' && Peek != '.'))
         {
             if (Current == '.')
                 isFloat = true;
