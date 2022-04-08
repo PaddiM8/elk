@@ -169,13 +169,13 @@ internal class Parser
 
     private Expr ParseRange()
     {
-        if (AdvanceIf(TokenKind.DotDot))
+        if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
             return new RangeExpr(null, ParseAdditive());
         }
 
         var left = ParseAdditive();
-        if (AdvanceIf(TokenKind.DotDot))
+        if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
             bool allowedEnd = _allowEndOfExpression;
             _allowEndOfExpression = true;
@@ -290,7 +290,7 @@ internal class Parser
         {
             return ParseBlock();
         }
-        else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.Slash, TokenKind.Tilde))
+        else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
         {
             return ParseIdentifier();
         }

@@ -261,7 +261,7 @@ class Interpreter
         string name = expr.Identifier.Value;
         if (name == "cd")
         {
-            var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>());
+            var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>().Value);
             string path = arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
