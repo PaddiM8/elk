@@ -31,6 +31,11 @@ abstract class Scope
         }
     }
 
+    public void Clear()
+    {
+        _variables.Clear();
+    }
+
     public bool ContainsVariable(string name)
         => _variables.ContainsKey(name) || (Parent?.ContainsVariable(name) ?? false);
 

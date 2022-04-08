@@ -1,13 +1,21 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
 
-class RuntimeRange : IRuntimeValue
+class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 {
     public int? From { get; }
 
     public int? To { get; }
+
+    public IEnumerator<IRuntimeValue> GetEnumerator()
+        => new RuntimeRangeEnumerator(From, To);
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
     public RuntimeRange(int? from, int? to)
     {
@@ -44,4 +52,43 @@ class RuntimeRange : IRuntimeValue
 
     public override string ToString()
         => $"{From}..{To}";
+}
+
+class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
+{
+    public IRuntimeValue Current
+        => new RuntimeInteger(_pos);
+
+    object IEnumerator.Current
+        => Current;
+
+    private readonly int? _from;
+    private readonly int? _to;
+    private int _pos;
+
+    public RuntimeRangeEnumerator(int? from, int? to)
+    {
+        _to = to;
+        _from = from;
+        _pos = _from ?? 0;
+    }
+
+    public bool MoveNext()
+    {
+        if (_to != null && _pos >= _to)
+            return false;
+
+        _pos++;
+
+        return true;
+    }
+
+    public void Reset()
+    {
+        _pos = _from ?? 0;
+    }
+
+    void IDisposable.Dispose()
+    {
+    }
 }

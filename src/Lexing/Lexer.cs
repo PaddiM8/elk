@@ -162,6 +162,7 @@ internal class Lexer
             "if" => TokenKind.If,
             "else" => TokenKind.Else,
             "for" => TokenKind.For,
+            "in" => TokenKind.In,
             "return" => TokenKind.Return,
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,

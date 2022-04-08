@@ -282,6 +282,10 @@ internal class Parser
         {
             return ParseIf();
         }
+        else if (Match(TokenKind.For))
+        {
+            return ParseFor();
+        }
         else if (Match(TokenKind.OpenSquareBracket))
         {
             return ParseList();
@@ -329,6 +333,17 @@ internal class Parser
             : null;
         
         return new IfExpr(condition, thenBranch, elseBranch);
+    }
+
+    private Expr ParseFor()
+    {
+        EatExpected(TokenKind.For);
+        var identifier = EatExpected(TokenKind.Identifier);
+        EatExpected(TokenKind.In);
+        var value = ParseExpr();
+        var branch = ParseBlockOrSingle();
+
+        return new ForExpr(identifier, value, branch);
     }
 
     private Expr ParseList()
