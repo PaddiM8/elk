@@ -2,10 +2,10 @@ using System;
 
 namespace Shel;
 
-class RuntimeUnableToIndexException : Exception
+class RuntimeUnableToIndexException : RuntimeException
 {
     public RuntimeUnableToIndexException(Type type)
-        : base(type.Name[7..])
+        : base($"Cannot index values of type {type.Name[7..]}")
     {
     }
 }

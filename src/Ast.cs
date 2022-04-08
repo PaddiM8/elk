@@ -169,6 +169,23 @@ class IfExpr : Expr
     }
 }
 
+class ForExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public Expr Value { get; }
+
+    public BlockExpr Branch { get; }
+
+    public ForExpr(Token identifier, Expr value, BlockExpr branch)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Value = value;
+        Branch = branch;
+    }
+}
+
 class ListExpr : Expr
 {
     public List<Expr> Values { get; }
