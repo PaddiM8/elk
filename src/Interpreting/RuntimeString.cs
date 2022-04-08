@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
 
-class RuntimeString : IRuntimeValue
+class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
     public string Value { get; }
 
@@ -11,6 +13,25 @@ class RuntimeString : IRuntimeValue
     {
         Value = value;
     }
+
+    public IRuntimeValue this[int index]
+    {
+        get
+        {
+            return new RuntimeString(Value[index].ToString());
+        }
+
+        set
+        {
+            throw new RuntimeException("Cannot modify immutable value");
+        }
+    }
+
+    public IEnumerator<IRuntimeValue> GetEnumerator()
+        => new RuntimeStringEnumerator(Value);
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
     public IRuntimeValue As(Type toType)
         => toType switch
@@ -58,4 +79,42 @@ class RuntimeString : IRuntimeValue
 
     public override string ToString()
         => $"\"{Value}\"";
+}
+
+class RuntimeStringEnumerator : IEnumerator<IRuntimeValue>
+{
+    public IRuntimeValue Current
+        => new RuntimeString(_currentChar.ToString());
+    
+    object IEnumerator.Current
+        => Current;
+
+    private readonly string _value;
+    private char _currentChar;
+    private int _index;
+
+    public RuntimeStringEnumerator(string value)
+    {
+        _value = value;
+    }
+
+    public bool MoveNext()
+    {
+        _index++;
+        if (_index >= _value.Length)
+            return false;
+
+        _currentChar = _value[_index];
+
+        return true;
+    }
+
+    public void Reset()
+    {
+        _index = -1;
+    }
+
+    void IDisposable.Dispose()
+    {
+    }
 }

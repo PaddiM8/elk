@@ -1,11 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
 
-class RuntimeList : IRuntimeValue
+class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
     public List<IRuntimeValue> Values { get; }
 
@@ -13,6 +14,25 @@ class RuntimeList : IRuntimeValue
     {
         Values = values.ToList();
     }
+
+    public IRuntimeValue this[int index]
+    {
+        get
+        {
+            return Values[index];
+        }
+
+        set
+        {
+            Values[index] = value;
+        }
+    }
+
+    public IEnumerator<IRuntimeValue> GetEnumerator()
+        => Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
     public IRuntimeValue As(Type toType)
         => toType switch

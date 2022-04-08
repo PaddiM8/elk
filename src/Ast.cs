@@ -91,6 +91,20 @@ class UnaryExpr : Expr
     }
 }
 
+class IndexerExpr : Expr
+{
+    public Expr Value { get; }
+
+    public Expr Index { get; }
+
+    public IndexerExpr(Expr value, Expr index)
+        : base(index.Position)
+    {
+        Value = value;
+        Index = index;
+    }
+}
+
 class VariableExpr : Expr
 {
     public Token Identifier { get; }
