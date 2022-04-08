@@ -197,12 +197,26 @@ internal class Parser
         if (Match(TokenKind.Minus, TokenKind.Exclamation))
         {
             var op = Eat().Kind;
-            var value = ParsePrimary();
+            var value = ParseIndexer();
 
             return new UnaryExpr(op, value);
         }
 
-        return ParsePrimary();
+        return ParseIndexer();
+    }
+
+    private Expr ParseIndexer()
+    {
+        var expr = ParsePrimary();
+        if (AdvanceIf(TokenKind.OpenSquareBracket))
+        {
+            var index = ParseExpr();
+            EatExpected(TokenKind.ClosedSquareBracket);
+
+            return new IndexerExpr(expr, index);
+        }
+
+        return expr;
     }
 
     private Expr ParsePrimary()
@@ -397,7 +411,8 @@ internal class Parser
     private string ParsePath()
     {
         var value = new StringBuilder();
-        while (!ReachedTextEnd() && !MatchInclWhiteSpace(TokenKind.WhiteSpace, TokenKind.OpenParenthesis))
+        while (!ReachedTextEnd() &&
+               !MatchInclWhiteSpace(TokenKind.WhiteSpace, TokenKind.OpenParenthesis, TokenKind.OpenSquareBracket))
         {
             var token = Eat();
             value.Append(

@@ -234,7 +234,7 @@ internal class Lexer
 
     private static bool IsValidIdentifierMiddle(char c)
     {
-        return char.IsLetter(c) || c == '_';
+        return char.IsLetter(c) || char.IsDigit(c) || c == '_';
     }
 
     private Token Build(TokenKind kind, char value)
