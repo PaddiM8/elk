@@ -6,6 +6,8 @@ class GlobalScope : Scope
 {
     public Dictionary<string, FunctionExpr> _functions = new();
 
+    public HashSet<string> _includes = new();
+
     public GlobalScope()
         : base(null)
     {
@@ -19,8 +21,16 @@ class GlobalScope : Scope
         }
     }
 
+    public void AddInclude(string absolutePath)
+    {
+        _includes.Add(absolutePath);
+    }
+
     public bool ContainsFunction(string name)
         => _functions.ContainsKey(name);
+    
+    public bool ContainsInclude(string absolutePath)
+        => _includes.Contains(absolutePath);
 
     public FunctionExpr? FindFunction(string name)
     {
