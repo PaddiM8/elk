@@ -71,7 +71,9 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 {
     public IRuntimeValue Current
-        => new RuntimeInteger(_pos);
+        => _reversed
+            ?  new RuntimeInteger(_to!.Value - _pos)
+            : new RuntimeInteger(_pos);
 
     object IEnumerator.Current
         => Current;
@@ -79,11 +81,23 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
     private readonly int? _from;
     private readonly int? _to;
     private int _pos;
+    private readonly bool _reversed;
 
     public RuntimeRangeEnumerator(int? from, int? to)
     {
-        _to = to;
-        _from = from;
+        if (to != null && from != null && to > from)
+        {
+            _reversed = false;
+            _to = to;
+            _from = from;
+        }
+        else
+        {
+            _reversed = true;
+            _to = from;
+            _from = to;
+        }
+
         Reset();
     }
 
