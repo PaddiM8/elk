@@ -274,12 +274,9 @@ internal class Parser
                 _ => new LiteralExpr(Eat()),
             };
         }
-        else if (AdvanceIf(TokenKind.OpenParenthesis))
+        else if (Match(TokenKind.OpenParenthesis))
         {
-            var expr = ParseExpr();
-            EatExpected(TokenKind.ClosedParenthesis);
-
-            return expr;
+            return ParseParenthesis();
         }
         else if (Match(TokenKind.Let))
         {
@@ -332,6 +329,23 @@ internal class Parser
                 ? Error($"Unexpected end of expression")
                 : Error($"Unexpected token: '{Current?.Kind}'");
         }
+    }
+
+    private Expr ParseParenthesis()
+    {
+        var pos = EatExpected(TokenKind.OpenParenthesis).Position;
+        var expressions = new List<Expr>();
+        do
+        {
+            expressions.Add(ParseExpr());
+        }
+        while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedParenthesis));
+
+        EatExpected(TokenKind.ClosedParenthesis);
+
+        return expressions.Count == 1
+            ? expressions.First()
+            : new TupleExpr(expressions, pos);
     }
 
     private Expr ParseLet()
