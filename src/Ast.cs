@@ -5,6 +5,13 @@ using Shel.Lexing;
 
 namespace Shel;
 
+enum StructureKind
+{
+    Other,
+    Loop,
+    Function,
+}
+
 abstract class Expr
 {
     [JsonIgnore]
@@ -57,13 +64,16 @@ class LetExpr : Expr
     }
 }
 
-class ReturnExpr : Expr
+class KeywordExpr : Expr
 {
-    public Expr Value { get; }
+    public TokenKind Kind { get; }
 
-    public ReturnExpr(Expr value)
-        : base(value.Position)
+    public Expr? Value { get; }
+
+    public KeywordExpr(TokenKind kind, Expr? value, TextPos pos)
+        : base(pos)
     {
+        Kind = kind;
         Value = value;
     }
 }
@@ -201,10 +211,13 @@ class BlockExpr : Expr
 {
     public List<Expr> Expressions { get; }
 
-    public BlockExpr(List<Expr> expressions, TextPos pos)
+    public StructureKind ParentStructureKind { get; }
+
+    public BlockExpr(List<Expr> expressions, StructureKind parentStructureKind, TextPos pos)
         : base(pos)
     {
         Expressions = expressions;
+        ParentStructureKind = parentStructureKind;
     }
 }
 
