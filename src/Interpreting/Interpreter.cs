@@ -382,6 +382,8 @@ class Interpreter
             functionScope.AddVariable(parameter.Value, Next(argument));
         }
 
+        function.Block.IsRoot = call.IsRoot;
+
         return Visit(function.Block, functionScope);
     }
 
