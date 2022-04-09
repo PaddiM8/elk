@@ -36,6 +36,8 @@ class Interpreter
             {
                 var pos = _lastExpr?.Position ?? new TextPos(0, 0);
                 Console.WriteLine($"[{pos.Line}:{pos.Column}] {e.Message}");
+
+                return RuntimeNil.Value;
             }
         }
 

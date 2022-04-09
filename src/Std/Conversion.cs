@@ -17,6 +17,10 @@ static class Conversion
     public static RuntimeFloat ToFloat(IRuntimeValue value)
         => value.As<RuntimeFloat>();
 
+    [ShellFunction("list")]
+    public static RuntimeList ToList(IRuntimeValue value)
+        => value.As<RuntimeList>();
+
     [ShellFunction("string")]
     public static RuntimeString ToString(IRuntimeValue value)
         => value.As<RuntimeString>();
