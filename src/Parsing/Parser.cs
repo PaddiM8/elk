@@ -341,7 +341,10 @@ internal class Parser
         var identifier = EatExpected(TokenKind.Identifier);
         EatExpected(TokenKind.In);
         var value = ParseExpr();
-        var branch = ParseBlockOrSingle();
+
+        var scope = new LocalScope(_scope);
+        _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+        var branch = ParseBlockOrSingle(scope);
 
         return new ForExpr(identifier, value, branch);
     }

@@ -70,12 +70,12 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
     {
         _to = to;
         _from = from;
-        _pos = _from ?? 0;
+        Reset();
     }
 
     public bool MoveNext()
     {
-        if (_to != null && _pos >= _to)
+        if (_to != null && _pos >= _to - 1)
             return false;
 
         _pos++;
@@ -85,7 +85,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     public void Reset()
     {
-        _pos = _from ?? 0;
+        _pos = (_from ?? 0) - 1;
     }
 
     void IDisposable.Dispose()

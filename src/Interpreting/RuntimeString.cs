@@ -96,6 +96,7 @@ class RuntimeStringEnumerator : IEnumerator<IRuntimeValue>
     public RuntimeStringEnumerator(string value)
     {
         _value = value;
+        Reset();
     }
 
     public bool MoveNext()
