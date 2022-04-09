@@ -166,6 +166,7 @@ internal class Lexer
             "return" => TokenKind.Return,
             "break" => TokenKind.Break,
             "continue" => TokenKind.Continue,
+            "include" => TokenKind.Include,
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,
             "false" => TokenKind.False,

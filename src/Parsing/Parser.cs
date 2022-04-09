@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Shel.Interpreting;
@@ -12,6 +13,7 @@ internal class Parser
     private readonly List<Token> _tokens;
     private int _index;
     private Scope _scope;
+    private readonly string _filePath;
     private bool _allowEndOfExpression = false;
 
     private Token? Current => _index < _tokens.Count
@@ -24,18 +26,27 @@ internal class Parser
 
     private bool ReachedEnd => _index >= _tokens.Count;
 
-    private Parser(List<Token> tokens, GlobalScope scope)
+    private Parser(List<Token> tokens, GlobalScope scope, string filePath)
     {
+        scope.AddInclude(filePath);
+
         _tokens = tokens;
         _scope = scope;
+        _filePath = filePath;
     }
 
-    public static List<Expr> Parse(List<Token> tokens, GlobalScope scope)
+    public static List<Expr> Parse(List<Token> tokens, GlobalScope scope, string filePath)
     {
-        var parser = new Parser(tokens, scope);
+        var parser = new Parser(tokens, scope, filePath);
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
+            if (parser.Match(TokenKind.Include))
+            {
+                expressions.AddRange(parser.ParseInclude());
+                continue;
+            }
+
             var expr = parser.ParseExpr();
             expr.IsRoot = true;
             expressions.Add(expr);
@@ -92,6 +103,26 @@ internal class Parser
         );
     }
 
+    private List<Expr> ParseInclude()
+    {
+        var pos = EatExpected(TokenKind.Include).Position;
+        string relativePath = EatExpected(TokenKind.StringLiteral).Value;
+        string directoryPath = Path.GetDirectoryName(_filePath)!;
+        string absolutePath = Path.Combine(directoryPath, relativePath);
+
+        if (_scope.GlobalScope.ContainsInclude(absolutePath))
+            return new();
+        
+        if (!File.Exists(absolutePath))
+        {
+            throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
+        }
+
+        _scope.GlobalScope.AddInclude(absolutePath);
+        
+        return Parse(Lexer.Lex(File.ReadAllText(absolutePath)), _scope.GlobalScope, absolutePath);
+    }
+
     private List<Token> ParseParameterList()
     {
         EatExpected(TokenKind.OpenParenthesis);
@@ -99,9 +130,12 @@ internal class Parser
 
         do
         {
+            if (Match(TokenKind.ClosedParenthesis))
+                break;
+
             parameters.Add(EatExpected(TokenKind.Identifier));
         }
-        while(AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedParenthesis));
+        while(AdvanceIf(TokenKind.Comma));
 
         EatExpected(TokenKind.ClosedParenthesis);
 
