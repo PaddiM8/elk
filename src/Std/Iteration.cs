@@ -6,6 +6,14 @@ namespace Shel.Std;
 
 static class Iteration
 {
+    [ShellFunction("add")]
+    public static RuntimeList Add(RuntimeList x, IRuntimeValue value)
+    {
+        x.Values.Add(value);
+
+        return x;
+    }
+
     [ShellFunction("all")]
     public static RuntimeBoolean All(RuntimeList x)
         => RuntimeBoolean.From(x.Values.All(x => x.As<RuntimeBoolean>().Value));
