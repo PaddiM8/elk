@@ -1,18 +1,19 @@
 using System;
 using System.Collections;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
 
-class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+class RuntimeTuple : IRuntimeValue, IIndexable<IRuntimeValue>
 {
-    public List<IRuntimeValue> Values { get; }
+    public ImmutableArray<IRuntimeValue> Values { get; }
 
-    public RuntimeList(IEnumerable<IRuntimeValue> values)
+    public RuntimeTuple(IEnumerable<IRuntimeValue> values)
     {
-        Values = values.ToList();
+        Values = values.ToImmutableArray();
     }
 
     public IRuntimeValue this[IRuntimeValue index]
@@ -31,15 +32,9 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
 
         set
         {
-            Values[index.As<RuntimeInteger>().Value] = value;
+            throw new RuntimeException("Cannot modify immutable value");
         }
     }
-
-    public IEnumerator<IRuntimeValue> GetEnumerator()
-        => Values.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator()
-        => GetEnumerator();
 
     public IRuntimeValue As(Type toType)
         => toType switch
@@ -55,21 +50,14 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
         };
 
     public IRuntimeValue Operation(TokenKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "List");
+        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
-    {
-        var otherList = other.As<RuntimeList>();
-        return kind switch
-        {
-            TokenKind.Plus => new RuntimeList(Values.Concat(otherList.Values)),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "List"),
-        };
-    }
+        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public override int GetHashCode()
         => Values.GetHashCode();
 
     public override string ToString()
-        => $"[{string.Join(", ", Values.Select(x => x.ToString()))}]";
+        => $"({string.Join(", ", Values.Select(x => x.ToString()))})";
 }

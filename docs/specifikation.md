@@ -163,12 +163,15 @@ echo("Age: " + (person["age"] ?? "unknown"))
     | <if>
     | <for>
     | <match>
+    | <tuple>
     | <list>
     | <dict>
     | <var>
     | <call>
 <list> ::= [ <exprList> ]
     | [ <exprList> , ]
+<tuple> ::= ( <exprList> )
+    | ( <exprList> , )
 <dict> ::= { <dictEntries> }
     | { <dictEntries> , }
 <dictEntries> ::= <dictEntries> , <dictEntry>

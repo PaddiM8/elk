@@ -196,6 +196,17 @@ class ForExpr : Expr
     }
 }
 
+class TupleExpr : Expr
+{
+    public List<Expr> Values { get; }
+
+    public TupleExpr(List<Expr> values, TextPos position)
+        : base(position)
+    {
+        Values = values;
+    }
+}
+
 class ListExpr : Expr
 {
     public List<Expr> Values { get; }
