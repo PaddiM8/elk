@@ -12,7 +12,7 @@ class Interpreter
 {
     private Scope _scope;
     private readonly Redirector _redirector = new();
-    private IRuntimeValue? _functionReturnValue = null;
+    private readonly ReturnationHandler _returnationHandler = new();
     private Expr? _lastExpr = null;
 
     public ShellEnvironment ShellEnvironment { get; }
@@ -60,7 +60,7 @@ class Interpreter
 
     private IRuntimeValue Next(Expr expr)
     {
-        if (_functionReturnValue != null)
+        if (_returnationHandler.Active)
             return RuntimeNil.Value;
 
         _lastExpr = expr;
@@ -69,7 +69,7 @@ class Interpreter
         {
             FunctionExpr e => Visit(e),
             LetExpr e => Visit(e),
-            ReturnExpr e => Visit(e),
+            KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
             ListExpr e => Visit(e),
@@ -97,9 +97,20 @@ class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(ReturnExpr expr)
+    private IRuntimeValue Visit(KeywordExpr expr)
     {
-        _functionReturnValue = Next(expr.Value);
+        var returnationType = expr.Kind switch
+        {
+            TokenKind.Break => ReturnationType.BreakLoop,
+            TokenKind.Continue => ReturnationType.ContinueLoop,
+            TokenKind.Return => ReturnationType.ReturnFunction,
+            _ => throw new NotImplementedException(),
+        };
+        var value = expr.Value == null
+            ? RuntimeNil.Value
+            : Next(expr.Value);
+
+        _returnationHandler.TriggerReturn(returnationType, value);
 
         return RuntimeNil.Value;
     }
@@ -141,6 +152,16 @@ class Interpreter
             scope.AddVariable(expr.Identifier.Value, enumerator.Current);
             Visit(expr.Branch, scope);
             scope.Clear();
+
+            if (_returnationHandler.ReturnationType == ReturnationType.BreakLoop)
+            {
+                return _returnationHandler.Collect();
+            }
+
+            if (_returnationHandler.ReturnationType == ReturnationType.ContinueLoop)
+            {
+                _returnationHandler.Collect();
+            }
         }
 
         return RuntimeNil.Value;
@@ -167,9 +188,14 @@ class Interpreter
         {
             // If there is a value to be returned, stop immediately
             // and make sure it's passed upwards.
-            if (_functionReturnValue != null)
+            if (_returnationHandler.Active)
             {
-                lastValue = _functionReturnValue;
+                if (expr.ParentStructureKind == StructureKind.Function &&
+                    _returnationHandler.ReturnationType == ReturnationType.ReturnFunction)
+                {
+                    lastValue = _returnationHandler.Collect();
+                }
+
                 break;
             }
 
@@ -327,10 +353,7 @@ class Interpreter
             functionScope.AddVariable(parameter.Value, Next(argument));
         }
 
-        var returnValue = Visit(function.Block, functionScope);
-        _functionReturnValue = null;
-
-        return returnValue;
+        return Visit(function.Block, functionScope);
     }
 
     private IRuntimeValue EvaluateProgramCall(CallExpr expr)

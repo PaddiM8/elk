@@ -5,7 +5,7 @@ internal enum TokenKind
     Unknown,
 
     // Keywords
-    Fn, Let, If, Else, For, In, Return,
+    Fn, Let, If, Else, For, In, Return, Break, Continue,
     Nil, True, False,
 
     // Operators
