@@ -74,6 +74,7 @@ class Interpreter
             KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
+            TupleExpr e => Visit(e),
             ListExpr e => Visit(e),
             DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
@@ -168,6 +169,17 @@ class Interpreter
         }
 
         return RuntimeNil.Value;
+    }
+
+    private IRuntimeValue Visit(TupleExpr expr)
+    {
+        var values = new List<IRuntimeValue>();
+        foreach (var subExpr in expr.Values)
+        {
+            values.Add(Next(subExpr));
+        }
+
+        return new RuntimeTuple(values);
     }
 
     private IRuntimeValue Visit(ListExpr expr)
