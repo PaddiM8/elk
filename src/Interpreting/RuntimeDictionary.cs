@@ -32,9 +32,8 @@ class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<
         }
     }
 
-    // TODO: Create a custom enumerator
     public IEnumerator<IRuntimeValue> GetEnumerator()
-        => throw new NotImplementedException();
+        => new RuntimeDictionaryEnumerator(Entries.Values);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -74,5 +73,50 @@ class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<
         stringBuilder.Append("\n}");
 
         return stringBuilder.ToString();
+    }
+}
+
+class RuntimeDictionaryEnumerator : IEnumerator<IRuntimeValue>
+{
+    public IRuntimeValue Current
+        => _current;
+
+    object IEnumerator.Current
+        => Current;
+
+    private readonly IEnumerable<(IRuntimeValue, IRuntimeValue)> _keyValueSets;
+    private IEnumerator<(IRuntimeValue, IRuntimeValue)> _enumerator;
+    private IRuntimeValue _current;
+
+    public RuntimeDictionaryEnumerator(IEnumerable<(IRuntimeValue, IRuntimeValue)> keyValueSets)
+    {
+        _keyValueSets = keyValueSets;
+        _enumerator = _keyValueSets.GetEnumerator();
+        _current = RuntimeNil.Value;
+    }
+
+    public bool MoveNext()
+    {
+        bool success = _enumerator.MoveNext();
+        if (success)
+        {
+            _current = new RuntimeTuple(new[]
+            {
+                _enumerator.Current.Item1,
+                _enumerator.Current.Item2
+            });
+        }
+
+        return success;
+    }
+
+    public void Reset()
+    {
+        _enumerator = _keyValueSets.GetEnumerator();
+        _current = RuntimeNil.Value;
+    }
+
+    void IDisposable.Dispose()
+    {
     }
 }
