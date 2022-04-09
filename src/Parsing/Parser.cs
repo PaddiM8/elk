@@ -50,9 +50,9 @@ internal class Parser
         {
             return ParseFn();
         }
-        else if (Match(TokenKind.Return))
+        else if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
         {
-            return ParseReturn();
+            return ParseKeywordExpr();
         }
 
         return ParsePipe();
@@ -70,7 +70,7 @@ internal class Parser
             functionScope.AddVariable(parameter.Value, RuntimeNil.Value);
         }
 
-        var block = ParseBlockOrSingle(functionScope);
+        var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
         var function = new FunctionExpr(identifier, parameters, block);
 
         _scope.GlobalScope.AddFunction(function);
@@ -78,11 +78,18 @@ internal class Parser
         return function;
     }
 
-    private Expr ParseReturn()
+    private Expr ParseKeywordExpr()
     {
-        EatExpected(TokenKind.Return);
+        var keyword = Eat();
+        _allowEndOfExpression = true;
+        var value = ParseExpr();
+        _allowEndOfExpression = false;
 
-        return new ReturnExpr(ParseExpr());
+        return new KeywordExpr(
+            keyword.Kind,
+            value is EmptyExpr ? null : value,
+            keyword.Position
+        );
     }
 
     private List<Token> ParseParameterList()
@@ -292,7 +299,7 @@ internal class Parser
         }
         else if (Match(TokenKind.OpenBrace))
         {
-            return ParseBlock();
+            return ParseBlock(StructureKind.Other);
         }
         else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
         {
@@ -327,7 +334,7 @@ internal class Parser
         EatExpected(TokenKind.If);
 
         var condition = ParseExpr();
-        var thenBranch = ParseBlockOrSingle();
+        var thenBranch = ParseBlockOrSingle(StructureKind.Other);
         var elseBranch = AdvanceIf(TokenKind.Else)
             ? ParseExpr()
             : null;
@@ -344,7 +351,7 @@ internal class Parser
 
         var scope = new LocalScope(_scope);
         _scope.AddVariable(identifier.Value, RuntimeNil.Value);
-        var branch = ParseBlockOrSingle(scope);
+        var branch = ParseBlockOrSingle(StructureKind.Loop, scope);
 
         return new ForExpr(identifier, value, branch);
     }
@@ -368,7 +375,7 @@ internal class Parser
         return new ListExpr(expressions, pos);
     }
 
-    private BlockExpr ParseBlockOrSingle(LocalScope? scope = null)
+    private BlockExpr ParseBlockOrSingle(StructureKind parentStructureKind, LocalScope? scope = null)
     {
         if (AdvanceIf(TokenKind.Colon))
         {
@@ -378,14 +385,15 @@ internal class Parser
 
             return new BlockExpr(
                 new() { expr },
+                parentStructureKind,
                 expr.Position
             );
         }
 
-        return ParseBlock(scope);
+        return ParseBlock(parentStructureKind, scope);
     }
 
-    private BlockExpr ParseBlock(LocalScope? scope = null)
+    private BlockExpr ParseBlock(StructureKind parentStructureKind, LocalScope? scope = null)
     {
         EatExpected(TokenKind.OpenBrace);
 
@@ -398,7 +406,7 @@ internal class Parser
 
         _scope = _scope.Parent!;
 
-        return new BlockExpr(expressions, pos);
+        return new BlockExpr(expressions, parentStructureKind, pos);
     }
 
     private Expr ParseIdentifier()
