@@ -132,6 +132,8 @@ class Interpreter
         if (value is not IEnumerable<IRuntimeValue> enumerableValue)
             throw new RuntimeIterationException(value.GetType());
 
+        expr.Branch.IsRoot = expr.IsRoot;
+
         var enumerator = enumerableValue.GetEnumerator();
         var scope = new LocalScope(_scope);
         while (enumerator.MoveNext())
