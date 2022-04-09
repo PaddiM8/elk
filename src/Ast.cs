@@ -207,6 +207,17 @@ class ListExpr : Expr
     }
 }
 
+class DictionaryExpr : Expr
+{
+    public List<(string, Expr)> Entries { get; }
+
+    public DictionaryExpr(List<(string, Expr)> entries, TextPos position)
+        : base(position)
+    {
+        Entries = entries;
+    }
+}
+
 class BlockExpr : Expr
 {
     public List<Expr> Expressions { get; }

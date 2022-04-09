@@ -48,6 +48,9 @@ class RuntimeBoolean : IRuntimeValue
         return new RuntimeBoolean(newValue);
     }
 
+    public override int GetHashCode()
+        => Value.GetHashCode();
+
     public override string ToString()
         => Value.ToString();
 }

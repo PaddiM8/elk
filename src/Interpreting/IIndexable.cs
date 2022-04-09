@@ -1,4 +1,6 @@
+using Shel.Interpreting;
+
 interface IIndexable<T>
 {
-    T this[int index] { get; set; }
+    T this[IRuntimeValue index] { get; set; }
 }

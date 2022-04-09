@@ -15,16 +15,23 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
         Values = values.ToList();
     }
 
-    public IRuntimeValue this[int index]
+    public IRuntimeValue this[IRuntimeValue index]
     {
         get
         {
-            return Values[index];
+            try
+            {
+                return Values[index.As<RuntimeInteger>().Value];
+            }
+            catch (Exception)
+            {
+                throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            }
         }
 
         set
         {
-            Values[index] = value;
+            Values[index.As<RuntimeInteger>().Value] = value;
         }
     }
 
@@ -48,12 +55,7 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
         };
 
     public IRuntimeValue Operation(TokenKind kind)
-        => kind switch
-        {
-            TokenKind.Minus => throw new RuntimeInvalidOperationException("-", "List"),
-            TokenKind.Exclamation => throw new RuntimeInvalidOperationException("!", "List"),
-            _ => throw new NotImplementedException(),
-        };
+        => throw new RuntimeInvalidOperationException(kind.ToString(), "List");
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
     {
@@ -64,6 +66,9 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "List"),
         };
     }
+
+    public override int GetHashCode()
+        => Values.GetHashCode();
 
     public override string ToString()
         => $"[{string.Join(", ", Values.Select(x => x.ToString()))}]";

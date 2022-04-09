@@ -53,6 +53,9 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
         };
     }
 
+    public override int GetHashCode()
+        => (To, From).GetHashCode();
+
     public override string ToString()
         => $"{From}..{To}";
 

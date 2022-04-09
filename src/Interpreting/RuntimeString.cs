@@ -14,11 +14,11 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
         Value = value;
     }
 
-    public IRuntimeValue this[int index]
+    public IRuntimeValue this[IRuntimeValue index]
     {
         get
         {
-            return new RuntimeString(Value[index].ToString());
+            return new RuntimeString(Value[index.As<RuntimeInteger>().Value].ToString());
         }
 
         set
@@ -76,6 +76,9 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "String"),
         };
     }
+
+    public override int GetHashCode()
+        => Value.GetHashCode();
 
     public override string ToString()
         => $"\"{Value}\"";

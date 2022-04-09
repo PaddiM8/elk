@@ -299,6 +299,22 @@ internal class Parser
         }
         else if (Match(TokenKind.OpenBrace))
         {
+            // Go forward a bit in order to be able to look ahead,
+            // but make sure to make it possible to go back again afterwards.
+            int prevIndex = _index;
+            Eat();
+            SkipWhiteSpace();
+
+            if (Match(TokenKind.Identifier, TokenKind.StringLiteral) &&
+                Peek(1)?.Kind == TokenKind.Colon)
+            {
+                _index = prevIndex;
+
+                return ParseDictionary();
+            }
+
+            _index = prevIndex;
+
             return ParseBlock(StructureKind.Other);
         }
         else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
@@ -373,6 +389,27 @@ internal class Parser
         EatExpected(TokenKind.ClosedSquareBracket);
 
         return new ListExpr(expressions, pos);
+    }
+
+    private Expr ParseDictionary()
+    {
+        var pos = EatExpected(TokenKind.OpenBrace).Position;
+        var entries = new List<(string, Expr)>();
+        while (Match(TokenKind.Identifier, TokenKind.StringLiteral))
+        {
+            var identifier = Eat().Value;
+            EatExpected(TokenKind.Colon);
+            var value = ParseExpr();
+            entries.Add((identifier, value));
+
+            if (!Match(TokenKind.ClosedBrace))
+                EatExpected(TokenKind.Comma);
+        }
+
+        AdvanceIf(TokenKind.Comma);
+        EatExpected(TokenKind.ClosedBrace);
+
+        return new DictionaryExpr(entries, pos);
     }
 
     private BlockExpr ParseBlockOrSingle(StructureKind parentStructureKind, LocalScope? scope = null)
