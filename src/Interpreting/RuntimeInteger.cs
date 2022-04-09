@@ -59,6 +59,9 @@ class RuntimeInteger : IRuntimeValue
         };
     }
 
+    public override int GetHashCode()
+        => Value.GetHashCode();
+
     public override string ToString()
         => Value.ToString();
 }

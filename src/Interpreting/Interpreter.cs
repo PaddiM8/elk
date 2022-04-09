@@ -75,6 +75,7 @@ class Interpreter
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
             ListExpr e => Visit(e),
+            DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
             BinaryExpr e => Visit(e),
@@ -178,6 +179,18 @@ class Interpreter
         }
 
         return new RuntimeList(values);
+    }
+
+    private IRuntimeValue Visit(DictionaryExpr expr)
+    {
+        var dict = new Dictionary<int, (IRuntimeValue, IRuntimeValue)>();
+        foreach (var entry in expr.Entries)
+        {
+            var key = new RuntimeString(entry.Item1);
+            dict.Add(key.GetHashCode(), (key, Next(entry.Item2)));
+        }
+
+        return new RuntimeDictionary(dict);
     }
 
     private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)
@@ -293,9 +306,7 @@ class Interpreter
         var value = Next(expr.Value);
         if (value is IIndexable<IRuntimeValue> indexableValue)
         {
-            var index = Next(expr.Index).As<RuntimeInteger>().Value;
-
-            return indexableValue[index];
+            return indexableValue[Next(expr.Index)];
         }
 
         throw new RuntimeUnableToIndexException(value.GetType());
