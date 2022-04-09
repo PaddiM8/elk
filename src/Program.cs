@@ -13,6 +13,6 @@ CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
         else
         {
             var content = File.ReadAllText(options.FilePath);
-            new Interpreter().Interpret(content);
+            new Interpreter().Interpret(content, options.FilePath);
         }
     });

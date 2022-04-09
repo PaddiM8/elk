@@ -44,11 +44,15 @@ class Interpreter
         return lastResult;
     }
 
-    public IRuntimeValue Interpret(string input)
+    public IRuntimeValue Interpret(string input, string? filePath)
     {
         try
         {
-            var ast = Parser.Parse(Lexer.Lex(input), _scope.GlobalScope);
+            var ast = Parser.Parse(
+                Lexer.Lex(input),
+                _scope.GlobalScope,
+                filePath ?? ShellEnvironment.WorkingDirectory
+            );
 
             return Interpret(ast);
         }

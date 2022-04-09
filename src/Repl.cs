@@ -29,7 +29,7 @@ class Repl
             if (input == "exit")
                 break;
 
-            var result = interpreter.Interpret(input);
+            var result = interpreter.Interpret(input, null);
             if (result is RuntimeNil)
                 continue;
 
