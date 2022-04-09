@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Shel.Lexing;
 
 namespace Shel.Interpreting;
@@ -28,10 +29,12 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
         {
             var type when type == typeof(RuntimeRange)
                 => this,
-            var type when type == typeof(RuntimeString)
-                => new RuntimeString(ToString()),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
+            var type when type == typeof(RuntimeList)
+                => new RuntimeList(AsEnumerable()),
+            var type when type == typeof(RuntimeString)
+                => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
@@ -52,6 +55,14 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 
     public override string ToString()
         => $"{From}..{To}";
+
+    private IEnumerable<RuntimeInteger> AsEnumerable()
+    {
+        int from = From ?? 0;
+        int count = (To ?? from) - from;
+
+        return Enumerable.Range(from, count).Select(x => new RuntimeInteger(x));
+    }
 }
 
 class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
