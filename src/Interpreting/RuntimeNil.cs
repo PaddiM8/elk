@@ -29,6 +29,9 @@ class RuntimeNil : IRuntimeValue
             _ => this,
         };
 
+    public override int GetHashCode()
+        => throw new RuntimeUnableToHashException<RuntimeNil>();
+
     public override string ToString()
         => "nil";
 }

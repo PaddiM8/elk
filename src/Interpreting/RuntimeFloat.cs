@@ -54,6 +54,9 @@ class RuntimeFloat : IRuntimeValue
         };
     }
 
+    public override int GetHashCode()
+        => throw new RuntimeUnableToHashException<RuntimeFloat>();
+
     public override string ToString()
         => Value.ToString();
 }
