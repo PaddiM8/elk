@@ -36,6 +36,14 @@ static class Iteration
     public static RuntimeBoolean Any(RuntimeList x)
         => RuntimeBoolean.From(x.Values.Any(x => x.As<RuntimeBoolean>().Value));
 
+    [ShellFunction("stepBy")]
+    public static RuntimeRange StepBy(RuntimeRange x, RuntimeInteger step)
+    {
+        x.Increment = step.Value;
+
+        return x;
+    }
+
     [ShellFunction("insert")]
     public static RuntimeList Insert(RuntimeList x, RuntimeInteger index, IRuntimeValue value)
     {
