@@ -18,6 +18,13 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
     {
         get
         {
+            if (index is RuntimeRange range)
+            {
+                int length = (range.To ?? Value.Length) - (range.From ?? 0);
+
+                return new RuntimeString(Value.Substring(range.From ?? 0, length));
+            }
+
             return new RuntimeString(Value[index.As<RuntimeInteger>().Value].ToString());
         }
 
