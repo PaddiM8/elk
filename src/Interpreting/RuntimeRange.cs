@@ -12,16 +12,19 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 
     public int? To { get; }
 
+    public int Increment { get; set; }
+
     public IEnumerator<IRuntimeValue> GetEnumerator()
-        => new RuntimeRangeEnumerator(From, To);
+        => new RuntimeRangeEnumerator(From, To, Increment);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public RuntimeRange(int? from, int? to)
+    public RuntimeRange(int? from, int? to, int increment = 1)
     {
         From = from;
         To = to;
+        Increment = increment;
     }
 
     public IRuntimeValue As(Type toType)
@@ -80,10 +83,11 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     private readonly int? _from;
     private readonly int? _to;
+    private readonly int _increment;
     private int _pos;
     private readonly bool _reversed;
 
-    public RuntimeRangeEnumerator(int? from, int? to)
+    public RuntimeRangeEnumerator(int? from, int? to, int increment)
     {
         if (to != null && from != null && to > from)
         {
@@ -98,6 +102,8 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
             _from = to;
         }
 
+        _increment = increment;
+
         Reset();
     }
 
@@ -106,7 +112,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
         if (_to != null && _pos >= _to - 1)
             return false;
 
-        _pos++;
+        _pos += _increment;
 
         return true;
     }
