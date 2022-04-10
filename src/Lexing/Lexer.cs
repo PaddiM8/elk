@@ -235,7 +235,7 @@ internal class Lexer
 
     private static bool IsValidIdentifierStart(char c)
     {
-        return char.IsLetter(c) || c == '_';
+        return char.IsLetter(c) || c == '_' || c == '$';
     }
 
     private static bool IsValidIdentifierMiddle(char c)
