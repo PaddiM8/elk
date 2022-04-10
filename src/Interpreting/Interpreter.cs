@@ -100,7 +100,18 @@ class Interpreter
 
     private IRuntimeValue Visit(LetExpr expr)
     {
-        _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
+        string name = expr.Identifier.Value;
+        if (name.StartsWith('$'))
+        {
+            Environment.SetEnvironmentVariable(
+                name[1..],
+                Next(expr.Value).As<RuntimeString>().Value
+            );
+        }
+        else
+        {
+            _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
+        }
 
         return RuntimeNil.Value;
     }
@@ -342,7 +353,17 @@ class Interpreter
 
     private IRuntimeValue Visit(VariableExpr expr)
     {
-        return _scope.FindVariable(expr.Identifier.Value) ?? RuntimeNil.Value;
+        string name = expr.Identifier.Value;
+        if (name.StartsWith('$'))
+        {
+            string? value = Environment.GetEnvironmentVariable(name[1..]);
+
+            return value == null
+                ? RuntimeNil.Value
+                : new RuntimeString(value);
+        }
+
+        return _scope.FindVariable(name) ?? RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(CallExpr expr)
