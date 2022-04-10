@@ -212,12 +212,16 @@ internal class Parser
     {
         if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
-            return new RangeExpr(null, ParseAdditive());
+            bool inclusive = AdvanceIf(TokenKind.Equals);
+
+            return new RangeExpr(null, ParseAdditive(), inclusive);
         }
 
         var left = ParseAdditive();
         if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
+            bool inclusive = AdvanceIf(TokenKind.Equals);
+
             bool allowedEnd = _allowEndOfExpression;
             _allowEndOfExpression = true;
             var right = ParseAdditive();
@@ -225,10 +229,10 @@ internal class Parser
 
             if (right is EmptyExpr)
             {
-                return new RangeExpr(left, null);
+                return new RangeExpr(left, null, false);
             }
 
-            return new RangeExpr(left, right);
+            return new RangeExpr(left, right, inclusive);
         }
 
         return left;
