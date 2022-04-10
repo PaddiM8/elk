@@ -9,7 +9,7 @@ internal enum TokenKind
     Nil, True, False,
 
     // Operators
-    Plus, Minus, Star, Slash,
+    Plus, Minus, Star, Slash, Caret,
     Exclamation, Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
     Equals,
     And, Or,

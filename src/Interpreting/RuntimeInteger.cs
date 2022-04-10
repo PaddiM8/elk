@@ -49,6 +49,7 @@ class RuntimeInteger : IRuntimeValue
             TokenKind.Minus => new RuntimeInteger(Value - otherNumber.Value),
             TokenKind.Star => new RuntimeInteger(Value * otherNumber.Value),
             TokenKind.Slash => new RuntimeFloat((double)Value / otherNumber.Value),
+            TokenKind.Caret => new RuntimeFloat(Math.Pow(Value, otherNumber.Value)),
             TokenKind.Greater => RuntimeBoolean.From(Value > otherNumber.Value),
             TokenKind.GreaterEquals => RuntimeBoolean.From(Value >= otherNumber.Value),
             TokenKind.Less => RuntimeBoolean.From(Value < otherNumber.Value),

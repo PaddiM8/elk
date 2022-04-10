@@ -49,6 +49,7 @@ internal class Lexer
             '-' => Build(TokenKind.Minus, Eat()),
             '*' => Build(TokenKind.Star, Eat()),
             '/' => Build(TokenKind.Slash, Eat()),
+            '^' => Build(TokenKind.Caret, Eat()),
             '>' => Peek == '='
                 ? Build(TokenKind.GreaterEquals, Eat(2))
                 : Build(TokenKind.Greater, Eat()),

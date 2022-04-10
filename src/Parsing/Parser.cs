@@ -255,14 +255,28 @@ internal class Parser
 
     private Expr ParseMultiplicative()
     {
-        var left = ParseUnary();
+        var left = ParseExponent();
 
         while (Match(TokenKind.Star, TokenKind.Slash))
         {
             var op = Eat().Kind;
-            var right = ParseUnary();
+            var right = ParseExponent();
 
             left = new BinaryExpr(left, op, right);
+        }
+
+        return left;
+    }
+
+    private Expr ParseExponent()
+    {
+        var left = ParseUnary();
+
+        if (Match(TokenKind.Caret))
+        {
+            Eat();
+
+            return new BinaryExpr(left, TokenKind.Caret, ParseExponent());
         }
 
         return left;
