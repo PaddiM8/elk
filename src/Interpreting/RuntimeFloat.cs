@@ -44,6 +44,7 @@ class RuntimeFloat : IRuntimeValue
             TokenKind.Minus => new RuntimeFloat(Value - otherNumber.Value),
             TokenKind.Star => new RuntimeFloat(Value * otherNumber.Value),
             TokenKind.Slash => new RuntimeFloat(Value / otherNumber.Value),
+            TokenKind.Caret => new RuntimeFloat(Math.Pow(Value, otherNumber.Value)),
             TokenKind.Greater => RuntimeBoolean.From(Value > otherNumber.Value),
             TokenKind.GreaterEquals => RuntimeBoolean.From(Value >= otherNumber.Value),
             TokenKind.Less => RuntimeBoolean.From(Value < otherNumber.Value),

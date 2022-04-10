@@ -287,33 +287,14 @@ class Interpreter
         var left = Next(expr.Left);
         var right = Next(expr.Right);
 
-        return expr.Operator switch
-        {
-            TokenKind.Plus
-            or TokenKind.Minus
-            or TokenKind.Star
-            or TokenKind.Slash
-            or TokenKind.Greater
-            or TokenKind.GreaterEquals
-            or TokenKind.Less
-            or TokenKind.LessEquals
-            or TokenKind.EqualsEquals
-            or TokenKind.NotEquals
-            or TokenKind.And
-            or TokenKind.Or => left.Operation(expr.Operator, right),
-            _ => throw new NotImplementedException(),
-        };
+        return left.Operation(expr.Operator, right);
     }
 
     private IRuntimeValue Visit(UnaryExpr expr)
     {
         var value = Next(expr.Value);
 
-        return expr.Operator switch
-        {
-            TokenKind.Minus or TokenKind.Exclamation => value.Operation(expr.Operator),
-            _ => throw new NotImplementedException(),
-        };
+        return value.Operation(expr.Operator);
     }
 
     private IRuntimeValue Visit(RangeExpr expr)
