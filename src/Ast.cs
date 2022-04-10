@@ -115,11 +115,14 @@ class RangeExpr : Expr
 
     public Expr? To { get; }
 
-    public RangeExpr(Expr? from, Expr? to)
+    public bool Inclusive { get; }
+
+    public RangeExpr(Expr? from, Expr? to, bool inclusive)
         : base(from?.Position ?? to!.Position)
     {
         From = from;
         To = to;
+        Inclusive = inclusive;
     }
 }
 

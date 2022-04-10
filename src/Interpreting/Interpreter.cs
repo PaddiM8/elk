@@ -313,6 +313,18 @@ class Interpreter
         int? to = expr.To == null
             ? null
             : Next(expr.To).As<RuntimeInteger>().Value;
+        
+        if (expr.Inclusive)
+        {
+            if (to > from)
+            {
+                to++;
+            }
+            else
+            {
+                from++;
+            }
+        }
 
         return new RuntimeRange(from, to);
     }
