@@ -228,7 +228,7 @@ echo("Age: " + (person["age"] ?? "unknown"))
 ### Tokens
 ```bnf
 <textArgument> ::= /[^|)}\n\s]*/
-<identifier> ::= /[A-Za-z_][A-Za-z0-9_]*/
+<identifier> ::= /[A-Za-z_$][A-Za-z0-9_]*/
 <number> ::= /\d+(\.\d+)?|0b[01]+|0o[0-8]+|0x[0-0a-fA-F]+/
 <string> ::= /"[^\"]"/
 <regex> ::= /\/[^/]+\//

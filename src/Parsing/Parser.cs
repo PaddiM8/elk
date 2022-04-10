@@ -516,7 +516,7 @@ internal class Parser
 
             return new CallExpr(identifier, arguments);
         }
-        else if (_scope.ContainsVariable(identifier.Value))
+        else if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
         {
             return new VariableExpr(identifier);
         }
