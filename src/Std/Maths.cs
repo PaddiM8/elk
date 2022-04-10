@@ -6,6 +6,14 @@ namespace Shel.Std;
 
 static class Maths
 {
+    [ShellFunction("abs")]
+    public static IRuntimeValue Abs(IRuntimeValue x)
+        => x switch
+        {
+            RuntimeInteger integer => new RuntimeInteger(Math.Abs(integer.Value)),
+            _ => new RuntimeFloat(Math.Abs(x.As<RuntimeFloat>().Value)),
+        };
+
     [ShellFunction("ceil")]
     public static RuntimeFloat Ceil(IRuntimeValue x)
         => new(Math.Ceiling(x.As<RuntimeFloat>().Value));
