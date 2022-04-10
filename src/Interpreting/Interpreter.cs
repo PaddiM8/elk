@@ -403,7 +403,9 @@ class Interpreter
 
     private IRuntimeValue EvaluateProgramCall(CallExpr expr)
     {
-        var arguments = expr.Arguments.Select(x => Next(x).ToString()).ToList();
+        var arguments = expr.Arguments
+            .Select(x => Next(x).As<RuntimeString>().Value)
+            .ToList();
         bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
 
         // Read potential shebang
@@ -426,7 +428,7 @@ class Interpreter
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = string.Join(" ", arguments),
+                Arguments = string.Join(" ", arguments).Replace("\"", "\"\"\""),
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
