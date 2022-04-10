@@ -21,6 +21,13 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
         {
             try
             {
+                if (index is RuntimeRange range)
+                {
+                    int length = (range.To ?? Values.Count) - (range.From ?? 0);
+
+                    return new RuntimeList(Values.GetRange(range.From ?? 0, length));
+                }
+
                 return Values[index.As<RuntimeInteger>().Value];
             }
             catch (Exception)
