@@ -257,7 +257,7 @@ internal class Parser
     {
         var left = ParseExponent();
 
-        while (Match(TokenKind.Star, TokenKind.Slash))
+        while (Match(TokenKind.Star, TokenKind.Slash, TokenKind.Percent))
         {
             var op = Eat().Kind;
             var right = ParseExponent();

@@ -36,14 +36,6 @@ static class Iteration
     public static RuntimeBoolean Any(RuntimeList x)
         => RuntimeBoolean.From(x.Values.Any(x => x.As<RuntimeBoolean>().Value));
 
-    [ShellFunction("stepBy")]
-    public static RuntimeRange StepBy(RuntimeRange x, RuntimeInteger step)
-    {
-        x.Increment = step.Value;
-
-        return x;
-    }
-
     [ShellFunction("insert")]
     public static RuntimeList Insert(RuntimeList x, RuntimeInteger index, IRuntimeValue value)
     {
@@ -55,6 +47,16 @@ static class Iteration
     [ShellFunction("join")]
     public static RuntimeString Join(RuntimeList x, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", x.Values.Select(x => x.As<RuntimeString>())));
+
+    [ShellFunction("len")]
+    public static RuntimeInteger Length(IRuntimeValue x)
+        => x switch
+        {
+            RuntimeTuple tuple => new(tuple.Values.Length),
+            RuntimeList list => new(list.Values.Count),
+            RuntimeDictionary dict => new(dict.Entries.Count),
+            _ => new(x.As<RuntimeString>().Value.Length),
+        };
 
     [ShellFunction("remove")]
     public static IRuntimeValue Remove(IRuntimeValue x, IRuntimeValue index)
@@ -71,6 +73,14 @@ static class Iteration
         {
             throw new RuntimeException("Can only use function 'remove' on lists and dictionaries");
         }
+
+        return x;
+    }
+
+    [ShellFunction("stepBy")]
+    public static RuntimeRange StepBy(RuntimeRange x, RuntimeInteger step)
+    {
+        x.Increment = step.Value;
 
         return x;
     }

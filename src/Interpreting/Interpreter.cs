@@ -287,7 +287,11 @@ class Interpreter
         var left = Next(expr.Left);
         var right = Next(expr.Right);
 
-        return left.Operation(expr.Operator, right);
+        return expr.Operator switch
+        {
+            TokenKind.Percent => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
+            _ => left.Operation(expr.Operator, right)
+        };
     }
 
     private IRuntimeValue Visit(UnaryExpr expr)
