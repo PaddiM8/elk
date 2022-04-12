@@ -151,17 +151,26 @@ class VariableExpr : Expr
     }
 }
 
+enum CallStyle
+{
+    Parenthesized,
+    TextArguments,
+}
+
 class CallExpr : Expr
 {
     public Token Identifier { get; }
 
     public List<Expr> Arguments { get; }
 
-    public CallExpr(Token identifier, List<Expr> arguments)
+    public CallStyle CallStyle { get; }
+
+    public CallExpr(Token identifier, List<Expr> arguments, CallStyle callStyle)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Arguments = arguments;
+        CallStyle = callStyle;
     }
 }
 
