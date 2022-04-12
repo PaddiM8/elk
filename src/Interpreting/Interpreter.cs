@@ -284,6 +284,11 @@ class Interpreter
             return result;
         }
 
+        if (expr.Operator == TokenKind.Equals)
+        {
+            return EvaluateAssignment(expr.Left, Next(expr.Right));
+        }
+
         var left = Next(expr.Left);
         var right = Next(expr.Right);
 
@@ -292,6 +297,27 @@ class Interpreter
             TokenKind.Percent => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
             _ => left.Operation(expr.Operator, right)
         };
+    }
+
+    private IRuntimeValue EvaluateAssignment(Expr assignee, IRuntimeValue value)
+    {
+        if (assignee is VariableExpr variable)
+        {
+            _scope.UpdateVariable(variable.Identifier.Value, value);
+        }
+        else if (assignee is IndexerExpr indexer)
+        {
+            if (Next(indexer.Value) is not IIndexable<IRuntimeValue> indexable)
+                throw new RuntimeUnableToIndexException(value.GetType());
+
+            indexable[Next(indexer.Index)] = value;
+        }
+        else
+        {
+            throw new RuntimeException("Invalid assignment");
+        }
+
+        return value;
     }
 
     private IRuntimeValue Visit(UnaryExpr expr)
