@@ -257,17 +257,17 @@ internal class Parser
         {
             bool inclusive = AdvanceIf(TokenKind.Equals);
 
-            return new RangeExpr(null, ParseAdditive(), inclusive);
+            return new RangeExpr(null, ParseCoalescing(), inclusive);
         }
 
-        var left = ParseAdditive();
+        var left = ParseCoalescing();
         if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
             bool inclusive = AdvanceIf(TokenKind.Equals);
 
             bool allowedEnd = _allowEndOfExpression;
             _allowEndOfExpression = true;
-            var right = ParseAdditive();
+            var right = ParseCoalescing();
             _allowEndOfExpression = allowedEnd;
 
             if (right is EmptyExpr)
@@ -276,6 +276,21 @@ internal class Parser
             }
 
             return new RangeExpr(left, right, inclusive);
+        }
+
+        return left;
+    }
+
+    private Expr ParseCoalescing()
+    {
+        var left = ParseAdditive();
+
+        while (Match(TokenKind.QuestionQuestion))
+        {
+            var op = Eat().Kind;
+            var right = ParseAdditive();
+
+            left = new BinaryExpr(left, op, right);
         }
 
         return left;
