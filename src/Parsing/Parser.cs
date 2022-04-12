@@ -66,7 +66,7 @@ internal class Parser
             return ParseKeywordExpr();
         }
 
-        return ParsePipe();
+        return ParseAssignment();
     }
 
     private Expr ParseFn()
@@ -140,6 +140,49 @@ internal class Parser
         EatExpected(TokenKind.ClosedParenthesis);
 
         return parameters;
+    }
+
+    private Expr ParseAssignment()
+    {
+        var left = ParsePipe();
+
+        if (Match(TokenKind.Equals,
+            TokenKind.PlusEquals,
+            TokenKind.MinusEquals,
+            TokenKind.StarEquals,
+            TokenKind.SlashEquals))
+        {
+            var op = Eat();
+            var right = ParsePipe();
+
+            return op.Kind switch
+            {
+                TokenKind.Equals => new BinaryExpr(left, TokenKind.Equals, right),
+                TokenKind.PlusEquals => new BinaryExpr(
+                    left,
+                    TokenKind.Equals,
+                    new BinaryExpr(left, TokenKind.Plus, right)
+                ),
+                TokenKind.MinusEquals => new BinaryExpr(
+                    left,
+                    TokenKind.Equals,
+                    new BinaryExpr(left, TokenKind.Minus, right)
+                ),
+                TokenKind.StarEquals => new BinaryExpr(
+                    left,
+                    TokenKind.Equals,
+                    new BinaryExpr(left, TokenKind.Star, right)
+                ),
+                TokenKind.SlashEquals => new BinaryExpr(
+                    left,
+                    TokenKind.Equals,
+                    new BinaryExpr(left, TokenKind.Slash, right)
+                ),
+                _ => throw new NotImplementedException(),
+            };
+        }
+
+        return left;
     }
 
     private Expr ParsePipe()

@@ -11,7 +11,7 @@ internal enum TokenKind
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,
     Exclamation, Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
-    Equals,
+    Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
     And, Or,
     Pipe,
 
