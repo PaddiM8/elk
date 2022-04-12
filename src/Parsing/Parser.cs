@@ -144,8 +144,8 @@ internal class Parser
 
     private Expr ParseBinaryIf()
     {
-        var left = ParsePipe();
-        if (Match(TokenKind.If))
+        var left = ParseAssignment();
+        if (Previous?.Kind is not TokenKind.NewLine && Match(TokenKind.If))
         {
             var op = Eat();
             var right = ParseAssignment();
