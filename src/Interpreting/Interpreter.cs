@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Shel.Lexing;
 using Shel.Parsing;
 
@@ -460,9 +462,28 @@ class Interpreter
 
     private IRuntimeValue EvaluateProgramCall(CallExpr expr)
     {
-        var arguments = expr.Arguments
-            .Select(x => Next(x).As<RuntimeString>().Value)
-            .ToList();
+        var arguments = new List<string>();
+        foreach (var argumentExpr in expr.Arguments)
+        {
+            string value = Next(argumentExpr).As<RuntimeString>().Value;
+            if (expr.CallStyle == CallStyle.TextArguments)
+            {
+                var matcher = new Matcher();
+                matcher.AddInclude(value);
+                var result = matcher.Execute(
+                    new DirectoryInfoWrapper(new DirectoryInfo(ShellEnvironment.WorkingDirectory))
+                );
+
+                if (result.HasMatches)
+                {
+                    arguments.AddRange(result.Files.Select(x => x.Path));
+                    continue;
+                }
+            }
+
+            arguments.Add(value);
+        }
+
         bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
 
         // Read potential shebang

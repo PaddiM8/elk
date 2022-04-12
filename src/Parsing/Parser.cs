@@ -600,7 +600,7 @@ internal class Parser
 
             EatExpected(TokenKind.ClosedParenthesis);
 
-            return new CallExpr(identifier, arguments);
+            return new CallExpr(identifier, arguments, CallStyle.Parenthesized);
         }
         else if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
         {
@@ -644,7 +644,7 @@ internal class Parser
                 textArguments.Add(new LiteralExpr(finalToken));
             }
 
-            return new CallExpr(identifier, textArguments);
+            return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
         }
     }
 
