@@ -66,7 +66,7 @@ internal class Parser
             return ParseKeywordExpr();
         }
 
-        return ParseAssignment();
+        return ParseBinaryIf();
     }
 
     private Expr ParseFn()
@@ -140,6 +140,20 @@ internal class Parser
         EatExpected(TokenKind.ClosedParenthesis);
 
         return parameters;
+    }
+
+    private Expr ParseBinaryIf()
+    {
+        var left = ParsePipe();
+        if (Match(TokenKind.If))
+        {
+            var op = Eat();
+            var right = ParseAssignment();
+
+            return new BinaryExpr(left, op.Kind, right);
+        }
+
+        return left;
     }
 
     private Expr ParseAssignment()

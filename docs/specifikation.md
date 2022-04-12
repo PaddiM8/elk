@@ -108,18 +108,18 @@ echo("Age: " + (person["age"] ?? "unknown"))
     | <block>
     | <empty>
 
-<pipe> ::= <assignment>
-    | <pipe> | <assignment>
 <binaryIf> ::= <assignment> if <assignment>
     | <assignment>
-<assignment> ::= <identifier> = <or>
-    | <identifier> += <or>
-    | <identifier> -= <or>
-    | <identifier> *= <or>
-    | <identifier> /= <or>
-    | <identifier> %= <or>
-    | <identifier> ^= <or>
+<assignment> ::= <identifier> = <pipe>
+    | <identifier> += <pipe>
+    | <identifier> -= <pipe>
+    | <identifier> *= <pipe>
+    | <identifier> /= <pipe>
+    | <identifier> %= <pipe>
+    | <identifier> ^= <pipe>
     | <or>
+<pipe> ::= <or>
+    | <pipe> | <or>
 <or> ::= <and>
     | <or> || <and>
 <and> ::= <comparison>
