@@ -229,7 +229,7 @@ echo("Age: " + (person["age"] ?? "unknown"))
 ```bnf
 <textArgument> ::= /[^|)}\n\s]*/
 <identifier> ::= /[A-Za-z_$][A-Za-z0-9_]*/
-<number> ::= /\d+(\.\d+)?|0b[01]+|0o[0-8]+|0x[0-0a-fA-F]+/
+<number> ::= /[0-9_]+(\.[0-9_]+)?+/
 <string> ::= /"[^\"]"/
 <regex> ::= /\/[^/]+\//
 <comment> ::= /#.*\n/

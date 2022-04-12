@@ -194,8 +194,11 @@ internal class Lexer
     {
         var value = new StringBuilder();
         bool isFloat = false;
-        while (char.IsDigit(Current) || (Current == '.' && Peek != '.'))
+        while (char.IsDigit(Current) || Current == '_' || (Current == '.' && Peek != '.'))
         {
+            if (AdvanceIf('_'))
+                continue;
+
             if (Current == '.')
                 isFloat = true;
 
