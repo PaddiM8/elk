@@ -283,11 +283,15 @@ class Interpreter
 
             return result;
         }
-
-
-        if (expr.Operator == TokenKind.Equals)
+        else if (expr.Operator == TokenKind.Equals)
         {
             return EvaluateAssignment(expr.Left, Next(expr.Right));
+        }
+        else if (expr.Operator == TokenKind.If)
+        {
+            return Next(expr.Right).As<RuntimeBoolean>().Value
+                ? Next(expr.Left)
+                : RuntimeNil.Value;
         }
 
         var left = Next(expr.Left);
