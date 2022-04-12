@@ -45,10 +45,18 @@ internal class Lexer
     {
         return Current switch
         {
-            '+' => Build(TokenKind.Plus, Eat()),
-            '-' => Build(TokenKind.Minus, Eat()),
-            '*' => Build(TokenKind.Star, Eat()),
-            '/' => Build(TokenKind.Slash, Eat()),
+            '+' => Peek == '='
+                ? Build(TokenKind.PlusEquals, Eat(2))
+                : Build(TokenKind.Plus, Eat()),
+            '-' => Peek == '='
+                ? Build(TokenKind.MinusEquals, Eat(2))
+                : Build(TokenKind.Minus, Eat()),
+            '*' => Peek == '='
+                ? Build(TokenKind.StarEquals, Eat(2))
+                : Build(TokenKind.Star, Eat()),
+            '/' => Peek == '='
+                ? Build(TokenKind.SlashEquals, Eat(2))
+                : Build(TokenKind.Slash, Eat()),
             '%' => Build(TokenKind.Percent, Eat()),
             '^' => Build(TokenKind.Caret, Eat()),
             '>' => Peek == '='
