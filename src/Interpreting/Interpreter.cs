@@ -284,12 +284,20 @@ class Interpreter
             return result;
         }
 
+
         if (expr.Operator == TokenKind.Equals)
         {
             return EvaluateAssignment(expr.Left, Next(expr.Right));
         }
 
         var left = Next(expr.Left);
+        if (expr.Operator == TokenKind.QuestionQuestion)
+        {
+            return left is RuntimeNil
+                ? Next(expr.Right)
+                : left;
+        }
+
         var right = Next(expr.Right);
 
         return expr.Operator switch

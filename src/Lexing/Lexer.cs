@@ -77,6 +77,9 @@ internal class Lexer
             '|' => Peek == '|'
                 ? Build(TokenKind.Or, Eat(2))
                 : Build(TokenKind.Pipe, Eat()),
+            '?' => Peek == '?'
+                ? Build(TokenKind.QuestionQuestion, Eat(2))
+                : Build(TokenKind.Unknown, Eat()),
             '(' => Build(TokenKind.OpenParenthesis, Eat()),
             ')' => Build(TokenKind.ClosedParenthesis, Eat()),
             '[' => Build(TokenKind.OpenSquareBracket, Eat()),

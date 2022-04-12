@@ -21,7 +21,7 @@ internal enum TokenKind
     OpenBrace, ClosedBrace,
 
     // Punctuation
-    Comma, Colon, Hash, Dot, DotDot, Tilde,
+    Comma, Colon, Hash, Dot, DotDot, Tilde, QuestionQuestion,
 
     // Other
     IntegerLiteral, FloatLiteral, StringLiteral,
