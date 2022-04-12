@@ -13,7 +13,7 @@ class RuntimeNil : IRuntimeValue
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
             _
-                => this,
+                => throw new RuntimeCastException<RuntimeNil>(toType),
         };
 
     public IRuntimeValue Operation(TokenKind kind)

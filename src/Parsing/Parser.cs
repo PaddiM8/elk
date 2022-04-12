@@ -539,7 +539,8 @@ internal class Parser
             var textArguments = new List<Expr>();
             var currentText = new StringBuilder();
             AdvanceIf(TokenKind.WhiteSpace);
-            while (!ReachedEnd && !ReachedTextEnd())
+
+            while (!ReachedTextEnd())
             {
                 if (AdvanceIf(TokenKind.WhiteSpace))
                 {
@@ -550,7 +551,7 @@ internal class Parser
                 }
 
                 var next = Peek();
-                if (Match(TokenKind.Tilde) &&
+                if (MatchInclWhiteSpace(TokenKind.Tilde) &&
                     (next == null || next.Kind == TokenKind.Slash || next.Kind == TokenKind.WhiteSpace))
                 {
                     Eat();
@@ -583,7 +584,7 @@ internal class Parser
         {
             // If ".." is not before/after a slash, it is not a part of a path
             // and the loop should be stopped.
-            if (Match(TokenKind.DotDot) &&
+            if (MatchInclWhiteSpace(TokenKind.DotDot) &&
                 Previous?.Kind is not TokenKind.Slash &&
                 Peek()?.Kind is not TokenKind.Slash)
             {
@@ -615,11 +616,15 @@ internal class Parser
 
     private bool AdvanceIf(TokenKind kind)
     {
+        int prevIndex = _index;
+
         if (Match(kind))
         {
             Eat();
             return true;
         }
+
+        _index = prevIndex;
 
         return false;
     }

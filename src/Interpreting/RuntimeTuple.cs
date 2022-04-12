@@ -39,8 +39,10 @@ class RuntimeTuple : IRuntimeValue, IIndexable<IRuntimeValue>
     public IRuntimeValue As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeList)
+            var type when type == typeof(RuntimeTuple)
                 => this,
+            var type when type == typeof(RuntimeList)
+                => new RuntimeList(Values),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),
             var type when type == typeof(RuntimeString)
