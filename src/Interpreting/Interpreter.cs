@@ -230,15 +230,10 @@ class Interpreter
         {
             // If there is a value to be returned, stop immediately
             // and make sure it's passed upwards.
-            if (_returnationHandler.Active)
+            if (BlockShouldExit(expr, out IRuntimeValue? returnValue))
             {
-                if (expr.ParentStructureKind == StructureKind.Function &&
-                    _returnationHandler.ReturnationType == ReturnationType.ReturnFunction)
-                {
-                    lastValue = _returnationHandler.Collect();
-                }
-
-                break;
+                if (returnValue != null)
+                    lastValue = returnValue;
             }
 
             // If last
@@ -256,7 +251,24 @@ class Interpreter
 
         _scope = _scope.Parent!;
 
-        return lastValue;
+        BlockShouldExit(expr, out IRuntimeValue? explicitReturnValue);
+
+        return explicitReturnValue ?? lastValue;
+    }
+
+    private bool BlockShouldExit(BlockExpr expr, out IRuntimeValue? returnValue)
+    {
+        returnValue = null;
+        if (!_returnationHandler.Active)
+            return false;
+
+        if (expr.ParentStructureKind == StructureKind.Function &&
+            _returnationHandler.ReturnationType == ReturnationType.ReturnFunction)
+        {
+            returnValue = _returnationHandler.Collect();
+        }
+
+        return true;
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)
