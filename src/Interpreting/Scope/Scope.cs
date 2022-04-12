@@ -46,8 +46,20 @@ abstract class Scope
         return result ?? Parent?.FindVariable(name);
     }
 
-    public void UpdateVariable(string name, IRuntimeValue value)
+    public bool UpdateVariable(string name, IRuntimeValue value)
     {
-        _variables[name] = value;
+        if (_variables.ContainsKey(name))
+        {
+            _variables[name] = value;
+        }
+        else
+        {
+            if (Parent == null)
+                return false;
+
+            Parent.UpdateVariable(name, value);
+        }
+
+        return true;
     }
 }

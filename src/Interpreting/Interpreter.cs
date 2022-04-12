@@ -303,7 +303,10 @@ class Interpreter
     {
         if (assignee is VariableExpr variable)
         {
-            _scope.UpdateVariable(variable.Identifier.Value, value);
+            if (!_scope.UpdateVariable(variable.Identifier.Value, value))
+            {
+                throw new RuntimeNotFoundException(variable.Identifier.Value);
+            }
         }
         else if (assignee is IndexerExpr indexer)
         {
