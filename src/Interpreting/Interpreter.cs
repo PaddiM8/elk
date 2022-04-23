@@ -14,7 +14,7 @@ class Interpreter
 {
     private Scope _scope;
     private readonly Redirector _redirector = new();
-    private readonly ReturnationHandler _returnationHandler = new();
+    private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr = null;
 
     public ShellEnvironment ShellEnvironment { get; }
@@ -68,7 +68,7 @@ class Interpreter
 
     private IRuntimeValue Next(Expr expr)
     {
-        if (_returnationHandler.Active)
+        if (_returnHandler.Active)
             return RuntimeNil.Value;
 
         _lastExpr = expr;
@@ -120,18 +120,18 @@ class Interpreter
 
     private IRuntimeValue Visit(KeywordExpr expr)
     {
-        var returnationType = expr.Kind switch
+        var returnKind = expr.Kind switch
         {
-            TokenKind.Break => ReturnationType.BreakLoop,
-            TokenKind.Continue => ReturnationType.ContinueLoop,
-            TokenKind.Return => ReturnationType.ReturnFunction,
+            TokenKind.Break => ReturnKind.BreakLoop,
+            TokenKind.Continue => ReturnKind.ContinueLoop,
+            TokenKind.Return => ReturnKind.ReturnFunction,
             _ => throw new NotImplementedException(),
         };
         var value = expr.Value == null
             ? RuntimeNil.Value
             : Next(expr.Value);
 
-        _returnationHandler.TriggerReturn(returnationType, value);
+        _returnHandler.TriggerReturn(returnKind, value);
 
         return RuntimeNil.Value;
     }
@@ -174,14 +174,14 @@ class Interpreter
             Visit(expr.Branch, scope);
             scope.Clear();
 
-            if (_returnationHandler.ReturnationType == ReturnationType.BreakLoop)
+            if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
             {
-                return _returnationHandler.Collect();
+                return _returnHandler.Collect();
             }
 
-            if (_returnationHandler.ReturnationType == ReturnationType.ContinueLoop)
+            if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
             {
-                _returnationHandler.Collect();
+                _returnHandler.Collect();
             }
         }
 
@@ -261,13 +261,13 @@ class Interpreter
     private bool BlockShouldExit(BlockExpr expr, out IRuntimeValue? returnValue)
     {
         returnValue = null;
-        if (!_returnationHandler.Active)
+        if (!_returnHandler.Active)
             return false;
 
         if (expr.ParentStructureKind == StructureKind.Function &&
-            _returnationHandler.ReturnationType == ReturnationType.ReturnFunction)
+            _returnHandler.ReturnKind == ReturnKind.ReturnFunction)
         {
-            returnValue = _returnationHandler.Collect();
+            returnValue = _returnHandler.Collect();
         }
 
         return true;

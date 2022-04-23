@@ -1,7 +1,7 @@
 using System;
 using Elk.Interpreting;
 
-enum ReturnationType
+enum ReturnKind
 {
     None,
     BreakLoop,
@@ -9,24 +9,24 @@ enum ReturnationType
     ReturnFunction,
 }
 
-class ReturnationHandler
+class ReturnHandler
 {
     public bool Active
-        => ReturnationType != ReturnationType.None;
+        => ReturnKind != ReturnKind.None;
 
-    public ReturnationType ReturnationType { get; private set; }
+    public ReturnKind ReturnKind { get; private set; }
 
     private IRuntimeValue? _returnValue;
 
-    public void TriggerReturn(ReturnationType type, IRuntimeValue value)
+    public void TriggerReturn(ReturnKind type, IRuntimeValue value)
     {
-        ReturnationType = type;
+        ReturnKind = type;
         _returnValue = value;
     }
 
     public IRuntimeValue Collect()
     {
-        ReturnationType = ReturnationType.None;
+        ReturnKind = ReturnKind.None;
         var value = _returnValue ?? throw new InvalidOperationException("Cannot collect return value. No value is being returned.");
         _returnValue = null;
 
