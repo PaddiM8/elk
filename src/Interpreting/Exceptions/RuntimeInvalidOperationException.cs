@@ -1,6 +1,6 @@
 using System;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeInvalidOperationException : RuntimeException
 {

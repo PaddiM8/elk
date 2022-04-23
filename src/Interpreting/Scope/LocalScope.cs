@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Shel.Interpreting;
+using Elk.Interpreting;
 
-namespace Shel;
+namespace Elk;
 
 class LocalScope : Scope
 {

@@ -1,4 +1,4 @@
-namespace Shel.Lexing;
+namespace Elk.Lexing;
 
 internal enum TokenKind
 {

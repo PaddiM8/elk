@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class ShellEnvironment
 {

@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Shel.csproj" />
+    <ProjectReference Include="..\src\Elk.csproj" />
   </ItemGroup>
 
 </Project>

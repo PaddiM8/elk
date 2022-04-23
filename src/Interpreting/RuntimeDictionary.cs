@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {

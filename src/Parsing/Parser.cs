@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Shel.Interpreting;
-using Shel.Lexing;
+using Elk.Interpreting;
+using Elk.Lexing;
 
-namespace Shel.Parsing;
+namespace Elk.Parsing;
 
 internal class Parser
 {

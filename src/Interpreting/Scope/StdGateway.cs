@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Shel.Attributes;
+using Elk.Attributes;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 static class StdGateway
 {
@@ -70,7 +70,7 @@ static class StdGateway
     {
         var stdTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(x => x.Namespace?.StartsWith("Shel.Std") ?? false);
+            .Where(x => x.Namespace?.StartsWith("Elk.Std") ?? false);
         foreach (Type stdType in stdTypes)
         {
             var methods = stdType.GetMethods();

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Shel.Lexing;
+namespace Elk.Lexing;
 
 internal class Lexer
 {

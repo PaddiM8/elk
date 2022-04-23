@@ -1,7 +1,7 @@
 using System;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeInteger : IRuntimeValue
 {
