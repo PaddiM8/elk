@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeBoolean : IRuntimeValue
 {

@@ -13,6 +13,7 @@
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="PrettyPrompt" Version="3.0.5" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -21,7 +22,7 @@
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-    <_Parameter1>Shel.Tests</_Parameter1>
+    <_Parameter1>Elk.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 

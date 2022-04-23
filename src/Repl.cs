@@ -1,15 +1,16 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Shel.Interpreting;
+using PrettyPrompt;
+using PrettyPrompt.Consoles;
+using PrettyPrompt.Highlighting;
+using Elk.Interpreting;
 
-namespace Shel;
+namespace Elk;
 
 class Repl
 {
-    public static void Run()
+    public static async Task Run()
     {
         var interpreter = new Interpreter();
         while (true)
@@ -21,11 +22,23 @@ class Repl
                 workingDirectory = "~" + workingDirectory[homePath.Length..];
             }
 
-            Console.Write(workingDirectory);
+            /*Console.Write(workingDirectory);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write(" >> ");
             Console.ResetColor();
-            string input = Console.ReadLine() ?? "";
+            string input = Console.ReadLine() ?? "";*/
+            var promptConfiguration = new PromptConfiguration(
+                maxCompletionItemsCount: 1,
+                prompt: new FormattedString(
+                    workingDirectory + " >> ",
+                    new FormatSpan(workingDirectory.Length, workingDirectory.Length + 2, AnsiColor.Cyan)
+                )
+            );
+
+            var prompt = new Prompt(configuration: promptConfiguration);
+            var promptResult = await prompt.ReadLineAsync();
+            string input = promptResult.Text;
+
             if (input == "exit")
                 break;
 

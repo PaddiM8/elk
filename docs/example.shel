@@ -1,4 +1,4 @@
-#!/bin/shel
+#!/bin/elk
 
 # execute programs
 /usr/bin/something -a b

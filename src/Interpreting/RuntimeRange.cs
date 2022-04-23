@@ -2,9 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 {

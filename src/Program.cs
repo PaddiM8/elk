@@ -1,14 +1,14 @@
 ﻿using System.IO;
 using CommandLine;
-using Shel;
-using Shel.Interpreting;
+using Elk;
+using Elk.Interpreting;
 
 CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
-    .WithParsed(options =>
+    .WithParsed(async options =>
     {
         if (options.FilePath == null)
         {
-            Repl.Run();
+            await Repl.Run();
         }
         else
         {

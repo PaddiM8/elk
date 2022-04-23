@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Shel;
+namespace Elk;
 
 public static class Extensions
 {
