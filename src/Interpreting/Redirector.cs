@@ -1,4 +1,4 @@
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 enum RedirectorStatus
 {

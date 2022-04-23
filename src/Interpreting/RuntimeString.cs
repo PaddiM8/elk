@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
@@ -88,7 +88,7 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
         => Value.GetHashCode();
 
     public override string ToString()
-        => $"\"{Value}\"";
+        => $"{Value}";
 }
 
 class RuntimeStringEnumerator : IEnumerator<IRuntimeValue>

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Shel.Lexing;
+namespace Elk.Lexing;
 
 internal record struct TextPos(int Line, int Column);
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace Shel;
+namespace Elk;
 
 class RuntimeUnableToIndexException : RuntimeException
 {

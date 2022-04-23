@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Shel.Attributes;
-using Shel.Interpreting;
+using Elk.Attributes;
+using Elk.Interpreting;
 
-namespace Shel.Std;
+namespace Elk.Std;
 
 static class IO
 {
@@ -25,11 +25,5 @@ static class IO
         Console.Write(prompt.Value);
 
         return new RuntimeString(Console.ReadLine() ?? "");
-    }
-
-    [ShellFunction("print")]
-    public static void Print(RuntimeString input)
-    {
-        Console.Write(input.Value);
     }
 }

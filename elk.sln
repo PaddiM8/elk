@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk", "src\Elk.csproj", "{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Tests", "tests\Elk.Tests.csproj", "{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel;
+namespace Elk;
 
 enum StructureKind
 {

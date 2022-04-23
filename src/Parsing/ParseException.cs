@@ -1,7 +1,7 @@
 using System;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Parsing;
+namespace Elk.Parsing;
 
 internal class ParseException : Exception
 {

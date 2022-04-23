@@ -1,6 +1,6 @@
 # Språkspecifikation
 
-Shel är ett språk med dynamisk typning och omfattande implicit
+Elk är ett språk med dynamisk typning och omfattande implicit
 typkonvertering. Värden skickas alltid i grunden till funktioner
 som objektreferenser. Varje block-sats har sitt egna scope.
 
@@ -20,7 +20,7 @@ echo hello world
 ```
 
 ### Variabler utan prefix
-I Shel har variabler inte någon prefix-symbol som `$`
+I Elk har variabler inte någon prefix-symbol som `$`
 eller `@`. Detta betyder att följande exempel
 har samma syntax men annorlunda semantik:
 
@@ -42,11 +42,11 @@ output för att på något sätt hantera den returnerade texten.
 I andra fall räcker det att låta terminalen skriva ut programmets
 output. I bash behöver användaren explicit visa att
 ett programs output ska hämtas (och därmed inte heller
-visas i terminalen). Shel analyserar automatiskt koden
+visas i terminalen). Elk analyserar automatiskt koden
 för att bestämma hur output bör hanteras. Om värdet
-av ett anrop inte hanteras i koden låter Shel terminalen
+av ett anrop inte hanteras i koden låter Elk terminalen
 skriva ut det. Om värdet av ett anrop hanteras (till
-exempel `let x = ls`) "stjäler" Shel programmets
+exempel `let x = ls`) "stjäler" Elk programmets
 output och skapar ett objekt med värdet. Detta leder
 till att det inte heller skrivs ut i terminalen.
 

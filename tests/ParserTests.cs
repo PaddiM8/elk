@@ -1,12 +1,12 @@
 using NUnit.Framework;
-using Shel.Lexing;
-using Shel.Parsing;
-using Shel.Interpreting;
+using Elk.Lexing;
+using Elk.Parsing;
+using Elk.Interpreting;
 using System.Collections.Generic;
 using System.Linq;
 using static AstBuilder;
 
-namespace Shel.Tests;
+namespace Elk.Tests;
 
 internal class ParserTests
 {

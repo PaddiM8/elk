@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using Shel.Lexing;
+using Elk.Lexing;
 using System.Linq;
 
-namespace Shel.Tests;
+namespace Elk.Tests;
 
 internal class LexerTests
 {

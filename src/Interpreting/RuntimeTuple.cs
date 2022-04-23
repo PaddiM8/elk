@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
-using Shel.Lexing;
+using Elk.Lexing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class RuntimeTuple : IRuntimeValue, IIndexable<IRuntimeValue>
 {

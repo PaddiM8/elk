@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Shel;
+namespace Elk;
 
 class GlobalScope : Scope
 {

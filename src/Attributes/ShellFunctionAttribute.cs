@@ -1,6 +1,6 @@
 using System;
 
-namespace Shel.Attributes;
+namespace Elk.Attributes;
 
 class ShellFunctionAttribute : Attribute
 {

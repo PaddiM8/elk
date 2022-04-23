@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
-using Shel.Lexing;
-using Shel.Parsing;
+using Elk.Lexing;
+using Elk.Parsing;
 
-namespace Shel.Interpreting;
+namespace Elk.Interpreting;
 
 class Interpreter
 {
