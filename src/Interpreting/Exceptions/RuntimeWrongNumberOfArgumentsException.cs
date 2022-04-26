@@ -1,6 +1,4 @@
-using System;
-
-namespace Elk.Interpreting;
+namespace Elk.Interpreting.Exceptions;
 
 class RuntimeWrongNumberOfArgumentsException : RuntimeException
 {

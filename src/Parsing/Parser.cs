@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Interpreting;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 
 namespace Elk.Parsing;
@@ -14,7 +15,7 @@ internal class Parser
     private int _index;
     private Scope _scope;
     private readonly string _filePath;
-    private bool _allowEndOfExpression = false;
+    private bool _allowEndOfExpression;
 
     private Token? Current => _index < _tokens.Count
         ? _tokens[_index]
@@ -427,7 +428,7 @@ internal class Parser
             SkipWhiteSpace();
 
             if (Match(TokenKind.Identifier, TokenKind.StringLiteral) &&
-                Peek(1)?.Kind == TokenKind.Colon)
+                Peek()?.Kind == TokenKind.Colon)
             {
                 _index = prevIndex;
 

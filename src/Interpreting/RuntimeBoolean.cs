@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 namespace Elk.Interpreting;

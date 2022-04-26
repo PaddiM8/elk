@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Elk.Lexing;
-using Elk.Parsing;
 using Elk.Interpreting;
-using static AstBuilder;
+using Elk.Interpreting.Scope;
+using static Elk.Tests.AstBuilder;
 
 namespace Elk.Tests;
 

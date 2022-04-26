@@ -1,5 +1,6 @@
 using System;
-using Elk.Interpreting;
+
+namespace Elk.Interpreting;
 
 enum ReturnKind
 {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 namespace Elk.Interpreting;
@@ -74,10 +75,10 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
         return kind switch
         {
             TokenKind.Plus => new RuntimeString(Value + otherString.Value),
-            TokenKind.Greater => RuntimeBoolean.From(string.Compare(Value, otherString.Value) > 0),
-            TokenKind.GreaterEquals => RuntimeBoolean.From(string.Compare(Value, otherString.Value) >= 0),
-            TokenKind.Less => RuntimeBoolean.From(string.Compare(Value, otherString.Value) < 0),
-            TokenKind.LessEquals => RuntimeBoolean.From(string.Compare(Value, otherString.Value) <= 0),
+            TokenKind.Greater => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) > 0),
+            TokenKind.GreaterEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) >= 0),
+            TokenKind.Less => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) < 0),
+            TokenKind.LessEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) <= 0),
             TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
             TokenKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "String"),

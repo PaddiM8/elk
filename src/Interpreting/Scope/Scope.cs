@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
-using Elk.Interpreting;
 
-namespace Elk;
+namespace Elk.Interpreting.Scope;
 
 abstract class Scope
 {
@@ -10,9 +8,9 @@ abstract class Scope
 
     public Scope? Parent { get; }
 
-    public Dictionary<string, IRuntimeValue> _variables = new();
+    private readonly Dictionary<string, IRuntimeValue> _variables = new();
 
-    public Scope(Scope? parent)
+    protected Scope(Scope? parent)
     {
         GlobalScope = parent switch
         {

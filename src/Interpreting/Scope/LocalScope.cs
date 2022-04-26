@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using Elk.Interpreting;
-
-namespace Elk;
+namespace Elk.Interpreting.Scope;
 
 class LocalScope : Scope
 {

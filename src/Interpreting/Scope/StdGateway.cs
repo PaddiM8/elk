@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elk.Attributes;
+using Elk.Interpreting.Exceptions;
 
-namespace Elk.Interpreting;
+namespace Elk.Interpreting.Scope;
 
 static class StdGateway
 {
-    public static readonly Dictionary<string, MethodInfo> _methods = new();
+    private static readonly Dictionary<string, MethodInfo> _methods = new();
 
     public static bool Contains(string name)
     {

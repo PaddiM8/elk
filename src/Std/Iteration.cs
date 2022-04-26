@@ -1,6 +1,10 @@
 using System.Linq;
 using Elk.Attributes;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
+
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 
 namespace Elk.Std;
 
@@ -29,24 +33,24 @@ static class Iteration
     }
 
     [ShellFunction("all")]
-    public static RuntimeBoolean All(RuntimeList x)
-        => RuntimeBoolean.From(x.Values.All(x => x.As<RuntimeBoolean>().Value));
+    public static RuntimeBoolean All(RuntimeList list)
+        => RuntimeBoolean.From(list.Values.All(x => x.As<RuntimeBoolean>().Value));
 
     [ShellFunction("any")]
-    public static RuntimeBoolean Any(RuntimeList x)
-        => RuntimeBoolean.From(x.Values.Any(x => x.As<RuntimeBoolean>().Value));
+    public static RuntimeBoolean Any(RuntimeList list)
+        => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().Value));
 
     [ShellFunction("insert")]
-    public static RuntimeList Insert(RuntimeList x, RuntimeInteger index, IRuntimeValue value)
+    public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, IRuntimeValue value)
     {
-        x.Values.Insert(index.Value, value);
+        list.Values.Insert(index.Value, value);
 
-        return x;
+        return list;
     }
 
     [ShellFunction("join")]
-    public static RuntimeString Join(RuntimeList x, RuntimeString? separator = null)
-        => new(string.Join(separator?.Value ?? "", x.Values.Select(x => x.As<RuntimeString>())));
+    public static RuntimeString Join(RuntimeList list, RuntimeString? separator = null)
+        => new(string.Join(separator?.Value ?? "", list.Values.Select(x => x.As<RuntimeString>())));
 
     [ShellFunction("len")]
     public static RuntimeInteger Length(IRuntimeValue x)

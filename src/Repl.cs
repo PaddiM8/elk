@@ -1,14 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using PrettyPrompt;
-using PrettyPrompt.Consoles;
 using PrettyPrompt.Highlighting;
 using Elk.Interpreting;
 
 namespace Elk;
 
-class Repl
+static class Repl
 {
     public static async Task Run()
     {

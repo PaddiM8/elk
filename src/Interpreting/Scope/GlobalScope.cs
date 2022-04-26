@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
-namespace Elk;
+namespace Elk.Interpreting.Scope;
 
 class GlobalScope : Scope
 {
-    public Dictionary<string, FunctionExpr> _functions = new();
+    private readonly Dictionary<string, FunctionExpr> _functions = new();
 
-    public HashSet<string> _includes = new();
+    private readonly HashSet<string> _includes = new();
 
     public GlobalScope()
         : base(null)
