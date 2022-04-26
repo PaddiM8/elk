@@ -18,8 +18,8 @@ static class AstBuilder
     public static LetExpr Let(string identifier, Expr value)
         => new(Token(TokenKind.Identifier, identifier), value);
 
-    public static ReturnExpr ReturnExpr(Expr value)
-        => new(value);
+    public static KeywordExpr KeywordExpr(TokenKind kind, Expr value)
+        => new(kind, value, new(0, 0));
 
     public static BinaryExpr Binary(Expr left, TokenKind op, Expr right)
         => new(left, op, right);
@@ -31,13 +31,13 @@ static class AstBuilder
         => new(Token(TokenKind.Identifier, identifier));
 
     public static CallExpr Call(string identifier, List<Expr> arguments)
-        => new(Token(TokenKind.Identifier, identifier), arguments);
+        => new(Token(TokenKind.Identifier, identifier), arguments, CallStyle.Parenthesized);
 
     public static IfExpr If(Expr condition, Expr thenBranch, Expr? elseBranch = null)
         => new(condition, thenBranch, elseBranch);
 
-    public static BlockExpr Block(List<Expr> expressions)
-        => new(expressions, new TextPos(0, 0));
+    public static BlockExpr Block(List<Expr> expressions, StructureKind structureKind)
+        => new(expressions, structureKind, new TextPos(0, 0));
 
     public static LiteralExpr Literal(object value)
         => value switch
