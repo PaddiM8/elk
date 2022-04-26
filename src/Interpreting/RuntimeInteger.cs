@@ -1,4 +1,5 @@
 using System;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 namespace Elk.Interpreting;

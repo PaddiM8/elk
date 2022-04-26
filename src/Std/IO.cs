@@ -2,9 +2,12 @@ using System;
 using System.IO;
 using Elk.Attributes;
 using Elk.Interpreting;
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 
 namespace Elk.Std;
 
+// ReSharper disable once InconsistentNaming
 static class IO
 {
     [ShellFunction("read")]

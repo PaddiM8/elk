@@ -1,11 +1,12 @@
 using System;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 namespace Elk.Interpreting;
 
 class RuntimeNil : IRuntimeValue
 {
-    public static RuntimeNil Value = new();
+    public static readonly RuntimeNil Value = new();
 
     public IRuntimeValue As(Type toType)
         => toType switch

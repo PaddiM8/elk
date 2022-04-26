@@ -1,4 +1,4 @@
-using Elk.Interpreting;
+namespace Elk.Interpreting;
 
 interface IIndexable<T>
 {

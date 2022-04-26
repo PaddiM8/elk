@@ -16,7 +16,7 @@ internal class LexerTests
     public void TestBasics()
     {
         var gotTokens = Lexer.Lex("+-*/> >= < <= = == ! !=&&| ||(){}:,");
-        var expectedKinds = new TokenKind[]
+        var expectedKinds = new[]
         {
             TokenKind.Plus,
             TokenKind.Minus,
@@ -59,7 +59,7 @@ internal class LexerTests
     public void TestNumber()
     {
         var gotTokens = Lexer.Lex("123.456 789 1");
-        var expectedValues = new (TokenKind, string)[]
+        var expectedValues = new[]
         {
             (TokenKind.FloatLiteral, "123.456"),
             (TokenKind.WhiteSpace, " "),
@@ -79,7 +79,7 @@ internal class LexerTests
     public void TestString()
     {
         var gotTokens = Lexer.Lex("\"hello world\" \"this is\n a test\"");
-        var expectedValues = new (TokenKind, string)[]
+        var expectedValues = new[]
         {
             (TokenKind.StringLiteral, "hello world"),
             (TokenKind.WhiteSpace, " "),
@@ -105,7 +105,7 @@ internal class LexerTests
     public void TestIdentifier()
     {
         var gotTokens = Lexer.Lex("fn let if else for return nil true false notAKeyword");
-        var expectedValues = new (TokenKind, string)[]
+        var expectedValues = new[]
         {
             (TokenKind.Fn, "fn"),
             (TokenKind.WhiteSpace, " "),

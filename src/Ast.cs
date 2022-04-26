@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Elk.Lexing;
@@ -19,7 +18,7 @@ abstract class Expr
 
     public bool IsRoot { get; set; }
 
-    public Expr(TextPos pos)
+    protected Expr(TextPos pos)
     {
         Position = pos;
     }

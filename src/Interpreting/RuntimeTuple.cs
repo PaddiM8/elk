@@ -1,8 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 namespace Elk.Interpreting;

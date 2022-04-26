@@ -1,6 +1,6 @@
 using System;
 
-namespace Elk;
+namespace Elk.Interpreting.Exceptions;
 
 class RuntimeException : Exception
 {
