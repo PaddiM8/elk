@@ -96,7 +96,7 @@ class Interpreter
             IndexerExpr e => Visit(e),
             VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
     }
 
@@ -130,7 +130,7 @@ class Interpreter
             TokenKind.Break => ReturnKind.BreakLoop,
             TokenKind.Continue => ReturnKind.ContinueLoop,
             TokenKind.Return => ReturnKind.ReturnFunction,
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(),
         };
         var value = expr.Value == null
             ? RuntimeNil.Value
@@ -284,7 +284,7 @@ class Interpreter
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
             TokenKind.Nil => RuntimeNil.Value,
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(),
         };
     }
 

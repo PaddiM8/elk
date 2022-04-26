@@ -33,7 +33,7 @@ class RuntimeFloat : IRuntimeValue
         {
             TokenKind.Minus => new RuntimeFloat(-Value),
             TokenKind.Exclamation => RuntimeBoolean.From(Value == 0),
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)

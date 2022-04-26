@@ -61,7 +61,7 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
         {
             TokenKind.Minus => ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind),
             TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
     public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)

@@ -12,7 +12,7 @@ class TokenConverter : JsonConverter<Token>
 {
     public override Token ReadJson(JsonReader reader, Type objectType, Token? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        throw new NotImplementedException();
+        throw new InvalidOperationException();
     }
 
     public override void WriteJson(JsonWriter writer, Token? token, JsonSerializer serializer)
