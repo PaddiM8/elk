@@ -193,7 +193,7 @@ internal class Parser
                     TokenKind.Equals,
                     new BinaryExpr(left, TokenKind.Slash, right)
                 ),
-                _ => throw new NotImplementedException(),
+                _ => throw new ArgumentOutOfRangeException(),
             };
         }
 
