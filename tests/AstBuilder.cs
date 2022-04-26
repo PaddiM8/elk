@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elk;
 using Elk.Lexing;
+// ReSharper disable UnusedMember.Global
+
+namespace Elk.Tests;
 
 static class AstBuilder
 {
     public static Token Token(TokenKind kind, string value)
         => new(kind, value, new TextPos(0, 0));
 
-    public static FunctionExpr Function(string identifier, List<string> parameters, BlockExpr block)
+    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block)
         => new(
             Token(TokenKind.Identifier, identifier),
-            parameters.Select(x => Token(TokenKind.Identifier, identifier)).ToList(),
+            parameters.Select(x => Token(TokenKind.Identifier, x)).ToList(),
             block
         );
 
@@ -48,6 +50,6 @@ static class AstBuilder
             int x => new IntegerLiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
             double x => new FloatLiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
             string x => new(Token(TokenKind.StringLiteral, x)),
-            _ => new(Token(TokenKind.Unknown, value?.ToString() ?? "")),
+            _ => new(Token(TokenKind.Unknown, value.ToString() ?? "")),
         };
 }

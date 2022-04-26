@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Elk.Lexing;
@@ -12,10 +14,10 @@ namespace Elk.Interpreting;
 
 class Interpreter
 {
-    private Scope _scope;
+    private Scope.Scope _scope;
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
-    private Expr? _lastExpr = null;
+    private Expr? _lastExpr;
 
     public ShellEnvironment ShellEnvironment { get; }
 
@@ -78,7 +80,7 @@ class Interpreter
 
         return expr switch
         {
-            FunctionExpr e => Visit(e),
+            FunctionExpr _ => Visit(),
             LetExpr e => Visit(e),
             KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
@@ -98,7 +100,7 @@ class Interpreter
         };
     }
 
-    private IRuntimeValue Visit(FunctionExpr _)
+    private IRuntimeValue Visit()
     {
         return RuntimeNil.Value;
     }
@@ -169,7 +171,7 @@ class Interpreter
 
         expr.Branch.IsRoot = expr.IsRoot;
 
-        var enumerator = enumerableValue.GetEnumerator();
+        using var enumerator = enumerableValue.GetEnumerator();
         var scope = new LocalScope(_scope);
         while (enumerator.MoveNext())
         {
@@ -193,11 +195,7 @@ class Interpreter
 
     private IRuntimeValue Visit(TupleExpr expr)
     {
-        var values = new List<IRuntimeValue>();
-        foreach (var subExpr in expr.Values)
-        {
-            values.Add(Next(subExpr));
-        }
+        var values = expr.Values.Select(Next).ToList();
 
         return new RuntimeTuple(values);
     }
@@ -300,11 +298,13 @@ class Interpreter
 
             return result;
         }
-        else if (expr.Operator == TokenKind.Equals)
+        
+        if (expr.Operator == TokenKind.Equals)
         {
             return EvaluateAssignment(expr.Left, Next(expr.Right));
         }
-        else if (expr.Operator == TokenKind.If)
+        
+        if (expr.Operator == TokenKind.If)
         {
             return Next(expr.Right).As<RuntimeBoolean>().Value
                 ? Next(expr.Left)
