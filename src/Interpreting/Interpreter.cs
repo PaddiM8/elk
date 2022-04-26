@@ -25,8 +25,11 @@ class Interpreter
         ShellEnvironment = new ShellEnvironment();
     }
 
-    public IRuntimeValue Interpret(List<Expr> ast)
+    public IRuntimeValue Interpret(List<Expr> ast, GlobalScope? scope = null)
     {
+        if (scope != null)
+            _scope = scope;
+
         IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
         {
