@@ -13,7 +13,7 @@ static class AstBuilder
     public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block)
         => new(
             Token(TokenKind.Identifier, identifier),
-            parameters.Select(x => Token(TokenKind.Identifier, x)).ToList(),
+            parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null)).ToList(),
             block
         );
 
