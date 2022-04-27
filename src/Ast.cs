@@ -32,15 +32,17 @@ class EmptyExpr : Expr
     }
 }
 
+record Parameter(Token Identifier, Expr? DefaultValue);
+
 class FunctionExpr : Expr
 {
     public Token Identifier { get; }
 
-    public List<Token> Parameters { get; }
+    public List<Parameter> Parameters { get; }
 
     public BlockExpr Block { get; }
 
-    public FunctionExpr(Token identifier, List<Token> parameters, BlockExpr block)
+    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block)
         : base(identifier.Position)
     {
         Identifier = identifier;
