@@ -3,10 +3,10 @@ using Newtonsoft.Json;
 
 namespace Elk.Lexing;
 
-internal record struct TextPos(int Line, int Column);
+record struct TextPos(int Line, int Column);
 
 [JsonConverter(typeof(TokenConverter))]
-internal record Token(TokenKind Kind, string Value, TextPos Position);
+record Token(TokenKind Kind, string Value, TextPos Position);
 
 class TokenConverter : JsonConverter<Token>
 {

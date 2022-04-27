@@ -79,7 +79,7 @@ internal class Parser
         var functionScope = new LocalScope(_scope);
         foreach (var parameter in parameters)
         {
-            functionScope.AddVariable(parameter.Value, RuntimeNil.Value);
+            functionScope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
         }
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
@@ -124,17 +124,22 @@ internal class Parser
         return Parse(Lexer.Lex(File.ReadAllText(absolutePath)), _scope.GlobalScope, absolutePath);
     }
 
-    private List<Token> ParseParameterList()
+    private List<Parameter> ParseParameterList()
     {
         EatExpected(TokenKind.OpenParenthesis);
-        var parameters = new List<Token>();
+        var parameters = new List<Parameter>();
 
         do
         {
             if (Match(TokenKind.ClosedParenthesis))
                 break;
 
-            parameters.Add(EatExpected(TokenKind.Identifier));
+            var identifier = EatExpected(TokenKind.Identifier);
+            Expr? defaultValue = null;
+            if (AdvanceIf(TokenKind.Equals))
+                defaultValue = ParseExpr();
+            
+            parameters.Add(new Parameter(identifier, defaultValue));
         }
         while(AdvanceIf(TokenKind.Comma));
 
@@ -588,7 +593,9 @@ internal class Parser
     private Expr ParseIdentifier()
     {
         var pos = Current?.Position ?? new TextPos(0, 0);
-        var identifier = new Token(TokenKind.Identifier, ParsePath(), pos);
+        var identifier = Match(TokenKind.Identifier)
+            ? Eat()
+            : new Token(TokenKind.Identifier, ParsePath(), pos);
         if (AdvanceIf(TokenKind.OpenParenthesis))
         {
             var arguments = new List<Expr>();
@@ -603,50 +610,49 @@ internal class Parser
 
             return new CallExpr(identifier, arguments, CallStyle.Parenthesized);
         }
-        else if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
+        
+        if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
         {
             return new VariableExpr(identifier);
         }
-        else
+        
+        var textArguments = new List<Expr>();
+        var currentText = new StringBuilder();
+        AdvanceIf(TokenKind.WhiteSpace);
+
+        while (!ReachedTextEnd())
         {
-            var textArguments = new List<Expr>();
-            var currentText = new StringBuilder();
-            AdvanceIf(TokenKind.WhiteSpace);
-
-            while (!ReachedTextEnd())
+            if (AdvanceIf(TokenKind.WhiteSpace))
             {
-                if (AdvanceIf(TokenKind.WhiteSpace))
-                {
-                    var token = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
-                    textArguments.Add(new LiteralExpr(token));
-                    currentText.Clear();
-                    continue;
-                }
-
-                var next = Peek();
-                if (MatchInclWhiteSpace(TokenKind.Tilde) &&
-                    (next == null || next.Kind == TokenKind.Slash || next.Kind == TokenKind.WhiteSpace))
-                {
-                    Eat();
-                    currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-                }
-                else
-                {
-                    currentText.Append(Eat().Value);
-                }
+                var token = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
+                textArguments.Add(new LiteralExpr(token));
+                currentText.Clear();
+                continue;
             }
 
-            // There will still be some text left that needs to be added since
-            // currentText is only moved to textArguments when encountering a space,
-            // which normally are not present at the end.
-            if (currentText.Length > 0)
+            var next = Peek();
+            if (MatchInclWhiteSpace(TokenKind.Tilde) &&
+                (next == null || next.Kind == TokenKind.Slash || next.Kind == TokenKind.WhiteSpace))
             {
-                var finalToken = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
-                textArguments.Add(new LiteralExpr(finalToken));
+                Eat();
+                currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             }
-
-            return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
+            else
+            {
+                currentText.Append(Eat().Value);
+            }
         }
+
+        // There will still be some text left that needs to be added since
+        // currentText is only moved to textArguments when encountering a space,
+        // which normally are not present at the end.
+        if (currentText.Length > 0)
+        {
+            var finalToken = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
+            textArguments.Add(new LiteralExpr(finalToken));
+        }
+
+        return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
     }
 
     private string ParsePath()

@@ -202,13 +202,7 @@ class Interpreter
 
     private IRuntimeValue Visit(ListExpr expr)
     {
-        var values = new List<IRuntimeValue>();
-        foreach (var subExpr in expr.Values)
-        {
-            values.Add(Next(subExpr));
-        }
-
-        return new RuntimeList(values);
+        return new RuntimeList(expr.Values.Select(Next).ToList());
     }
 
     private IRuntimeValue Visit(DictionaryExpr expr)
@@ -447,15 +441,28 @@ class Interpreter
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
     {
-        if (call.Arguments.Count != function.Parameters.Count)
-        {
-            throw new RuntimeException($"Expected {function.Parameters.Count} arguments but got {call.Arguments.Count}");
-        }
-
         var functionScope = new LocalScope(_scope);
-        foreach (var (parameter, argument) in function.Parameters.Zip(call.Arguments))
+        bool encounteredDefaultParameter = false;
+        foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
         {
-            functionScope.AddVariable(parameter.Value, Next(argument));
+            if (parameter?.DefaultValue != null)
+                encounteredDefaultParameter = true;
+            
+            if (parameter == null ||
+                argument == null && parameter.DefaultValue == null)
+            {
+                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, call.Arguments.Count);
+            }
+
+            if (encounteredDefaultParameter && parameter.DefaultValue == null)
+            {
+                throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
+            }
+            
+            functionScope.AddVariable(
+                parameter.Identifier.Value,
+                argument == null ? Next(parameter.DefaultValue!) : Next(argument)
+            );
         }
 
         function.Block.IsRoot = call.IsRoot;
