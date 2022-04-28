@@ -1,6 +1,9 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "elk",
+	"scopeName": "source.elk",
+	"foldingStartMarker": "\\{\\s*$",
+	"foldingEndMarker": "^\\s*\\}",
 	"patterns": [
 		{
 			"include": "#constants"
@@ -50,7 +53,7 @@
 						}
 					},
 					"name": "meta.function.elk",
-					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s[\\w\"][^\n]*))"
+					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s(?!in\\b)[\\w\"][^\n]*))"
 				}
 			]
 		},
@@ -74,5 +77,4 @@
 			]
 		}
 	},
-	"scopeName": "source.elk"
 }
