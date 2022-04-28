@@ -136,10 +136,18 @@ internal class Parser
 
             var identifier = EatExpected(TokenKind.Identifier);
             Expr? defaultValue = null;
+            bool variadic = false;
+            
             if (AdvanceIf(TokenKind.Equals))
                 defaultValue = ParseExpr();
             
-            parameters.Add(new Parameter(identifier, defaultValue));
+            if (AdvanceIf(TokenKind.DotDot))
+            {
+                EatExpected(TokenKind.Dot);
+                variadic = true;
+            }
+
+            parameters.Add(new Parameter(identifier, defaultValue, variadic));
         }
         while(AdvanceIf(TokenKind.Comma));
 
