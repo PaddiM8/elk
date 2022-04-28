@@ -21,17 +21,14 @@ class Interpreter
 
     public ShellEnvironment ShellEnvironment { get; }
 
-    public Interpreter()
+    public Interpreter(GlobalScope? scope = null)
     {
-        _scope = new GlobalScope();
+        _scope = scope ?? new GlobalScope();
         ShellEnvironment = new ShellEnvironment();
     }
 
-    public IRuntimeValue Interpret(List<Expr> ast, GlobalScope? scope = null)
+    public IRuntimeValue Interpret(List<Expr> ast)
     {
-        if (scope != null)
-            _scope = scope;
-
         IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
         {
@@ -69,6 +66,12 @@ class Interpreter
 
             return RuntimeNil.Value;
         }
+    }
+
+    public static void InterpretBlock(BlockExpr block, LocalScope scope, PauseToken<IRuntimeValue> pauseToken)
+    {
+        var interpreter = new Interpreter(scope.GlobalScope);
+        interpreter.Visit(block, scope, pauseToken);
     }
 
     private IRuntimeValue Next(Expr expr)
@@ -217,7 +220,7 @@ class Interpreter
         return new RuntimeDictionary(dict);
     }
 
-    private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)
+    private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null, PauseToken<IRuntimeValue>? pauseToken = null)
     {
         _scope = scope ?? new LocalScope(_scope);
 
@@ -225,9 +228,19 @@ class Interpreter
         IRuntimeValue lastValue = RuntimeNil.Value;
         foreach (var child in expr.Expressions)
         {
+            if (child is KeywordExpr { Kind: TokenKind.Yield } keywordExpr)
+            {
+                var yieldValue = keywordExpr.Value == null
+                    ? RuntimeNil.Value
+                    : Next(keywordExpr.Value);
+                pauseToken!.Value.PauseIfRequestedAsync(yieldValue).Wait();
+
+                continue;
+            }
+            
             // If there is a value to be returned, stop immediately
             // and make sure it's passed upwards.
-            if (BlockShouldExit(expr, out IRuntimeValue? returnValue))
+            if (BlockShouldExit(expr, out var returnValue))
             {
                 if (returnValue != null)
                     lastValue = returnValue;
@@ -248,7 +261,12 @@ class Interpreter
 
         _scope = _scope.Parent!;
 
-        BlockShouldExit(expr, out IRuntimeValue? explicitReturnValue);
+        BlockShouldExit(expr, out var explicitReturnValue);
+
+        if (expr.ParentStructureKind == StructureKind.Function)
+        {
+            pauseToken?.FinishAsync().Wait();
+        }
 
         return explicitReturnValue ?? lastValue;
     }
@@ -485,6 +503,11 @@ class Interpreter
             );
         }
 
+        if (function.HasYield)
+        {
+            return new RuntimeGenerator(function.Block, functionScope);
+        }
+        
         function.Block.IsRoot = call.IsRoot;
 
         return Visit(function.Block, functionScope);

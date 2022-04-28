@@ -6,7 +6,7 @@ internal enum TokenKind
 
     // Keywords
     Fn, Let, If, Else, For, In, Return, Break, Continue, Include,
-    Nil, True, False,
+    Nil, True, False, Yield,
 
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,

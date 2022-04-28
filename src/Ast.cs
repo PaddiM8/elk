@@ -41,13 +41,16 @@ class FunctionExpr : Expr
     public List<Parameter> Parameters { get; }
 
     public BlockExpr Block { get; }
+    
+    public bool HasYield { get; }
 
-    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block)
+    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, bool hasYield)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Parameters = parameters;
         Block = block;
+        HasYield = hasYield;
     }
 }
 

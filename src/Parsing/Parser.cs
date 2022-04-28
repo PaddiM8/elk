@@ -16,6 +16,7 @@ internal class Parser
     private Scope _scope;
     private readonly string _filePath;
     private bool _allowEndOfExpression;
+    private bool _encounteredYield;
 
     private Token? Current => _index < _tokens.Count
         ? _tokens[_index]
@@ -62,7 +63,7 @@ internal class Parser
         {
             return ParseFn();
         }
-        else if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
+        else if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue, TokenKind.Yield))
         {
             return ParseKeywordExpr();
         }
@@ -72,6 +73,10 @@ internal class Parser
 
     private Expr ParseFn()
     {
+        // Should already be false at this stage, but a user error could confuse
+        // things.
+        _encounteredYield = false;
+        
         EatExpected(TokenKind.Fn);
         var identifier = EatExpected(TokenKind.Identifier);
 
@@ -83,9 +88,10 @@ internal class Parser
         }
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
-        var function = new FunctionExpr(identifier, parameters, block);
+        var function = new FunctionExpr(identifier, parameters, block, _encounteredYield);
 
         _scope.GlobalScope.AddFunction(function);
+        _encounteredYield = false;
 
         return function;
     }
@@ -96,6 +102,9 @@ internal class Parser
         _allowEndOfExpression = true;
         var value = ParseExpr();
         _allowEndOfExpression = false;
+
+        if (keyword.Kind == TokenKind.Yield)
+            _encounteredYield = true;
 
         return new KeywordExpr(
             keyword.Kind,

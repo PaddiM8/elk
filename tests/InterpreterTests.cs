@@ -58,7 +58,7 @@ internal class InterpreterTests
         var scope = new GlobalScope();
         scope.AddVariable("x", RuntimeNil.Value);
 
-        var result = new Interpreter().Interpret(ast, scope);
+        var result = new Interpreter(scope).Interpret(ast);
         Assert.True(SameResult(2, result));
     }
 

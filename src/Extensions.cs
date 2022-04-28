@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Elk;
 
@@ -30,5 +31,10 @@ public static class Extensions
             hasNext1 = enumerator1.MoveNext();
             hasNext2 = enumerator2.MoveNext();
         }
+    }
+    
+    public static async Task<IEnumerable<T>> WhenAll<T>(this IEnumerable<Task<T>> tasks)
+    {
+        return await Task.WhenAll(tasks);
     }
 }
