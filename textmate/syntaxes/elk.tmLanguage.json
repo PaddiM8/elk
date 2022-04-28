@@ -1,0 +1,78 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "elk",
+	"patterns": [
+		{
+			"include": "#constants"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#entity"
+		},
+		{
+			"include": "#comment"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"constants": {
+			"patterns": [
+				{
+					"name": "constant.numeric.elk",
+					"match": "(?<!\\w)\\d+(\\.\\d+)?"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.elk",
+					"match": "\\b(fn|if|else|return|include|let|true|false|for|in|nil|break|continue)\\b"
+				}
+			]
+		},
+		"entity": {
+			"patterns": [
+				{
+					"captures": {
+						"1": {
+							"name": "support.function"
+						},
+						"2": {
+							"name": "support.function"
+						},
+						"3": {
+							"name": "string.quoted.double.elk"
+						}
+					},
+					"name": "meta.function.elk",
+					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s[\\w\"][^\n]*))"
+				}
+			]
+		},
+		"comment": {
+			"patterns": [
+				{
+					"name": "comment.double-slash.elk",
+					"match": "#.+(\\n|\\0)"
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.elk",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.elk",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.elk"
+}
