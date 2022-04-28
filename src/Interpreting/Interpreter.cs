@@ -117,7 +117,7 @@ class Interpreter
         }
         else
         {
-            _scope.UpdateVariable(expr.Identifier.Value, Next(expr.Value));
+            _scope.AddVariable(expr.Identifier.Value, Next(expr.Value));
         }
 
         return RuntimeNil.Value;
