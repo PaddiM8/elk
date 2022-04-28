@@ -443,24 +443,44 @@ class Interpreter
     {
         var functionScope = new LocalScope(_scope);
         bool encounteredDefaultParameter = false;
+        RuntimeList? variadicArguments = null;
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
         {
             if (parameter?.DefaultValue != null)
                 encounteredDefaultParameter = true;
-            
-            if (parameter == null ||
-                argument == null && parameter.DefaultValue == null)
+
+            if (parameter == null && variadicArguments == null ||
+                argument == null && parameter?.DefaultValue == null && parameter?.Variadic is false)
             {
-                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, call.Arguments.Count);
+                bool variadic = function.Parameters.LastOrDefault()?.Variadic is true;
+                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, call.Arguments.Count, variadic);
             }
 
-            if (encounteredDefaultParameter && parameter.DefaultValue == null)
+            if (encounteredDefaultParameter && parameter?.DefaultValue == null)
             {
                 throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
             }
+
+            if (variadicArguments != null && parameter != null)
+            {
+                throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
+            }
+            
+            if (parameter?.Variadic is true)
+            {
+                variadicArguments = new RuntimeList(new List<IRuntimeValue>());
+                functionScope.AddVariable(parameter.Identifier.Value, variadicArguments);
+            }
+
+            if (variadicArguments != null)
+            {
+                if (argument != null)
+                    variadicArguments.Values.Add(Next(argument));
+                continue;
+            }
             
             functionScope.AddVariable(
-                parameter.Identifier.Value,
+                parameter!.Identifier.Value,
                 argument == null ? Next(parameter.DefaultValue!) : Next(argument)
             );
         }

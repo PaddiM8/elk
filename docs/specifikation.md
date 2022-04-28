@@ -88,16 +88,19 @@ echo("Age: " + (person["age"] ?? "unknown"))
     | return <expr>
     | <or>
 
-<fn> ::= fn <identifier> ( <identifierList> ) <blockOrSingle>
+<fn> ::= fn <identifier> ( <parameterList> ) <blockOrSingle>
 <let> ::= let <identifier> = <expr>
 <if> ::= if <expr> <blockOrSingle>
     | if <expr> <blockOrSingle> else <expr>
 <for> ::= for <identifier> in <expr> <blockOrSingle>
 <include> ::= include <string>
 
-<identifierList> ::= <identifierList> , <identifier>
-    | <identifier>
+<parameterList> ::= <parameterList> , <parameter>
+    | <parameter>
     | <empty>
+<parameter> ::= <identifier>
+    | <identifier> = <expr>
+    | <identifier> ...
 <blockOrSingle> ::= <block>
     | : <expr>
 ```

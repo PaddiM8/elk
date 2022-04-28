@@ -32,7 +32,7 @@ class EmptyExpr : Expr
     }
 }
 
-record Parameter(Token Identifier, Expr? DefaultValue);
+record Parameter(Token Identifier, Expr? DefaultValue, bool Variadic);
 
 class FunctionExpr : Expr
 {
