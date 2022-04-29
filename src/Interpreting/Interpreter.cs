@@ -318,7 +318,7 @@ class Interpreter
         return expr.Operator switch
         {
             TokenKind.Percent => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
-            _ => left.Operation(expr.Operator, right)
+            _ => left.Operation(expr.Operator, right),
         };
     }
 
