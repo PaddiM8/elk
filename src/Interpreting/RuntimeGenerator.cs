@@ -1,6 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -8,7 +8,7 @@ using Elk.Lexing;
 
 namespace Elk.Interpreting;
 
-class RuntimeGenerator : IRuntimeValue, IEnumerable<IRuntimeValue?>
+class RuntimeGenerator : IRuntimeValue, IAsyncEnumerable<IRuntimeValue?>
 {
     private readonly BlockExpr _block;
     private readonly LocalScope _scope;
@@ -19,11 +19,8 @@ class RuntimeGenerator : IRuntimeValue, IEnumerable<IRuntimeValue?>
         _scope = scope;
     }
 
-    public IEnumerator<IRuntimeValue?> GetEnumerator()
+    public IAsyncEnumerator<IRuntimeValue?> GetAsyncEnumerator(CancellationToken cancellationToken = new())
         => new RuntimeGeneratorEnumerator(_block, _scope);
-
-    IEnumerator IEnumerable.GetEnumerator()
-        => GetEnumerator();
 
     public IRuntimeValue As(Type toType)
         => toType switch
@@ -44,12 +41,9 @@ class RuntimeGenerator : IRuntimeValue, IEnumerable<IRuntimeValue?>
         => $"generator<{GetHashCode()}>";
 }
 
-class RuntimeGeneratorEnumerator : IEnumerator<IRuntimeValue?>
+class RuntimeGeneratorEnumerator : IAsyncEnumerator<IRuntimeValue?>
 {
     public IRuntimeValue? Current { get; private set;  }
-
-    object? IEnumerator.Current
-        => Current;
 
     private readonly BlockExpr _block;
     private readonly LocalScope _scope;
@@ -64,7 +58,7 @@ class RuntimeGeneratorEnumerator : IEnumerator<IRuntimeValue?>
         Current = null;
     }
 
-    public bool MoveNext()
+    public async ValueTask<bool> MoveNextAsync()
     {
         if (!_movedOnce)
             Init();
@@ -72,11 +66,11 @@ class RuntimeGeneratorEnumerator : IEnumerator<IRuntimeValue?>
         if (_pauseTokenSource.Finished)
             return false;
 
-        _pauseTokenSource.ResumeAsync().Wait();
-        Current = _pauseTokenSource.PauseAsync().Result;
+        await _pauseTokenSource.ResumeAsync();
+        Current = _pauseTokenSource.PauseAsync().GetAwaiter().GetResult();
 
         if (_pauseTokenSource.Finished)
-            _pauseTokenSource.ResumeAsync().Wait();
+            await _pauseTokenSource.ResumeAsync();
 
         return !_pauseTokenSource.Finished;
     }
@@ -91,15 +85,17 @@ class RuntimeGeneratorEnumerator : IEnumerator<IRuntimeValue?>
     {
         _movedOnce = true;
         _task = Task.Run(
-            () =>
+            async () =>
             {
-                Interpreter.InterpretBlock(_block, _scope, _pauseTokenSource.Token);
+                await Interpreter.InterpretBlock(_block, _scope, _pauseTokenSource.Token);
             }
         );
     }
 
-    void IDisposable.Dispose()
+    ValueTask IAsyncDisposable.DisposeAsync()
     {
         _task?.Dispose();
+
+        return default;
     }
 }

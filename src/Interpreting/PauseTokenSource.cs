@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,14 +12,13 @@ public class PauseTokenSource<T>
         => new(this);
 
     private TaskCompletionSource<bool>? _resumeRequestTcs;
-    private TaskCompletionSource<bool>? _pauseConfirmationTcs;
+    private TaskCompletionSource<T?>? _pauseConfirmationTcs;
 
     private readonly SemaphoreSlim _stateAsyncLock = new(1);
     private readonly SemaphoreSlim _pauseRequestAsyncLock = new(1);
 
     private bool _paused;
     private bool _pauseRequested;
-    private T? _retrievedValue;
 
     public async Task FinishAsync()
     {
@@ -61,22 +59,22 @@ public class PauseTokenSource<T>
 
     public async Task<T?> PauseAsync(CancellationToken token = default)
     {
-        await _stateAsyncLock.WaitAsync();
+        await _stateAsyncLock.WaitAsync(token);
         try
         {
             if (_paused)
             {
-                return _retrievedValue;
+                return default;
             }
 
-            Task pauseConfirmationTask;
+            Task<T?> pauseConfirmationTask;
 
-            await _pauseRequestAsyncLock.WaitAsync();
+            await _pauseRequestAsyncLock.WaitAsync(token);
             try
             {
                 _pauseRequested = true;
                 _resumeRequestTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _pauseConfirmationTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _pauseConfirmationTcs = new TaskCompletionSource<T?>(TaskCreationOptions.RunContinuationsAsynchronously);
                 pauseConfirmationTask = WaitForPauseConfirmationAsync(token);
             }
             finally
@@ -84,16 +82,15 @@ public class PauseTokenSource<T>
                 _pauseRequestAsyncLock.Release();
             }
 
-            await pauseConfirmationTask;
-
+            var result = await pauseConfirmationTask;
             _paused = true;
+
+            return result;
         }
         finally
         {
             _stateAsyncLock.Release();
         }
-
-        return _retrievedValue;
     }
 
     private async Task WaitForResumeRequestAsync(CancellationToken token)
@@ -104,18 +101,17 @@ public class PauseTokenSource<T>
         }
     }
 
-    private async Task WaitForPauseConfirmationAsync(CancellationToken token)
+    private async Task<T?> WaitForPauseConfirmationAsync(CancellationToken token)
     {
         await using (token.Register(() => _pauseConfirmationTcs!.TrySetCanceled(), useSynchronizationContext: false))
         {
-            await _pauseConfirmationTcs!.Task;
+            return await _pauseConfirmationTcs!.Task;
         }
     }
 
 
     internal async Task PauseIfRequestedAsync(T? returnValue)
     {
-        _retrievedValue = returnValue;
         Task resumeRequestTask;
         await _pauseRequestAsyncLock.WaitAsync(CancellationToken.None);
         try
@@ -124,7 +120,7 @@ public class PauseTokenSource<T>
                 return;
 
             resumeRequestTask = WaitForResumeRequestAsync(CancellationToken.None);
-            _pauseConfirmationTcs?.TrySetResult(true);
+            _pauseConfirmationTcs?.TrySetResult(returnValue);
         }
         finally
         {

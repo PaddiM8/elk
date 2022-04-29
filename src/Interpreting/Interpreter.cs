@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -27,14 +28,14 @@ class Interpreter
         ShellEnvironment = new ShellEnvironment();
     }
 
-    public IRuntimeValue Interpret(List<Expr> ast)
+    public async Task<IRuntimeValue> Interpret(List<Expr> ast)
     {
         IRuntimeValue lastResult = RuntimeNil.Value;
         foreach (var expr in ast)
         {
             try
             {
-                lastResult = Next(expr);
+                lastResult = await Next(expr);
             }
             catch (RuntimeException e)
             {
@@ -48,7 +49,7 @@ class Interpreter
         return lastResult;
     }
 
-    public IRuntimeValue Interpret(string input, string? filePath)
+    public async Task<IRuntimeValue> Interpret(string input, string? filePath)
     {
         try
         {
@@ -58,7 +59,7 @@ class Interpreter
                 filePath ?? ShellEnvironment.WorkingDirectory
             );
 
-            return Interpret(ast);
+            return await Interpret(ast);
         }
         catch (ParseException e)
         {
@@ -68,13 +69,13 @@ class Interpreter
         }
     }
 
-    public static void InterpretBlock(BlockExpr block, LocalScope scope, PauseToken<IRuntimeValue> pauseToken)
+    public static async Task InterpretBlock(BlockExpr block, LocalScope scope, PauseToken<IRuntimeValue> pauseToken)
     {
         var interpreter = new Interpreter(scope.GlobalScope);
-        interpreter.Visit(block, scope, pauseToken);
+        await interpreter.Visit(block, scope, pauseToken);
     }
 
-    private IRuntimeValue Next(Expr expr)
+    private async Task<IRuntimeValue> Next(Expr expr)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
@@ -84,21 +85,21 @@ class Interpreter
         return expr switch
         {
             FunctionExpr _ => Visit(),
-            LetExpr e => Visit(e),
-            KeywordExpr e => Visit(e),
-            IfExpr e => Visit(e),
-            ForExpr e => Visit(e),
-            TupleExpr e => Visit(e),
-            ListExpr e => Visit(e),
-            DictionaryExpr e => Visit(e),
-            BlockExpr e => Visit(e),
+            LetExpr e => await Visit(e),
+            KeywordExpr e => await Visit(e),
+            IfExpr e => await Visit(e),
+            ForExpr e => await Visit(e),
+            TupleExpr e => await Visit(e),
+            ListExpr e => await Visit(e),
+            DictionaryExpr e => await Visit(e),
+            BlockExpr e => await Visit(e),
             LiteralExpr e => Visit(e),
-            BinaryExpr e => Visit(e),
-            UnaryExpr e => Visit(e),
-            RangeExpr e => Visit(e),
-            IndexerExpr e => Visit(e),
+            BinaryExpr e => await Visit(e),
+            UnaryExpr e => await Visit(e),
+            RangeExpr e => await Visit(e),
+            IndexerExpr e => await Visit(e),
             VariableExpr e => Visit(e),
-            CallExpr e => Visit(e),
+            CallExpr e => await Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
     }
@@ -108,25 +109,25 @@ class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(LetExpr expr)
+    private async Task<IRuntimeValue> Visit(LetExpr expr)
     {
         string name = expr.Identifier.Value;
         if (name.StartsWith('$'))
         {
             Environment.SetEnvironmentVariable(
                 name[1..],
-                Next(expr.Value).As<RuntimeString>().Value
+                (await Next(expr.Value)).As<RuntimeString>().Value
             );
         }
         else
         {
-            _scope.AddVariable(expr.Identifier.Value, Next(expr.Value));
+            _scope.AddVariable(expr.Identifier.Value, await Next(expr.Value));
         }
 
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(KeywordExpr expr)
+    private async Task<IRuntimeValue> Visit(KeywordExpr expr)
     {
         var returnKind = expr.Kind switch
         {
@@ -137,16 +138,16 @@ class Interpreter
         };
         var value = expr.Value == null
             ? RuntimeNil.Value
-            : Next(expr.Value);
+            : await Next(expr.Value);
 
         _returnHandler.TriggerReturn(returnKind, value);
 
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(IfExpr expr)
+    private async Task<IRuntimeValue> Visit(IfExpr expr)
     {
-        var condition = Next(expr.Condition);
+        var condition = await Next(expr.Condition);
         var conditionValue = condition.As<RuntimeBoolean>();
 
         expr.ThenBranch.IsRoot = expr.IsRoot;
@@ -155,72 +156,98 @@ class Interpreter
 
         if (conditionValue.Value)
         {
-            return Next(expr.ThenBranch);
+            return await Next(expr.ThenBranch);
         }
         else
         {
             return expr.ElseBranch == null
                 ? RuntimeNil.Value
-                : Next(expr.ElseBranch);
+                : await Next(expr.ElseBranch);
         }
     }
 
-    private IRuntimeValue Visit(ForExpr expr)
+    private async Task<IRuntimeValue> Visit(ForExpr expr)
     {
-        var value = Next(expr.Value);
-
-        if (value is not IEnumerable<IRuntimeValue> enumerableValue)
-            throw new RuntimeIterationException(value.GetType());
-
+        var value = await Next(expr.Value);
         expr.Branch.IsRoot = expr.IsRoot;
 
-        using var enumerator = enumerableValue.GetEnumerator();
         var scope = new LocalScope(_scope);
-        while (enumerator.MoveNext())
+        if (value is IEnumerable<IRuntimeValue> enumerableValue)
         {
-            scope.AddVariable(expr.Identifier.Value, enumerator.Current);
-            Visit(expr.Branch, scope);
-            scope.Clear();
-
-            if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
+            foreach (var item in enumerableValue)
             {
-                return _returnHandler.Collect();
+                var result = await EvaluateLoopIteration(expr, scope, item);
+                if (result != null)
+                    return result;
             }
-
-            if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
+        }
+        else if (value is IAsyncEnumerable<IRuntimeValue> asyncEnumerableValue)
+        {
+            await foreach (var item in asyncEnumerableValue)
             {
-                _returnHandler.Collect();
+                var result = await EvaluateLoopIteration(expr, scope, item);
+                if (result != null)
+                    return result;
             }
+        }
+        else
+        {
+            throw new RuntimeIterationException(value.GetType());
         }
 
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(TupleExpr expr)
+    private async Task<IRuntimeValue?> EvaluateLoopIteration(ForExpr forExpr, LocalScope scope, IRuntimeValue current)
     {
-        var values = expr.Values.Select(Next).ToList();
+        scope.AddVariable(forExpr.Identifier.Value, current);
+        await Visit(forExpr.Branch, scope);
+        scope.Clear();
+
+        if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
+        {
+            return _returnHandler.Collect();
+        }
+
+        if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
+        {
+            _returnHandler.Collect();
+        }
+
+        return null;
+    }
+
+    private async Task<IRuntimeValue> Visit(TupleExpr expr)
+    {
+        var values = await expr.Values
+            .Select(async x => await Next(x))
+            .WhenAll();
 
         return new RuntimeTuple(values);
     }
 
-    private IRuntimeValue Visit(ListExpr expr)
+    private async Task<IRuntimeValue> Visit(ListExpr expr)
     {
-        return new RuntimeList(expr.Values.Select(Next).ToList());
+        var values = await expr.Values
+            .Select(async x => await Next(x))
+            .WhenAll();
+        
+        return new RuntimeList(values);
     }
 
-    private IRuntimeValue Visit(DictionaryExpr expr)
+    private async Task<IRuntimeValue> Visit(DictionaryExpr expr)
     {
         var dict = new Dictionary<int, (IRuntimeValue, IRuntimeValue)>();
         foreach (var entry in expr.Entries)
         {
             var key = new RuntimeString(entry.Item1);
-            dict.Add(key.GetHashCode(), (key, Next(entry.Item2)));
+            dict.Add(key.GetHashCode(), (key, await Next(entry.Item2)));
         }
 
         return new RuntimeDictionary(dict);
     }
 
-    private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null, PauseToken<IRuntimeValue>? pauseToken = null)
+    private async Task<IRuntimeValue> Visit(BlockExpr expr, LocalScope? scope = null, PauseToken<IRuntimeValue>? pauseToken = null)
     {
         _scope = scope ?? new LocalScope(_scope);
 
@@ -232,8 +259,8 @@ class Interpreter
             {
                 var yieldValue = keywordExpr.Value == null
                     ? RuntimeNil.Value
-                    : Next(keywordExpr.Value);
-                pauseToken!.Value.PauseIfRequestedAsync(yieldValue).Wait();
+                    : await Next(keywordExpr.Value);
+                await pauseToken!.Value.PauseIfRequestedAsync(yieldValue);
 
                 continue;
             }
@@ -250,12 +277,12 @@ class Interpreter
             if (i == expr.Expressions.Count - 1)
             {
                 child.IsRoot = expr.IsRoot;
-                lastValue = Next(child);
+                lastValue = await Next(child);
                 break;
             }
 
             child.IsRoot = true;
-            Next(child);
+            await Next(child);
             i++;
         }
 
@@ -263,10 +290,8 @@ class Interpreter
 
         BlockShouldExit(expr, out var explicitReturnValue);
 
-        if (expr.ParentStructureKind == StructureKind.Function)
-        {
-            pauseToken?.FinishAsync().Wait();
-        }
+        if (pauseToken != null)
+            await pauseToken.Value.FinishAsync();
 
         return explicitReturnValue ?? lastValue;
     }
@@ -300,47 +325,47 @@ class Interpreter
         };
     }
 
-    private IRuntimeValue Visit(BinaryExpr expr)
+    private async Task<IRuntimeValue> Visit(BinaryExpr expr)
     {
         if (expr.Operator == TokenKind.Pipe)
         {
             _redirector.Open();
-            _redirector.Send(Next(expr.Left));
-            var result = Next(expr.Right);
+            _redirector.Send(await Next(expr.Left));
+            var result = await Next(expr.Right);
 
             return result;
         }
         
         if (expr.Operator == TokenKind.Equals)
         {
-            return EvaluateAssignment(expr.Left, Next(expr.Right));
+            return await EvaluateAssignment(expr.Left, await Next(expr.Right));
         }
         
         if (expr.Operator == TokenKind.If)
         {
-            return Next(expr.Right).As<RuntimeBoolean>().Value
-                ? Next(expr.Left)
+            return (await Next(expr.Right)).As<RuntimeBoolean>().Value
+                ? await Next(expr.Left)
                 : RuntimeNil.Value;
         }
 
-        var left = Next(expr.Left);
+        var left = await Next(expr.Left);
         if (expr.Operator == TokenKind.QuestionQuestion)
         {
             return left is RuntimeNil
-                ? Next(expr.Right)
+                ? await Next(expr.Right)
                 : left;
         }
 
-        var right = Next(expr.Right);
+        var right = await Next(expr.Right);
 
         return expr.Operator switch
         {
             TokenKind.Percent => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
-            _ => left.Operation(expr.Operator, right)
+            _ => left.Operation(expr.Operator, right),
         };
     }
 
-    private IRuntimeValue EvaluateAssignment(Expr assignee, IRuntimeValue value)
+    private async Task<IRuntimeValue> EvaluateAssignment(Expr assignee, IRuntimeValue value)
     {
         if (assignee is VariableExpr variable)
         {
@@ -351,10 +376,10 @@ class Interpreter
         }
         else if (assignee is IndexerExpr indexer)
         {
-            if (Next(indexer.Value) is not IIndexable<IRuntimeValue> indexable)
+            if (await Next(indexer.Value) is not IIndexable<IRuntimeValue> indexable)
                 throw new RuntimeUnableToIndexException(value.GetType());
 
-            indexable[Next(indexer.Index)] = value;
+            indexable[await Next(indexer.Index)] = value;
         }
         else
         {
@@ -364,21 +389,21 @@ class Interpreter
         return value;
     }
 
-    private IRuntimeValue Visit(UnaryExpr expr)
+    private async Task<IRuntimeValue> Visit(UnaryExpr expr)
     {
-        var value = Next(expr.Value);
+        var value = await Next(expr.Value);
 
         return value.Operation(expr.Operator);
     }
 
-    private IRuntimeValue Visit(RangeExpr expr)
+    private async Task<IRuntimeValue> Visit(RangeExpr expr)
     {
         int? from = expr.From == null
             ? null
-            : Next(expr.From).As<RuntimeInteger>().Value;
+            : (await Next(expr.From)).As<RuntimeInteger>().Value;
         int? to = expr.To == null
             ? null
-            : Next(expr.To).As<RuntimeInteger>().Value;
+            : (await Next(expr.To)).As<RuntimeInteger>().Value;
         
         if (expr.Inclusive)
         {
@@ -395,12 +420,12 @@ class Interpreter
         return new RuntimeRange(from, to);
     }
 
-    private IRuntimeValue Visit(IndexerExpr expr)
+    private async Task<IRuntimeValue> Visit(IndexerExpr expr)
     {
-        var value = Next(expr.Value);
+        var value = await Next(expr.Value);
         if (value is IIndexable<IRuntimeValue> indexableValue)
         {
-            return indexableValue[Next(expr.Index)];
+            return indexableValue[await Next(expr.Index)];
         }
 
         throw new RuntimeUnableToIndexException(value.GetType());
@@ -421,12 +446,14 @@ class Interpreter
         return _scope.FindVariable(name) ?? RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(CallExpr expr)
+    private async Task<IRuntimeValue> Visit(CallExpr expr)
     {
         string name = expr.Identifier.Value;
         if (name == "cd")
         {
-            var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>().Value);
+            var arguments = await expr.Arguments
+                .Select(async x => (await Next(x)).As<RuntimeString>().Value)
+                .WhenAll();
             string path = arguments.Any()
                 ? string.Join(" ", arguments)
                 : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -444,7 +471,7 @@ class Interpreter
             }
 
             foreach (var argument in expr.Arguments)
-                arguments.Add(Next(argument));
+                arguments.Add(await Next(argument));
 
 
             return StdGateway.Call(name, arguments, ShellEnvironment);
@@ -453,11 +480,11 @@ class Interpreter
         var function = _scope.GlobalScope.FindFunction(name);
 
         return function == null
-            ? EvaluateProgramCall(expr)
-            : EvaluateFunctionCall(expr, function);
+            ? await EvaluateProgramCall(expr)
+            : await EvaluateFunctionCall(expr, function);
     }
 
-    private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
+    private async Task<IRuntimeValue> EvaluateFunctionCall(CallExpr call, FunctionExpr function)
     {
         var functionScope = new LocalScope(_scope);
         bool encounteredDefaultParameter = false;
@@ -493,13 +520,13 @@ class Interpreter
             if (variadicArguments != null)
             {
                 if (argument != null)
-                    variadicArguments.Values.Add(Next(argument));
+                    variadicArguments.Values.Add(await Next(argument));
                 continue;
             }
             
             functionScope.AddVariable(
                 parameter!.Identifier.Value,
-                argument == null ? Next(parameter.DefaultValue!) : Next(argument)
+                argument == null ? await Next(parameter.DefaultValue!) : await Next(argument)
             );
         }
 
@@ -510,15 +537,15 @@ class Interpreter
         
         function.Block.IsRoot = call.IsRoot;
 
-        return Visit(function.Block, functionScope);
+        return await Visit(function.Block, functionScope);
     }
 
-    private IRuntimeValue EvaluateProgramCall(CallExpr expr)
+    private async Task<IRuntimeValue> EvaluateProgramCall(CallExpr expr)
     {
         var arguments = new List<string>();
         foreach (var argumentExpr in expr.Arguments)
         {
-            string value = Next(argumentExpr).As<RuntimeString>().Value;
+            string value = (await Next(argumentExpr)).As<RuntimeString>().Value;
             if (expr.CallStyle == CallStyle.TextArguments)
             {
                 var matcher = new Matcher();
@@ -545,12 +572,12 @@ class Interpreter
         {
             using var streamReader = new StreamReader(ShellEnvironment.GetAbsolutePath(fileName));
             var firstChars = new char[2];
-            streamReader.ReadBlock(firstChars, 0, 2);
+            await streamReader.ReadBlockAsync(firstChars, 0, 2);
 
             if (firstChars[0] == '#' && firstChars[1] == '!')
             {
                 arguments.Insert(0, fileName);
-                fileName = streamReader.ReadLine() ?? "";
+                fileName = await streamReader.ReadLineAsync() ?? "";
             }
         }
 
@@ -578,23 +605,21 @@ class Interpreter
 
         if (_redirector.Status == RedirectorStatus.HasData)
         {
-            using var streamWriter = process.StandardInput;
+            await using var streamWriter = process.StandardInput;
             streamWriter.Write(_redirector.Receive());
         }
 
-        process.WaitForExit();
+        await process.WaitForExitAsync();
 
         if (stealOutput)
         {
             string output = process.ExitCode == 0
-                ? process.StandardOutput.ReadToEnd()
-                : process.StandardError.ReadToEnd();
+                ? await process.StandardOutput.ReadToEndAsync()
+                : await process.StandardError.ReadToEndAsync();
 
             return new RuntimeString(output);
         }
-        else
-        {
-            return RuntimeNil.Value;
-        }
+        
+        return RuntimeNil.Value;
     }
 }
