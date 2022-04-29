@@ -23,7 +23,7 @@ static class Conversion
     public static RuntimeList ToList(IRuntimeValue value)
         => value.As<RuntimeList>();
 
-    [ShellFunction("string")]
+    [ShellFunction("str")]
     public static RuntimeString ToString(IRuntimeValue value)
         => value.As<RuntimeString>();
 }
