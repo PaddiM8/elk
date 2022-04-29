@@ -120,7 +120,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     public void Reset()
     {
-        _pos = (_from ?? 0) - 1;
+        _pos = (_from ?? 0) - _increment;
     }
 
     void IDisposable.Dispose()
