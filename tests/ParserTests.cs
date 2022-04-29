@@ -152,8 +152,8 @@ internal class ParserTests
         Assert.IsInstanceOf<FunctionExpr>(ast[0]);
         Assert.AreEqual("main", ast[0].Identifier.Value);
         Assert.AreEqual(2, ast[0].Parameters.Count);
-        Assert.AreEqual("x", ast[0].Parameters[0].Value);
-        Assert.AreEqual("y", ast[0].Parameters[1].Value);
+        Assert.AreEqual("x", ast[0].Parameters[0].Identifier.Value);
+        Assert.AreEqual("y", ast[0].Parameters[1].Identifier.Value);
         Assert.AreEqual("2", ast[0].Block.Expressions[0].Value.Value);
     }
 }

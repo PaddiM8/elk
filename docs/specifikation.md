@@ -89,10 +89,7 @@ echo("Age: " + (person["age"] ?? "unknown"))
     | <or>
 
 <fn> ::= fn <identifier> ( <parameterList> ) <blockOrSingle>
-<let> ::= let <identifier> = <expr>
-<if> ::= if <expr> <blockOrSingle>
-    | if <expr> <blockOrSingle> else <expr>
-<for> ::= for <identifier> in <expr> <blockOrSingle>
+<let> ::= let <identifierList> = <expr>
 <include> ::= include <string>
 
 <parameterList> ::= <parameterList> , <parameter>
@@ -180,6 +177,16 @@ echo("Age: " + (person["age"] ?? "unknown"))
 <dictEntries> ::= <dictEntries> , <dictEntry>
     | <dictEntry>
 <dictEntry> ::= <identifier> : expr
+
+<if> ::= if <expr> <blockOrSingle>
+    | if <expr> <blockOrSingle> else <expr>
+<for> ::= for <identifierList> in <expr> <blockOrSingle>
+
+<declarationIdentifier> ::= <identifier>
+    \alt ( <identifierList> )
+
+<identifierList> ::= <identifier>
+    \alt <identifier> , <identifierList>
 
 <match> ::= match <expr> { matchArms }
     | match <expr> { matchArms , }
