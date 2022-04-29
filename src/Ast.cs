@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using Elk.Lexing;
 
@@ -53,14 +54,14 @@ class FunctionExpr : Expr
 
 class LetExpr : Expr
 {
-    public Token Identifier { get; }
+    public List<Token> IdentifierList { get; }
 
     public Expr Value { get; }
 
-    public LetExpr(Token identifier, Expr value)
-        : base(identifier.Position)
+    public LetExpr(List<Token> identifierList, Expr value)
+        : base(identifierList.First().Position)
     {
-        Identifier = identifier;
+        IdentifierList = identifierList;
         Value = value;
     }
 }
@@ -194,16 +195,16 @@ class IfExpr : Expr
 
 class ForExpr : Expr
 {
-    public Token Identifier { get; }
+    public List<Token> IdentifierList { get; }
 
     public Expr Value { get; }
 
     public BlockExpr Branch { get; }
 
-    public ForExpr(Token identifier, Expr value, BlockExpr branch)
-        : base(identifier.Position)
+    public ForExpr(List<Token> identifierList, Expr value, BlockExpr branch)
+        : base(identifierList.First().Position)
     {
-        Identifier = identifier;
+        IdentifierList = identifierList;
         Value = value;
         Branch = branch;
     }

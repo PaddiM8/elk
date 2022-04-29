@@ -107,20 +107,44 @@ class Interpreter
 
     private IRuntimeValue Visit(LetExpr expr)
     {
-        string name = expr.Identifier.Value;
+        SetVariables(expr.IdentifierList, Next(expr.Value));
+        
+        return RuntimeNil.Value;
+    }
+
+    private void SetVariables(List<Token> identifiers, IRuntimeValue value, Scope.Scope? scope = null)
+    {
+        if (identifiers.Count > 1)
+        {
+            if (value is not IEnumerable<IRuntimeValue> values)
+            {
+                throw new RuntimeException("Unable to deconstruct value");
+            }
+
+            foreach (var (identifier, deconstructedValue) in identifiers.Zip(values))
+            {
+                SetVariable(identifier.Value, deconstructedValue, scope ?? _scope);
+            }
+        }
+        else
+        {
+            SetVariable(identifiers.First().Value, value, scope ?? _scope);
+        }
+    }
+
+    private void SetVariable(string name, IRuntimeValue value, Scope.Scope scope)
+    {
         if (name.StartsWith('$'))
         {
             Environment.SetEnvironmentVariable(
                 name[1..],
-                Next(expr.Value).As<RuntimeString>().Value
+                value.As<RuntimeString>().Value
             );
         }
         else
         {
-            _scope.AddVariable(expr.Identifier.Value, Next(expr.Value));
+            scope.AddVariable(name, value);
         }
-
-        return RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(KeywordExpr expr)
@@ -169,11 +193,10 @@ class Interpreter
 
         expr.Branch.IsRoot = expr.IsRoot;
 
-        using var enumerator = enumerableValue.GetEnumerator();
         var scope = new LocalScope(_scope);
-        while (enumerator.MoveNext())
+        foreach (var current in enumerableValue)
         {
-            scope.AddVariable(expr.Identifier.Value, enumerator.Current);
+            SetVariables(expr.IdentifierList, current, scope);
             Visit(expr.Branch, scope);
             scope.Clear();
 

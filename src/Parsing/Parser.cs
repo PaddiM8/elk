@@ -494,11 +494,12 @@ internal class Parser
     {
         EatExpected(TokenKind.Let);
 
-        var identifier = EatExpected(TokenKind.Identifier);
+        var identifierList = ParseIdentifierList();
         EatExpected(TokenKind.Equals);
-        _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+        foreach (var identifier in identifierList)
+            _scope.AddVariable(identifier.Value, RuntimeNil.Value);
 
-        return new LetExpr(identifier, ParseExpr());
+        return new LetExpr(identifierList, ParseExpr());
     }
 
     private Expr ParseIf()
@@ -517,15 +518,36 @@ internal class Parser
     private Expr ParseFor()
     {
         EatExpected(TokenKind.For);
-        var identifier = EatExpected(TokenKind.Identifier);
+        var identifierList = ParseIdentifierList();
         EatExpected(TokenKind.In);
         var value = ParseExpr();
 
         var scope = new LocalScope(_scope);
-        _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+        foreach (var identifier in identifierList)
+            _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+        
         var branch = ParseBlockOrSingle(StructureKind.Loop, scope);
 
-        return new ForExpr(identifier, value, branch);
+        return new ForExpr(identifierList, value, branch);
+    }
+
+    private List<Token> ParseIdentifierList()
+    {
+        if (Match(TokenKind.Identifier))
+            return new() { Eat() };
+
+        EatExpected(TokenKind.OpenParenthesis);
+
+        var identifiers = new List<Token>();
+        do
+        {
+            identifiers.Add(EatExpected(TokenKind.Identifier));
+        }
+        while (AdvanceIf(TokenKind.Comma));
+        
+        EatExpected(TokenKind.ClosedParenthesis);
+
+        return identifiers;
     }
 
     private Expr ParseList()

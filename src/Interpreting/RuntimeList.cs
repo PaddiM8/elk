@@ -16,6 +16,12 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
         Values = values.ToList();
     }
 
+    public IEnumerator<IRuntimeValue> GetEnumerator()
+        => Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
+
     public IRuntimeValue this[IRuntimeValue index]
     {
         get
@@ -42,12 +48,6 @@ class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunti
             Values[index.As<RuntimeInteger>().Value] = value;
         }
     }
-
-    public IEnumerator<IRuntimeValue> GetEnumerator()
-        => Values.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator()
-        => GetEnumerator();
 
     public IRuntimeValue As(Type toType)
         => toType switch
