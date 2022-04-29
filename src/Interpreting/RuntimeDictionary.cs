@@ -21,7 +21,7 @@ class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<
     {
         get
         {
-            if (Entries.TryGetValue(index.GetHashCode(), out (IRuntimeValue, IRuntimeValue) value))
+            if (Entries.TryGetValue(index.GetHashCode(), out var value))
                 return value.Item2;
 
             throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
@@ -79,21 +79,19 @@ class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<
 
 class RuntimeDictionaryEnumerator : IEnumerator<IRuntimeValue>
 {
-    public IRuntimeValue Current
-        => _current;
+    public IRuntimeValue Current { get; private set; }
 
     object IEnumerator.Current
         => Current;
 
     private readonly IEnumerable<(IRuntimeValue, IRuntimeValue)> _keyValueSets;
     private IEnumerator<(IRuntimeValue, IRuntimeValue)> _enumerator;
-    private IRuntimeValue _current;
 
     public RuntimeDictionaryEnumerator(IEnumerable<(IRuntimeValue, IRuntimeValue)> keyValueSets)
     {
         _keyValueSets = keyValueSets;
         _enumerator = _keyValueSets.GetEnumerator();
-        _current = RuntimeNil.Value;
+        Current = RuntimeNil.Value;
     }
 
     public bool MoveNext()
@@ -101,10 +99,10 @@ class RuntimeDictionaryEnumerator : IEnumerator<IRuntimeValue>
         bool success = _enumerator.MoveNext();
         if (success)
         {
-            _current = new RuntimeTuple(new[]
+            Current = new RuntimeTuple(new[]
             {
                 _enumerator.Current.Item1,
-                _enumerator.Current.Item2
+                _enumerator.Current.Item2,
             });
         }
 
@@ -114,7 +112,7 @@ class RuntimeDictionaryEnumerator : IEnumerator<IRuntimeValue>
     public void Reset()
     {
         _enumerator = _keyValueSets.GetEnumerator();
-        _current = RuntimeNil.Value;
+        Current = RuntimeNil.Value;
     }
 
     void IDisposable.Dispose()
