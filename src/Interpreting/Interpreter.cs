@@ -495,7 +495,10 @@ class Interpreter
         var arguments = new List<string>();
         foreach (var argumentExpr in expr.Arguments)
         {
-            string value = Next(argumentExpr).As<RuntimeString>().Value;
+            var argument = Next(argumentExpr);
+            string value = argument is RuntimeNil
+                ? string.Empty
+                : argument.As<RuntimeString>().Value;
             if (expr.CallStyle == CallStyle.TextArguments)
             {
                 var matcher = new Matcher();
