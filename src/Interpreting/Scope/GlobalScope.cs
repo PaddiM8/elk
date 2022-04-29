@@ -34,7 +34,7 @@ class GlobalScope : Scope
 
     public FunctionExpr? FindFunction(string name)
     {
-        _functions.TryGetValue(name, out FunctionExpr? result);
+        _functions.TryGetValue(name, out var result);
 
         return result;
     }

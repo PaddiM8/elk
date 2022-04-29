@@ -39,7 +39,7 @@ abstract class Scope
 
     public IRuntimeValue? FindVariable(string name)
     {
-        _variables.TryGetValue(name, out IRuntimeValue? result);
+        _variables.TryGetValue(name, out var result);
 
         return result ?? Parent?.FindVariable(name);
     }

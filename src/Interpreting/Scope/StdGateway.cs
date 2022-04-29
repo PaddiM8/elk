@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -43,7 +42,7 @@ static class StdGateway
                 }
                 else
                 {
-                    throw new RuntimeWrongNumberOfArgumentsException(parameters.Count(), arguments.Count);
+                    throw new RuntimeWrongNumberOfArgumentsException(parameters.Length, arguments.Count);
                 }
             }
 
@@ -72,10 +71,10 @@ static class StdGateway
         var stdTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where(x => x.Namespace?.StartsWith("Elk.Std") ?? false);
-        foreach (Type stdType in stdTypes)
+        foreach (var stdType in stdTypes)
         {
             var methods = stdType.GetMethods();
-            foreach (MethodInfo method in methods)
+            foreach (var method in methods)
             {
                 var attribute = method.GetCustomAttribute<ShellFunctionAttribute>();
                 if (attribute == null)

@@ -80,7 +80,7 @@ class Interpreter
 
         return expr switch
         {
-            FunctionExpr _ => Visit(),
+            FunctionExpr => Visit(),
             LetExpr e => Visit(e),
             KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
@@ -154,12 +154,10 @@ class Interpreter
         {
             return Next(expr.ThenBranch);
         }
-        else
-        {
-            return expr.ElseBranch == null
-                ? RuntimeNil.Value
-                : Next(expr.ElseBranch);
-        }
+        
+        return expr.ElseBranch == null
+            ? RuntimeNil.Value
+            : Next(expr.ElseBranch);
     }
 
     private IRuntimeValue Visit(ForExpr expr)
@@ -227,7 +225,7 @@ class Interpreter
         {
             // If there is a value to be returned, stop immediately
             // and make sure it's passed upwards.
-            if (BlockShouldExit(expr, out IRuntimeValue? returnValue))
+            if (BlockShouldExit(expr, out var returnValue))
             {
                 if (returnValue != null)
                     lastValue = returnValue;
@@ -248,7 +246,7 @@ class Interpreter
 
         _scope = _scope.Parent!;
 
-        BlockShouldExit(expr, out IRuntimeValue? explicitReturnValue);
+        BlockShouldExit(expr, out var explicitReturnValue);
 
         return explicitReturnValue ?? lastValue;
     }
@@ -534,7 +532,7 @@ class Interpreter
             }
         }
 
-        using var process = new Process()
+        using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
@@ -544,7 +542,7 @@ class Interpreter
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
                 WorkingDirectory = ShellEnvironment.WorkingDirectory,
-            }
+            },
         };
 
         try
@@ -572,9 +570,7 @@ class Interpreter
 
             return new RuntimeString(output);
         }
-        else
-        {
-            return RuntimeNil.Value;
-        }
+        
+        return RuntimeNil.Value;
     }
 }

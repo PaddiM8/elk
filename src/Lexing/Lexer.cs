@@ -103,20 +103,24 @@ internal class Lexer
         {
             return NextWhiteSpace();
         }
-        else if (Current == '#')
+        
+        if (Current == '#')
         {
             var c = NextComment();
             return c;
         }
-        else if (IsValidIdentifierStart(Current))
+        
+        if (IsValidIdentifierStart(Current))
         {
             return NextIdentifier();
         }
-        else if (char.IsDigit(Current))
+        
+        if (char.IsDigit(Current))
         {
             return NextNumber();
         }
-        else if (Current == '"' && Previous != '\\')
+        
+        if (Current == '"' && Previous != '\\')
         {
             return NextString();
         }
@@ -230,7 +234,7 @@ internal class Lexer
                     't' => '\t',
                     'r' => '\r',
                     '\\' => '\\',
-                    _ => Current
+                    _ => Current,
                 };
                 Eat();
 
@@ -251,7 +255,7 @@ internal class Lexer
 
     private static bool IsValidIdentifierStart(char c)
     {
-        return char.IsLetter(c) || c == '_' || c == '$';
+        return char.IsLetter(c) || c is '_' or '$';
     }
 
     private static bool IsValidIdentifierMiddle(char c)

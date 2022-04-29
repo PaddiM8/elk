@@ -62,7 +62,8 @@ internal class Parser
         {
             return ParseFn();
         }
-        else if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
+        
+        if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
         {
             return ParseKeywordExpr();
         }
@@ -299,12 +300,9 @@ internal class Parser
             var right = ParseCoalescing();
             _allowEndOfExpression = allowedEnd;
 
-            if (right is EmptyExpr)
-            {
-                return new RangeExpr(left, null, false);
-            }
-
-            return new RangeExpr(left, right, inclusive);
+            return right is EmptyExpr
+                ? new RangeExpr(left, null, false)
+                : new RangeExpr(left, right, inclusive);
         }
 
         return left;
@@ -413,27 +411,33 @@ internal class Parser
                 _ => new LiteralExpr(Eat()),
             };
         }
-        else if (Match(TokenKind.OpenParenthesis))
+        
+        if (Match(TokenKind.OpenParenthesis))
         {
             return ParseParenthesis();
         }
-        else if (Match(TokenKind.Let))
+        
+        if (Match(TokenKind.Let))
         {
             return ParseLet();
         }
-        else if (Match(TokenKind.If))
+        
+        if (Match(TokenKind.If))
         {
             return ParseIf();
         }
-        else if (Match(TokenKind.For))
+        
+        if (Match(TokenKind.For))
         {
             return ParseFor();
         }
-        else if (Match(TokenKind.OpenSquareBracket))
+        
+        if (Match(TokenKind.OpenSquareBracket))
         {
             return ParseList();
         }
-        else if (Match(TokenKind.OpenBrace))
+        
+        if (Match(TokenKind.OpenBrace))
         {
             // Go forward a bit in order to be able to look ahead,
             // but make sure to make it possible to go back again afterwards.
@@ -453,7 +457,8 @@ internal class Parser
 
             return ParseBlock(StructureKind.Other);
         }
-        else if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
+        
+        if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
         {
             return ParseIdentifier();
         }
@@ -462,12 +467,10 @@ internal class Parser
         {
             return new EmptyExpr();
         }
-        else
-        {
-            throw Current == null
-                ? Error($"Unexpected end of expression")
-                : Error($"Unexpected token: '{Current?.Kind}'");
-        }
+        
+        throw Current == null
+            ? Error("Unexpected end of expression")
+            : Error($"Unexpected token: '{Current?.Kind}'");
     }
 
     private Expr ParseParenthesis()
@@ -641,7 +644,7 @@ internal class Parser
 
             var next = Peek();
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
-                (next == null || next.Kind == TokenKind.Slash || next.Kind == TokenKind.WhiteSpace))
+                (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
             {
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -760,11 +763,7 @@ internal class Parser
 
     private void SkipWhiteSpace()
     {
-        while (Current?.Kind == TokenKind.WhiteSpace ||
-            Current?.Kind == TokenKind.NewLine ||
-            Current?.Kind == TokenKind.Comment)
-        {
+        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment)
             Eat();
-        }
     }
 }

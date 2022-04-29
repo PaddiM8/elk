@@ -9,25 +9,24 @@ enum RedirectorStatus
 
 class Redirector
 {
-    public RedirectorStatus Status => _status;
+    public RedirectorStatus Status { get; private set; } = RedirectorStatus.Closed;
 
     private IRuntimeValue? _buffer;
-    private RedirectorStatus _status = RedirectorStatus.Closed;
 
     public void Open()
     {
-        _status = RedirectorStatus.ExpectingInput;
+        Status = RedirectorStatus.ExpectingInput;
     }
 
     public void Send(IRuntimeValue input)
     {
-        _status = RedirectorStatus.HasData;
+        Status = RedirectorStatus.HasData;
         _buffer = input;
     }
 
     public IRuntimeValue? Receive()
     {
-        _status = RedirectorStatus.Closed;
+        Status = RedirectorStatus.Closed;
 
         return _buffer;
     }
