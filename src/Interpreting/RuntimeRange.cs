@@ -90,7 +90,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     public RuntimeRangeEnumerator(int? from, int? to, int increment)
     {
-        if (to != null && from != null && to > from)
+        if (to == null || to > from)
         {
             _reversed = false;
             _to = to;
