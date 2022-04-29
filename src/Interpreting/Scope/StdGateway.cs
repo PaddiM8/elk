@@ -58,8 +58,12 @@ static class StdGateway
 
         try
         {
-            return methodInfo.Invoke(null, arguments.ToArray()) as IRuntimeValue
-                ?? RuntimeNil.Value;
+            return methodInfo.Invoke(null, arguments.ToArray()) switch
+            {
+                IRuntimeValue x => x,
+                IEnumerable<IRuntimeValue> x => new RuntimeGenerator(x),
+                _ => RuntimeNil.Value,
+            };
         }
         catch(TargetInvocationException e)
         {

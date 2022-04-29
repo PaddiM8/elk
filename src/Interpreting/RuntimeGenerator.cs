@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elk.Interpreting.Exceptions;
@@ -10,17 +11,25 @@ namespace Elk.Interpreting;
 
 class RuntimeGenerator : IRuntimeValue, IAsyncEnumerable<IRuntimeValue?>
 {
-    private readonly BlockExpr _block;
-    private readonly LocalScope _scope;
-    
+    private readonly BlockExpr? _block;
+    private readonly LocalScope? _scope;
+    private readonly IEnumerable<IRuntimeValue>? _values;
+
     public RuntimeGenerator(BlockExpr block, LocalScope scope)
     {
         _block = block;
         _scope = scope;
     }
 
-    public IAsyncEnumerator<IRuntimeValue?> GetAsyncEnumerator(CancellationToken cancellationToken = new())
-        => new RuntimeGeneratorEnumerator(_block, _scope);
+    public RuntimeGenerator(IEnumerable<IRuntimeValue> values)
+    {
+        _values = values;
+    }
+
+    public IAsyncEnumerator<IRuntimeValue> GetAsyncEnumerator(CancellationToken cancellationToken = new())
+        => _values != null
+            ? _values.ToAsyncEnumerable().GetAsyncEnumerator(cancellationToken)
+            : new RuntimeGeneratorEnumerator(_block!, _scope!);
 
     public IRuntimeValue As(Type toType)
         => toType switch
@@ -41,21 +50,20 @@ class RuntimeGenerator : IRuntimeValue, IAsyncEnumerable<IRuntimeValue?>
         => $"generator<{GetHashCode()}>";
 }
 
-class RuntimeGeneratorEnumerator : IAsyncEnumerator<IRuntimeValue?>
+class RuntimeGeneratorEnumerator : IAsyncEnumerator<IRuntimeValue>
 {
-    public IRuntimeValue? Current { get; private set;  }
+    public IRuntimeValue Current { get; private set;  }
 
     private readonly BlockExpr _block;
     private readonly LocalScope _scope;
-    private Task? _task;
-    private PauseTokenSource<IRuntimeValue> _pauseTokenSource = new();
+    private readonly PauseTokenSource<IRuntimeValue> _pauseTokenSource = new();
     private bool _movedOnce;
 
     public RuntimeGeneratorEnumerator(BlockExpr block, LocalScope scope)
     {
         _block = block;
         _scope = scope;
-        Current = null;
+        Current = RuntimeNil.Value;
     }
 
     public async ValueTask<bool> MoveNextAsync()
@@ -67,24 +75,18 @@ class RuntimeGeneratorEnumerator : IAsyncEnumerator<IRuntimeValue?>
             return false;
 
         await _pauseTokenSource.ResumeAsync();
-        Current = _pauseTokenSource.PauseAsync().GetAwaiter().GetResult();
+        Current = await _pauseTokenSource.PauseAsync() ?? RuntimeNil.Value;
 
         if (_pauseTokenSource.Finished)
             await _pauseTokenSource.ResumeAsync();
 
         return !_pauseTokenSource.Finished;
     }
-
-    public void Reset()
-    {
-        Current = null;
-        _pauseTokenSource = new();
-    }
     
     private void Init()
     {
         _movedOnce = true;
-        _task = Task.Run(
+        Task.Run(
             async () =>
             {
                 await Interpreter.InterpretBlock(_block, _scope, _pauseTokenSource.Token);
@@ -94,8 +96,6 @@ class RuntimeGeneratorEnumerator : IAsyncEnumerator<IRuntimeValue?>
 
     ValueTask IAsyncDisposable.DisposeAsync()
     {
-        _task?.Dispose();
-
         return default;
     }
 }
