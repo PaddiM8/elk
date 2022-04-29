@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Elk.Attributes;
 using Elk.Interpreting;
@@ -87,5 +88,15 @@ static class Iteration
         x.Increment = step.Value;
 
         return x;
+    }
+
+    [ShellFunction("withIndex")]
+    public static RuntimeList WithIndex(IRuntimeValue values)
+    {
+        var items = values is IEnumerable<IRuntimeValue> enumerable
+            ? enumerable
+            : values.As<RuntimeList>().Values;
+
+        return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
     }
 }
