@@ -4,7 +4,7 @@ using Elk;
 using Elk.Interpreting;
 
 CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
-    .WithParsed(async options =>
+    .WithParsedAsync(async options =>
     {
         if (options.FilePath == null)
         {
@@ -15,4 +15,4 @@ CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
             var content = File.ReadAllText(options.FilePath);
             await new Interpreter().Interpret(content, options.FilePath);
         }
-    });
+    }).Wait();

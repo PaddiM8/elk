@@ -90,7 +90,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     public RuntimeRangeEnumerator(int? from, int? to, int increment)
     {
-        if (to != null && from != null && to > from)
+        if (to == null || to > from)
         {
             _reversed = false;
             _to = to;
@@ -120,7 +120,7 @@ class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
 
     public void Reset()
     {
-        _pos = (_from ?? 0) - 1;
+        _pos = (_from ?? 0) - _increment;
     }
 
     void IDisposable.Dispose()
