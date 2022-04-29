@@ -697,6 +697,7 @@ internal class Parser
     {
         return ReachedEnd || MatchInclWhiteSpace(
             TokenKind.ClosedParenthesis,
+            TokenKind.OpenBrace,
             TokenKind.ClosedBrace,
             TokenKind.Pipe,
             TokenKind.And,

@@ -29,8 +29,10 @@ static class String
         => new(input.Value.Trim());
 
     [ShellFunction("split")]
-    public static RuntimeList Split(RuntimeString input, RuntimeString delimiter)
-        => new(input.Value.Split(delimiter.Value).Select(x => new RuntimeString(x)));
+    public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null)
+        => delimiter == null
+            ? new(input.Select(x => x))
+            : new(input.Value.Split(delimiter.Value).Select(x => new RuntimeString(x)));
 
     [ShellFunction("upper")]
     public static RuntimeString Upper(RuntimeString input)
