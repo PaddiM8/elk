@@ -61,7 +61,7 @@
 			"patterns": [
 				{
 					"name": "comment.double-slash.elk",
-					"match": "#.+(\\n|\\0)"
+					"match": "#.*(\\n|\\0)"
 				}
 			]
 		},
