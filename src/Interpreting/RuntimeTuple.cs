@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Immutable;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
@@ -7,14 +7,20 @@ using Elk.Lexing;
 
 namespace Elk.Interpreting;
 
-class RuntimeTuple : IRuntimeValue, IIndexable<IRuntimeValue>
+class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
-    public ImmutableArray<IRuntimeValue> Values { get; }
+    public List<IRuntimeValue> Values { get; }
 
     public RuntimeTuple(IEnumerable<IRuntimeValue> values)
     {
-        Values = values.ToImmutableArray();
+        Values = values.ToList();
     }
+
+    public IEnumerator<IRuntimeValue> GetEnumerator()
+        => Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
     public IRuntimeValue this[IRuntimeValue index]
     {

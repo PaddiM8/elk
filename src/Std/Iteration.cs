@@ -57,7 +57,7 @@ static class Iteration
     public static RuntimeInteger Length(IRuntimeValue x)
         => x switch
         {
-            RuntimeTuple tuple => new(tuple.Values.Length),
+            RuntimeTuple tuple => new(tuple.Values.Count),
             RuntimeList list => new(list.Values.Count),
             RuntimeDictionary dict => new(dict.Entries.Count),
             _ => new(x.As<RuntimeString>().Value.Length),
