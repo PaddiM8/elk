@@ -20,8 +20,8 @@ echo hello world
 ```
 
 ### Variabler utan prefix
-I Elk har variabler inte någon prefix-symbol som `$`
-eller `@`. Detta betyder att följande exempel
+I Elk behöver variabler inte ha någon prefix-symbol som `$`
+eller `@` (variabler som börjar med `$` behandlas dock som miljövariabler). Detta betyder att följande exempel
 har samma syntax men annorlunda semantik:
 
 ```shell
