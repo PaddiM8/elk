@@ -14,14 +14,14 @@ namespace Elk.Interpreting;
 
 class Interpreter
 {
+    public ShellEnvironment ShellEnvironment { get; }
+
+    public bool PrintErrors { get; init; } = true;
+
     private Scope.Scope _scope;
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
-
-    public ShellEnvironment ShellEnvironment { get; }
-
-    public bool PrintErrors { get; set; } = true;
 
     public Interpreter()
     {
@@ -43,13 +43,15 @@ class Interpreter
             }
             catch (RuntimeException e)
             {
-                var pos = _lastExpr?.Position ?? new TextPos(0, 0);
+                var pos = _lastExpr?.Position ?? TextPos.Default;
                 string message = $"[{pos.Line}:{pos.Column}] {e.Message}";
+                if (pos.FilePath != null)
+                    message = $"{pos.FilePath} {message}";
                 
                 if (!PrintErrors)
                     throw new AggregateException(message, e);
                 
-                Console.WriteLine(message);
+                Console.Error.WriteLine(message);
 
                 return RuntimeNil.Value;
             }
@@ -63,7 +65,7 @@ class Interpreter
         try
         {
             var ast = Parser.Parse(
-                Lexer.Lex(input),
+                Lexer.Lex(input, filePath),
                 _scope.GlobalScope,
                 filePath ?? ShellEnvironment.WorkingDirectory
             );
@@ -73,10 +75,13 @@ class Interpreter
         catch (ParseException e)
         {
             string message = $"[{e.Position.Line}:{e.Position.Column}] {e.Message}";
+            if (e.Position.FilePath != null)
+                message = $"{e.Position.FilePath} {message}";
+            
             if (!PrintErrors)
                 throw new AggregateException(message, e);
                 
-            Console.WriteLine(message);
+            Console.Error.WriteLine(message);
 
             return RuntimeNil.Value;
         }
@@ -91,7 +96,7 @@ class Interpreter
 
         return expr switch
         {
-            FunctionExpr => Visit(),
+            FunctionExpr => RuntimeNil.Value,
             LetExpr e => Visit(e),
             KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
@@ -109,11 +114,6 @@ class Interpreter
             CallExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
-    }
-
-    private IRuntimeValue Visit()
-    {
-        return RuntimeNil.Value;
     }
 
     private IRuntimeValue Visit(LetExpr expr)

@@ -8,7 +8,7 @@ namespace Elk.Tests;
 static class AstBuilder
 {
     public static Token Token(TokenKind kind, string value)
-        => new(kind, value, new TextPos(0, 0));
+        => new(kind, value, TextPos.Default);
 
     public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block)
         => new(
@@ -21,7 +21,7 @@ static class AstBuilder
         => new(new() { Token(TokenKind.Identifier, identifier) }, value);
 
     public static KeywordExpr KeywordExpr(TokenKind kind, Expr value)
-        => new(kind, value, new(0, 0));
+        => new(kind, value, TextPos.Default);
 
     public static BinaryExpr Binary(Expr left, TokenKind op, Expr right)
         => new(left, op, right);
@@ -39,7 +39,7 @@ static class AstBuilder
         => new(condition, thenBranch, elseBranch);
 
     public static BlockExpr Block(List<Expr> expressions, StructureKind structureKind)
-        => new(expressions, structureKind, new TextPos(0, 0));
+        => new(expressions, structureKind, TextPos.Default);
 
     public static LiteralExpr Literal(object value)
         => value switch

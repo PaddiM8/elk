@@ -44,7 +44,10 @@ internal class Parser
         {
             if (parser.Match(TokenKind.Include))
             {
-                expressions.AddRange(parser.ParseInclude());
+                var includedAst = parser.ParseInclude();
+                if (includedAst != null)
+                    expressions.AddRange(includedAst);
+                
                 continue;
             }
 
@@ -105,7 +108,7 @@ internal class Parser
         );
     }
 
-    private List<Expr> ParseInclude()
+    private List<Expr>? ParseInclude()
     {
         var pos = EatExpected(TokenKind.Include).Position;
         string relativePath = EatExpected(TokenKind.StringLiteral).Value;
@@ -113,7 +116,7 @@ internal class Parser
         string absolutePath = Path.Combine(directoryPath, relativePath);
 
         if (_scope.GlobalScope.ContainsInclude(absolutePath))
-            return new();
+            return null;
         
         if (!File.Exists(absolutePath))
         {
@@ -122,7 +125,11 @@ internal class Parser
 
         _scope.GlobalScope.AddInclude(absolutePath);
         
-        return Parse(Lexer.Lex(File.ReadAllText(absolutePath)), _scope.GlobalScope, absolutePath);
+        return Parse(
+            Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
+            _scope.GlobalScope,
+            absolutePath
+        );
     }
 
     private List<Parameter> ParseParameterList()
@@ -626,7 +633,7 @@ internal class Parser
 
     private Expr ParseIdentifier()
     {
-        var pos = Current?.Position ?? new TextPos(0, 0);
+        var pos = Current?.Position ?? TextPos.Default;
         var identifier = Match(TokenKind.Identifier)
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
@@ -658,7 +665,11 @@ internal class Parser
         {
             if (AdvanceIf(TokenKind.WhiteSpace))
             {
-                var token = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
+                var token = new Token(
+                    TokenKind.StringLiteral,
+                    currentText.ToString(),
+                    identifier.Position
+                );
                 textArguments.Add(new LiteralExpr(token));
                 currentText.Clear();
                 continue;
@@ -682,7 +693,11 @@ internal class Parser
         // which normally are not present at the end.
         if (currentText.Length > 0)
         {
-            var finalToken = new Token(TokenKind.StringLiteral, currentText.ToString(), identifier.Position);
+            var finalToken = new Token(
+                TokenKind.StringLiteral,
+                currentText.ToString(),
+                identifier.Position
+            );
             textArguments.Add(new LiteralExpr(finalToken));
         }
 
@@ -782,7 +797,7 @@ internal class Parser
     private ParseException Error(string message)
         => Current == null && _index > 0
             ? new(_tokens[_index - 1].Position, message)
-            : new(Current?.Position ?? new TextPos(0, 0), message);
+            : new(Current?.Position ?? TextPos.Default, message);
 
     private void SkipWhiteSpace()
     {

@@ -28,7 +28,7 @@ abstract class Expr
 class EmptyExpr : Expr
 {
     public EmptyExpr()
-        : base(new(0, 0))
+        : base(TextPos.Default)
     {
     }
 }
