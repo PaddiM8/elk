@@ -1,0 +1,14 @@
+let sum = 0
+for i in 0..5 {
+    sum += i
+}
+
+assert(sum == 10)
+
+let result = for i in 0..5 {
+    if i == 3 {
+        break i
+    }
+}
+
+assert(result == 3)

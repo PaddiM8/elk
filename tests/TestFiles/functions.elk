@@ -1,0 +1,20 @@
+fn confirmParamCount(expectedCount, params...) {
+    assert(expectedCount == len(params))
+}
+
+confirmParamCount(1, "a")
+confirmParamCount(2, "a", "b")
+
+fn simple(a) {
+    a
+}
+
+assert((simple test) == "test")
+assert(simple("test") == "test")
+
+fn empty() {
+    "empty"
+}
+
+assert((empty) == "empty")
+assert(empty() == "empty")
