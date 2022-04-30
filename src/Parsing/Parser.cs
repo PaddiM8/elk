@@ -27,16 +27,16 @@ internal class Parser
 
     private bool ReachedEnd => _index >= _tokens.Count;
 
-    private Parser(List<Token> tokens, GlobalScope scope, string filePath)
+    private Parser(List<Token> tokens, Scope scope, string filePath)
     {
-        scope.AddInclude(filePath);
+        scope.GlobalScope.AddInclude(filePath);
 
         _tokens = tokens;
         _scope = scope;
         _filePath = filePath;
     }
 
-    public static List<Expr> Parse(List<Token> tokens, GlobalScope scope, string filePath)
+    public static List<Expr> Parse(List<Token> tokens, Scope scope, string filePath)
     {
         var parser = new Parser(tokens, scope, filePath);
         var expressions = new List<Expr>();
@@ -415,6 +415,7 @@ internal class Parser
             {
                 TokenKind.IntegerLiteral => new IntegerLiteralExpr(Eat()),
                 TokenKind.FloatLiteral => new FloatLiteralExpr(Eat()),
+                TokenKind.StringLiteral => ParseStringLiteral(),
                 _ => new LiteralExpr(Eat()),
             };
         }
@@ -478,6 +479,40 @@ internal class Parser
         throw Current == null
             ? Error("Unexpected end of expression")
             : Error($"Unexpected token: '{Current?.Kind}'");
+    }
+
+    private Expr ParseStringLiteral()
+    {
+        var stringLiteral = EatExpected(TokenKind.StringLiteral);
+        var parts = StringInterpolationParser.Parse(stringLiteral);
+        var parsedParts = new List<Expr>();
+        int column = stringLiteral.Position.Column;
+        foreach (var part in parts)
+        {
+            var textPos = new TextPos(column, stringLiteral.Position.Line, _filePath);
+            if (part.Kind == InterpolationPartKind.Text)
+            {
+                var token = new Token(
+                    TokenKind.StringLiteral,
+                    part.Value,
+                    textPos
+                );
+                parsedParts.Add(new LiteralExpr(token));
+            }
+            else
+            {
+                var tokens = Lexer.Lex(part.Value, textPos);
+                var ast = Parse(tokens, _scope, _filePath);
+                if (ast.Count != 1)
+                    throw new ParseException(textPos, "Expected exactly one expression in the string interpolation block");
+                
+                parsedParts.Add(ast.First());
+            }
+
+            column += part.Value.Length;
+        }
+
+        return new StringInterpolationExpr(parsedParts, stringLiteral.Position);
     }
 
     private Expr ParseParenthesis()

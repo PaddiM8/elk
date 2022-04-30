@@ -9,13 +9,13 @@ internal class LexerTests
     [Test]
     public void TestEmpty()
     {
-        Assert.IsEmpty(Lexer.Lex("", null));
+        Assert.IsEmpty(Lexer.Lex("", filePath: null));
     }
 
     [Test]
     public void TestBasics()
     {
-        var gotTokens = Lexer.Lex("+-*/> >= < <= = == ! !=&&| ||(){}:,", null);
+        var gotTokens = Lexer.Lex("+-*/> >= < <= = == ! !=&&| ||(){}:,", filePath: null);
         var expectedKinds = new[]
         {
             TokenKind.Plus,
@@ -58,7 +58,7 @@ internal class LexerTests
     [Test]
     public void TestNumber()
     {
-        var gotTokens = Lexer.Lex("123.456 789 1", null);
+        var gotTokens = Lexer.Lex("123.456 789 1", filePath: null);
         var expectedValues = new[]
         {
             (TokenKind.FloatLiteral, "123.456"),
@@ -78,7 +78,7 @@ internal class LexerTests
     [Test]
     public void TestString()
     {
-        var gotTokens = Lexer.Lex("\"hello world\" \"this is\n a test\"", null);
+        var gotTokens = Lexer.Lex("\"hello world\" \"this is\n a test\"", filePath: null);
         var expectedValues = new[]
         {
             (TokenKind.StringLiteral, "hello world"),
@@ -96,7 +96,7 @@ internal class LexerTests
     [Test]
     public void TestComment()
     {
-        var gotTokens = Lexer.Lex("123 # Comment\n123", null);
+        var gotTokens = Lexer.Lex("123 # Comment\n123", filePath: null);
         Assert.AreEqual(TokenKind.Comment, gotTokens[2].Kind);
         Assert.AreEqual("# Comment", gotTokens[2].Value);
     }
@@ -104,7 +104,7 @@ internal class LexerTests
     [Test]
     public void TestIdentifier()
     {
-        var gotTokens = Lexer.Lex("fn let if else for return nil true false notAKeyword", null);
+        var gotTokens = Lexer.Lex("fn let if else for return nil true false notAKeyword", filePath: null);
         var expectedValues = new[]
         {
             (TokenKind.Fn, "fn"),

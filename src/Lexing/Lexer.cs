@@ -23,17 +23,18 @@ internal class Lexer
     private readonly string _source;
     private int _index;
     private (int line, int column) _pos = (1, 0);
-    private string? _filePath;
+    private readonly string? _filePath;
 
-    private Lexer(string input, string? filePath)
+    private Lexer(string input, TextPos startPos)
     {
         _source = input;
-        _filePath = filePath;
+        _pos = (startPos.Column, startPos.Line);
+        _filePath = startPos.FilePath;
     }
 
-    public static List<Token> Lex(string input, string? filePath)
+    public static List<Token> Lex(string input, TextPos startPos)
     {
-        var lexer = new Lexer(input, filePath);
+        var lexer = new Lexer(input, startPos);
         var tokens = new List<Token>();
 
         Token token;
@@ -42,6 +43,9 @@ internal class Lexer
 
         return tokens;
     }
+
+    public static List<Token> Lex(string input, string? filePath)
+        => Lex(input, new TextPos(0, 0, filePath));
 
     private Token Next()
     {
