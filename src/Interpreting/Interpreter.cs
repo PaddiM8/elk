@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -106,6 +107,7 @@ class Interpreter
             DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
             LiteralExpr e => Visit(e),
+            StringInterpolationExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
             RangeExpr e => Visit(e),
@@ -312,6 +314,17 @@ class Interpreter
             TokenKind.Nil => RuntimeNil.Value,
             _ => throw new ArgumentOutOfRangeException(),
         };
+    }
+
+    private IRuntimeValue Visit(StringInterpolationExpr expr)
+    {
+        var result = new StringBuilder();
+        foreach (var part in expr.Parts)
+        {
+            result.Append(Next(part).As<RuntimeString>().Value);
+        }
+
+        return new RuntimeString(result.ToString());
     }
 
     private IRuntimeValue Visit(BinaryExpr expr)
