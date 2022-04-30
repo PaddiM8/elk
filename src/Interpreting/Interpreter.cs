@@ -21,6 +21,8 @@ class Interpreter
 
     public ShellEnvironment ShellEnvironment { get; }
 
+    public bool PrintErrors { get; set; } = true;
+
     public Interpreter()
     {
         _scope = new GlobalScope();
@@ -42,7 +44,12 @@ class Interpreter
             catch (RuntimeException e)
             {
                 var pos = _lastExpr?.Position ?? new TextPos(0, 0);
-                Console.WriteLine($"[{pos.Line}:{pos.Column}] {e.Message}");
+                string message = $"[{pos.Line}:{pos.Column}] {e.Message}";
+                
+                if (!PrintErrors)
+                    throw new AggregateException(message, e);
+                
+                Console.WriteLine(message);
 
                 return RuntimeNil.Value;
             }
@@ -65,7 +72,11 @@ class Interpreter
         }
         catch (ParseException e)
         {
-            Console.WriteLine($"[{e.Position.Line}:{e.Position.Column}] {e.Message}");
+            string message = $"[{e.Position.Line}:{e.Position.Column}] {e.Message}";
+            if (!PrintErrors)
+                throw new AggregateException(message, e);
+                
+            Console.WriteLine(message);
 
             return RuntimeNil.Value;
         }

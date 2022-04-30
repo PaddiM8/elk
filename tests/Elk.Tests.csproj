@@ -18,4 +18,10 @@
     <ProjectReference Include="..\src\Elk.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="TestFiles/**/*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
 </Project>
