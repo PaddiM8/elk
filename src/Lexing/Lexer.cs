@@ -241,6 +241,7 @@ internal class Lexer
                 Eat();
 
                 value.Append(c);
+                break;
             }
 
             value.Append(Eat());
