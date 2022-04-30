@@ -6,10 +6,6 @@ namespace Elk.Lexing;
 
 internal class Lexer
 {
-    private readonly string _source;
-    private int _index;
-    private (int line, int column) _pos = (1, 0);
-
     private char Current => _index < _source.Length
         ? _source[_index]
         : '\0';
@@ -24,14 +20,20 @@ internal class Lexer
 
     private bool ReachedEnd => _index >= _source.Length;
 
-    private Lexer(string input)
+    private readonly string _source;
+    private int _index;
+    private (int line, int column) _pos = (1, 0);
+    private string? _filePath;
+
+    private Lexer(string input, string? filePath)
     {
         _source = input;
+        _filePath = filePath;
     }
 
-    public static List<Token> Lex(string input)
+    public static List<Token> Lex(string input, string? filePath)
     {
-        var lexer = new Lexer(input);
+        var lexer = new Lexer(input, filePath);
         var tokens = new List<Token>();
 
         Token token;
@@ -144,7 +146,7 @@ internal class Lexer
         return Build(
             TokenKind.WhiteSpace,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length)
+            new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
 
@@ -159,7 +161,7 @@ internal class Lexer
         return Build(
             TokenKind.Comment,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length)
+            new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
 
@@ -193,7 +195,7 @@ internal class Lexer
         return Build(
             kind,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length)
+            new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
 
@@ -215,7 +217,7 @@ internal class Lexer
         return Build(
             isFloat ? TokenKind.FloatLiteral : TokenKind.IntegerLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length)
+            new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
 
@@ -249,7 +251,7 @@ internal class Lexer
         return Build(
             TokenKind.StringLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length)
+            new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
 
@@ -273,7 +275,7 @@ internal class Lexer
         return new Token(
             kind,
             value,
-            pos ?? new TextPos(_pos.line, _pos.column)
+            pos ?? new TextPos(_pos.line, _pos.column, _filePath)
         );
     }
 
