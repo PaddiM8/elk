@@ -1,11 +1,10 @@
 using System;
 using Elk.Interpreting.Exceptions;
-using Elk.Lexing;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
-class RuntimeInteger : IRuntimeValue
+public class RuntimeInteger : IRuntimeValue
 {
     public int Value { get; }
 

@@ -1,11 +1,10 @@
 using System;
 using Elk.Interpreting.Exceptions;
-using Elk.Lexing;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
-class RuntimeFloat : IRuntimeValue
+public class RuntimeFloat : IRuntimeValue
 {
     public double Value { get; }
 

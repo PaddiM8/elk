@@ -1,11 +1,10 @@
 using System;
 using Elk.Interpreting.Exceptions;
-using Elk.Lexing;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
-class RuntimeNil : IRuntimeValue
+public class RuntimeNil : IRuntimeValue
 {
     public static readonly RuntimeNil Value = new();
 
