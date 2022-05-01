@@ -693,7 +693,15 @@ internal class Parser
             return new VariableExpr(identifier);
         }
         
+
+        return new CallExpr(identifier, ParseTextArguments(), CallStyle.TextArguments);
+    }
+
+    private List<Expr> ParseTextArguments()
+    {
+        var pos = Current?.Position ?? TextPos.Default;
         var textArguments = new List<Expr>();
+        var interpolationParts = new List<Expr>();
         var currentText = new StringBuilder();
         AdvanceIf(TokenKind.WhiteSpace);
 
@@ -704,10 +712,16 @@ internal class Parser
                 var token = new Token(
                     TokenKind.StringLiteral,
                     currentText.ToString(),
-                    identifier.Position
+                    pos
                 );
-                textArguments.Add(new LiteralExpr(token));
-                currentText.Clear();
+                if (currentText.Length > 0)
+                {
+                    interpolationParts.Add(new LiteralExpr(token));
+                    currentText.Clear();
+                }
+                
+                textArguments.Add(new StringInterpolationExpr(interpolationParts, pos));
+                interpolationParts = new();
                 continue;
             }
 
@@ -718,13 +732,24 @@ internal class Parser
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             }
+            else if (MatchInclWhiteSpace(TokenKind.Identifier) && Current!.Value.StartsWith('$'))
+            {
+                var stringToken = new Token(
+                    TokenKind.StringLiteral,
+                    currentText.ToString(),
+                    pos
+                );
+                interpolationParts.Add(new LiteralExpr(stringToken));
+                currentText.Clear();
+                interpolationParts.Add(new VariableExpr(Eat()));
+            }
             else
             {
                 currentText.Append(Eat().Value);
             }
         }
 
-        // There will still be some text left that needs to be added since
+        // There might still be some text left that needs to be added since
         // currentText is only moved to textArguments when encountering a space,
         // which normally are not present at the end.
         if (currentText.Length > 0)
@@ -732,12 +757,17 @@ internal class Parser
             var finalToken = new Token(
                 TokenKind.StringLiteral,
                 currentText.ToString(),
-                identifier.Position
+                pos
             );
-            textArguments.Add(new LiteralExpr(finalToken));
+            interpolationParts.Add(new LiteralExpr(finalToken));
         }
 
-        return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
+        if (interpolationParts.Any())
+        {
+            textArguments.Add(new StringInterpolationExpr(interpolationParts, pos));
+        }
+
+        return textArguments;
     }
 
     private string ParsePath()
