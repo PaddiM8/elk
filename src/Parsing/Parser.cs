@@ -83,6 +83,11 @@ internal class Parser
             return ParseAlias();
         }
 
+        if (Match(TokenKind.Unalias))
+        {
+            return ParseUnalias();
+        }
+
         return ParseBinaryIf();
     }
 
@@ -128,6 +133,15 @@ internal class Parser
         var value = EatExpected(TokenKind.StringLiteral);
 
         _scope.GlobalScope.AddAlias(name, new LiteralExpr(value));
+
+        return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
+    }
+
+    private Expr ParseUnalias()
+    {
+        var pos = EatExpected(TokenKind.Unalias).Position;
+        string name = EatExpected(TokenKind.Identifier).Value;
+        _scope.GlobalScope.RemoveAlias(name);
 
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
     }
