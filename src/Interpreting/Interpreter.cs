@@ -613,8 +613,15 @@ class Interpreter
 
         if (_redirector.Status == RedirectorStatus.HasData)
         {
-            using var streamWriter = process.StandardInput;
-            streamWriter.Write(_redirector.Receive());
+            try
+            {
+                using var streamWriter = process.StandardInput;
+                streamWriter.Write(_redirector.Receive());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e.Message);
+            }
         }
 
         process.WaitForExit();
