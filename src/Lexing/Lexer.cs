@@ -23,7 +23,7 @@ internal class Lexer
 
     private readonly string _source;
     private int _index;
-    private (int line, int column) _pos = (1, 0);
+    private (int line, int column) _pos;
     private readonly string? _filePath;
 
     private Lexer(string input, TextPos startPos)
@@ -46,7 +46,7 @@ internal class Lexer
     }
 
     public static List<Token> Lex(string input, string? filePath)
-        => Lex(input, new TextPos(0, 0, filePath));
+        => Lex(input, new TextPos(1, 0, filePath));
 
     private Token Next()
     {
