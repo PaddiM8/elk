@@ -5,11 +5,18 @@ namespace Elk.Interpreting;
 
 class ShellEnvironment
 {
-    public string WorkingDirectory { get; set; }
-
-    public ShellEnvironment()
+    public string WorkingDirectory
     {
-        WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        get
+        {
+            return Environment.GetEnvironmentVariable("PWD")
+                ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+        
+        set
+        {
+            Environment.SetEnvironmentVariable("PWD", value);
+        }
     }
 
     public string GetAbsolutePath(string relativePath)
