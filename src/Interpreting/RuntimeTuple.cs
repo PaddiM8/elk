@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -57,10 +58,10 @@ class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRunt
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public override int GetHashCode()

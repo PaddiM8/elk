@@ -10,14 +10,15 @@ static class Repl
         var shell = new ShellSession();
         while (true)
         {
-            string workingDirectory = shell.WorkingDirectory;
+            /*string workingDirectory = shell.WorkingDirectory;
             string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             if (workingDirectory.StartsWith(homePath))
             {
                 workingDirectory = "~" + workingDirectory[homePath.Length..];
-            }
-
-            string input = ReadLine.Read(workingDirectory + " >> ");
+            }*/
+            shell.PrintPrompt();
+            
+            string input = ReadLine.Read();
             if (input == "exit")
                 break;
 

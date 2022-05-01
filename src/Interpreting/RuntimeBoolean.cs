@@ -1,6 +1,7 @@
 using System;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -30,18 +31,18 @@ class RuntimeBoolean : IRuntimeValue
     public static RuntimeBoolean From(bool value)
         => value ? RuntimeBoolean.True : RuntimeBoolean.False;
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => new RuntimeBoolean(!Value);
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
     {
         var otherBoolean = other.As<RuntimeBoolean>();
         var newValue = kind switch
         {
-            TokenKind.EqualsEquals => Value == otherBoolean.Value,
-            TokenKind.NotEquals => Value != otherBoolean.Value,
-            TokenKind.And => Value && otherBoolean.Value,
-            TokenKind.Or => Value || otherBoolean.Value,
+            OperationKind.EqualsEquals => Value == otherBoolean.Value,
+            OperationKind.NotEquals => Value != otherBoolean.Value,
+            OperationKind.And => Value && otherBoolean.Value,
+            OperationKind.Or => Value || otherBoolean.Value,
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Boolean"),
         };
 

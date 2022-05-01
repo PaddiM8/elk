@@ -47,7 +47,7 @@ internal class ParserTests
             Token(TokenKind.IntegerLiteral, "2"),
         };
         dynamic ast = Parser.Parse(tokens, _scope, "");
-        Assert.AreEqual(TokenKind.Minus, ast[0].Operator);
+        Assert.AreEqual(OperationKind.Subtraction, ast[0].Operator);
         Assert.AreEqual("2", ast[0].Value.Value.Value);
     }
 

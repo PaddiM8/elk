@@ -1,6 +1,7 @@
 using System;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -28,15 +29,15 @@ class RuntimeInteger : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => kind switch
         {
-            TokenKind.Minus => new RuntimeInteger(-Value),
-            TokenKind.Exclamation => RuntimeBoolean.From(Value == 0),
+            OperationKind.Subtraction => new RuntimeInteger(-Value),
+            OperationKind.Not => RuntimeBoolean.From(Value == 0),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
     {
         if (other is RuntimeFloat)
         {
@@ -46,18 +47,18 @@ class RuntimeInteger : IRuntimeValue
         var otherNumber = other.As<RuntimeInteger>();
         return kind switch
         {
-            TokenKind.Plus => new RuntimeInteger(Value + otherNumber.Value),
-            TokenKind.Minus => new RuntimeInteger(Value - otherNumber.Value),
-            TokenKind.Star => new RuntimeInteger(Value * otherNumber.Value),
-            TokenKind.Slash => new RuntimeFloat((double)Value / otherNumber.Value),
-            TokenKind.Percent => new RuntimeInteger(Value % otherNumber.Value),
-            TokenKind.Caret => new RuntimeFloat(Math.Pow(Value, otherNumber.Value)),
-            TokenKind.Greater => RuntimeBoolean.From(Value > otherNumber.Value),
-            TokenKind.GreaterEquals => RuntimeBoolean.From(Value >= otherNumber.Value),
-            TokenKind.Less => RuntimeBoolean.From(Value < otherNumber.Value),
-            TokenKind.LessEquals => RuntimeBoolean.From(Value <= otherNumber.Value),
-            TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherNumber.Value),
-            TokenKind.NotEquals => RuntimeBoolean.From(Value != otherNumber.Value),
+            OperationKind.Addition => new RuntimeInteger(Value + otherNumber.Value),
+            OperationKind.Subtraction => new RuntimeInteger(Value - otherNumber.Value),
+            OperationKind.Multiplication => new RuntimeInteger(Value * otherNumber.Value),
+            OperationKind.Division => new RuntimeFloat((double)Value / otherNumber.Value),
+            OperationKind.Modulo => new RuntimeInteger(Value % otherNumber.Value),
+            OperationKind.Power => new RuntimeFloat(Math.Pow(Value, otherNumber.Value)),
+            OperationKind.Greater => RuntimeBoolean.From(Value > otherNumber.Value),
+            OperationKind.GreaterEquals => RuntimeBoolean.From(Value >= otherNumber.Value),
+            OperationKind.Less => RuntimeBoolean.From(Value < otherNumber.Value),
+            OperationKind.LessEquals => RuntimeBoolean.From(Value <= otherNumber.Value),
+            OperationKind.EqualsEquals => RuntimeBoolean.From(Value == otherNumber.Value),
+            OperationKind.NotEquals => RuntimeBoolean.From(Value != otherNumber.Value),
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Integer"),
         };
     }

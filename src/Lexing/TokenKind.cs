@@ -1,6 +1,9 @@
+using System.ComponentModel;
+using Elk.Parsing;
+
 namespace Elk.Lexing;
 
-internal enum TokenKind
+enum TokenKind
 {
     Unknown,
 
@@ -29,4 +32,34 @@ internal enum TokenKind
     Comment,
     Identifier,
     EndOfFile,
+}
+
+static class TokenKindExtensions
+{
+    public static OperationKind ToOperationKind(this TokenKind tokenKind)
+    {
+        return tokenKind switch
+        {
+            TokenKind.Plus => OperationKind.Addition,
+            TokenKind.Minus => OperationKind.Subtraction,
+            TokenKind.Star => OperationKind.Multiplication,
+            TokenKind.Slash => OperationKind.Division,
+            TokenKind.Percent => OperationKind.Modulo,
+            TokenKind.Caret => OperationKind.Power,
+            TokenKind.Greater => OperationKind.Greater,
+            TokenKind.GreaterEquals => OperationKind.GreaterEquals,
+            TokenKind.Less => OperationKind.Less,
+            TokenKind.LessEquals => OperationKind.LessEquals,
+            TokenKind.Equals => OperationKind.Equals,
+            TokenKind.EqualsEquals => OperationKind.EqualsEquals,
+            TokenKind.NotEquals => OperationKind.NotEquals,
+            TokenKind.And => OperationKind.And,
+            TokenKind.Or => OperationKind.Or,
+            TokenKind.Exclamation => OperationKind.Not,
+            TokenKind.Pipe => OperationKind.Pipe,
+            TokenKind.If => OperationKind.If,
+            TokenKind.QuestionQuestion => OperationKind.Coalescing,
+            _ => throw new InvalidEnumArgumentException(),
+        };
+    }
 }

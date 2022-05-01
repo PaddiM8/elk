@@ -329,7 +329,7 @@ class Interpreter
 
     private IRuntimeValue Visit(BinaryExpr expr)
     {
-        if (expr.Operator == TokenKind.Pipe)
+        if (expr.Operator == OperationKind.Pipe)
         {
             _redirector.Open();
             _redirector.Send(Next(expr.Left));
@@ -338,12 +338,12 @@ class Interpreter
             return result;
         }
         
-        if (expr.Operator == TokenKind.Equals)
+        if (expr.Operator == OperationKind.Equals)
         {
             return EvaluateAssignment(expr.Left, Next(expr.Right));
         }
         
-        if (expr.Operator == TokenKind.If)
+        if (expr.Operator == OperationKind.If)
         {
             return Next(expr.Right).As<RuntimeBoolean>().Value
                 ? Next(expr.Left)
@@ -351,7 +351,7 @@ class Interpreter
         }
 
         var left = Next(expr.Left);
-        if (expr.Operator == TokenKind.QuestionQuestion)
+        if (expr.Operator == OperationKind.Coalescing)
         {
             return left is RuntimeNil
                 ? Next(expr.Right)
@@ -362,7 +362,7 @@ class Interpreter
 
         return expr.Operator switch
         {
-            TokenKind.Percent => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
+            OperationKind.Modulo => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
             _ => left.Operation(expr.Operator, right),
         };
     }

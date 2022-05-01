@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -43,16 +44,16 @@ class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Range");
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
     {
         var otherRange = other.As<RuntimeRange>();
         return kind switch
         {
-            TokenKind.EqualsEquals => RuntimeBoolean.From(From == otherRange.From && To == otherRange.To),
-            TokenKind.NotEquals => RuntimeBoolean.From(From != otherRange.From || To != otherRange.To),
+            OperationKind.EqualsEquals => RuntimeBoolean.From(From == otherRange.From && To == otherRange.To),
+            OperationKind.NotEquals => RuntimeBoolean.From(From != otherRange.From || To != otherRange.To),
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Range"),
         };
     }
