@@ -1,13 +1,25 @@
 using System;
 using System.IO;
 using Elk.Interpreting;
+using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk;
 
 public class ShellSession
 {
     public string WorkingDirectory
-        => _interpreter.ShellEnvironment.WorkingDirectory;
+    {
+        get
+        {
+            string workingDirectory = _interpreter.ShellEnvironment.WorkingDirectory;
+            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            
+            return workingDirectory.StartsWith(homePath)
+                ? "~" + workingDirectory[homePath.Length..]
+                : workingDirectory;
+        }
+    }
     
     private readonly Interpreter _interpreter = new();
     
@@ -28,6 +40,25 @@ public class ShellSession
 
     public void PrintPrompt()
     {
+        if (_interpreter.FunctionExists("elkPrompt"))
+        {
+            var call = new CallExpr(
+                new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
+                new(),
+                CallStyle.Parenthesized
+            )
+            {
+                IsRoot = true,
+            };
+            _interpreter.Interpret(new() { call });
+
+            return;
+        }
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write(WorkingDirectory);
+        Console.ResetColor();
+        Console.Write(" ❯ ");
     }
 
     public void RunCommand(string command)
