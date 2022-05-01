@@ -88,6 +88,9 @@ class Interpreter
         }
     }
 
+    public bool FunctionExists(string name)
+        => _scope.GlobalScope.ContainsFunction(name);
+
     private IRuntimeValue Next(Expr expr)
     {
         if (_returnHandler.Active)

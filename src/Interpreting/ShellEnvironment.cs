@@ -13,5 +13,5 @@ class ShellEnvironment
     }
 
     public string GetAbsolutePath(string relativePath)
-        => Path.Combine(WorkingDirectory, relativePath);
+        => Path.GetFullPath(Path.Combine(WorkingDirectory, relativePath));
 }
