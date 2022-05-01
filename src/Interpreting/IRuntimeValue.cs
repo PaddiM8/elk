@@ -1,5 +1,6 @@
 using System;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -13,7 +14,7 @@ interface IRuntimeValue
         return (T)As(typeof(T));
     }
 
-    public IRuntimeValue Operation(TokenKind kind);
+    public IRuntimeValue Operation(OperationKind kind);
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other);
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other);
 }

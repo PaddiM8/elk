@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Lexing;
+using Elk.Parsing;
+
 // ReSharper disable UnusedMember.Global
 
 namespace Elk.Tests;

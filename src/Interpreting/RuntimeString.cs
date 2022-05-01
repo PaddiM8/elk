@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -56,17 +57,17 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => kind switch
         {
-            TokenKind.Minus => ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind),
-            TokenKind.Exclamation => RuntimeBoolean.From(Value.Length == 0),
+            OperationKind.Subtraction => ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind),
+            OperationKind.Not => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
     {
-        if (kind is TokenKind.Minus or TokenKind.Star or TokenKind.Slash)
+        if (kind is OperationKind.Subtraction or OperationKind.Multiplication or OperationKind.Division)
         {
             return ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind, other);
         }
@@ -74,13 +75,13 @@ class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRun
         var otherString = other.As<RuntimeString>();
         return kind switch
         {
-            TokenKind.Plus => new RuntimeString(Value + otherString.Value),
-            TokenKind.Greater => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) > 0),
-            TokenKind.GreaterEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) >= 0),
-            TokenKind.Less => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) < 0),
-            TokenKind.LessEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) <= 0),
-            TokenKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
-            TokenKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
+            OperationKind.Addition => new RuntimeString(Value + otherString.Value),
+            OperationKind.Greater => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) > 0),
+            OperationKind.GreaterEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) >= 0),
+            OperationKind.Less => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) < 0),
+            OperationKind.LessEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) <= 0),
+            OperationKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
+            OperationKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "String"),
         };
     }

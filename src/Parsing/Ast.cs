@@ -1,15 +1,38 @@
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 using Elk.Lexing;
+using Newtonsoft.Json;
 
-namespace Elk;
+namespace Elk.Parsing;
 
 enum StructureKind
 {
     Other,
     Loop,
     Function,
+}
+
+public enum OperationKind
+{
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Modulo,
+    Power,
+    Greater,
+    GreaterEquals,
+    Less,
+    LessEquals,
+    Equals,
+    EqualsEquals,
+    NotEquals,
+    And,
+    Or,
+    Not,
+    Pipe,
+    If,
+    Coalescing,
 }
 
 abstract class Expr
@@ -84,29 +107,29 @@ class BinaryExpr : Expr
 {
     public Expr Left { get; }
 
-    public TokenKind Operator { get; }
+    public OperationKind Operator { get; }
 
     public Expr Right { get; }
-
+    
     public BinaryExpr(Expr left, TokenKind op, Expr right)
         : base(left.Position)
     {
         Left = left;
-        Operator = op;
+        Operator = op.ToOperationKind();
         Right = right;
     }
 }
 
 class UnaryExpr : Expr
 {
-    public TokenKind Operator { get; }
+    public OperationKind Operator { get; }
 
     public Expr Value { get; }
-
+    
     public UnaryExpr(TokenKind op, Expr value)
         : base(value.Position)
     {
-        Operator = op;
+        Operator = op.ToOperationKind();
         Value = value;
     }
 }

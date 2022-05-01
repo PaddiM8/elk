@@ -1,6 +1,7 @@
 using System;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -17,16 +18,16 @@ class RuntimeNil : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeNil>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
-        => kind == TokenKind.Exclamation
+    public IRuntimeValue Operation(OperationKind kind)
+        => kind == OperationKind.Not
             ? RuntimeBoolean.True
             : this;
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
         => kind switch
         {
-            TokenKind.Equals => RuntimeBoolean.From(other is RuntimeNil),
-            TokenKind.NotEquals => RuntimeBoolean.From(other is not RuntimeNil),
+            OperationKind.Equals => RuntimeBoolean.From(other is RuntimeNil),
+            OperationKind.NotEquals => RuntimeBoolean.From(other is not RuntimeNil),
             _ => this,
         };
 

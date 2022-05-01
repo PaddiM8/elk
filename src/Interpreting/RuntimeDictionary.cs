@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
@@ -52,10 +53,10 @@ class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(TokenKind kind)
+    public IRuntimeValue Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
 
-    public IRuntimeValue Operation(TokenKind kind, IRuntimeValue other)
+    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
 
     public override int GetHashCode()

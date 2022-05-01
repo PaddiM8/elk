@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Elk.Lexing;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
+using Elk.Parsing;
 using static Elk.Tests.AstBuilder;
 
 namespace Elk.Tests;
@@ -63,7 +64,7 @@ internal class InterpreterTests
     }
 
     private bool SameResult(object expectedResult, IRuntimeValue gotResult)
-        => ((RuntimeBoolean)RuntimeValue(expectedResult).Operation(TokenKind.EqualsEquals, gotResult)).Value;
+        => ((RuntimeBoolean)RuntimeValue(expectedResult).Operation(OperationKind.EqualsEquals, gotResult)).Value;
 
     private IRuntimeValue RuntimeValue(object value)
         => value switch

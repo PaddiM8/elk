@@ -26,6 +26,10 @@ public class ShellSession
         }
     }
 
+    public void PrintPrompt()
+    {
+    }
+
     public void RunCommand(string command)
     {
         var result = _interpreter.Interpret(command, null);
