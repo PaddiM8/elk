@@ -9,7 +9,7 @@ enum TokenKind
 
     // Keywords
     Fn, Let, If, Else, For, In, Return, Break, Continue, Include,
-    Nil, True, False,
+    Nil, True, False, Alias,
 
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,
