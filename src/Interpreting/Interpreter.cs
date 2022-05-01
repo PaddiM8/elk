@@ -457,10 +457,14 @@ class Interpreter
         if (name == "cd")
         {
             var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>().Value);
+            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string path = arguments.Any()
                 ? string.Join(" ", arguments)
-                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            ShellEnvironment.WorkingDirectory = ShellEnvironment.GetAbsolutePath(path);
+                : homePath;
+
+            ShellEnvironment.WorkingDirectory = path == "-"
+                ? Environment.GetEnvironmentVariable("OLDPWD") ?? homePath
+                : ShellEnvironment.GetAbsolutePath(path);
 
             return RuntimeNil.Value;
         }
