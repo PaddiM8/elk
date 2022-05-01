@@ -12,7 +12,6 @@ CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
         }
         else
         {
-            var content = File.ReadAllText(options.FilePath);
-            new Interpreter().Interpret(content, options.FilePath);
+            new ShellSession().RunFile(options.FilePath);
         }
     }).Wait();
