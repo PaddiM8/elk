@@ -476,7 +476,7 @@ internal class Parser
         {
             return new EmptyExpr();
         }
-        
+
         throw Current == null
             ? Error("Unexpected end of expression")
             : Error($"Unexpected token: '{Current?.Kind}'");
