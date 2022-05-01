@@ -36,6 +36,10 @@ public class ShellSession
         {
             RunFile(initFilePath);
         }
+        else
+        {
+            RunCommand(Resources.Defaults.init_file);
+        }
     }
 
     public void PrintPrompt()
@@ -55,10 +59,13 @@ public class ShellSession
             return;
         }
 
+        // The 'elkPrompt' function should have been created
+        // automatically. This is simply a fallback in case
+        // something goes wrong.
         Console.ForegroundColor = ConsoleColor.Green;
         Console.Write(WorkingDirectory);
         Console.ResetColor();
-        Console.Write(" ❯ ");
+        Console.Write(" >> ");
     }
 
     public void RunCommand(string command)
