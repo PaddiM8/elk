@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Elk.Parsing;
 
 namespace Elk.Lexing;
 
@@ -239,17 +240,19 @@ internal class Lexer
                     'n' => '\n',
                     't' => '\t',
                     'r' => '\r',
-                    '\\' => '\\',
                     _ => Current,
                 };
                 Eat();
 
                 value.Append(c);
-                break;
+                continue;
             }
 
             value.Append(Eat());
         }
+
+        if (Current != '"')
+            Error("Unterminated string literal");
 
         Eat(); // Final quote
 
@@ -321,5 +324,10 @@ internal class Lexer
         }
 
         return toReturn;
+    }
+
+    private void Error(string message)
+    {
+        throw new ParseException(new(_pos.line, _pos.column, _filePath), message);
     }
 }
