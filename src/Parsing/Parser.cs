@@ -54,6 +54,7 @@ internal class Parser
             var expr = parser.ParseExpr();
             expr.IsRoot = true;
             expressions.Add(expr);
+            parser.SkipWhiteSpace();
         }
 
         return expressions;
