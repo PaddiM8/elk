@@ -194,6 +194,7 @@ internal class Lexer
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,
             "false" => TokenKind.False,
+            "alias" => TokenKind.Alias,
             _ => TokenKind.Identifier,
         };
 

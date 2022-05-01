@@ -26,8 +26,8 @@ class Interpreter
 
     public Interpreter()
     {
-        _scope = new GlobalScope();
         ShellEnvironment = new ShellEnvironment();
+        _scope = new GlobalScope();
     }
 
     public IRuntimeValue Interpret(List<Expr> ast, GlobalScope? scope = null)
@@ -459,19 +459,11 @@ class Interpreter
         string name = expr.Identifier.Value;
         if (name == "cd")
         {
-            var arguments = expr.Arguments.Select(x => Next(x).As<RuntimeString>().Value);
-            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string path = arguments.Any()
-                ? string.Join(" ", arguments)
-                : homePath;
-
-            ShellEnvironment.WorkingDirectory = path == "-"
-                ? Environment.GetEnvironmentVariable("OLDPWD") ?? homePath
-                : ShellEnvironment.GetAbsolutePath(path);
+            EvaluateCd(expr.Arguments);
 
             return RuntimeNil.Value;
         }
-        
+
         if (StdGateway.Contains(name))
         {
             var arguments = new List<object?>(expr.Arguments.Count + 1);
@@ -492,6 +484,19 @@ class Interpreter
         return function == null
             ? EvaluateProgramCall(expr)
             : EvaluateFunctionCall(expr, function);
+    }
+
+    private void EvaluateCd(List<Expr> argumentExpressions)
+    {
+        var arguments = argumentExpressions.Select(x => Next(x).As<RuntimeString>().Value);
+        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string path = arguments.Any()
+            ? string.Join(" ", arguments)
+            : homePath;
+
+        ShellEnvironment.WorkingDirectory = path == "-"
+            ? Environment.GetEnvironmentVariable("OLDPWD") ?? homePath
+            : ShellEnvironment.GetAbsolutePath(path);
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)

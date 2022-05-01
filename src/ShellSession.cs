@@ -20,7 +20,7 @@ public class ShellSession
                 : workingDirectory;
         }
     }
-    
+
     private readonly Interpreter _interpreter = new();
     
     public ShellSession()

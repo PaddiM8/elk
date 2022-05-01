@@ -17,15 +17,21 @@ internal class Parser
     private readonly string _filePath;
     private bool _allowEndOfExpression;
 
-    private Token? Current => _index < _tokens.Count
-        ? _tokens[_index]
-        : null;
+    private Token? Current
+        => _index < _tokens.Count
+            ? _tokens[_index]
+            : null;
 
-    private Token? Previous => _index - 1 > 0
-        ? _tokens[_index - 1]
-        : null;
+    private Token? Previous
+        => _index - 1 > 0
+            ? _tokens[_index - 1]
+            : null;
 
-    private bool ReachedEnd => _index >= _tokens.Count;
+    private bool ReachedEnd
+        => _index >= _tokens.Count;
+
+    private bool UseAliases
+        => Current?.Position.FilePath == null;
 
     private Parser(List<Token> tokens, Scope scope, string filePath)
     {
@@ -72,6 +78,11 @@ internal class Parser
             return ParseKeywordExpr();
         }
 
+        if (Match(TokenKind.Alias))
+        {
+            return ParseAlias();
+        }
+
         return ParseBinaryIf();
     }
 
@@ -109,6 +120,18 @@ internal class Parser
         );
     }
 
+    private Expr ParseAlias()
+    {
+        var pos = EatExpected(TokenKind.Alias).Position;
+        string name = EatExpected(TokenKind.Identifier).Value;
+        EatExpected(TokenKind.Equals);
+        var value = EatExpected(TokenKind.StringLiteral);
+
+        _scope.GlobalScope.AddAlias(name, new LiteralExpr(value));
+
+        return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
+    }
+
     private List<Expr>? ParseInclude()
     {
         var pos = EatExpected(TokenKind.Include).Position;
@@ -125,7 +148,7 @@ internal class Parser
         }
 
         _scope.GlobalScope.AddInclude(absolutePath);
-        
+
         return Parse(
             Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
             _scope.GlobalScope,
@@ -676,6 +699,15 @@ internal class Parser
         if (AdvanceIf(TokenKind.OpenParenthesis))
         {
             var arguments = new List<Expr>();
+
+            // Load alias if there is one
+            var alias = UseAliases ? _scope.GlobalScope.FindAlias(identifier.Value) : null;
+            if (alias != null)
+            {
+                identifier = identifier with { Value = alias.Name };
+                arguments.Add(alias.Value);
+            }
+
             do
             {
                 if (!Match(TokenKind.ClosedParenthesis))
@@ -692,9 +724,18 @@ internal class Parser
         {
             return new VariableExpr(identifier);
         }
-        
 
-        return new CallExpr(identifier, ParseTextArguments(), CallStyle.TextArguments);
+        var textArguments = ParseTextArguments();
+
+        // Load alias if there is one
+        var aliasResult = UseAliases ? _scope.GlobalScope.FindAlias(identifier.Value) : null;
+        if (aliasResult != null)
+        {
+            identifier = identifier with { Value = aliasResult.Name };
+            textArguments.Insert(0, aliasResult.Value);
+        }
+
+        return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
     }
 
     private List<Expr> ParseTextArguments()

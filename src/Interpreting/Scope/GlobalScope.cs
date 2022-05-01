@@ -3,15 +3,30 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
+record Alias(string Name, LiteralExpr Value);
+
 class GlobalScope : Scope
 {
     private readonly Dictionary<string, FunctionExpr> _functions = new();
+
+    private readonly Dictionary<string, Alias> _aliases = new();
 
     private readonly HashSet<string> _includes = new();
 
     public GlobalScope()
         : base(null)
     {
+    }
+
+    public void AddAlias(string name, LiteralExpr expansion)
+    {
+        var parts = expansion.Value.Value.Split(' ', 2);
+        var argument = expansion.Value with { Value = parts[1] };
+
+        _aliases.Add(
+            name,
+            new Alias(parts[0], new LiteralExpr(argument))
+        );
     }
 
     public void AddFunction(FunctionExpr function)
@@ -32,6 +47,13 @@ class GlobalScope : Scope
     
     public bool ContainsInclude(string absolutePath)
         => _includes.Contains(absolutePath);
+
+    public Alias? FindAlias(string name)
+    {
+        _aliases.TryGetValue(name, out var value);
+
+        return value;
+    }
 
     public FunctionExpr? FindFunction(string name)
     {
