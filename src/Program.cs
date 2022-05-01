@@ -1,17 +1,16 @@
-﻿using System.IO;
+﻿using System;
 using CommandLine;
 using Elk;
-using Elk.Interpreting;
 
 CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
-    .WithParsedAsync(async options =>
+    .WithParsed(options =>
     {
         if (options.FilePath == null)
         {
-            await Repl.Run();
+            Repl.Run();
         }
         else
         {
             new ShellSession().RunFile(options.FilePath);
         }
-    }).Wait();
+    });
