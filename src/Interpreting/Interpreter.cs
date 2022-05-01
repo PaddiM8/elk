@@ -53,6 +53,9 @@ class Interpreter
                     throw new AggregateException(message, e);
                 
                 Console.Error.WriteLine(message);
+                
+                // Make sure the redirector is emptied
+                _redirector.Receive();
 
                 return RuntimeNil.Value;
             }
