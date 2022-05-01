@@ -1,14 +1,11 @@
 using System;
-using System.Threading.Tasks;
-using PrettyPrompt;
-using PrettyPrompt.Highlighting;
-using Elk.Interpreting;
+using BetterReadLine;
 
 namespace Elk;
 
 static class Repl
 {
-    public static async Task Run()
+    public static void Run()
     {
         var shell = new ShellSession();
         while (true)
@@ -19,19 +16,8 @@ static class Repl
             {
                 workingDirectory = "~" + workingDirectory[homePath.Length..];
             }
-            
-            var promptConfiguration = new PromptConfiguration(
-                maxCompletionItemsCount: 1,
-                prompt: new FormattedString(
-                    workingDirectory + " >> ",
-                    new FormatSpan(workingDirectory.Length, workingDirectory.Length + 2, AnsiColor.Cyan)
-                )
-            );
 
-            var prompt = new Prompt(configuration: promptConfiguration);
-            var promptResult = await prompt.ReadLineAsync();
-            string input = promptResult.Text;
-
+            string input = ReadLine.Read(workingDirectory + " >> ");
             if (input == "exit")
                 break;
 
