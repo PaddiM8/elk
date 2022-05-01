@@ -108,8 +108,8 @@ internal class ParserTests
         Assert.IsInstanceOf<CallExpr>(ast[0]);
         Assert.AreEqual("echo", ast[0].Identifier.Value);
         Assert.AreEqual(2, ast[0].Arguments.Count);
-        Assert.AreEqual("hello", ast[0].Arguments[0].Value.Value);
-        Assert.AreEqual("world", ast[0].Arguments[1].Value.Value);
+        Assert.AreEqual("hello", ast[0].Arguments[0].Parts[0].Value.Value);
+        Assert.AreEqual("world", ast[0].Arguments[1].Parts[0].Value.Value);
     }
 
     [Test]

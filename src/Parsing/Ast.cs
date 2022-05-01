@@ -315,7 +315,7 @@ class FloatLiteralExpr : LiteralExpr
 
 class StringInterpolationExpr : Expr
 {
-    public List<Expr>  Parts { get;  }
+    public List<Expr> Parts { get;  }
 
     public StringInterpolationExpr(List<Expr> parts, TextPos pos)
         : base(pos)
