@@ -4,7 +4,7 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
-interface IRuntimeValue
+public interface IRuntimeValue
 {
     public IRuntimeValue As(Type toType);
 
