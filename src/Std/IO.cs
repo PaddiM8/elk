@@ -29,4 +29,16 @@ static class IO
 
         return new RuntimeString(Console.ReadLine() ?? "");
     }
+
+    [ShellFunction("print")]
+    public static void Print(RuntimeString input)
+    {
+        Console.Write(input);
+    }
+    
+    [ShellFunction("println")]
+    public static void PrintLine(RuntimeString input)
+    {
+        Console.WriteLine(input);
+    }
 }
