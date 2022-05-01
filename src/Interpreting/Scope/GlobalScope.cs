@@ -61,4 +61,9 @@ class GlobalScope : Scope
 
         return result;
     }
+
+    public void RemoveAlias(string name)
+    {
+        _aliases.Remove(name);
+    }
 }
