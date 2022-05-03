@@ -606,7 +606,7 @@ class Interpreter
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = string.Join(" ", arguments).Replace("\"", "\"\"\""),
+                Arguments = string.Join(" ", arguments.Select(EscapeArgument)),
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
@@ -649,4 +649,7 @@ class Interpreter
         
         return RuntimeNil.Value;
     }
+
+    private static string EscapeArgument(string argument)
+        => $"\"{argument.Replace("\"", "\"\"\"")}\"";
 }
