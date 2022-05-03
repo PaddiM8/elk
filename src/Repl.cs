@@ -79,11 +79,17 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
     public string[] GetSuggestions(string text, int startPos, int endPos)
     {
-        string word = text[startPos..endPos];
+        string suggestionTarget = text[startPos..endPos];
+        int pathStart = text[..endPos].LastIndexOf(' ');
+        string path = text[(pathStart + 1)..startPos];
+        string fullPath = Path.Combine(_shell.WorkingDirectory, path);
 
-        return Directory.GetFileSystemEntries(_shell.WorkingDirectory)
+        if (!File.Exists(fullPath))
+            return new string[] {};
+
+        return Directory.GetFileSystemEntries(fullPath)
             .Select(x => Path.GetFileName(x)!)
-            .Where(x => x.StartsWith(word))
+            .Where(x => x.StartsWith(suggestionTarget))
             .Select(FormatSuggestion)
             .ToArray();
     }
