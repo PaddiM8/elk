@@ -26,7 +26,7 @@ static class Repl
         var shell = new ShellSession();
         var readLine = new ReadLine
         {
-            AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ' }),
+            AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }),
             HistoryEnabled = true,
         };
         
