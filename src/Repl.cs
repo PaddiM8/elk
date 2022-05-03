@@ -28,6 +28,7 @@ static class Repl
         {
             AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }),
             HistoryEnabled = true,
+            WordSeparators = new[] { ' ', '/' },
         };
         
         if (File.Exists(historyFile))
