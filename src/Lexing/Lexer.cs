@@ -99,6 +99,7 @@ internal class Lexer
                 ? Build(TokenKind.DotDot, Eat(2))
                 : Build(TokenKind.Dot, Eat()),
             '~' => Build(TokenKind.Tilde, Eat()),
+            '\\' => Build(TokenKind.Backslash, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
         };

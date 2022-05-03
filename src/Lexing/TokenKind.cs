@@ -24,7 +24,7 @@ enum TokenKind
     OpenBrace, ClosedBrace,
 
     // Punctuation
-    Comma, Colon, Dot, DotDot, Tilde, QuestionQuestion,
+    Comma, Colon, Dot, DotDot, Tilde, QuestionQuestion, Backslash,
 
     // Other
     IntegerLiteral, FloatLiteral, StringLiteral,
