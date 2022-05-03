@@ -581,6 +581,7 @@ class Interpreter
 
         // Read potential shebang
         string fileName = expr.Identifier.Value;
+        bool hasShebang = false;
         if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
         {
             using var streamReader = new StreamReader(ShellEnvironment.GetAbsolutePath(fileName));
@@ -591,7 +592,13 @@ class Interpreter
             {
                 arguments.Insert(0, fileName);
                 fileName = streamReader.ReadLine() ?? "";
+                hasShebang = true;
             }
+        }
+
+        if (!hasShebang && fileName.StartsWith("./"))
+        {
+            fileName = Path.Combine(ShellEnvironment.WorkingDirectory, fileName[2..]);
         }
 
         using var process = new Process

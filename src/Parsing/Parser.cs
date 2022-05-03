@@ -759,10 +759,12 @@ internal class Parser
         var interpolationParts = new List<Expr>();
         var currentText = new StringBuilder();
         AdvanceIf(TokenKind.WhiteSpace);
+        AdvanceIf(TokenKind.Backslash);
 
         while (!ReachedTextEnd())
         {
-            if (AdvanceIf(TokenKind.WhiteSpace))
+            AdvanceIf(TokenKind.Backslash);
+            if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
                     TokenKind.StringLiteral,
@@ -831,6 +833,8 @@ internal class Parser
         while (!ReachedTextEnd() &&
                !MatchInclWhiteSpace(TokenKind.WhiteSpace, TokenKind.OpenParenthesis, TokenKind.OpenSquareBracket))
         {
+            AdvanceIf(TokenKind.Backslash);
+
             // If ".." is not before/after a slash, it is not a part of a path
             // and the loop should be stopped.
             if (MatchInclWhiteSpace(TokenKind.DotDot) &&
@@ -861,7 +865,7 @@ internal class Parser
             TokenKind.And,
             TokenKind.Or,
             TokenKind.NewLine
-        );
+        ) && Previous?.Kind != TokenKind.Backslash;
     }
 
     private bool AdvanceIf(TokenKind kind)
