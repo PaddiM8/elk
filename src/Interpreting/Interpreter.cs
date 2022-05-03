@@ -488,15 +488,24 @@ class Interpreter
 
     private void EvaluateCd(List<Expr> argumentExpressions)
     {
-        var arguments = argumentExpressions.Select(x => Next(x).As<RuntimeString>().Value);
-        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        string path = arguments.Any()
-            ? string.Join(" ", arguments)
-            : homePath;
+        if (argumentExpressions.Count > 1)
+            throw new RuntimeWrongNumberOfArgumentsException(1, argumentExpressions.Count);
 
-        ShellEnvironment.WorkingDirectory = path == "-"
-            ? Environment.GetEnvironmentVariable("OLDPWD") ?? homePath
-            : ShellEnvironment.GetAbsolutePath(path);
+        string argument = argumentExpressions.Any()
+            ? Next(argumentExpressions.First()).As<RuntimeString>().Value
+            : "";
+        string path = argument == "-"
+            ? Environment.GetEnvironmentVariable("OLDPWD") ?? ""
+            : ShellEnvironment.GetAbsolutePath(argument);
+
+        if (path == "" || Directory.Exists(path))
+        {
+            ShellEnvironment.WorkingDirectory = path;
+        }
+        else
+        {
+            throw new RuntimeException($"cd: The directory \"{path}\" does not exist");
+        }
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
