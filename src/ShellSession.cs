@@ -8,16 +8,17 @@ namespace Elk;
 
 public class ShellSession
 {
-    public string WorkingDirectory
+    public string WorkingDirectory => _interpreter.ShellEnvironment.WorkingDirectory;
+
+    public string WorkingDirectoryUnexpanded
     {
         get
         {
-            string workingDirectory = _interpreter.ShellEnvironment.WorkingDirectory;
             string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             
-            return workingDirectory.StartsWith(homePath)
-                ? "~" + workingDirectory[homePath.Length..]
-                : workingDirectory;
+            return WorkingDirectory.StartsWith(homePath)
+                ? "~" + WorkingDirectory[homePath.Length..]
+                : WorkingDirectory;
         }
     }
 
@@ -63,7 +64,7 @@ public class ShellSession
         // automatically. This is simply a fallback in case
         // something goes wrong.
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write(WorkingDirectory);
+        Console.Write(WorkingDirectoryUnexpanded);
         Console.ResetColor();
         Console.Write(" >> ");
     }
