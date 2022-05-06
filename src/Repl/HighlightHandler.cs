@@ -20,8 +20,9 @@ class HighlightHandler : IHighlightHandler
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"([^\"]|(?!\\\\)\")*\")",
             @"(?<comment>#.*(\n|\0))",
+            @"(?<variableDeclaration>(?<=let |for )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+" + textArgument + ")",
-            $"(?<identifier>\\b\\w+{textArgument})",
+            @$"(?<identifier>\b\w+{textArgument})",
         };
         _pattern = new Regex(string.Join("|", rules));
     }
@@ -35,10 +36,12 @@ class HighlightHandler : IHighlightHandler
                 colorCode = 31;
             if (m.Groups["numbers"].Value.Any())
                 colorCode = 33;
-            if (m.Groups["comment"].Value.Any())
-                colorCode = 90;
             if (m.Groups["string"].Value.Any())
                 colorCode = 93;
+            if (m.Groups["comment"].Value.Any())
+                colorCode = 90;
+            if (m.Groups["variableDeclaration"].Value.Any())
+                return m.Value;
 
             if (m.Groups["path"].Value.Any())
             {
