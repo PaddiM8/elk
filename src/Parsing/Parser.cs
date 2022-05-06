@@ -754,6 +754,9 @@ internal class Parser
 
     private List<Expr> ParseTextArguments()
     {
+        if (!MatchInclWhiteSpace(TokenKind.WhiteSpace))
+            return new();
+
         var pos = Current?.Position ?? TextPos.Default;
         var textArguments = new List<Expr>();
         var interpolationParts = new List<Expr>();
