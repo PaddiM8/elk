@@ -494,14 +494,21 @@ class Interpreter
         if (argumentExpressions.Count > 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, argumentExpressions.Count);
 
+
         string argument = argumentExpressions.Any()
             ? Next(argumentExpressions.First()).As<RuntimeString>().Value
             : "";
+        if (argument == "")
+        {
+            ShellEnvironment.WorkingDirectory = "";
+            return;
+        }
+
         string path = argument == "-"
             ? Environment.GetEnvironmentVariable("OLDPWD") ?? ""
             : ShellEnvironment.GetAbsolutePath(argument);
 
-        if (path == "" || Directory.Exists(path))
+        if (Directory.Exists(path))
         {
             ShellEnvironment.WorkingDirectory = path;
         }
