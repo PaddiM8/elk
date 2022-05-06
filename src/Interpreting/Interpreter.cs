@@ -94,6 +94,9 @@ class Interpreter
     public bool FunctionExists(string name)
         => _scope.GlobalScope.ContainsFunction(name);
 
+    public bool VariableExists(string name)
+        => _scope.GlobalScope.ContainsVariable(name);
+
     private IRuntimeValue Next(Expr expr)
     {
         if (_returnHandler.Active)

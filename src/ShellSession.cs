@@ -43,6 +43,11 @@ public class ShellSession
         }
     }
 
+    public bool VariableExists(string name)
+    {
+        return _interpreter.VariableExists(name);
+    }
+
     public void PrintPrompt()
     {
         if (_interpreter.FunctionExists("elkPrompt"))
