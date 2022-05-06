@@ -6,7 +6,7 @@ namespace Elk.Repl;
 
 class HighlightHandler : IHighlightHandler
 {
-    private ShellSession _shell;
+    private readonly ShellSession _shell;
     private readonly Regex _pattern;
 
     public HighlightHandler(ShellSession shell)
@@ -39,6 +39,7 @@ class HighlightHandler : IHighlightHandler
                 colorCode = 90;
             if (m.Groups["string"].Value.Any())
                 colorCode = 93;
+
             if (m.Groups["path"].Value.Any())
             {
                 string argument = m.Groups["textArgument"].Value;

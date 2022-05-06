@@ -35,23 +35,26 @@ class AutoCompleteHandler : IAutoCompleteHandler
         string suggestionTarget = text[startPos..endPos];
         int pathStart = text[..endPos].LastIndexOf(' ');
         string path = text[(pathStart + 1)..startPos];
+        if (path.StartsWith("~"))
+            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
+
         string fullPath = Path.Combine(_shell.WorkingDirectory, path);
 
         if (!Directory.Exists(fullPath))
             return new string[] {};
 
         return Directory.GetFileSystemEntries(fullPath)
-            .Select(x => Path.GetFileName(x)!)
-            .Where(x => x.StartsWith(suggestionTarget))
-            .Select(FormatSuggestion)
+            .Select(Path.GetFileName)
+            .Where(x => x!.StartsWith(suggestionTarget))
+            .Select(x => FormatSuggestion(x!, fullPath))
             .ToArray();
     }
 
-    private string FormatSuggestion(string suggestion)
+    private string FormatSuggestion(string suggestion, string preceding)
     {
         string escaped = new Regex("[{}()|$ ]").Replace(suggestion, m => $"\\{m.Value}");
 
-        return Directory.Exists(Path.Combine(_shell.WorkingDirectory, suggestion))
+        return Directory.Exists(Path.Combine(preceding, suggestion))
             ? escaped + "/"
             : escaped;
     }
