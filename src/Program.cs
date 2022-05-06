@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using Elk;
 using Elk.Interpreting;
+using Elk.Repl;
 
 CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
     .WithParsed(options =>
