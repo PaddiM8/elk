@@ -55,9 +55,12 @@ internal class Lexer
             '+' => Peek == '='
                 ? Build(TokenKind.PlusEquals, Eat(2))
                 : Build(TokenKind.Plus, Eat()),
-            '-' => Peek == '='
-                ? Build(TokenKind.MinusEquals, Eat(2))
-                : Build(TokenKind.Minus, Eat()),
+            '-' => Peek switch
+            {
+                '=' => Build(TokenKind.MinusEquals, Eat(2)),
+                '>' => Build(TokenKind.Arrow, Eat(2)),
+                _ => Build(TokenKind.Minus, Eat()),
+            },
             '*' => Peek == '='
                 ? Build(TokenKind.StarEquals, Eat(2))
                 : Build(TokenKind.Star, Eat()),

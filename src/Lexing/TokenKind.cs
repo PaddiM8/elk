@@ -17,6 +17,7 @@ enum TokenKind
     Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
     And, Or,
     Pipe,
+    Arrow,
 
     // Brackets
     OpenParenthesis, ClosedParenthesis,
@@ -59,6 +60,7 @@ static class TokenKindExtensions
             TokenKind.Pipe => OperationKind.Pipe,
             TokenKind.If => OperationKind.If,
             TokenKind.QuestionQuestion => OperationKind.Coalescing,
+            TokenKind.Arrow => OperationKind.NonRedirectingAnd,
             _ => throw new InvalidEnumArgumentException(),
         };
     }

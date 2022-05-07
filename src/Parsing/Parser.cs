@@ -294,7 +294,7 @@ internal class Parser
     {
         var left = ParseComparison();
 
-        while (Match(TokenKind.And))
+        while (Match(TokenKind.And, TokenKind.Arrow))
         {
             var op = Eat().Kind;
             var right = ParseComparison();
@@ -868,6 +868,7 @@ internal class Parser
             TokenKind.And,
             TokenKind.Or,
             TokenKind.Semicolon,
+            TokenKind.Arrow,
             TokenKind.NewLine
         ) && Previous?.Kind != TokenKind.Backslash;
     }

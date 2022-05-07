@@ -367,6 +367,13 @@ class Interpreter
                 : left;
         }
 
+        if (expr.Operator == OperationKind.NonRedirectingAnd)
+        {
+            return left is RuntimeError
+                ? left
+                : Next(expr.Right);
+        }
+
         var right = Next(expr.Right);
 
         return expr.Operator switch
@@ -462,11 +469,7 @@ class Interpreter
     {
         string name = expr.Identifier.Value;
         if (name == "cd")
-        {
-            EvaluateCd(expr.Arguments);
-
-            return RuntimeNil.Value;
-        }
+            return EvaluateCd(expr.Arguments);
 
         if (StdGateway.Contains(name))
         {
@@ -490,7 +493,7 @@ class Interpreter
             : EvaluateFunctionCall(expr, function);
     }
 
-    private void EvaluateCd(List<Expr> argumentExpressions)
+    private IRuntimeValue EvaluateCd(List<Expr> argumentExpressions)
     {
         if (argumentExpressions.Count > 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, argumentExpressions.Count);
@@ -502,7 +505,7 @@ class Interpreter
         if (argument == "")
         {
             ShellEnvironment.WorkingDirectory = "";
-            return;
+            return RuntimeNil.Value;
         }
 
         string path = argument == "-"
@@ -515,8 +518,10 @@ class Interpreter
         }
         else
         {
-            throw new RuntimeException($"cd: The directory \"{path}\" does not exist");
+            return new RuntimeError($"cd: The directory \"{path}\" does not exist");
         }
+
+        return RuntimeNil.Value;
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
@@ -660,11 +665,9 @@ class Interpreter
 
         if (stealOutput)
         {
-            string output = process.ExitCode == 0
-                ? process.StandardOutput.ReadToEnd()
-                : process.StandardError.ReadToEnd();
-
-            return new RuntimeString(output);
+            return process.ExitCode == 0
+                ? new RuntimeString(process.StandardOutput.ReadToEnd())
+                : new RuntimeError(process.StandardError.ReadToEnd());
         }
         
         return RuntimeNil.Value;
