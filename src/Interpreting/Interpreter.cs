@@ -372,6 +372,7 @@ class Interpreter
         return expr.Operator switch
         {
             OperationKind.Modulo => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
+            OperationKind.And or OperationKind.Or => left.As<RuntimeBoolean>().Operation(expr.Operator, right.As<RuntimeBoolean>()),
             _ => left.Operation(expr.Operator, right),
         };
     }
