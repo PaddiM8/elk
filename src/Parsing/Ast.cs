@@ -33,6 +33,7 @@ public enum OperationKind
     Pipe,
     If,
     Coalescing,
+    NonRedirectingAnd,
 }
 
 abstract class Expr
