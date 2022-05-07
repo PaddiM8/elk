@@ -100,6 +100,7 @@ internal class Lexer
                 : Build(TokenKind.Dot, Eat()),
             '~' => Build(TokenKind.Tilde, Eat()),
             '\\' => Build(TokenKind.Backslash, Eat()),
+            ';' => Build(TokenKind.Semicolon, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
         };
