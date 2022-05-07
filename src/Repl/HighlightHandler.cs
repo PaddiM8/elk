@@ -13,7 +13,7 @@ class HighlightHandler : IHighlightHandler
     {
         _shell = shell;
 
-        const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|[^{})|&\\n])+)?)";
+        const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|[^{})|&;\\n])+)?)";
         var rules = new[]
         {
             @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|in|nil|break|continue)\b)",

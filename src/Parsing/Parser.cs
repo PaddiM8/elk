@@ -867,6 +867,7 @@ internal class Parser
             TokenKind.Pipe,
             TokenKind.And,
             TokenKind.Or,
+            TokenKind.Semicolon,
             TokenKind.NewLine
         ) && Previous?.Kind != TokenKind.Backslash;
     }
@@ -929,7 +930,7 @@ internal class Parser
 
     private void SkipWhiteSpace()
     {
-        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment)
+        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment or TokenKind.Semicolon)
             Eat();
     }
 }
