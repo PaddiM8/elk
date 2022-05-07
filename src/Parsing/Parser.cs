@@ -860,6 +860,13 @@ internal class Parser
 
     private bool ReachedTextEnd()
     {
+        if (Previous?.Kind == TokenKind.WhiteSpace &&
+            Current?.Kind == TokenKind.Arrow &&
+            Peek()?.Kind == TokenKind.WhiteSpace)
+        {
+            return true;
+        }
+
         return ReachedEnd || MatchInclWhiteSpace(
             TokenKind.ClosedParenthesis,
             TokenKind.OpenBrace,
@@ -868,7 +875,6 @@ internal class Parser
             TokenKind.And,
             TokenKind.Or,
             TokenKind.Semicolon,
-            TokenKind.Arrow,
             TokenKind.NewLine
         ) && Previous?.Kind != TokenKind.Backslash;
     }
