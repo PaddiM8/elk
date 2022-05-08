@@ -401,6 +401,19 @@ class Interpreter
         }
 
         var right = Next(expr.Right);
+        if (expr.Operator == OperationKind.In)
+        {
+            bool result = right switch
+            {
+                RuntimeList list => list.Values
+                    .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().Value) != null,
+                RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
+                RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
+                _ => throw new RuntimeInvalidOperationException("in", right.GetType().ToString()[7..]),
+            };
+
+            return RuntimeBoolean.From(result);
+        }
 
         return expr.Operator switch
         {

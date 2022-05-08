@@ -315,7 +315,8 @@ internal class Parser
             TokenKind.Less, 
             TokenKind.LessEquals,
             TokenKind.EqualsEquals,
-            TokenKind.NotEquals))
+            TokenKind.NotEquals,
+            TokenKind.In))
         {
             var op = Eat().Kind;
             var right = ParseRange();
