@@ -1,3 +1,4 @@
+using System.Linq;
 using Elk.Attributes;
 using Elk.Interpreting;
 // ReSharper disable UnusedType.Global
@@ -26,4 +27,8 @@ static class Conversion
     [ShellFunction("str")]
     public static RuntimeString ToString(IRuntimeValue value)
         => value.As<RuntimeString>();
+
+    [ShellFunction("isDigit")]
+    public static RuntimeBoolean IsDigit(RuntimeString str)
+        => RuntimeBoolean.From(str.Value.Length == 1 && char.IsDigit(str.Value[0]));
 }
