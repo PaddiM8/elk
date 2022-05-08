@@ -34,7 +34,7 @@ static class IO
     [ShellFunction("getKey")]
     public static RuntimeString GetKey()
     {
-        return new RuntimeString(Console.ReadKey().KeyChar.ToString());
+        return new RuntimeString(Console.ReadKey(true).KeyChar.ToString());
     }
 
     [ShellFunction("print")]

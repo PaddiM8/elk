@@ -1,30 +1,30 @@
 include "sokoban.elk"
 
-fn get_board_string(board) {
-    let board_string = ""
-    let (_, max_y) = get_board_max_bounds(board)
-    for y in 0..(max_y + 1):
-        board_string += row_to_string(board, y) + "\n"
+fn getBoardString(board) {
+    let boardString = ""
+    let (_, maxY) = getBoardMaxBounds(board)
+    for y in 0..(maxY + 1):
+        boardString += rowToString(board, y) + "\n"
 
-    board_string
+    boardString
 }
 
-fn row_to_string(board, y) {
+fn rowToString(board, y) {
     let row = ""
-    let (max_x, _) = get_board_max_bounds(board)
-    for x in 0..(max_x + 1) {
-        let block = get_block(board, x, y)
+    let (maxX, _) = getBoardMaxBounds(board)
+    for x in 0..(maxX + 1) {
+        let block = getBlock(board, x, y)
         if !bool(block) {
             row += " "
         } else {
-            let block_type = get_block_type(block)
-            if block_type == "wall" {
+            let blockType = getBlockType(block)
+            if blockType == "wall" {
                 row += "#"
-            } else if block_type == "crate" {
-                row += if block_is_on_storage(board, block): "*" else "o"
-            } else if block_type == "player" {
-                row += if block_is_on_storage(board, block): "+" else "@"
-            } else if block_type == "storage" {
+            } else if blockType == "crate" {
+                row += if blockIsOnStorage(board, block): "*" else "o"
+            } else if blockType == "player" {
+                row += if blockIsOnStorage(board, block): "+" else "@"
+            } else if blockType == "storage" {
                 row += "."
             }
         }
@@ -33,25 +33,25 @@ fn row_to_string(board, y) {
     row
 }
 
-fn load_board(file_path) {
-    let board = create_board()
-    let file_content = read(file_path)
+fn loadBoard(filePath) {
+    let board = createBoard()
+    let fileContent = read(filePath)
     let x = 0
     let y = 0
-    for c in file_content {
+    for c in fileContent {
         if c == "#" {
-            add_wall(board, x, y)
+            addWall(board, x, y)
         } else if c == "@" {
-            add_player(board, x, y)
+            addPlayer(board, x, y)
         } else if c == "+" {
-            add_player(board, x, y)
-            add_storage(board, x, y)
+            addPlayer(board, x, y)
+            addStorage(board, x, y)
         } else if c == "o" {
-            add_crate(board, x, y)
+            addCrate(board, x, y)
         } else if c == "*" {
-            add_stored_crate(board, x, y)
+            addStoredCrate(board, x, y)
         } else if c == "." {
-            add_storage(board, x, y)
+            addStorage(board, x, y)
         }
 
         if c == "\n" {
@@ -65,27 +65,27 @@ fn load_board(file_path) {
     board
 }
 
-fn start_game(map_path) {
-    let board = load_board(map_path)
-    let game_done = false
-    while !game_done {
-        update_screen(board)
-        let input_key = getKey()
-        if (input_key == "w") {
-            move_player(board, "up")
-        } else if input_key == "a" {
-            move_player(board, "left")
-        } else if input_key == "s" {
-            move_player(board, "down")
-        } else if input_key == "d" {
-            move_player(board, "right")
+fn startGame(mapPath) {
+    let board = loadBoard(mapPath)
+    let gameDone = false
+    while !gameDone {
+        updateScreen(board)
+        let inputKey = getKey()
+        if (inputKey == "w") {
+            movePlayer(board, "up")
+        } else if inputKey == "a" {
+            movePlayer(board, "left")
+        } else if inputKey == "s" {
+            movePlayer(board, "down")
+        } else if inputKey == "d" {
+            movePlayer(board, "right")
         }
 
-        game_done = input_key == "q" || has_won(board)
+        gameDone = inputKey == "q" || hasWon(board)
     }
 
-    if has_won(board) {
-        update_screen(board)
+    if hasWon(board) {
+        updateScreen(board)
         println("You won!")
         println("Press enter to continue")
         input()
@@ -93,34 +93,34 @@ fn start_game(map_path) {
     }
 }
 
-fn update_screen(board) {
-    let board_string = get_board_string(board)
+fn updateScreen(board) {
+    let boardString = getBoardString(board)
     clear()
-    println("Points: {get_points(board)}")
-    println(board_string)
+    println("Points: {getPoints(board)}")
+    println(boardString)
 }
 
-let run_game = true
-while run_game {
+let runGame = true
+while runGame {
     println("Welcome to Sokoban, please choose a level:")
 
     # get levels
     let maps = read(scriptPath() + "/maps.txt") | lines
     println(maps)
 
-    for (map_path, i) in maps | withIndex {
-        let map_name = (map_path | split("."))[0]
-        println("{i + 1}. {map_name}")
+    for (mapPath, i) in maps | withIndex {
+        let mapName = (mapPath | split("."))[0]
+        println("{i + 1}. {mapName}")
     }
 
-    let quit_id = str(len(maps) + 1)
-    println("{quit_id}. Quit")
+    let quitId = str(len(maps) + 1)
+    println("{quitId}. Quit")
 
-    let map_id = input("Choose: ")
-    run_game = map_id != quit_id
+    let mapId = input("Choose: ")
+    runGame = mapId != quitId
 
-    if run_game && isDigit(map_id) {
-        let map_path = scriptPath() + "/" + maps[int(map_id) - 1]
-        start_game(map_path)
+    if runGame && isDigit(mapId) {
+        let mapPath = scriptPath() + "/" + maps[int(mapId) - 1]
+        startGame(mapPath)
     }
 }
