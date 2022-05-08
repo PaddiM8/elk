@@ -1,0 +1,126 @@
+include "sokoban.elk"
+
+fn get_board_string(board) {
+    let board_string = ""
+    let (_, max_y) = get_board_max_bounds(board)
+    for y in 0..(max_y + 1):
+        board_string += row_to_string(board, y) + "\n"
+
+    board_string
+}
+
+fn row_to_string(board, y) {
+    let row = ""
+    let (max_x, _) = get_board_max_bounds(board)
+    for x in 0..(max_x + 1) {
+        let block = get_block(board, x, y)
+        if !bool(block) {
+            row += " "
+        } else {
+            let block_type = get_block_type(block)
+            if block_type == "wall" {
+                row += "#"
+            } else if block_type == "crate" {
+                row += if block_is_on_storage(board, block): "*" else "o"
+            } else if block_type == "player" {
+                row += if block_is_on_storage(board, block): "+" else "@"
+            } else if block_type == "storage" {
+                row += "."
+            }
+        }
+    }
+
+    row
+}
+
+fn load_board(file_path) {
+    let board = create_board()
+    let file_content = read(file_path)
+    let x = 0
+    let y = 0
+    for c in file_content {
+        if c == "#" {
+            add_wall(board, x, y)
+        } else if c == "@" {
+            add_player(board, x, y)
+        } else if c == "+" {
+            add_player(board, x, y)
+            add_storage(board, x, y)
+        } else if c == "o" {
+            add_crate(board, x, y)
+        } else if c == "*" {
+            add_stored_crate(board, x, y)
+        } else if c == "." {
+            add_storage(board, x, y)
+        }
+
+        if c == "\n" {
+            x = 0
+            y += 1
+        } else {
+            x += 1
+        }
+    }
+
+    board
+}
+
+fn start_game(map_path) {
+    let board = load_board(map_path)
+    let game_done = false
+    while !game_done {
+        update_screen(board)
+        let input_key = getKey()
+        if (input_key == "w") {
+            move_player(board, "up")
+        } else if input_key == "a" {
+            move_player(board, "left")
+        } else if input_key == "s" {
+            move_player(board, "down")
+        } else if input_key == "d" {
+            move_player(board, "right")
+        }
+
+        game_done = input_key == "q" || has_won(board)
+    }
+
+    if has_won(board) {
+        update_screen(board)
+        println("You won!")
+        println("Press enter to continue")
+        input()
+        clear()
+    }
+}
+
+fn update_screen(board) {
+    let board_string = get_board_string(board)
+    clear()
+    println("Points: {get_points(board)}")
+    println(board_string)
+}
+
+let run_game = true
+while run_game {
+    println("Welcome to Sokoban, please choose a level:")
+
+    # get levels
+    let maps = read(scriptPath() + "/maps.txt") | lines
+    println(maps)
+
+    for (map_path, i) in maps | withIndex {
+        let map_name = (map_path | split("."))[0]
+        println("{i + 1}. {map_name}")
+    }
+
+    let quit_id = str(len(maps) + 1)
+    println("{quit_id}. Quit")
+
+    let map_id = input("Choose: ")
+    run_game = map_id != quit_id
+
+    if run_game && isDigit(map_id) {
+        let map_path = scriptPath() + "/" + maps[int(map_id) - 1]
+        start_game(map_path)
+    }
+}
