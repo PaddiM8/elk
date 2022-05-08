@@ -34,7 +34,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.elk",
-					"match": "\\b(fn|if|else|return|include|let|true|false|for|in|nil|break|continue|yield)\\b"
+					"match": "\\b(fn|if|else|return|include|let|true|false|for|while|in|nil|break|continue|yield)\\b"
 				}
 			]
 		},

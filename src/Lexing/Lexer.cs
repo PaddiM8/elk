@@ -191,6 +191,7 @@ internal class Lexer
             "if" => TokenKind.If,
             "else" => TokenKind.Else,
             "for" => TokenKind.For,
+            "while" => TokenKind.While,
             "in" => TokenKind.In,
             "return" => TokenKind.Return,
             "break" => TokenKind.Break,

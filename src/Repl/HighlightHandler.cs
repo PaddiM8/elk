@@ -16,7 +16,7 @@ class HighlightHandler : IHighlightHandler
         const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
         var rules = new[]
         {
-            @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|in|nil|break|continue)\b)",
+            @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|while|in|nil|break|continue)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"([^\"]|(?!\\\\)\")*\")",
             @"(?<comment>#.*(\n|\0))",

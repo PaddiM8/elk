@@ -234,6 +234,20 @@ class ForExpr : Expr
     }
 }
 
+class WhileExpr : Expr
+{
+    public Expr Condition { get; }
+
+    public BlockExpr Branch { get; }
+
+    public WhileExpr(Expr condition, BlockExpr branch)
+        : base(condition.Position)
+    {
+        Condition = condition;
+        Branch = branch;
+    }
+}
+
 class TupleExpr : Expr
 {
     public List<Expr> Values { get; }
