@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Elk.Attributes;
 using Elk.Interpreting;
@@ -14,7 +15,13 @@ static class String
 
     [ShellFunction("lines")]
     public static RuntimeList Lines(RuntimeString input)
-        => new(input.Value.Split('\n').Select(x => new RuntimeString(x)));
+    {
+        var lines = input.Value.Split(System.Environment.NewLine).ToList();
+        if (lines.LastOrDefault() == "")
+            lines.RemoveAt(lines.Count - 1);
+
+        return new(lines.Select(x => new RuntimeString(x)));
+    }
 
     [ShellFunction("lower")]
     public static RuntimeString Lower(RuntimeString input)
