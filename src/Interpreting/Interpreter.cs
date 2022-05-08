@@ -546,6 +546,8 @@ class Interpreter
         string name = expr.Identifier.Value;
         if (name == "cd")
             return EvaluateCd(expr.Arguments);
+        if (name == "scriptPath")
+            return EvaluateScriptPath(expr.Arguments);
 
         if (StdGateway.Contains(name))
         {
