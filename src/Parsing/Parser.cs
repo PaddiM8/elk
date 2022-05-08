@@ -429,12 +429,12 @@ internal class Parser
     private Expr ParseIndexer()
     {
         var expr = ParsePrimary();
-        if (AdvanceIf(TokenKind.OpenSquareBracket))
+        while (AdvanceIf(TokenKind.OpenSquareBracket))
         {
             var index = ParseExpr();
             EatExpected(TokenKind.ClosedSquareBracket);
 
-            return new IndexerExpr(expr, index);
+            expr = new IndexerExpr(expr, index);
         }
 
         return expr;
@@ -536,7 +536,7 @@ internal class Parser
         int column = stringLiteral.Position.Column;
         foreach (var part in parts)
         {
-            var textPos = new TextPos(column, stringLiteral.Position.Line, _filePath);
+            var textPos = new TextPos(stringLiteral.Position.Line, column, _filePath);
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(

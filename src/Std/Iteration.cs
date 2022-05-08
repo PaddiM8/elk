@@ -68,7 +68,7 @@ static class Iteration
     {
         if (x is RuntimeList list)
         {
-            list.Values.Add(index.As<RuntimeInteger>());
+            list.Values.RemoveAt(index.As<RuntimeInteger>().Value);
         }
         else if (x is RuntimeDictionary dict)
         {

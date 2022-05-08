@@ -46,7 +46,7 @@ internal class Lexer
     }
 
     public static List<Token> Lex(string input, string? filePath)
-        => Lex(input, new TextPos(1, 0, filePath));
+        => Lex(input, new TextPos(1, 1, filePath));
 
     private Token Next()
     {
