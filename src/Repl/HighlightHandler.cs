@@ -24,7 +24,7 @@ class HighlightHandler : IHighlightHandler
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+" + textArgument + ")",
             @$"(?<identifier>\b\w+{textArgument})",
         };
-        _pattern = new Regex(string.Join("|", rules));
+        _pattern = new Regex(string.Join("|", rules), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
     }
 
     public string Highlight(string text)
