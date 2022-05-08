@@ -61,6 +61,7 @@ static class TokenKindExtensions
             TokenKind.If => OperationKind.If,
             TokenKind.QuestionQuestion => OperationKind.Coalescing,
             TokenKind.Arrow => OperationKind.NonRedirectingAnd,
+            TokenKind.In => OperationKind.In,
             _ => throw new InvalidEnumArgumentException(),
         };
     }

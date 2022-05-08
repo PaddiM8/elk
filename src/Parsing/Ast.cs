@@ -34,6 +34,7 @@ public enum OperationKind
     If,
     Coalescing,
     NonRedirectingAnd,
+    In,
 }
 
 abstract class Expr
