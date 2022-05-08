@@ -359,19 +359,22 @@ class Interpreter
                 : RuntimeNil.Value;
         }
 
+        if (expr.Operator == OperationKind.NonRedirectingAnd)
+        {
+            expr.Left.IsRoot = true;
+
+            var leftAsRoot = Next(expr.Left);
+            return leftAsRoot is RuntimeError
+                ? leftAsRoot
+                : Next(expr.Right);
+        }
+
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Coalescing)
         {
             return left is RuntimeNil
                 ? Next(expr.Right)
                 : left;
-        }
-
-        if (expr.Operator == OperationKind.NonRedirectingAnd)
-        {
-            return left is RuntimeError
-                ? left
-                : Next(expr.Right);
         }
 
         var right = Next(expr.Right);
