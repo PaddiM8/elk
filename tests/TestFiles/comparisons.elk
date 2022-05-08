@@ -1,0 +1,17 @@
+assert(1 == 1)
+assert(1 != 2)
+assert("a" == "a")
+assert("a" != "b")
+assert([1] != [1])
+
+let list1 = [1, 2, 3]
+let list2 = [1, 2, 3]
+assert(list1 == list1)
+assert(list1 != list2)
+assert(list1 != nil)
+assert(nil != list1)
+assert(nil == nil)
+
+let none = nil
+assert(none == nil)
+assert(nil == none)
