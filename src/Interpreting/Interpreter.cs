@@ -431,6 +431,24 @@ class Interpreter
             return RuntimeBoolean.From(result);
         }
 
+        if (expr.Operator is OperationKind.EqualsEquals or OperationKind.NotEquals)
+        {
+            bool? areEqual = null;
+            if (left is RuntimeNil && right is RuntimeNil)
+                areEqual = true;
+            else if (left is RuntimeNil || right is RuntimeNil)
+                areEqual = false;
+            else if (left is not (RuntimeBoolean or RuntimeInteger or RuntimeFloat or RuntimeString))
+                areEqual = left == right;
+
+            if (areEqual != null)
+            {
+                return expr.Operator == OperationKind.EqualsEquals
+                    ? RuntimeBoolean.From(areEqual.Value)
+                    : RuntimeBoolean.From(!areEqual.Value);
+            }
+        }
+
         return expr.Operator switch
         {
             OperationKind.Modulo => left.As<RuntimeInteger>().Operation(expr.Operator, right.As<RuntimeInteger>()),
