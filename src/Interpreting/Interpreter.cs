@@ -600,6 +600,18 @@ class Interpreter
         return RuntimeNil.Value;
     }
 
+    private IRuntimeValue EvaluateScriptPath(List<Expr> arguments)
+    {
+        if (arguments.Any())
+            throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
+
+        string path = _lastExpr!.Position.FilePath == null
+            ? ShellEnvironment.WorkingDirectory
+            : Path.GetDirectoryName(_lastExpr.Position.FilePath)!;
+
+        return new RuntimeString(path);
+    }
+
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
     {
         var functionScope = new LocalScope(_scope);
