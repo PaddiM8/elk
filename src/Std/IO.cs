@@ -23,11 +23,18 @@ static class IO
         => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
 
     [ShellFunction("input")]
-    public static RuntimeString Input(RuntimeString prompt)
+    public static RuntimeString Input(RuntimeString? prompt = null)
     {
-        Console.Write(prompt.Value);
+        if (prompt != null)
+            Console.Write(prompt.Value);
 
         return new RuntimeString(Console.ReadLine() ?? "");
+    }
+
+    [ShellFunction("getKey")]
+    public static RuntimeString GetKey()
+    {
+        return new RuntimeString(Console.ReadKey().KeyChar.ToString());
     }
 
     [ShellFunction("print")]

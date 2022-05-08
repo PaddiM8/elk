@@ -400,6 +400,22 @@ class Interpreter
                 : left;
         }
 
+        if (expr.Operator == OperationKind.And)
+        {
+            bool result = left.As<RuntimeBoolean>().Value &&
+                Next(expr.Right).As<RuntimeBoolean>().Value;
+
+            return RuntimeBoolean.From(result);
+        }
+
+        if (expr.Operator == OperationKind.Or)
+        {
+            bool result = left.As<RuntimeBoolean>().Value ||
+                Next(expr.Right).As<RuntimeBoolean>().Value;
+
+            return RuntimeBoolean.From(result);
+        }
+
         var right = Next(expr.Right);
         if (expr.Operator == OperationKind.In)
         {
