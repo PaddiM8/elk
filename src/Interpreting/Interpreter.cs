@@ -467,6 +467,9 @@ class Interpreter
     {
         var value = Next(expr.Value);
 
+        if (expr.Operator == OperationKind.Not)
+            value = value.As<RuntimeBoolean>();
+
         return value.Operation(expr.Operator);
     }
 
