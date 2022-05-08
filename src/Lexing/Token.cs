@@ -6,7 +6,7 @@ namespace Elk.Lexing;
 record TextPos(int Line, int Column, string? FilePath)
 {
     public static TextPos Default
-        => new(0, 0, null);
+        => new(1, 1, null);
 }
 
 [JsonConverter(typeof(TokenConverter))]
