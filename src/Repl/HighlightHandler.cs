@@ -13,7 +13,7 @@ class HighlightHandler : IHighlightHandler
     {
         _shell = shell;
 
-        const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|[^{})|&\\->;\\n])+)?)";
+        const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
         var rules = new[]
         {
             @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|in|nil|break|continue)\b)",
@@ -34,16 +34,15 @@ class HighlightHandler : IHighlightHandler
             int? colorCode = null;
             if (m.Groups["keywords"].Value.Any())
                 colorCode = 31;
-            if (m.Groups["numbers"].Value.Any())
+            else if (m.Groups["numbers"].Value.Any())
                 colorCode = 33;
-            if (m.Groups["string"].Value.Any())
+            else if (m.Groups["string"].Value.Any())
                 colorCode = 93;
-            if (m.Groups["comment"].Value.Any())
+            else if (m.Groups["comment"].Value.Any())
                 colorCode = 90;
-            if (m.Groups["variableDeclaration"].Value.Any())
+            else if (m.Groups["variableDeclaration"].Value.Any())
                 return m.Value;
-
-            if (m.Groups["path"].Value.Any())
+            else if (m.Groups["path"].Value.Any())
             {
                 string argument = m.Groups["textArgument"].Value;
                 string path = m.Groups["path"].Value;
@@ -53,8 +52,7 @@ class HighlightHandler : IHighlightHandler
                     ? $"\x1b[32m{path}\x1b[94m{argument}\x1b[0m"
                     : $"\x1b[32m{path}\x1b[0m{argument}";
             }
-
-            if (m.Groups["identifier"].Value.Any())
+            else if (m.Groups["identifier"].Value.Any())
             {
                 string argument = m.Groups["textArgument"].Value;
                 string identifier = m.Groups["identifier"].Value;
