@@ -496,6 +496,9 @@ internal class Parser
             Eat();
             SkipWhiteSpace();
 
+            if (AdvanceIf(TokenKind.ClosedBrace))
+                return new DictionaryExpr(new(), Previous!.Position);
+
             if (Match(TokenKind.Identifier, TokenKind.StringLiteral) &&
                 Peek()?.Kind == TokenKind.Colon)
             {
