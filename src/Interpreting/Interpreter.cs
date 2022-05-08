@@ -111,6 +111,7 @@ class Interpreter
             KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
+            WhileExpr e => Visit(e),
             TupleExpr e => Visit(e),
             ListExpr e => Visit(e),
             DictionaryExpr e => Visit(e),
@@ -213,7 +214,7 @@ class Interpreter
         if (value is not IEnumerable<IRuntimeValue> enumerableValue)
             throw new RuntimeIterationException(value.GetType());
 
-        expr.Branch.IsRoot = expr.IsRoot;
+        expr.Branch.IsRoot = true;
 
         var scope = new LocalScope(_scope);
         foreach (var current in enumerableValue)
@@ -221,6 +222,28 @@ class Interpreter
             SetVariables(expr.IdentifierList, current, scope);
             Visit(expr.Branch, scope);
             scope.Clear();
+
+            if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
+            {
+                return _returnHandler.Collect();
+            }
+
+            if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
+            {
+                _returnHandler.Collect();
+            }
+        }
+
+        return RuntimeNil.Value;
+    }
+
+    private IRuntimeValue Visit(WhileExpr expr)
+    {
+        expr.Branch.IsRoot = true;
+
+        while (Next(expr.Condition).As<RuntimeBoolean>().Value)
+        {
+            Next(expr.Branch);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
             {

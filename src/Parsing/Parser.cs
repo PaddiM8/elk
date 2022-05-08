@@ -477,7 +477,12 @@ internal class Parser
         {
             return ParseFor();
         }
-        
+
+        if (Match(TokenKind.While))
+        {
+            return ParseWhile();
+        }
+
         if (Match(TokenKind.OpenSquareBracket))
         {
             return ParseList();
@@ -609,6 +614,15 @@ internal class Parser
         var branch = ParseBlockOrSingle(StructureKind.Loop, scope);
 
         return new ForExpr(identifierList, value, branch);
+    }
+
+    private Expr ParseWhile()
+    {
+        EatExpected(TokenKind.While);
+        var condition = ParseExpr();
+        var branch = ParseBlockOrSingle(StructureKind.Loop);
+
+        return new WhileExpr(condition, branch);
     }
 
     private List<Token> ParseIdentifierList()
