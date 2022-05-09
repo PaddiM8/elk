@@ -30,7 +30,7 @@ internal class Lexer
     private Lexer(string input, TextPos startPos)
     {
         _source = input;
-        _pos = (startPos.Column, startPos.Line);
+        _pos = (startPos.Line, startPos.Column);
         _filePath = startPos.FilePath;
     }
 
@@ -240,9 +240,10 @@ internal class Lexer
         Eat(); // Initial quote
 
         var value = new StringBuilder();
-        while (!ReachedEnd && Current != '"')
+        int openBraces = 0;
+        while (!ReachedEnd && (Current != '"' || openBraces > 0))
         {
-            if (AdvanceIf('\\'))
+            if (AdvanceIf('\\') && openBraces == 0)
             {
                 char c = Current switch
                 {
@@ -256,6 +257,12 @@ internal class Lexer
                     _ => Current,
                 };
                 Eat();
+
+                // Keep the backslash for braces to allow the
+                // string interpolation parser to know when a
+                // brace is escaped.
+                if (c == '{')
+                    value.Append('\\');
 
                 if (c == 'x')
                 {
@@ -276,6 +283,11 @@ internal class Lexer
                 value.Append(c);
                 continue;
             }
+
+            if (Current == '{')
+                openBraces++;
+            if (Current == '}')
+                openBraces--;
 
             value.Append(Eat());
         }
