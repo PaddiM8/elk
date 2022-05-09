@@ -97,6 +97,9 @@ class Interpreter
     public bool VariableExists(string name)
         => _scope.GlobalScope.ContainsVariable(name);
 
+    public void AddGlobalVariable(string name, IRuntimeValue value)
+        => _scope.GlobalScope.AddVariable(name, value);
+
     private IRuntimeValue Next(Expr expr)
     {
         if (_returnHandler.Active)
