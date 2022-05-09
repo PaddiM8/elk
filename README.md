@@ -1,6 +1,6 @@
 # Elk
 
-![](preview.png)
+<img src="preview.png" width="500">
 
 ## Installation
 
