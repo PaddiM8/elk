@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using Elk.Parsing;
 
@@ -245,12 +246,32 @@ internal class Lexer
             {
                 char c = Current switch
                 {
+                    'b' => '\b',
+                    'f' => '\f',
                     'n' => '\n',
-                    't' => '\t',
                     'r' => '\r',
+                    't' => '\t',
+                    'v' => '\v',
+                    '0' => '\0',
                     _ => Current,
                 };
                 Eat();
+
+                if (c == 'x')
+                {
+                    var hex = new StringBuilder();
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (!Current.IsHex())
+                            break;
+
+                        hex.Append(Eat());
+                    }
+
+                    int charValue = int.Parse(hex.ToString(), NumberStyles.HexNumber);
+                    value.Append(Convert.ToChar(charValue));
+                    continue;
+                }
 
                 value.Append(c);
                 continue;
@@ -270,7 +291,7 @@ internal class Lexer
             new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
-
+    
     private static bool IsValidIdentifierStart(char c)
     {
         return char.IsLetter(c) || c is '_' or '$';

@@ -11,6 +11,9 @@ public static class Extensions
     public static bool HasSingle<T>(this ICollection<T> collection, Func<T, bool> predicate)
         => collection.Count == 1 && predicate(collection.First());
 
+    public static bool IsHex(this char c)
+        => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
+
     public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> self)       
         => self.Select((item, index) => (item, index));
 
