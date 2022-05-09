@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Elk.Interpreting;
 using Elk.Lexing;
 using Elk.Parsing;
@@ -91,8 +93,14 @@ public class ShellSession
         }
     }
 
-    public void RunFile(string filePath)
+    public void RunFile(string filePath, IEnumerable<string>? arguments = null)
     {
+        arguments ??= new List<string>();
+
+        var argumentValues = arguments.Prepend(filePath)
+            .Select(literal => new RuntimeString(literal));
+        _interpreter.AddGlobalVariable("argv", new RuntimeList(argumentValues));
+
         _interpreter.Interpret(File.ReadAllText(filePath), filePath);
     }
 }
