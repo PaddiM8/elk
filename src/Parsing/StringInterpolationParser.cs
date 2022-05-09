@@ -20,6 +20,14 @@ class StringInterpolationParser
         var textString = new StringBuilder();
         for (int i = 0; i < literal.Length; i++)
         {
+            // Parse escaped braces literally
+            if (literal[i] == '\\' && i + 1 < literal.Length && literal[i + 1] == '{')
+            {
+                i++;
+                textString.Append('{');
+                continue;
+            }
+
             if (literal[i] == '{')
             {
                 if (textString.Length > 0)
@@ -48,7 +56,7 @@ class StringInterpolationParser
         var exprString = new StringBuilder();
         int openBraceCount = 0;
         int i = startIndex;
-        while (openBraceCount > 0 || literal[i] != '}')
+        while (i < literal.Length && (openBraceCount > 0 || literal[i] != '}'))
         {
             if (i >= literal.Length)
                 throw new ParseException(textPos, "Expected '}' inside string literal");
