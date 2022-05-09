@@ -1,5 +1,7 @@
 # Elk
 
+![](preview.png)
+
 ## Installation
 
 Installation steps:
