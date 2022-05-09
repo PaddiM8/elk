@@ -18,7 +18,7 @@ class HighlightHandler : IHighlightHandler
         {
             @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|while|in|nil|break|continue)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
-            "(?<string>\"([^\"]|(?!\\\\)\")*\")",
+            "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
             @"(?<comment>#.*(\n|\0))",
             @"(?<variableDeclaration>(?<=let |for )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+" + textArgument + ")",
