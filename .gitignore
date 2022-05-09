@@ -1,4 +1,5 @@
 bin/
 obj/
+build/
 experiments/
 *.DotSettings.user
