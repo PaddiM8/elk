@@ -95,9 +95,11 @@ fn startGame(mapPath) {
 
 fn updateScreen(board) {
     let boardString = getBoardString(board)
+    print("\x1b[?25l")
     clear()
     println("Points: {getPoints(board)}")
     println(boardString)
+    print("\x1b[?25h")
 }
 
 let runGame = true
