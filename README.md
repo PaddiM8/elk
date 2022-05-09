@@ -1,4 +1,4 @@
-# Elk
+<img src="res/logo.png" width="260"><br>
 
 <img src="preview.png" width="500">
 
