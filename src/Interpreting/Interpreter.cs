@@ -398,9 +398,9 @@ class Interpreter
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Coalescing)
         {
-            return left is RuntimeNil
-                ? Next(expr.Right)
-                : left;
+            return left.As<RuntimeBoolean>().Value
+                ? left
+                : Next(expr.Right);
         }
 
         if (expr.Operator == OperationKind.And)
