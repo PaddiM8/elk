@@ -549,6 +549,8 @@ class Interpreter
         string name = expr.Identifier.Value;
         if (name == "cd")
             return EvaluateCd(expr.Arguments);
+        if (name == "exec")
+            return EvaluateExec(expr);
         if (name == "scriptPath")
             return EvaluateScriptPath(expr.Arguments);
 
@@ -570,7 +572,12 @@ class Interpreter
         var function = _scope.GlobalScope.FindFunction(name);
 
         return function == null
-            ? EvaluateProgramCall(expr)
+            ? EvaluateProgramCall(
+                expr.Identifier.Value,
+                expr.Arguments,
+                globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+                isRoot: expr.IsRoot
+            )
             : EvaluateFunctionCall(expr, function);
     }
 
@@ -603,6 +610,18 @@ class Interpreter
         }
 
         return RuntimeNil.Value;
+    }
+
+    private IRuntimeValue EvaluateExec(CallExpr callExpr)
+    {
+        string programName = Next(callExpr.Arguments[0]).As<RuntimeString>().Value;
+
+        return EvaluateProgramCall(
+            programName,
+            callExpr.Arguments.GetRange(1, callExpr.Arguments.Count - 1),
+            globbingEnabled: callExpr.CallStyle == CallStyle.TextArguments,
+            isRoot: callExpr.IsRoot
+        );
     }
 
     private IRuntimeValue EvaluateScriptPath(List<Expr> arguments)
@@ -668,16 +687,16 @@ class Interpreter
         return Visit(function.Block, functionScope);
     }
 
-    private IRuntimeValue EvaluateProgramCall(CallExpr expr)
+    private IRuntimeValue EvaluateProgramCall(string fileName, List<Expr> argumentExpressions, bool globbingEnabled, bool isRoot)
     {
         var arguments = new List<string>();
-        foreach (var argumentExpr in expr.Arguments)
+        foreach (var argumentExpr in argumentExpressions)
         {
             var argument = Next(argumentExpr);
             string value = argument is RuntimeNil
                 ? string.Empty
                 : argument.As<RuntimeString>().Value;
-            if (expr.CallStyle == CallStyle.TextArguments)
+            if (globbingEnabled)
             {
                 var matcher = new Matcher();
                 matcher.AddInclude(value);
@@ -695,10 +714,9 @@ class Interpreter
             arguments.Add(value);
         }
 
-        bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !expr.IsRoot;
+        bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !isRoot;
 
         // Read potential shebang
-        string fileName = expr.Identifier.Value;
         bool hasShebang = false;
         if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
         {
@@ -738,7 +756,7 @@ class Interpreter
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            throw new RuntimeNotFoundException(expr.Identifier.Value);
+            throw new RuntimeNotFoundException(fileName);
         }
 
         if (_redirector.Status == RedirectorStatus.HasData)
