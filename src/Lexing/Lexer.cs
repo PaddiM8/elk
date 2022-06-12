@@ -103,7 +103,6 @@ internal class Lexer
                 ? Build(TokenKind.DotDot, Eat(2))
                 : Build(TokenKind.Dot, Eat()),
             '~' => Build(TokenKind.Tilde, Eat()),
-            '\\' => Build(TokenKind.Backslash, Eat()),
             ';' => Build(TokenKind.Semicolon, Eat()),
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
@@ -112,6 +111,18 @@ internal class Lexer
 
     private Token NextComplex()
     {
+        if (Current == '\\')
+        {
+            if (Peek == '\n')
+            {
+                Eat(2);
+
+                return Build(TokenKind.WhiteSpace, " ");
+            }
+
+            return Build(TokenKind.Backslash, Eat());
+        }
+
         if (char.IsWhiteSpace(Current))
         {
             return NextWhiteSpace();
