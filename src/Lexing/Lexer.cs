@@ -322,7 +322,7 @@ internal class Lexer
 
     private static bool IsValidIdentifierMiddle(char c)
     {
-        return IsValidIdentifierStart(c) || "-%!:;".Contains(c);
+        return IsValidIdentifierStart(c) || "-%!:;".Contains(c) || char.IsDigit(c);
     }
 
     private Token Build(TokenKind kind, char value)
