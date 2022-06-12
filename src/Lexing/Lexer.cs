@@ -123,11 +123,6 @@ internal class Lexer
             return c;
         }
         
-        if (IsValidIdentifierStart(Current))
-        {
-            return NextIdentifier();
-        }
-        
         if (char.IsDigit(Current))
         {
             return NextNumber();
@@ -136,6 +131,11 @@ internal class Lexer
         if (Current == '"' && Previous != '\\')
         {
             return NextString();
+        }
+
+        if (IsValidIdentifierStart(Current))
+        {
+            return NextIdentifier();
         }
 
         return Build(TokenKind.Unknown, Eat().ToString());
@@ -306,12 +306,12 @@ internal class Lexer
     
     private static bool IsValidIdentifierStart(char c)
     {
-        return char.IsLetter(c) || c is '_' or '$';
+        return !(char.IsDigit(c) || "+-*/%^><=!&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
     }
 
     private static bool IsValidIdentifierMiddle(char c)
     {
-        return char.IsLetter(c) || char.IsDigit(c) || c == '_';
+        return IsValidIdentifierStart(c) || "-%!:;".Contains(c);
     }
 
     private Token Build(TokenKind kind, char value)
