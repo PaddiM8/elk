@@ -4,7 +4,7 @@ namespace Elk.Interpreting.Scope;
 
 abstract class Scope
 {
-    public GlobalScope GlobalScope { get; }
+    public ModuleScope ModuleScope { get; }
 
     public Scope? Parent { get; }
 
@@ -12,11 +12,11 @@ abstract class Scope
 
     protected Scope(Scope? parent)
     {
-        GlobalScope = parent switch
+        ModuleScope = parent switch
         {
-            GlobalScope scope => scope,
-            LocalScope scope => scope.GlobalScope,
-            _ => (GlobalScope)this,
+            ModuleScope scope => scope,
+            LocalScope scope => scope.ModuleScope,
+            _ => (ModuleScope)this,
         };
         Parent = parent;
     }

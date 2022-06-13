@@ -3,17 +3,16 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
+record FunctionSymbol(FunctionExpr Expr, bool IsImported);
 record Alias(string Name, LiteralExpr Value);
 
-class GlobalScope : Scope
+class ModuleScope : Scope
 {
-    private readonly Dictionary<string, FunctionExpr> _functions = new();
+    private readonly Dictionary<string, FunctionSymbol> _functions = new();
 
     private readonly Dictionary<string, Alias> _aliases = new();
 
-    private readonly HashSet<string> _includes = new();
-
-    public GlobalScope()
+    public ModuleScope()
         : base(null)
     {
     }
@@ -31,23 +30,16 @@ class GlobalScope : Scope
 
     public void AddFunction(FunctionExpr function)
     {
-        if (!_functions.TryAdd(function.Identifier.Value, function))
+        var symbol = new FunctionSymbol(function, false);
+        if (!_functions.TryAdd(function.Identifier.Value, symbol))
         {
-            _functions[function.Identifier.Value] = function;
+            _functions[function.Identifier.Value] = symbol;
         }
-    }
-
-    public void AddInclude(string absolutePath)
-    {
-        _includes.Add(absolutePath);
     }
 
     public bool ContainsFunction(string name)
         => _functions.ContainsKey(name);
     
-    public bool ContainsInclude(string absolutePath)
-        => _includes.Contains(absolutePath);
-
     public Alias? FindAlias(string name)
     {
         _aliases.TryGetValue(name, out var value);
@@ -59,7 +51,16 @@ class GlobalScope : Scope
     {
         _functions.TryGetValue(name, out var result);
 
-        return result;
+        return result?.Expr;
+    }
+
+    public void ImportFunction(FunctionExpr function)
+    {
+        var symbol = new FunctionSymbol(function, true);
+        if (!_functions.TryAdd(function.Identifier.Value, symbol))
+        {
+            _functions[function.Identifier.Value] = symbol;
+        }
     }
 
     public void RemoveAlias(string name)

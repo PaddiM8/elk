@@ -171,10 +171,13 @@ class VariableExpr : Expr
 {
     public Token Identifier { get; }
 
-    public VariableExpr(Token identifier)
+    public Token? ModuleName { get; }
+
+    public VariableExpr(Token identifier, Token? moduleName = null)
         : base(identifier.Position)
     {
         Identifier = identifier;
+        ModuleName = moduleName;
     }
 }
 
@@ -192,12 +195,15 @@ class CallExpr : Expr
 
     public CallStyle CallStyle { get; }
 
-    public CallExpr(Token identifier, List<Expr> arguments, CallStyle callStyle)
+    public Token? ModuleName { get; }
+
+    public CallExpr(Token identifier, List<Expr> arguments, CallStyle callStyle, Token? moduleName = null)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Arguments = arguments;
         CallStyle = callStyle;
+        ModuleName = moduleName;
     }
 }
 

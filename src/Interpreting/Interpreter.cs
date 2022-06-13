@@ -19,7 +19,8 @@ class Interpreter
 
     public bool PrintErrors { get; init; } = true;
 
-    private Scope.Scope _scope;
+    private Scope.Scope _scope = new ModuleScope(); // Placeholder scope, will get replaced
+    private readonly ModuleBag _modules = new();
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
@@ -27,10 +28,9 @@ class Interpreter
     public Interpreter()
     {
         ShellEnvironment = new ShellEnvironment();
-        _scope = new GlobalScope();
     }
 
-    public IRuntimeValue Interpret(List<Expr> ast, GlobalScope? scope = null)
+    public IRuntimeValue Interpret(List<Expr> ast, ModuleScope? scope = null)
     {
         if (scope != null)
             _scope = scope;
@@ -68,11 +68,13 @@ class Interpreter
     {
         try
         {
+            string path = filePath ?? ShellEnvironment.WorkingDirectory;
             var ast = Parser.Parse(
                 Lexer.Lex(input, filePath),
-                _scope.GlobalScope,
-                filePath ?? ShellEnvironment.WorkingDirectory
+                _modules,
+                path
             );
+            _scope = _modules.Find(Path.GetFileNameWithoutExtension(path))!;
 
             return Interpret(ast);
         }
@@ -92,13 +94,13 @@ class Interpreter
     }
 
     public bool FunctionExists(string name)
-        => _scope.GlobalScope.ContainsFunction(name);
+        => _scope.ModuleScope.ContainsFunction(name);
 
     public bool VariableExists(string name)
-        => _scope.GlobalScope.ContainsVariable(name);
+        => _scope.ModuleScope.ContainsVariable(name);
 
     public void AddGlobalVariable(string name, IRuntimeValue value)
-        => _scope.GlobalScope.AddVariable(name, value);
+        => _scope.ModuleScope.AddVariable(name, value);
 
     private IRuntimeValue Next(Expr expr)
     {
@@ -569,7 +571,13 @@ class Interpreter
             return StdGateway.Call(name, arguments, ShellEnvironment);
         }
 
-        var function = _scope.GlobalScope.FindFunction(name);
+        var module = expr.ModuleName == null
+            ? _scope.ModuleScope
+            : _modules.Find(expr.ModuleName.Value);
+        if (module == null)
+            throw new RuntimeModuleNotFoundException(expr.ModuleName!.Value);
+
+        var function = module.FindFunction(name);
 
         return function == null
             ? EvaluateProgramCall(

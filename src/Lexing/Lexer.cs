@@ -97,7 +97,9 @@ internal class Lexer
             ']' => Build(TokenKind.ClosedSquareBracket, Eat()),
             '{' => Build(TokenKind.OpenBrace, Eat()),
             '}' => Build(TokenKind.ClosedBrace, Eat()),
-            ':' => Build(TokenKind.Colon, Eat()),
+            ':' => Peek == ':'
+                ? Build(TokenKind.ColonColon, Eat(2))
+                : Build(TokenKind.Colon, Eat()),
             ',' => Build(TokenKind.Comma, Eat()),
             '.' => Peek == '.'
                 ? Build(TokenKind.DotDot, Eat(2))
@@ -193,6 +195,9 @@ internal class Lexer
         value.Append(Eat());
         while (IsValidIdentifierMiddle(Current))
         {
+            if (Current == '.' && Peek == '.')
+                break;
+
             value.Append(Eat());
         }
 
@@ -208,7 +213,7 @@ internal class Lexer
             "return" => TokenKind.Return,
             "break" => TokenKind.Break,
             "continue" => TokenKind.Continue,
-            "include" => TokenKind.Include,
+            "with" => TokenKind.With,
             "nil" => TokenKind.Nil,
             "true" => TokenKind.True,
             "false" => TokenKind.False,
@@ -322,7 +327,7 @@ internal class Lexer
 
     private static bool IsValidIdentifierMiddle(char c)
     {
-        return IsValidIdentifierStart(c) || "-%!:;.".Contains(c) || char.IsDigit(c);
+        return IsValidIdentifierStart(c) || "-%!.".Contains(c) || char.IsDigit(c);
     }
 
     private Token Build(TokenKind kind, char value)
