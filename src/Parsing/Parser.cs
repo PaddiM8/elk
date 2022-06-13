@@ -11,11 +11,12 @@ namespace Elk.Parsing;
 
 internal class Parser
 {
-    private readonly List<Token> _tokens;
-    private int _index;
-    private Scope _scope;
-    private readonly string _filePath;
     private bool _allowEndOfExpression;
+    private int _index;
+    private readonly string _filePath;
+    private readonly ModuleBag _modules;
+    private Scope _scope;
+    private readonly List<Token> _tokens;
 
     private Token? Current
         => _index < _tokens.Count
@@ -33,27 +34,34 @@ internal class Parser
     private bool UseAliases
         => Current?.Position.FilePath == null;
 
-    private Parser(List<Token> tokens, Scope scope, string filePath)
+    private Parser(List<Token> tokens, ModuleBag modules, string filePath, Scope? scope = null)
     {
-        scope.GlobalScope.AddInclude(filePath);
-
-        _tokens = tokens;
-        _scope = scope;
         _filePath = filePath;
+        _modules = modules;
+        _tokens = tokens;
+
+        if (scope == null)
+        {
+            var moduleScope = new ModuleScope();
+            _scope = moduleScope;
+            _modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), moduleScope);
+        }
+        else
+        {
+            _scope = scope;
+        }
     }
 
-    public static List<Expr> Parse(List<Token> tokens, Scope scope, string filePath)
+    public static List<Expr> Parse(List<Token> tokens, ModuleBag modules, string filePath, Scope? scope = null)
     {
-        var parser = new Parser(tokens, scope, filePath);
+        var parser = new Parser(tokens, modules, filePath, scope);
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
-            if (parser.Match(TokenKind.Include))
+            if (parser.Match(TokenKind.With))
             {
-                var includedAst = parser.ParseInclude();
-                if (includedAst != null)
-                    expressions.AddRange(includedAst);
-                
+                parser.ParseWith();
+
                 continue;
             }
 
@@ -64,6 +72,71 @@ internal class Parser
         }
 
         return expressions;
+    }
+
+    private void ParseWith()
+    {
+        var pos = EatExpected(TokenKind.With).Position;
+
+        // Peek ahead to check if there is a 'from', then backtrack
+        SkipWhiteSpace();
+        int prevIndex = _index;
+        bool hasFrom = Eat().Kind == TokenKind.Identifier &&
+            (Match(TokenKind.Comma) || MatchIdentifier("from"));
+        _index = prevIndex;
+
+        // Avoid reserving the keyword
+        var symbolImportTokens = new List<Token>();
+        if (hasFrom)
+        {
+            do
+            {
+                symbolImportTokens.Add(EatExpected(TokenKind.Identifier));
+            }
+            while (AdvanceIf(TokenKind.Comma));
+
+            if (!MatchIdentifier("from"))
+                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'from'");
+
+            Eat();
+        }
+
+        SkipWhiteSpace();
+        string relativePath = ParsePath();
+
+        string directoryPath = Path.GetDirectoryName(_filePath)!;
+        string moduleName = Path.GetFileNameWithoutExtension(relativePath);
+        if (_modules.Contains(moduleName))
+            return;
+
+        // TODO: Fix paths ending up like a/../b/c
+        string absolutePath = Path.Combine(directoryPath, relativePath) + ".elk";
+        if (!File.Exists(absolutePath))
+        {
+            throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
+        }
+
+        var scope = new ModuleScope();
+        Parse(
+            Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
+            _modules,
+            absolutePath,
+            scope
+        );
+
+        foreach (var symbolImportToken in symbolImportTokens)
+        {
+            var importedFunction = scope.FindFunction(symbolImportToken.Value);
+            if (importedFunction == null)
+                throw new ParseException(
+                    symbolImportToken.Position,
+                    $"Module does not contain function '{symbolImportToken.Value}'"
+                );
+
+            _scope.ModuleScope.ImportFunction(importedFunction);
+        }
+
+        _modules.TryAdd(moduleName, scope);
     }
 
     private Expr ParseExpr()
@@ -106,7 +179,7 @@ internal class Parser
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
         var function = new FunctionExpr(identifier, parameters, block);
 
-        _scope.GlobalScope.AddFunction(function);
+        _scope.ModuleScope.AddFunction(function);
 
         return function;
     }
@@ -132,7 +205,7 @@ internal class Parser
         EatExpected(TokenKind.Equals);
         var value = EatExpected(TokenKind.StringLiteral);
 
-        _scope.GlobalScope.AddAlias(name, new LiteralExpr(value));
+        _scope.ModuleScope.AddAlias(name, new LiteralExpr(value));
 
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
     }
@@ -141,33 +214,9 @@ internal class Parser
     {
         var pos = EatExpected(TokenKind.Unalias).Position;
         string name = EatExpected(TokenKind.Identifier).Value;
-        _scope.GlobalScope.RemoveAlias(name);
+        _scope.ModuleScope.RemoveAlias(name);
 
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
-    }
-
-    private List<Expr>? ParseInclude()
-    {
-        var pos = EatExpected(TokenKind.Include).Position;
-        string relativePath = EatExpected(TokenKind.StringLiteral).Value;
-        string directoryPath = Path.GetDirectoryName(_filePath)!;
-        string absolutePath = Path.Combine(directoryPath, relativePath);
-
-        if (_scope.GlobalScope.ContainsInclude(absolutePath))
-            return null;
-        
-        if (!File.Exists(absolutePath))
-        {
-            throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
-        }
-
-        _scope.GlobalScope.AddInclude(absolutePath);
-
-        return Parse(
-            Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
-            _scope.GlobalScope,
-            absolutePath
-        );
     }
 
     private List<Parameter> ParseParameterList()
@@ -549,7 +598,7 @@ internal class Parser
             else
             {
                 var tokens = Lexer.Lex(part.Value, textPos);
-                var ast = Parse(tokens, _scope, _filePath);
+                var ast = Parse(tokens, _modules, _filePath, _scope);
                 if (ast.Count != 1)
                     throw new ParseException(textPos, "Expected exactly one expression in the string interpolation block");
                 
@@ -725,6 +774,13 @@ internal class Parser
     private Expr ParseIdentifier()
     {
         var pos = Current?.Position ?? TextPos.Default;
+        Token? moduleName = null;
+        if (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
+        {
+            moduleName = Eat();
+            Eat(); // ::
+        }
+
         var identifier = Match(TokenKind.Identifier)
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
@@ -733,7 +789,7 @@ internal class Parser
             var arguments = new List<Expr>();
 
             // Load alias if there is one
-            var alias = UseAliases ? _scope.GlobalScope.FindAlias(identifier.Value) : null;
+            var alias = UseAliases ? _scope.ModuleScope.FindAlias(identifier.Value) : null;
             if (alias != null)
             {
                 identifier = identifier with { Value = alias.Name };
@@ -749,25 +805,25 @@ internal class Parser
 
             EatExpected(TokenKind.ClosedParenthesis);
 
-            return new CallExpr(identifier, arguments, CallStyle.Parenthesized);
+            return new CallExpr(identifier, arguments, CallStyle.Parenthesized, moduleName);
         }
         
         if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
         {
-            return new VariableExpr(identifier);
+            return new VariableExpr(identifier, moduleName);
         }
 
         var textArguments = ParseTextArguments();
 
         // Load alias if there is one
-        var aliasResult = UseAliases ? _scope.GlobalScope.FindAlias(identifier.Value) : null;
+        var aliasResult = UseAliases ? _scope.ModuleScope.FindAlias(identifier.Value) : null;
         if (aliasResult != null)
         {
             identifier = identifier with { Value = aliasResult.Name };
             textArguments.Insert(0, aliasResult.Value);
         }
 
-        return new CallExpr(identifier, textArguments, CallStyle.TextArguments);
+        return new CallExpr(identifier, textArguments, CallStyle.TextArguments, moduleName);
     }
 
     private List<Expr> ParseTextArguments()
@@ -939,6 +995,9 @@ internal class Parser
 
         return MatchInclWhiteSpace(kinds);
     }
+
+    private bool MatchIdentifier(string value)
+        => Match(TokenKind.Identifier) && Current?.Value == value;
 
     private Token? Peek(int length = 1)
         => _tokens.Count > _index + length

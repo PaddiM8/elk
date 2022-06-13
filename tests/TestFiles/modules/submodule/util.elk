@@ -1,0 +1,5 @@
+with ../main
+
+fn increment(x): x + 1
+
+assert(main::hello() == "hello")

@@ -56,7 +56,7 @@ internal class InterpreterTests
             Let("x", Literal(2)),
             Var("x"),
         };
-        var scope = new GlobalScope();
+        var scope = new ModuleScope();
         scope.AddVariable("x", RuntimeNil.Value);
 
         var result = new Interpreter().Interpret(ast, scope);

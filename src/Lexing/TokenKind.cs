@@ -8,7 +8,7 @@ enum TokenKind
     Unknown,
 
     // Keywords
-    Fn, Let, If, Else, For, While, In, Return, Break, Continue, Include,
+    Fn, Let, If, Else, For, While, In, Return, Break, Continue, With,
     Nil, True, False, Alias, Unalias,
 
     // Operators
@@ -25,7 +25,7 @@ enum TokenKind
     OpenBrace, ClosedBrace,
 
     // Punctuation
-    Comma, Colon, Dot, DotDot, Tilde, QuestionQuestion, Backslash, Semicolon,
+    Comma, Colon, ColonColon, Dot, DotDot, Tilde, QuestionQuestion, Backslash, Semicolon,
 
     // Other
     IntegerLiteral, FloatLiteral, StringLiteral,

@@ -1,0 +1,7 @@
+with ./submodule/util
+with decrement from ./util2
+
+fn hello(): "hello"
+
+assert(util::increment(2) == 3)
+assert(util2::decrement(2) == 1)
