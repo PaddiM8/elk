@@ -12,6 +12,8 @@ class ModuleScope : Scope
 
     private readonly Dictionary<string, Alias> _aliases = new();
 
+    private readonly Dictionary<string, string> _importedStdFunctions = new();
+
     public ModuleScope()
         : base(null)
     {
@@ -54,12 +56,27 @@ class ModuleScope : Scope
         return result?.Expr;
     }
 
+    public string? FindImportedStdFunctionModule(string functionName)
+    {
+        _importedStdFunctions.TryGetValue(functionName, out var result);
+
+        return result;
+    }
+
     public void ImportFunction(FunctionExpr function)
     {
         var symbol = new FunctionSymbol(function, true);
         if (!_functions.TryAdd(function.Identifier.Value, symbol))
         {
             _functions[function.Identifier.Value] = symbol;
+        }
+    }
+
+    public void ImportStdFunction(string name, string module)
+    {
+        if (!_importedStdFunctions.TryAdd(name, module))
+        {
+            _importedStdFunctions[name] = module;
         }
     }
 

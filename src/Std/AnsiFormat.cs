@@ -1,28 +1,30 @@
-using System.Collections.Generic;
 using Elk.Attributes;
-using Elk.Interpreting;
+using System.Collections.Generic;
 
 // ReSharper disable UnusedMember.Global
 
+using Elk.Interpreting;
+
 namespace Elk.Std;
 
-public class Format
+[ElkModule("ansi")]
+public class AnsiFormat
 {
-    [ShellFunction("color")]
+    [ElkFunction("color")]
     public static RuntimeString Color(RuntimeString input, RuntimeString colorName)
     {
         return new(Ansi.Color(input.Value, colorName.Value));
     }
-    
-   [ShellFunction("bold")]
+
+    [ElkFunction("bold")]
     public static RuntimeString Bold(RuntimeString input)
         => new(Ansi.Bold(input.Value));
-    
-   [ShellFunction("italic")]
+
+    [ElkFunction("italic")]
     public static RuntimeString Italic(RuntimeString input)
         => new(Ansi.Italic(input.Value));
-    
-   [ShellFunction("ansiReset")]
+
+    [ElkFunction("ansiReset")]
     public static RuntimeString Reset()
         => new(Ansi.Reset());
 }
@@ -59,7 +61,7 @@ static class Ansi
             ? Escape(value, colorCode, 39)
             : value;
     }
-    
+
     public static string Italic(string value)
         => Escape(value, 3, 23);
 

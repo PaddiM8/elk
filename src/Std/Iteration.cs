@@ -9,9 +9,10 @@ using Elk.Interpreting.Exceptions;
 
 namespace Elk.Std;
 
+[ElkModule("iter")]
 static class Iteration
 {
-    [ShellFunction("add")]
+    [ElkFunction("add", Reachability.Everywhere)]
     public static IRuntimeValue Add(IRuntimeValue x, IRuntimeValue value1, IRuntimeValue? value2 = null)
     {
         if (x is RuntimeList list)
@@ -33,15 +34,15 @@ static class Iteration
         return x;
     }
 
-    [ShellFunction("all")]
+    [ElkFunction("all")]
     public static RuntimeBoolean All(RuntimeList list)
         => RuntimeBoolean.From(list.Values.All(x => x.As<RuntimeBoolean>().Value));
 
-    [ShellFunction("any")]
+    [ElkFunction("any")]
     public static RuntimeBoolean Any(RuntimeList list)
         => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().Value));
 
-    [ShellFunction("insert")]
+    [ElkFunction("insert", Reachability.Everywhere)]
     public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, IRuntimeValue value)
     {
         list.Values.Insert(index.Value, value);
@@ -49,11 +50,11 @@ static class Iteration
         return list;
     }
 
-    [ShellFunction("join")]
+    [ElkFunction("join", Reachability.Everywhere)]
     public static RuntimeString Join(RuntimeList list, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", list.Values.Select(x => x.As<RuntimeString>())));
 
-    [ShellFunction("len")]
+    [ElkFunction("len", Reachability.Everywhere)]
     public static RuntimeInteger Length(IRuntimeValue x)
         => x switch
         {
@@ -63,7 +64,7 @@ static class Iteration
             _ => new(x.As<RuntimeString>().Value.Length),
         };
 
-    [ShellFunction("remove")]
+    [ElkFunction("remove", Reachability.Everywhere)]
     public static IRuntimeValue Remove(IRuntimeValue x, IRuntimeValue index)
     {
         if (x is RuntimeList list)
@@ -82,7 +83,7 @@ static class Iteration
         return x;
     }
 
-    [ShellFunction("stepBy")]
+    [ElkFunction("stepBy", Reachability.Everywhere)]
     public static RuntimeRange StepBy(RuntimeRange x, RuntimeInteger step)
     {
         x.Increment = step.Value;
@@ -90,7 +91,7 @@ static class Iteration
         return x;
     }
 
-    [ShellFunction("withIndex")]
+    [ElkFunction("withIndex", Reachability.Everywhere)]
     public static RuntimeList WithIndex(IRuntimeValue values)
     {
         var items = values is IEnumerable<IRuntimeValue> enumerable

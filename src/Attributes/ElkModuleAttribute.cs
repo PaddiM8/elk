@@ -2,11 +2,11 @@ using System;
 
 namespace Elk.Attributes;
 
-class ShellFunctionAttribute : Attribute
+class ElkModuleAttribute : Attribute
 {
     public string Name { get; }
 
-    public ShellFunctionAttribute(string name)
+    public ElkModuleAttribute(string name)
     {
         Name = name;
     }

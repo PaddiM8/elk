@@ -6,7 +6,7 @@ namespace Elk.Std;
 
 static class Testing
 {
-    [ShellFunction("assert")]
+    [ElkFunction("assert", Reachability.Everywhere)]
     public static void Assert(RuntimeBoolean boolean)
     {
         if (!boolean.Value)

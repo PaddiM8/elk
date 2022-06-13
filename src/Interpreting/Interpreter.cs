@@ -19,7 +19,7 @@ class Interpreter
 
     public bool PrintErrors { get; init; } = true;
 
-    private Scope.Scope _scope = new ModuleScope(); // Placeholder scope, will get replaced
+    private Scope.Scope _scope = new ModuleScope();
     private readonly ModuleBag _modules = new();
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
@@ -72,9 +72,9 @@ class Interpreter
             var ast = Parser.Parse(
                 Lexer.Lex(input, filePath),
                 _modules,
-                path
+                path,
+                _scope
             );
-            _scope = _modules.Find(Path.GetFileNameWithoutExtension(path))!;
 
             return Interpret(ast);
         }
@@ -556,8 +556,13 @@ class Interpreter
         if (name == "scriptPath")
             return EvaluateScriptPath(expr.Arguments);
 
-        if (StdGateway.Contains(name))
+        string? moduleName = expr.ModuleName?.Value;
+        bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
+        if (isStdModule || StdGateway.Contains(name))
         {
+            if (isStdModule && !StdGateway.Contains(name, moduleName))
+                throw new RuntimeNotFoundException(name);
+
             var arguments = new List<object?>(expr.Arguments.Count + 1);
             if (_redirector.Status == RedirectorStatus.HasData)
             {
@@ -567,8 +572,7 @@ class Interpreter
             foreach (var argument in expr.Arguments)
                 arguments.Add(Next(argument));
 
-
-            return StdGateway.Call(name, arguments, ShellEnvironment);
+            return StdGateway.Call(name, moduleName, arguments, ShellEnvironment);
         }
 
         var module = expr.ModuleName == null

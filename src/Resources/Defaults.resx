@@ -23,7 +23,7 @@
         alias ls = "ls --color"
 
         fn elkPrompt() {
-            print((prettyPwd | color blue) + " ❯ ")
+            print((prettyPwd | ansi::color blue) + " ❯ ")
         }
     </data>
 </root>

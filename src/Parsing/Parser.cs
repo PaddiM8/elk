@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 
@@ -34,27 +35,19 @@ internal class Parser
     private bool UseAliases
         => Current?.Position.FilePath == null;
 
-    private Parser(List<Token> tokens, ModuleBag modules, string filePath, Scope? scope = null)
+    private Parser(List<Token> tokens, ModuleBag modules, string filePath, Scope scope)
     {
         _filePath = filePath;
         _modules = modules;
         _tokens = tokens;
 
-        if (scope == null)
-        {
-            var moduleScope = new ModuleScope();
-            _scope = moduleScope;
-            _modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), moduleScope);
-        }
-        else
-        {
-            _scope = scope;
-        }
+        _scope = scope;
+        _modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), scope.ModuleScope);
     }
 
     public static List<Expr> Parse(List<Token> tokens, ModuleBag modules, string filePath, Scope? scope = null)
     {
-        var parser = new Parser(tokens, modules, filePath, scope);
+        var parser = new Parser(tokens, modules, filePath, scope ?? new ModuleScope());
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
@@ -103,14 +96,30 @@ internal class Parser
 
         SkipWhiteSpace();
         string relativePath = ParsePath();
-
-        string directoryPath = Path.GetDirectoryName(_filePath)!;
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
         if (_modules.Contains(moduleName))
             return;
 
+        if (!StdGateway.ContainsModule(moduleName))
+        {
+            ImportUserModule(relativePath, moduleName, symbolImportTokens, pos);
+            return;
+        }
+
+        foreach (var symbolImportToken in symbolImportTokens)
+        {
+            if (!StdGateway.Contains(symbolImportToken.Value, moduleName))
+                throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
+
+            _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
+        }
+    }
+
+    private void ImportUserModule(string path, string moduleName, List<Token> symbolImportTokens, TextPos pos)
+    {
         // TODO: Fix paths ending up like a/../b/c
-        string absolutePath = Path.Combine(directoryPath, relativePath) + ".elk";
+        string directoryPath = Path.GetDirectoryName(_filePath)!;
+        string absolutePath = Path.Combine(directoryPath, path) + ".elk";
         if (!File.Exists(absolutePath))
         {
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
@@ -123,6 +132,7 @@ internal class Parser
             absolutePath,
             scope
         );
+        _modules.TryAdd(moduleName, scope);
 
         foreach (var symbolImportToken in symbolImportTokens)
         {
@@ -135,8 +145,6 @@ internal class Parser
 
             _scope.ModuleScope.ImportFunction(importedFunction);
         }
-
-        _modules.TryAdd(moduleName, scope);
     }
 
     private Expr ParseExpr()
@@ -784,6 +792,13 @@ internal class Parser
         var identifier = Match(TokenKind.Identifier)
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
+
+        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
+        if (moduleName == null && importedStdModule != null)
+        {
+            moduleName = new Token(TokenKind.Identifier, importedStdModule, TextPos.Default);
+        }
+
         if (AdvanceIf(TokenKind.OpenParenthesis))
         {
             var arguments = new List<Expr>();
