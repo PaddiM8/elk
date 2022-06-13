@@ -8,21 +8,23 @@ using Elk.Interpreting;
 namespace Elk.Std;
 
 // ReSharper disable once InconsistentNaming
+
+[ElkModule("io")]
 static class IO
 {
-    [ShellFunction("read")]
+    [ElkFunction("read", Reachability.Everywhere)]
     public static RuntimeString ReadFile(RuntimeString path, ShellEnvironment env)
         => new(File.ReadAllText(env.GetAbsolutePath(path.Value)));
 
-    [ShellFunction("write")]
+    [ElkFunction("write", Reachability.Everywhere)]
     public static void WriteToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
         => File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
 
-    [ShellFunction("append")]
+    [ElkFunction("append", Reachability.Everywhere)]
     public static void AppendToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
         => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
 
-    [ShellFunction("input")]
+    [ElkFunction("input", Reachability.Everywhere)]
     public static RuntimeString Input(RuntimeString? prompt = null)
     {
         if (prompt != null)
@@ -31,19 +33,19 @@ static class IO
         return new RuntimeString(Console.ReadLine() ?? "");
     }
 
-    [ShellFunction("getKey")]
+    [ElkFunction("getKey")]
     public static RuntimeString GetKey()
     {
         return new RuntimeString(Console.ReadKey(true).KeyChar.ToString());
     }
 
-    [ShellFunction("print")]
+    [ElkFunction("print", Reachability.Everywhere)]
     public static void Print(RuntimeString input)
     {
         Console.Write(input);
     }
     
-    [ShellFunction("println")]
+    [ElkFunction("println", Reachability.Everywhere)]
     public static void PrintLine(RuntimeString input)
     {
         Console.WriteLine(input);

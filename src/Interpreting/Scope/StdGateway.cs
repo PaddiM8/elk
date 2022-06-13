@@ -9,21 +9,30 @@ namespace Elk.Interpreting.Scope;
 static class StdGateway
 {
     private static readonly Dictionary<string, MethodInfo> _methods = new();
+    private static readonly HashSet<string> _modules = new();
 
-    public static bool Contains(string name)
+    public static bool Contains(string name, string? moduleName = null)
     {
         if (!_methods.Any())
             Initialize();
 
-        return _methods.ContainsKey(name);
+        return _methods.ContainsKey(
+            moduleName == null ? name : $"{moduleName}::{name}"
+        );
     }
 
-    public static IRuntimeValue Call(string name, List<object?> arguments, ShellEnvironment shellEnvironment)
+    public static bool ContainsModule(string name)
+        => _modules.Contains(name);
+
+    public static IRuntimeValue Call(string name, string? module, List<object?> arguments, ShellEnvironment shellEnvironment)
     {
         if (!_methods.Any())
             Initialize();
 
-        _methods.TryGetValue(name, out MethodInfo? methodInfo);
+        string key = module == null
+            ? name
+            : $"{module}::{name}";
+        _methods.TryGetValue(key, out MethodInfo? methodInfo);
 
         if (methodInfo == null)
             return RuntimeNil.Value;
@@ -73,14 +82,22 @@ static class StdGateway
             .Where(x => x.Namespace?.StartsWith("Elk.Std") ?? false);
         foreach (var stdType in stdTypes)
         {
+            string? moduleName = stdType.GetCustomAttribute<ElkModuleAttribute>()?.Name;
+            if (moduleName != null)
+                _modules.Add(moduleName);
+
             var methods = stdType.GetMethods();
             foreach (var method in methods)
             {
-                var attribute = method.GetCustomAttribute<ShellFunctionAttribute>();
-                if (attribute == null)
+                var functionAttribute = method.GetCustomAttribute<ElkFunctionAttribute>();
+                if (functionAttribute == null)
                     continue;
-                
-                _methods.Add(attribute.Name, method);
+
+                string key = functionAttribute.Reachability == Reachability.Module
+                    ? $"{moduleName}::{functionAttribute.Name}"
+                    : functionAttribute.Name;
+
+                _methods.Add(key, method);
             }
         }
     }

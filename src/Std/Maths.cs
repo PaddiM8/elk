@@ -6,9 +6,10 @@ using Elk.Interpreting;
 
 namespace Elk.Std;
 
+[ElkModule("math")]
 static class Maths
 {
-    [ShellFunction("abs")]
+    [ElkFunction("abs", Reachability.Everywhere)]
     public static IRuntimeValue Abs(IRuntimeValue x)
         => x switch
         {
@@ -16,21 +17,21 @@ static class Maths
             _ => new RuntimeFloat(Math.Abs(x.As<RuntimeFloat>().Value)),
         };
 
-    [ShellFunction("ceil")]
+    [ElkFunction("ceil", Reachability.Everywhere)]
     public static RuntimeFloat Ceil(IRuntimeValue x)
         => new(Math.Ceiling(x.As<RuntimeFloat>().Value));
 
-    [ShellFunction("floor")]
+    [ElkFunction("floor", Reachability.Everywhere)]
     public static RuntimeFloat Floor(IRuntimeValue x)
         => new(Math.Floor(x.As<RuntimeFloat>().Value));
 
-    [ShellFunction("sqrt")]
+    [ElkFunction("sqrt", Reachability.Everywhere)]
     public static RuntimeFloat Sqrt(IRuntimeValue x)
         => x is RuntimeInteger integer
             ? new(Math.Sqrt(integer.Value))
             : new(Math.Sqrt(x.As<RuntimeFloat>().Value));
 
-    [ShellFunction("max")]
+    [ElkFunction("max", Reachability.Everywhere)]
     public static IRuntimeValue Max(IRuntimeValue x, IRuntimeValue y)
     {
         if (x is RuntimeInteger xInt && y is RuntimeInteger yInt)
@@ -39,7 +40,7 @@ static class Maths
         return new RuntimeFloat(Math.Max(x.As<RuntimeFloat>().Value, y.As<RuntimeFloat>().Value));
     }
 
-    [ShellFunction("min")]
+    [ElkFunction("min", Reachability.Everywhere)]
     public static IRuntimeValue Min(IRuntimeValue x, IRuntimeValue y)
     {
         if (x is RuntimeInteger xInt && y is RuntimeInteger yInt)

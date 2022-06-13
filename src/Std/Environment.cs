@@ -10,7 +10,7 @@ namespace Elk.Std;
 
 public class Environment
 {
-    [ShellFunction("prettyPwd")]
+    [ElkFunction("prettyPwd", Reachability.Everywhere)]
     public static RuntimeString PrettyPwd()
     {
         string homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);

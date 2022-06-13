@@ -7,13 +7,18 @@ using Elk.Interpreting;
 
 namespace Elk.Std;
 
+[ElkModule("str")]
 static class String
 {
-    [ShellFunction("endsWith")]
+    [ElkFunction("endsWith")]
     public static RuntimeBoolean EndsWith(RuntimeString input, RuntimeString ending)
         => RuntimeBoolean.From(input.Value.EndsWith(ending.Value));
 
-    [ShellFunction("lines")]
+    [ElkFunction("isDigit")]
+    public static RuntimeBoolean IsDigit(RuntimeString str)
+        => RuntimeBoolean.From(str.Value.Length == 1 && char.IsDigit(str.Value[0]));
+
+    [ElkFunction("lines", Reachability.Everywhere)]
     public static RuntimeList Lines(RuntimeString input)
     {
         var lines = input.Value.Split(System.Environment.NewLine).ToList();
@@ -23,25 +28,25 @@ static class String
         return new(lines.Select(x => new RuntimeString(x)));
     }
 
-    [ShellFunction("lower")]
+    [ElkFunction("lower")]
     public static RuntimeString Lower(RuntimeString input)
         => new(input.Value.ToLower());
 
-    [ShellFunction("startsWith")]
+    [ElkFunction("startsWith")]
     public static RuntimeBoolean StartsWith(RuntimeString input, RuntimeString start)
         => RuntimeBoolean.From(input.Value.StartsWith(start.Value));
 
-    [ShellFunction("trim")]
+    [ElkFunction("trim")]
     public static RuntimeString Trim(RuntimeString input)
         => new(input.Value.Trim());
 
-    [ShellFunction("split")]
+    [ElkFunction("split", Reachability.Everywhere)]
     public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null)
         => delimiter == null
             ? new(input.Select(x => x))
             : new(input.Value.Split(delimiter.Value).Select(x => new RuntimeString(x)));
 
-    [ShellFunction("upper")]
+    [ElkFunction("upper")]
     public static RuntimeString Upper(RuntimeString input)
         => new(input.Value.ToUpper());
 }
