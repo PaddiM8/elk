@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
@@ -8,6 +9,9 @@ record Alias(string Name, LiteralExpr Value);
 
 class ModuleScope : Scope
 {
+    public IEnumerable<FunctionExpr> Functions
+        => _functions.Values.Select(x => x.Expr);
+
     private readonly Dictionary<string, FunctionSymbol> _functions = new();
 
     private readonly Dictionary<string, Alias> _aliases = new();

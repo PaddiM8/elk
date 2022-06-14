@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Scope;
 static class StdGateway
 {
     private static readonly Dictionary<string, MethodInfo> _methods = new();
-    private static readonly HashSet<string> _modules = new();
+    private static readonly Dictionary<string, List<string>> _modules = new();
 
     public static bool Contains(string name, string? moduleName = null)
     {
@@ -22,7 +22,7 @@ static class StdGateway
     }
 
     public static bool ContainsModule(string name)
-        => _modules.Contains(name);
+        => _modules.ContainsKey(name);
 
     public static IRuntimeValue Call(string name, string? module, List<object?> arguments, ShellEnvironment shellEnvironment)
     {
@@ -75,6 +75,13 @@ static class StdGateway
         }
     }
 
+    public static List<string>? FindModuleFunctions(string moduleName)
+    {
+        _modules.TryGetValue(moduleName, out var functionNames);
+
+        return functionNames;
+    }
+
     private static void Initialize()
     {
         var stdTypes = Assembly.GetExecutingAssembly()
@@ -83,10 +90,9 @@ static class StdGateway
         foreach (var stdType in stdTypes)
         {
             string? moduleName = stdType.GetCustomAttribute<ElkModuleAttribute>()?.Name;
-            if (moduleName != null)
-                _modules.Add(moduleName);
 
             var methods = stdType.GetMethods();
+            var functionNames = new List<string>();
             foreach (var method in methods)
             {
                 var functionAttribute = method.GetCustomAttribute<ElkFunctionAttribute>();
@@ -98,7 +104,11 @@ static class StdGateway
                     : functionAttribute.Name;
 
                 _methods.Add(key, method);
+                functionNames.Add(functionAttribute.Name);
             }
+
+            if (moduleName != null)
+                _modules.Add(moduleName, functionNames);
         }
     }
 }

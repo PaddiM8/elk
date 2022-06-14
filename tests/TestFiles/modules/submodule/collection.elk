@@ -1,0 +1,3 @@
+fn addition(x, y): x + y
+fn subtraction(x, y): x - y
+fn multiplication(x, y): x * y

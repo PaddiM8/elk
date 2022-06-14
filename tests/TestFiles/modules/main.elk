@@ -1,7 +1,11 @@
 with ./submodule/util
 with decrement from ./util2
+using ./submodule/collection
 
 fn hello(): "hello"
 
 assert(util::increment(2) == 3)
 assert(util2::decrement(2) == 1)
+assert(addition(1, 2) == 3)
+assert(subtraction(2, 1) == 1)
+assert(multiplication(2, 2) == 4)
