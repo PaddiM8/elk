@@ -12,6 +12,9 @@
 			"include": "#keywords"
 		},
 		{
+			"include": "#types"
+		},
+		{
 			"include": "#entity"
 		},
 		{
@@ -34,7 +37,15 @@
 			"patterns": [
 				{
 					"name": "keyword.control.elk",
-					"match": "\\b(fn|if|else|return|include|let|true|false|for|while|in|nil|break|continue|yield)\\b"
+					"match": "\\b(fn|if|else|return|with|using|from|let|true|false|for|while|in|nil|break|continue|yield)\\b"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "support.class",
+					"match": "\\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\\b"
 				}
 			]
 		},
@@ -53,7 +64,7 @@
 						}
 					},
 					"name": "meta.function.elk",
-					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s(?!in\\b)[\\w\"][^\n{})|]*))"
+					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s(?!in\\b|from\\b)[\\w\"][^\n{})|]*))"
 				}
 			]
 		},
