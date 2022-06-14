@@ -8,7 +8,7 @@ enum TokenKind
     Unknown,
 
     // Keywords
-    Fn, Let, If, Else, For, While, In, Return, Break, Continue, With,
+    Fn, Let, If, Else, For, While, In, Return, Break, Continue, With, Using,
     Nil, True, False, Alias, Unalias,
 
     // Operators

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 
@@ -58,6 +57,13 @@ internal class Parser
                 continue;
             }
 
+            if (parser.Match(TokenKind.Using))
+            {
+                parser.ParseUsing();
+
+                continue;
+            }
+
             var expr = parser.ParseExpr();
             expr.IsRoot = true;
             expressions.Add(expr);
@@ -97,25 +103,56 @@ internal class Parser
         SkipWhiteSpace();
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
-        if (_modules.Contains(moduleName))
-            return;
 
-        if (!StdGateway.ContainsModule(moduleName))
+        if (StdGateway.ContainsModule(moduleName))
         {
-            ImportUserModule(relativePath, moduleName, symbolImportTokens, pos);
+            foreach (var symbolImportToken in symbolImportTokens)
+            {
+                if (!StdGateway.Contains(symbolImportToken.Value, moduleName))
+                    throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
+
+                _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
+            }
+
             return;
         }
 
+        var importScope = ImportUserModule(relativePath, moduleName, pos);
         foreach (var symbolImportToken in symbolImportTokens)
         {
-            if (!StdGateway.Contains(symbolImportToken.Value, moduleName))
-                throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
+            var importedFunction = importScope.FindFunction(symbolImportToken.Value);
+            if (importedFunction == null)
+                throw new ParseException(
+                    symbolImportToken.Position,
+                    $"Module does not contain function '{symbolImportToken.Value}'"
+                );
 
-            _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
+            _scope.ModuleScope.ImportFunction(importedFunction);
         }
     }
 
-    private void ImportUserModule(string path, string moduleName, List<Token> symbolImportTokens, TextPos pos)
+    private void ParseUsing()
+    {
+        var pos = EatExpected(TokenKind.Using).Position;
+        SkipWhiteSpace();
+        string relativePath = ParsePath();
+        string moduleName = Path.GetFileNameWithoutExtension(relativePath);
+
+        var stdFunctionNames = StdGateway.FindModuleFunctions(moduleName);
+        if (stdFunctionNames != null)
+        {
+            foreach (string stdFunctionName in stdFunctionNames)
+                _scope.ModuleScope.ImportStdFunction(stdFunctionName, moduleName);
+
+            return;
+        }
+
+        var importScope = ImportUserModule(relativePath, moduleName, pos);
+        foreach (var functionExpr in importScope.Functions)
+            _scope.ModuleScope.ImportFunction(functionExpr);
+    }
+
+    private ModuleScope ImportUserModule(string path, string moduleName, TextPos pos)
     {
         // TODO: Fix paths ending up like a/../b/c
         string directoryPath = Path.GetDirectoryName(_filePath)!;
@@ -125,26 +162,20 @@ internal class Parser
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
         }
 
-        var scope = new ModuleScope();
-        Parse(
-            Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
-            _modules,
-            absolutePath,
-            scope
-        );
-        _modules.TryAdd(moduleName, scope);
-
-        foreach (var symbolImportToken in symbolImportTokens)
+        var importScope = _modules.Find(moduleName);
+        if (importScope == null)
         {
-            var importedFunction = scope.FindFunction(symbolImportToken.Value);
-            if (importedFunction == null)
-                throw new ParseException(
-                    symbolImportToken.Position,
-                    $"Module does not contain function '{symbolImportToken.Value}'"
-                );
-
-            _scope.ModuleScope.ImportFunction(importedFunction);
+            importScope = new ModuleScope();
+            Parse(
+                Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
+                _modules,
+                absolutePath,
+                importScope
+            );
+            _modules.TryAdd(moduleName, importScope);
         }
+
+        return importScope;
     }
 
     private Expr ParseExpr()
