@@ -33,16 +33,31 @@ public class ShellSession
 
     private void Init()
     {
-        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        string initFilePath = Path.Combine(homePath, ".config/elk/init.elk");
-        if (File.Exists(initFilePath))
+        LoadPaths();
+
+        if (File.Exists(CommonPaths.InitFile))
         {
-            RunFile(initFilePath);
+            RunFile(CommonPaths.InitFile);
         }
         else
         {
             RunCommand(Resources.Defaults.init_file);
         }
+    }
+
+    private void LoadPaths()
+    {
+        if (!File.Exists(CommonPaths.PathFile))
+            return;
+
+        string pathValue = Environment.GetEnvironmentVariable("PATH") ?? "";
+        string initialColon = pathValue == "" ? "" : ":";
+        var pathFileContent = File.ReadAllLines(CommonPaths.PathFile);
+        if (pathFileContent.Length == 0)
+            return;
+
+        pathValue += initialColon + string.Join(":", pathFileContent);
+        Environment.SetEnvironmentVariable("PATH", pathValue);
     }
 
     public bool VariableExists(string name)
