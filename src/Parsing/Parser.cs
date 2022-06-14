@@ -154,9 +154,8 @@ internal class Parser
 
     private ModuleScope ImportUserModule(string path, string moduleName, TextPos pos)
     {
-        // TODO: Fix paths ending up like a/../b/c
         string directoryPath = Path.GetDirectoryName(_filePath)!;
-        string absolutePath = Path.Combine(directoryPath, path) + ".elk";
+        string absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
         if (!File.Exists(absolutePath))
         {
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
