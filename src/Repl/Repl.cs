@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using BetterReadLine;
 
 namespace Elk.Repl;
@@ -14,14 +13,10 @@ static class Repl
             args.Cancel = true;
         };
         
-        string configPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".config/elk"
-        );
-        if (!Directory.Exists(configPath))
-            Directory.CreateDirectory(configPath);
+        if (!Directory.Exists(CommonPaths.ConfigFolder))
+            Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
-        string historyFile = Path.Combine(configPath, "history.txt");
+        string historyFile = Path.Combine(CommonPaths.ConfigFolder, "history.txt");
         var shell = new ShellSession();
         var readLine = new ReadLine
         {
