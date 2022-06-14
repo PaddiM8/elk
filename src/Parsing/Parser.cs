@@ -215,7 +215,7 @@ internal class Parser
         }
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
-        var function = new FunctionExpr(identifier, parameters, block);
+        var function = new FunctionExpr(identifier, parameters, block, _scope.ModuleScope);
 
         _scope.ModuleScope.AddFunction(function);
 
