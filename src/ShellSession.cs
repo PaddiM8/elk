@@ -98,14 +98,23 @@ public class ShellSession
             return;
 
         string resultString = result.ToString() ?? "";
+        var textWriter = Console.Out;
+        if (result is RuntimeError)
+        {
+            textWriter = Console.Error;
+            Console.ForegroundColor = ConsoleColor.Red;
+        }
+
         if (resultString == "" || resultString.EndsWith('\n'))
         {
-            Console.Write(resultString);
+            textWriter.Write(resultString);
         }
         else
         {
-            Console.WriteLine(resultString);
+            textWriter.WriteLine(resultString);
         }
+
+        Console.ResetColor();
     }
 
     public void RunFile(string filePath, IEnumerable<string>? arguments = null)

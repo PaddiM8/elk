@@ -52,12 +52,10 @@ class Interpreter
                 if (!PrintErrors)
                     throw new AggregateException(message, e);
                 
-                Console.Error.WriteLine(message);
-                
                 // Make sure the redirector is emptied
                 _redirector.Receive();
 
-                return RuntimeNil.Value;
+                return new RuntimeError(message);
             }
         }
 
@@ -87,9 +85,7 @@ class Interpreter
             if (!PrintErrors)
                 throw new AggregateException(message, e);
                 
-            Console.Error.WriteLine(message);
-
-            return RuntimeNil.Value;
+            return new RuntimeError(message);
         }
     }
 

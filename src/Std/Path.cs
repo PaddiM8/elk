@@ -2,7 +2,6 @@ using System.IO;
 using System.Linq;
 using Elk.Attributes;
 using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
 
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
@@ -48,16 +47,18 @@ public class Path
     }
 
     [ElkFunction("remove")]
-    public static void Remove(RuntimeInteger index)
+    public static IRuntimeValue Remove(RuntimeInteger index)
     {
         if (!File.Exists(CommonPaths.PathFile))
-            throw new RuntimeItemNotFoundException(index.ToString());
+            return new RuntimeError("Index out of range");
 
         var lines = File.ReadAllLines(CommonPaths.PathFile).ToList();
         if (index.Value >= lines.Count)
-            throw new RuntimeItemNotFoundException(index.ToString());
+            return new RuntimeError("Index out of range");
 
         lines.RemoveAt(index.Value);
         File.WriteAllLines(CommonPaths.PathFile, lines);
+
+        return RuntimeNil.Value;
     }
 }

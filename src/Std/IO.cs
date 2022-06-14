@@ -40,14 +40,28 @@ static class IO
     }
 
     [ElkFunction("print", Reachability.Everywhere)]
-    public static void Print(RuntimeString input)
+    public static void Print(IRuntimeValue input)
     {
-        Console.Write(input);
+        if (input is RuntimeError err)
+        {
+            Console.Error.Write(err.Value);
+        }
+        else
+        {
+            Console.Write(input.As<RuntimeString>().Value);
+        }
     }
     
     [ElkFunction("println", Reachability.Everywhere)]
-    public static void PrintLine(RuntimeString input)
+    public static void PrintLine(IRuntimeValue input)
     {
-        Console.WriteLine(input);
+        if (input is RuntimeError err)
+        {
+            Console.Error.WriteLine(err.Value);
+        }
+        else
+        {
+            Console.WriteLine(input.As<RuntimeString>().Value);
+        }
     }
 }

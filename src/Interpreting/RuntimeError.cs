@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
@@ -21,7 +19,7 @@ public class RuntimeError : IRuntimeValue
             var type when type == typeof(RuntimeError)
                 => this,
             var type when type == typeof(RuntimeString)
-                => new RuntimeString(Value),
+                => new RuntimeString(ToString()),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
             _
@@ -38,5 +36,5 @@ public class RuntimeError : IRuntimeValue
         => Value.GetHashCode();
 
     public override string ToString()
-        => $"{Value}";
+        => Value;
 }

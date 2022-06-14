@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Net.Mail;
 using Elk.Attributes;
 using Elk.Interpreting;
 // ReSharper disable UnusedType.Global
@@ -12,13 +13,17 @@ static class Conversion
     public static RuntimeBoolean ToBool(IRuntimeValue value)
         => value.As<RuntimeBoolean>();
 
-    [ElkFunction("int", Reachability.Everywhere)]
-    public static RuntimeInteger ToInt(IRuntimeValue value)
-        => value.As<RuntimeInteger>();
+    [ElkFunction("error", Reachability.Everywhere)]
+    public static RuntimeError ToError(RuntimeString message)
+        => new(message.Value);
 
     [ElkFunction("float", Reachability.Everywhere)]
     public static RuntimeFloat ToFloat(IRuntimeValue value)
         => value.As<RuntimeFloat>();
+
+    [ElkFunction("int", Reachability.Everywhere)]
+    public static RuntimeInteger ToInt(IRuntimeValue value)
+        => value.As<RuntimeInteger>();
 
     [ElkFunction("list", Reachability.Everywhere)]
     public static RuntimeList ToList(IRuntimeValue value)
