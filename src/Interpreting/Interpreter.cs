@@ -290,6 +290,7 @@ class Interpreter
 
     private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)
     {
+        var prevScope = _scope;
         _scope = scope ?? new LocalScope(_scope);
 
         int i = 0;
@@ -317,7 +318,7 @@ class Interpreter
             i++;
         }
 
-        _scope = _scope.Parent!;
+        _scope = prevScope;
 
         BlockShouldExit(expr, out var explicitReturnValue);
 
@@ -650,7 +651,7 @@ class Interpreter
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
     {
-        var functionScope = new LocalScope(_scope);
+        var functionScope = new LocalScope(function.Module);
         bool encounteredDefaultParameter = false;
         RuntimeList? variadicArguments = null;
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))

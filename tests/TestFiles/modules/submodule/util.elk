@@ -1,5 +1,7 @@
 with ../main
+using ./collection
 
-fn increment(x): x + 1
+fn increment(x): someLocalFunction(addition(x, 1))
+fn someLocalFunction(x): x
 
 assert(main::hello() == "hello")

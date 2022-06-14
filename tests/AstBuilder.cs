@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 
@@ -12,11 +13,12 @@ static class AstBuilder
     public static Token Token(TokenKind kind, string value)
         => new(kind, value, TextPos.Default);
 
-    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block)
+    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block, ModuleScope module)
         => new(
             Token(TokenKind.Identifier, identifier),
             parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null, false)).ToList(),
-            block
+            block,
+            module
         );
 
     public static LetExpr Let(string identifier, Expr value)

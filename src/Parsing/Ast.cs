@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Newtonsoft.Json;
 
@@ -68,12 +69,15 @@ class FunctionExpr : Expr
 
     public BlockExpr Block { get; }
 
-    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block)
+    public ModuleScope Module { get;  }
+
+    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Parameters = parameters;
         Block = block;
+        Module = module;
     }
 }
 
