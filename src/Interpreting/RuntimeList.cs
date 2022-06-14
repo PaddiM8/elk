@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
+[ElkType("List")]
 public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
     public List<IRuntimeValue> Values { get; }

@@ -32,4 +32,8 @@ static class Conversion
     [ElkFunction("str", Reachability.Everywhere)]
     public static RuntimeString ToString(IRuntimeValue value)
         => value.As<RuntimeString>();
+
+    [ElkFunction("type", Reachability.Everywhere)]
+    public static RuntimeType ToType(IRuntimeValue value)
+        => new(value.GetType());
 }

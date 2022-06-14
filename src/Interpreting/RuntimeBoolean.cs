@@ -1,9 +1,11 @@
 using System;
+using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
+[ElkType("Boolean")]
 public class RuntimeBoolean : IRuntimeValue
 {
     public static RuntimeBoolean True => new(true);

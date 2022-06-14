@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
+[ElkType("Range")]
 public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 {
     public int? From { get; }

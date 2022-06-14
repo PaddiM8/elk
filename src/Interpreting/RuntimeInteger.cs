@@ -1,9 +1,11 @@
 using System;
+using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
 namespace Elk.Interpreting;
 
+[ElkType("Integer")]
 public class RuntimeInteger : IRuntimeValue
 {
     public int Value { get; }
