@@ -6,7 +6,7 @@ namespace Elk;
 public static class CommonPaths
 {
     public static string ConfigFolder =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "./config/elk");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config/elk");
 
     public static string InitFile =>
         Path.Combine(ConfigFolder, "init.elk");
