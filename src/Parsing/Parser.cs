@@ -823,6 +823,9 @@ internal class Parser
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
 
+        if (LanguageInfo.RuntimeTypes.ContainsKey(identifier.Value))
+            return new TypeExpr(identifier);
+
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
         if (moduleName == null && importedStdModule != null)
         {

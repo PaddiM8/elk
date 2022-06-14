@@ -124,6 +124,7 @@ class Interpreter
             RangeExpr e => Visit(e),
             IndexerExpr e => Visit(e),
             VariableExpr e => Visit(e),
+            TypeExpr e => Visit(e),
             CallExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
@@ -541,6 +542,14 @@ class Interpreter
         }
 
         return _scope.FindVariable(name) ?? RuntimeNil.Value;
+    }
+
+    private IRuntimeValue Visit(TypeExpr expr)
+    {
+        if (!LanguageInfo.RuntimeTypes.TryGetValue(expr.Identifier.Value, out var type))
+            throw new RuntimeNotFoundException(expr.Identifier.Value);
+
+        return new RuntimeType(type);
     }
 
     private IRuntimeValue Visit(CallExpr expr)

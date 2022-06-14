@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Scope;
@@ -182,6 +183,17 @@ class VariableExpr : Expr
     {
         Identifier = identifier;
         ModuleName = moduleName;
+    }
+}
+
+class TypeExpr : Expr
+{
+    public Token Identifier { get;  }
+
+    public TypeExpr(Token identifier)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
     }
 }
 
