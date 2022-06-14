@@ -13,16 +13,17 @@ class HighlightHandler : IHighlightHandler
     {
         _shell = shell;
 
-        const string textArgument = "(?<textArgument>( (?<!in\\b)[A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
+        const string textArgument = "(?<textArgument>([A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
         var rules = new[]
         {
-            @"(?<keywords>\b(fn|if|else|return|include|let|true|false|for|while|in|nil|break|continue)\b)",
+            @"(?<keywords>\b(fn|if|else|return|with|using|from|let|true|false|for|while|in|nil|break|continue)\b)",
+            @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
             @"(?<comment>#.*(\n|\0))",
-            @"(?<variableDeclaration>(?<=let |for )(\w+|\((\w+[ ]*,?[ ]*)*))",
-            @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+" + textArgument + ")",
-            @$"(?<identifier>\b\w+{textArgument})",
+            @"(?<variableDeclaration>(?<=let |for |with )(\w+|\((\w+[ ]*,?[ ]*)*))",
+            @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
+            @$"(?<identifier>\b\w+ {textArgument})",
         };
         _pattern = new Regex(string.Join("|", rules), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
     }
@@ -34,6 +35,10 @@ class HighlightHandler : IHighlightHandler
             int? colorCode = null;
             if (m.Groups["keywords"].Value.Any())
                 colorCode = 31;
+            if (m.Groups["from"].Value.Any())
+                colorCode = 31;
+            if (m.Groups["types"].Value.Any())
+                colorCode = 96;
             else if (m.Groups["numbers"].Value.Any())
                 colorCode = 33;
             else if (m.Groups["string"].Value.Any())

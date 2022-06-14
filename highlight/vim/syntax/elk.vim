@@ -11,7 +11,7 @@ syntax keyword elkConditional if else
 syntax keyword elkRepeat while for in
 syntax keyword elkControl return break continue exit
 syntax keyword elkBoolean true false
-syntax keyword elkUnspecifiedKeyword include let nil
+syntax keyword elkUnspecifiedKeyword with from using let nil
 
 syntax keyword elkFunction fn nextgroup=elkFunctionName skipwhite
 syntax match elkFunctionName '[^[:space:]/()-][^[:space:]/()]*' contained
