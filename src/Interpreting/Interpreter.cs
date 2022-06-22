@@ -498,10 +498,10 @@ class Interpreter
     {
         int? from = expr.From == null
             ? null
-            : Next(expr.From).As<RuntimeInteger>().Value;
+            : (int)Next(expr.From).As<RuntimeInteger>().Value;
         int? to = expr.To == null
             ? null
-            : Next(expr.To).As<RuntimeInteger>().Value;
+            : (int)Next(expr.To).As<RuntimeInteger>().Value;
         
         if (expr.Inclusive)
         {

@@ -8,9 +8,9 @@ namespace Elk.Interpreting;
 [ElkType("Integer")]
 public class RuntimeInteger : IRuntimeValue
 {
-    public int Value { get; }
+    public long Value { get; }
 
-    public RuntimeInteger(int value)
+    public RuntimeInteger(long value)
     {
         Value = value;
     }

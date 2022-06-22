@@ -30,7 +30,7 @@ public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexabl
         {
             try
             {
-                return Values[index.As<RuntimeInteger>().Value];
+                return Values[(int)index.As<RuntimeInteger>().Value];
             }
             catch (Exception)
             {
