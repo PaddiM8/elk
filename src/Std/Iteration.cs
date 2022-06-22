@@ -45,7 +45,7 @@ static class Iteration
     [ElkFunction("insert", Reachability.Everywhere)]
     public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, IRuntimeValue value)
     {
-        list.Values.Insert(index.Value, value);
+        list.Values.Insert((int)index.Value, value);
 
         return list;
     }
@@ -69,7 +69,7 @@ static class Iteration
     {
         if (x is RuntimeList list)
         {
-            list.Values.RemoveAt(index.As<RuntimeInteger>().Value);
+            list.Values.RemoveAt((int)index.As<RuntimeInteger>().Value);
         }
         else if (x is RuntimeDictionary dict)
         {
@@ -86,7 +86,7 @@ static class Iteration
     [ElkFunction("stepBy", Reachability.Everywhere)]
     public static RuntimeRange StepBy(RuntimeRange x, RuntimeInteger step)
     {
-        x.Increment = step.Value;
+        x.Increment = (int)step.Value;
 
         return x;
     }

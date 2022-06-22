@@ -37,7 +37,7 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
                     return new RuntimeList(Values.GetRange(range.From ?? 0, length));
                 }
 
-                return Values[index.As<RuntimeInteger>().Value];
+                return Values[(int)index.As<RuntimeInteger>().Value];
             }
             catch (Exception)
             {
@@ -47,7 +47,7 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
 
         set
         {
-            Values[index.As<RuntimeInteger>().Value] = value;
+            Values[(int)index.As<RuntimeInteger>().Value] = value;
         }
     }
 

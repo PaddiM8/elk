@@ -56,7 +56,7 @@ public class Path
         if (index.Value >= lines.Count)
             return new RuntimeError("Index out of range");
 
-        lines.RemoveAt(index.Value);
+        lines.RemoveAt((int)index.Value);
         File.WriteAllLines(CommonPaths.PathFile, lines);
 
         return RuntimeNil.Value;

@@ -12,6 +12,6 @@ static class Threading
     [ElkFunction("sleep", Reachability.Everywhere)]
     public static void EndsWith(RuntimeInteger length)
     {
-        Thread.Sleep(length.Value);
+        Thread.Sleep((int)length.Value);
     }
 }

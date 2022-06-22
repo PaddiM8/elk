@@ -28,7 +28,7 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
                 return new RuntimeString(Value.Substring(range.From ?? 0, length));
             }
 
-            return new RuntimeString(Value[index.As<RuntimeInteger>().Value].ToString());
+            return new RuntimeString(Value[(int)index.As<RuntimeInteger>().Value].ToString());
         }
 
         set

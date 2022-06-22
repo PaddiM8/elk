@@ -11,5 +11,5 @@ static class Random
 
     [ElkFunction("random", Reachability.Everywhere)]
     public static RuntimeFloat Next(IRuntimeValue from, IRuntimeValue to)
-        => new(_rand.Next(from.As<RuntimeInteger>().Value, to.As<RuntimeInteger>().Value));
+        => new(_rand.Next((int)from.As<RuntimeInteger>().Value, (int)to.As<RuntimeInteger>().Value));
 }
