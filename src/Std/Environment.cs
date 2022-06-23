@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Elk.Attributes;
 using Elk.Interpreting;
 
 namespace Elk.Std;
 
+[ElkModule("env")]
 public class Environment
 {
-    [ElkFunction("prettyPwd", Reachability.Everywhere)]
+    [ElkFunction("prettyPwd")]
     public static RuntimeString PrettyPwd()
     {
         string homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
