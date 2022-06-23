@@ -395,6 +395,16 @@ class Interpreter
                 : Next(expr.Right);
         }
 
+        if (expr.Operator == OperationKind.NonRedirectingOr)
+        {
+            expr.Left.IsRoot = true;
+
+            var leftAsRoot = Next(expr.Left);
+            return leftAsRoot is RuntimeError
+                ? Next(expr.Right)
+                : leftAsRoot;
+        }
+
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Coalescing)
         {

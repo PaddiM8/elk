@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Scope;
@@ -36,6 +35,7 @@ public enum OperationKind
     If,
     Coalescing,
     NonRedirectingAnd,
+    NonRedirectingOr,
     In,
 }
 

@@ -366,7 +366,7 @@ internal class Parser
     {
         var left = ParseAnd();
 
-        while (Match(TokenKind.Or))
+        while (Match(TokenKind.Or, TokenKind.PipePipe))
         {
             var op = Eat().Kind;
             var right = ParseAnd();
@@ -381,7 +381,7 @@ internal class Parser
     {
         var left = ParseComparison();
 
-        while (Match(TokenKind.And, TokenKind.Arrow))
+        while (Match(TokenKind.And, TokenKind.AmpersandAmpersand))
         {
             var op = Eat().Kind;
             var right = ParseComparison();
@@ -502,7 +502,7 @@ internal class Parser
 
     private Expr ParseUnary()
     {
-        if (Match(TokenKind.Minus, TokenKind.Exclamation))
+        if (Match(TokenKind.Minus, TokenKind.Not))
         {
             var op = Eat().Kind;
             var value = ParseIndexer();
@@ -983,7 +983,7 @@ internal class Parser
     private bool ReachedTextEnd()
     {
         if (Previous?.Kind == TokenKind.WhiteSpace &&
-            Current?.Kind == TokenKind.Arrow &&
+            (Current?.Kind is TokenKind.AmpersandAmpersand or TokenKind.PipePipe) &&
             Peek()?.Kind == TokenKind.WhiteSpace)
         {
             return true;

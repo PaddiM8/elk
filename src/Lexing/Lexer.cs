@@ -56,12 +56,9 @@ internal class Lexer
             '+' => Peek == '='
                 ? Build(TokenKind.PlusEquals, Eat(2))
                 : Build(TokenKind.Plus, Eat()),
-            '-' => Peek switch
-            {
-                '=' => Build(TokenKind.MinusEquals, Eat(2)),
-                '>' => Build(TokenKind.Arrow, Eat(2)),
-                _ => Build(TokenKind.Minus, Eat()),
-            },
+            '-' => Peek == '='
+                ? Build(TokenKind.MinusEquals, Eat(2))
+                : Build(TokenKind.Minus, Eat()),
             '*' => Peek == '='
                 ? Build(TokenKind.StarEquals, Eat(2))
                 : Build(TokenKind.Star, Eat()),
@@ -81,12 +78,12 @@ internal class Lexer
                 : Build(TokenKind.Equals, Eat()),
             '!' => Peek == '='
                 ? Build(TokenKind.NotEquals, Eat(2))
-                : Build(TokenKind.Exclamation, Eat()),
+                : Build(TokenKind.Unknown, Eat()),
             '&' => Peek == '&'
-                ? Build(TokenKind.And, Eat(2))
+                ? Build(TokenKind.AmpersandAmpersand, Eat(2))
                 : Build(TokenKind.Unknown, Eat()),
             '|' => Peek == '|'
-                ? Build(TokenKind.Or, Eat(2))
+                ? Build(TokenKind.PipePipe, Eat(2))
                 : Build(TokenKind.Pipe, Eat()),
             '?' => Peek == '?'
                 ? Build(TokenKind.QuestionQuestion, Eat(2))
@@ -203,6 +200,9 @@ internal class Lexer
 
         var kind = value.ToString() switch
         {
+            "not" => TokenKind.Not,
+            "and" => TokenKind.And,
+            "or" => TokenKind.Or,
             "fn" => TokenKind.Fn,
             "let" => TokenKind.Let,
             "if" => TokenKind.If,
@@ -323,12 +323,12 @@ internal class Lexer
     
     private static bool IsValidIdentifierStart(char c)
     {
-        return !(char.IsDigit(c) || "+-*/%^><=!&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
+        return !(char.IsDigit(c) || "+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
     }
 
     private static bool IsValidIdentifierMiddle(char c)
     {
-        return IsValidIdentifierStart(c) || "-%!.".Contains(c) || char.IsDigit(c);
+        return IsValidIdentifierStart(c) || "-%.".Contains(c) || char.IsDigit(c);
     }
 
     private Token Build(TokenKind kind, char value)

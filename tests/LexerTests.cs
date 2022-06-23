@@ -15,7 +15,7 @@ internal class LexerTests
     [Test]
     public void TestBasics()
     {
-        var gotTokens = Lexer.Lex("+-*/> >= < <= = == ! !=&&| ||(){}:,", filePath: null);
+        var gotTokens = Lexer.Lex("+-*/> >= < <= = == !=&&| ||(){}:,", filePath: null);
         var expectedKinds = new[]
         {
             TokenKind.Plus,
@@ -34,13 +34,11 @@ internal class LexerTests
             TokenKind.WhiteSpace,
             TokenKind.EqualsEquals,
             TokenKind.WhiteSpace,
-            TokenKind.Exclamation,
-            TokenKind.WhiteSpace,
             TokenKind.NotEquals,
-            TokenKind.And,
+            TokenKind.AmpersandAmpersand,
             TokenKind.Pipe,
             TokenKind.WhiteSpace,
-            TokenKind.Or,
+            TokenKind.PipePipe,
             TokenKind.OpenParenthesis,
             TokenKind.ClosedParenthesis,
             TokenKind.OpenBrace,
