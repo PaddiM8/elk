@@ -8,16 +8,15 @@ enum TokenKind
     Unknown,
 
     // Keywords
-    Fn, Let, If, Else, For, While, In, Return, Break, Continue, With, Using,
+    Not, And, Or, Fn, Let, If, Else, For, While, In, Return, Break, Continue, With, Using,
     Nil, True, False, Alias, Unalias,
 
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,
-    Exclamation, Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
+    Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
     Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
-    And, Or,
+    AmpersandAmpersand, PipePipe,
     Pipe,
-    Arrow,
 
     // Brackets
     OpenParenthesis, ClosedParenthesis,
@@ -56,11 +55,12 @@ static class TokenKindExtensions
             TokenKind.NotEquals => OperationKind.NotEquals,
             TokenKind.And => OperationKind.And,
             TokenKind.Or => OperationKind.Or,
-            TokenKind.Exclamation => OperationKind.Not,
+            TokenKind.Not => OperationKind.Not,
             TokenKind.Pipe => OperationKind.Pipe,
             TokenKind.If => OperationKind.If,
             TokenKind.QuestionQuestion => OperationKind.Coalescing,
-            TokenKind.Arrow => OperationKind.NonRedirectingAnd,
+            TokenKind.AmpersandAmpersand => OperationKind.NonRedirectingAnd,
+            TokenKind.PipePipe => OperationKind.NonRedirectingOr,
             TokenKind.In => OperationKind.In,
             _ => throw new InvalidEnumArgumentException(),
         };
