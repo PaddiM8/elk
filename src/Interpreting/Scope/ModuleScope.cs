@@ -27,11 +27,12 @@ class ModuleScope : Scope
     {
         var parts = expansion.Value.Value.Split(' ', 2);
         var argument = expansion.Value with { Value = parts[1] };
+        var alias = new Alias(parts[0], new LiteralExpr(argument));
 
-        _aliases.Add(
-            name,
-            new Alias(parts[0], new LiteralExpr(argument))
-        );
+        if (!_aliases.TryAdd(name, alias))
+        {
+            _aliases[name] = alias;
+        }
     }
 
     public void AddFunction(FunctionExpr function)
