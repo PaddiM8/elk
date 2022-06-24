@@ -36,4 +36,8 @@ static class Conversion
     [ElkFunction("type", Reachability.Everywhere)]
     public static RuntimeType ToType(IRuntimeValue value)
         => new(value.GetType());
+
+    [ElkFunction("message", Reachability.Everywhere)]
+    public static RuntimeString Message(RuntimeError err)
+        => new(err.Value);
 }

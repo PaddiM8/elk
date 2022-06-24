@@ -20,12 +20,10 @@ public class RuntimeError : IRuntimeValue
         {
             var type when type == typeof(RuntimeError)
                 => this,
-            var type when type == typeof(RuntimeString)
-                => new RuntimeString(ToString()),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
             _
-                => throw new RuntimeCastException<RuntimeString>(toType),
+                => throw new RuntimeUserException(Value),
         };
 
     public IRuntimeValue Operation(OperationKind kind)
