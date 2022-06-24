@@ -1,5 +1,9 @@
+#region
+
 using System.Collections.Generic;
 using CommandLine;
+
+#endregion
 
 namespace Elk.Cli;
 

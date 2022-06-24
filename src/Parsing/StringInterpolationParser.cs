@@ -1,6 +1,10 @@
+#region
+
 using System.Collections.Generic;
 using System.Text;
 using Elk.Lexing;
+
+#endregion
 
 namespace Elk.Parsing;
 

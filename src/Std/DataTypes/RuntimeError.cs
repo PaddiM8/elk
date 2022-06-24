@@ -1,9 +1,13 @@
+#region
+
 using System;
-using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
+using Elk.Std.Attributes;
 
-namespace Elk.Interpreting;
+#endregion
+
+namespace Elk.Std.DataTypes;
 
 [ElkType("Error")]
 public class RuntimeError : IRuntimeValue

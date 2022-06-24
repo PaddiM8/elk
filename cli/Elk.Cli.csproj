@@ -20,8 +20,4 @@
     <ProjectReference Include="..\src\Elk.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-  </PropertyGroup>
-
 </Project>

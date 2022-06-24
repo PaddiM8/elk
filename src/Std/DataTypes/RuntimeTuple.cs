@@ -1,19 +1,23 @@
+#region
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
+using Elk.Std.Attributes;
 
-namespace Elk.Interpreting;
+#endregion
 
-[ElkType("List")]
-public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+namespace Elk.Std.DataTypes;
+
+[ElkType("Tuple")]
+public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
 {
     public List<IRuntimeValue> Values { get; }
 
-    public RuntimeList(IEnumerable<IRuntimeValue> values)
+    public RuntimeTuple(IEnumerable<IRuntimeValue> values)
     {
         Values = values.ToList();
     }
@@ -30,13 +34,6 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
         {
             try
             {
-                if (index is RuntimeRange range)
-                {
-                    int length = (range.To ?? Values.Count) - (range.From ?? 0);
-
-                    return new RuntimeList(Values.GetRange(range.From ?? 0, length));
-                }
-
                 return Values[(int)index.As<RuntimeInteger>().Value];
             }
             catch (Exception)
@@ -47,15 +44,17 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
 
         set
         {
-            Values[(int)index.As<RuntimeInteger>().Value] = value;
+            throw new RuntimeException("Cannot modify immutable value");
         }
     }
 
     public IRuntimeValue As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeList)
+            var type when type == typeof(RuntimeTuple)
                 => this,
+            var type when type == typeof(RuntimeList)
+                => new RuntimeList(Values),
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),
             var type when type == typeof(RuntimeString)
@@ -65,21 +64,14 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
         };
 
     public IRuntimeValue Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "List");
+        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
-    {
-        var otherList = other.As<RuntimeList>();
-        return kind switch
-        {
-            OperationKind.Addition => new RuntimeList(Values.Concat(otherList.Values)),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "List"),
-        };
-    }
+        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public override int GetHashCode()
         => Values.GetHashCode();
 
     public override string ToString()
-        => $"[{string.Join(", ", Values.Select(x => x.ToString()))}]";
+        => $"({string.Join(", ", Values.Select(x => x.ToString()))})";
 }

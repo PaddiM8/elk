@@ -1,6 +1,10 @@
-using NUnit.Framework;
-using Elk.Lexing;
+#region
+
 using System.Linq;
+using Elk.Lexing;
+using NUnit.Framework;
+
+#endregion
 
 namespace Elk.Tests;
 

@@ -1,6 +1,10 @@
+#region
+
 using System;
 using System.IO;
 using BetterReadLine;
+
+#endregion
 
 namespace Elk.Cli;
 
