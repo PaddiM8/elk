@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using CommandLine;
 
-namespace Elk;
+namespace Elk.Cli;
 
 class CliOptions
 {
