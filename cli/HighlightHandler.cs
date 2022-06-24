@@ -2,7 +2,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using BetterReadLine;
 
-namespace Elk.Repl;
+namespace Elk.Cli;
 
 class HighlightHandler : IHighlightHandler
 {

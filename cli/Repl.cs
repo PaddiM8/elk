@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using BetterReadLine;
 
-namespace Elk.Repl;
+namespace Elk.Cli;
 
 static class Repl
 {
