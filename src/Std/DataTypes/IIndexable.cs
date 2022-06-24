@@ -1,4 +1,4 @@
-namespace Elk.Interpreting;
+namespace Elk.Std.DataTypes;
 
 interface IIndexable<T>
 {

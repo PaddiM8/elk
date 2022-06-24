@@ -1,6 +1,10 @@
+#region
+
 using System;
 
-namespace Elk.Attributes;
+#endregion
+
+namespace Elk.Std.Attributes;
 
 class ElkModuleAttribute : Attribute
 {

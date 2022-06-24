@@ -1,8 +1,12 @@
-﻿using CommandLine;
+﻿#region
+
+using CommandLine;
 using Elk;
 using Elk.Cli;
 
-CommandLine.Parser.Default.ParseArguments<CliOptions>(args)
+#endregion
+
+Parser.Default.ParseArguments<CliOptions>(args)
     .WithParsed(options =>
     {
         if (options.FilePath == null)

@@ -1,15 +1,21 @@
+#region
+
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
-using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Std.DataTypes;
+using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
+
+#endregion
 
 namespace Elk.Interpreting;
 
@@ -782,7 +788,7 @@ class Interpreter
         {
             process.Start();
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Win32Exception)
         {
             throw new RuntimeNotFoundException(fileName);
         }

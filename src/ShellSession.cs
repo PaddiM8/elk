@@ -1,3 +1,5 @@
+#region
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,6 +7,10 @@ using System.Linq;
 using Elk.Interpreting;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Resources;
+using Elk.Std.DataTypes;
+
+#endregion
 
 namespace Elk;
 
@@ -34,7 +40,7 @@ public class ShellSession
     private void Init()
     {
         LoadPaths();
-        RunCommand(Resources.Defaults.init_file);
+        RunCommand(Defaults.init_file);
 
         if (File.Exists(CommonPaths.InitFile))
             RunFile(CommonPaths.InitFile);

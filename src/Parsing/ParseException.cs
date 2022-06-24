@@ -1,5 +1,9 @@
+#region
+
 using System;
 using Elk.Lexing;
+
+#endregion
 
 namespace Elk.Parsing;
 

@@ -1,7 +1,11 @@
+#region
+
 using System.Linq;
 using Elk.Lexing;
 using Elk.Parsing;
 using NUnit.Framework;
+
+#endregion
 
 namespace Elk.Tests;
 

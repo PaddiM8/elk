@@ -1,9 +1,13 @@
+#region
+
 using System;
-using Elk.Attributes;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
+using Elk.Std.Attributes;
 
-namespace Elk.Interpreting;
+#endregion
+
+namespace Elk.Std.DataTypes;
 
 [ElkType("Boolean")]
 public class RuntimeBoolean : IRuntimeValue
@@ -30,7 +34,7 @@ public class RuntimeBoolean : IRuntimeValue
         };
 
     public static RuntimeBoolean From(bool value)
-        => value ? RuntimeBoolean.True : RuntimeBoolean.False;
+        => value ? True : False;
 
     public IRuntimeValue Operation(OperationKind kind)
         => new RuntimeBoolean(!Value);

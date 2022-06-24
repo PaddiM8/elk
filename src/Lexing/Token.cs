@@ -1,5 +1,9 @@
+#region
+
 using System;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Elk.Lexing;
 

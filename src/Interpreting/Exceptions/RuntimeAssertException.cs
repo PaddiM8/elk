@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Elk.Interpreting.Exceptions;
 
 class RuntimeAssertException : RuntimeException

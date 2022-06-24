@@ -1,6 +1,10 @@
+#region
+
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Parsing;
+
+#endregion
 
 namespace Elk.Interpreting.Scope;
 

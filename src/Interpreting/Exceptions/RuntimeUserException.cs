@@ -1,5 +1,3 @@
-using System;
-
 namespace Elk.Interpreting.Exceptions;
 
 class RuntimeUserException : RuntimeException

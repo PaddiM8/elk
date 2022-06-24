@@ -1,8 +1,12 @@
+#region
+
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Newtonsoft.Json;
+
+#endregion
 
 namespace Elk.Parsing;
 
