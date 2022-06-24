@@ -34,15 +34,10 @@ public class ShellSession
     private void Init()
     {
         LoadPaths();
+        RunCommand(Resources.Defaults.init_file);
 
         if (File.Exists(CommonPaths.InitFile))
-        {
             RunFile(CommonPaths.InitFile);
-        }
-        else
-        {
-            RunCommand(Resources.Defaults.init_file);
-        }
     }
 
     private void LoadPaths()
