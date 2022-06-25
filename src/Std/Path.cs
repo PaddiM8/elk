@@ -15,6 +15,11 @@ namespace Elk.Std;
 [ElkModule("path")]
 public class Path
 {
+    /// <summary>
+    /// Adds the provided path to $PATH and ~/.config/elk/path.txt.
+    /// Paths in path.txt are automatically added to $PATH each Elk session.
+    /// </summary>
+    /// <param name="path">Path to add</param>
     [ElkFunction("add")]
     public static void Add(RuntimeString path)
     {
@@ -26,6 +31,7 @@ public class Path
         System.Environment.SetEnvironmentVariable("PATH", pathVar + colon + path);
     }
 
+    /// <returns>A list of all the paths in ~/.config/elk/path.txt.</returns>
     [ElkFunction("all")]
     public static RuntimeList All()
     {
@@ -38,6 +44,7 @@ public class Path
         return new(lines);
     }
 
+    /// <returns>A string displaying all the paths in ~/.config/elk/path.txt together with their index.</returns>
     [ElkFunction("list")]
     public static RuntimeString List()
     {
@@ -50,6 +57,8 @@ public class Path
         return new(string.Join("\n", lines));
     }
 
+    /// <summary>Removes the path of the given index from $PATH and ~/.config/elk/path.txt. The index can be found with the help of the path::list function.</summary>
+    /// <returns>(nil or Error) An error if the index is out of range.</returns>
     [ElkFunction("remove")]
     public static IRuntimeValue Remove(RuntimeInteger index)
     {

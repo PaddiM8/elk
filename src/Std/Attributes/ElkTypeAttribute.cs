@@ -6,7 +6,7 @@ using System;
 
 namespace Elk.Std.Attributes;
 
-class ElkTypeAttribute : Attribute
+public class ElkTypeAttribute : Attribute
 {
     public string Name { get; }
 

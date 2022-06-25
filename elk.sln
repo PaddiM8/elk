@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Tests", "tests\Elk.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Cli", "cli\Elk.Cli.csproj", "{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.DocGen", "doc-gen\Elk.DocGen.csproj", "{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

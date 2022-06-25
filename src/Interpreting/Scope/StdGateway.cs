@@ -89,10 +89,10 @@ static class StdGateway
 
     private static void Initialize()
     {
-        var stdTypes = Assembly.GetExecutingAssembly()
+        var stdClasses = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(x => x.Namespace?.StartsWith("Elk.Std") ?? false);
-        foreach (var stdType in stdTypes)
+            .Where(x => x.Namespace == "Elk.Std");
+        foreach (var stdType in stdClasses)
         {
             string? moduleName = stdType.GetCustomAttribute<ElkModuleAttribute>()?.Name;
 

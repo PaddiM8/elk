@@ -16,7 +16,8 @@ static class Random
 {
     private static readonly System.Random _rand = new();
 
+    /// <returns>A random integer between the two provided values.</returns>
     [ElkFunction("random", Reachability.Everywhere)]
-    public static RuntimeFloat Next(IRuntimeValue from, IRuntimeValue to)
-        => new(_rand.Next((int)from.As<RuntimeInteger>().Value, (int)to.As<RuntimeInteger>().Value));
+    public static RuntimeFloat Next(RuntimeInteger from, RuntimeInteger to)
+        => new(_rand.Next((int)from.Value, (int)to.Value));
 }
