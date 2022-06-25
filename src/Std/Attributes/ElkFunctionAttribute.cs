@@ -6,13 +6,13 @@ using System;
 
 namespace Elk.Std.Attributes;
 
-enum Reachability
+public enum Reachability
 {
     Module,
     Everywhere,
 }
 
-class ElkFunctionAttribute : Attribute
+public class ElkFunctionAttribute : Attribute
 {
     public string Name { get; }
 

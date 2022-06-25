@@ -13,20 +13,26 @@ namespace Elk.Std;
 [ElkModule("ansi")]
 public class AnsiFormat
 {
+    /// <param name="input">Text that should be colored</param>
+    /// <param name="colorName">Color name. One of: default, black, red, green, yellow, blue, magenta, cyan, white, brightBlack, brightRed, etc.</param>
+    /// <returns>A string containing ansi escape codes that result in colored text in the terminal.</returns>
     [ElkFunction("color")]
     public static RuntimeString Color(RuntimeString input, RuntimeString colorName)
-    {
-        return new(Ansi.Color(input.Value, colorName.Value));
-    }
+        => new(Ansi.Color(input.Value, colorName.Value));
 
+    /// <param name="input">Text that should be made bold</param>
+    /// <returns>A string containing ansi escape codes that result in bold text in the terminal.</returns>
     [ElkFunction("bold")]
     public static RuntimeString Bold(RuntimeString input)
         => new(Ansi.Bold(input.Value));
 
+    /// <param name="input">Text that should be made italic</param>
+    /// <returns>A string containing ansi escape codes that result in italic text in the terminal.</returns>
     [ElkFunction("italic")]
     public static RuntimeString Italic(RuntimeString input)
         => new(Ansi.Italic(input.Value));
 
+    /// <returns>A string containing the ansi escape code for resetting colors and other things to their default state.</returns>
     [ElkFunction("ansiReset")]
     public static RuntimeString Reset()
         => new(Ansi.Reset());
