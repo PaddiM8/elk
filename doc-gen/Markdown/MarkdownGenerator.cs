@@ -18,7 +18,7 @@ public class MarkdownGenerator
 
         var modules = new List<ModuleInfo>()
         {
-            new("globals", "Globals", stdInfo.GlobalFunctions),
+            new("built-in", "Built-in", stdInfo.GlobalFunctions),
         };
         modules.AddRange(stdInfo.Modules);
 
@@ -28,15 +28,17 @@ public class MarkdownGenerator
             if (!module.Functions.Any())
                 continue;
 
-            string title = module.DisplayName == "Globals"
-                ? "Globals"
+            bool isBuiltIn = module.DisplayName == "Built-in";
+            string title = isBuiltIn
+                ? "Built-in"
                 : $"{module.DisplayName} ({module.Name})";
+            string description = isBuiltIn
+                ? "# Built-in\nThese functions do not belong to a module and are always available."
+                : $"# {title}\nFunctions in this module can be accessed by with the syntax {module.Name}::functionName or by importing the function from the {module.Name} module.";
             string folderPath = TitleToFolderName(title);
+
             Directory.CreateDirectory(Path.Combine(dir, folderPath));
-            File.WriteAllText(
-                Path.Combine(dir, $"{folderPath}/README.md"),
-                $"# {title}\nFunctions in this module can be accessed by with the syntax {module.Name}::functionName or by importing the function from the {module.Name} module."
-            );
+            File.WriteAllText(Path.Combine(dir, $"{folderPath}/README.md"), description);
             summary.AppendLine($"* [{title}](standard-library/{folderPath}/README.md)");
 
             foreach (var function in module.Functions.OrderBy(x => x.Name))
