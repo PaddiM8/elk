@@ -9,46 +9,44 @@ public class MarkdownGenerator
 {
     public static void Generate(StdInfo stdInfo)
     {
-        const string dir = "out";
-        if (Directory.Exists(dir))
-            Directory.Delete(dir, true);
+        const string outDir = "out";
+        const string dir = $"{outDir}/standard-library";
+        if (Directory.Exists(outDir))
+            Directory.Delete(outDir, true);
 
         Directory.CreateDirectory(dir);
 
-        var names = new List<(string, string)> { ("Globals", "globals.md") };
-        foreach (var module in stdInfo.Modules)
+        var modules = new List<ModuleInfo>()
         {
-            string title = $"{module.DisplayName} ({module.Name})";
-            var moduleString = new StringBuilder();
-            moduleString.AppendLine($"# {title}");
+            new("globals", "Globals", stdInfo.GlobalFunctions),
+        };
+        modules.AddRange(stdInfo.Modules);
 
-            foreach (var function in module.Functions)
-                moduleString.AppendLine(GenerateFunction(function));
+        var summary = new StringBuilder();
+        foreach (var module in modules)
+        {
+            string title = module.DisplayName == "Globals"
+                ? "Globals"
+                : $"{module.DisplayName} ({module.Name})";
+            string folderPath = TitleToFolderName(title);
+            Directory.CreateDirectory(Path.Combine(dir, folderPath));
+            File.WriteAllText(
+                Path.Combine(dir, $"{folderPath}/README.md"),
+                $"# {title}\nFunctions in this module can be accessed by with the syntax {module.Name}::functionName or by importing the function from the {module.Name} module."
+            );
+            summary.AppendLine($"* [{title}](standard-library/{folderPath}/README.md)");
 
-            if (module.Functions.Any())
+            foreach (var function in module.Functions.OrderBy(x => x.Name))
             {
-                string fileName = TitleToFileName(title);
-                names.Add((title, fileName));
                 File.WriteAllText(
-                    Path.Combine(dir, fileName),
-                    moduleString.ToString()
+                    Path.Combine(dir, folderPath, function.Name) + ".md",
+                    GenerateFunction(function)
                 );
+                summary.AppendLine($"  * [{function.Name}](standard-library/{folderPath}/{function.Name}.md)");
             }
         }
 
-        var globalsModuleString = new StringBuilder();
-        globalsModuleString.AppendLine("# Globals");
-
-        var globals = stdInfo.GlobalFunctions.OrderBy(x => x.Name);
-        foreach (var function in globals)
-            globalsModuleString.AppendLine(GenerateFunction(function));
-
-        File.WriteAllText(
-            Path.Combine(dir, "globals.md"),
-            globalsModuleString.ToString()
-        );
-
-        GenerateGitBookSummary(names, dir);
+        File.WriteAllText(Path.Combine(outDir, "SUMMARY.md"), summary.ToString());
     }
 
     private static string GenerateFunction(FunctionInfo functionInfo)
@@ -57,7 +55,7 @@ public class MarkdownGenerator
         var parameters = functionInfo.Parameters;
 
         // Title
-        functionString.Append($"## {functionInfo.Name}(");
+        functionString.Append($"# {functionInfo.Name}(");
         string? signatureWithoutOptionals = null;
         foreach (var parameter in parameters)
         {
@@ -109,7 +107,7 @@ public class MarkdownGenerator
         }
 
         // Returns
-        functionString.AppendLine("### Returns\n");
+        functionString.AppendLine("## Returns\n");
 
         if (functionInfo.ReturnValue.TypeName == null)
         {
@@ -131,7 +129,7 @@ public class MarkdownGenerator
         // Example
         if (functionInfo.Example != null)
         {
-            functionString.AppendLine("\n### Example\n");
+            functionString.AppendLine("\n## Example\n");
             string lang = functionInfo.Example.Contains("#")
                 ? "nim"
                 : "rust";
@@ -143,20 +141,9 @@ public class MarkdownGenerator
         return functionString.ToString();
     }
 
-    private static void GenerateGitBookSummary(IEnumerable<(string name, string fileName)> names, string dir)
-    {
-        var builder = new StringBuilder();
-        foreach (var (name, fileName) in names)
-        {
-            builder.AppendLine($"* [{name}](standard-library/{fileName})");
-        }
-
-        File.WriteAllText(Path.Combine(dir, "SUMMARY.md"), builder.ToString());
-    }
-
-    private static string TitleToFileName(string title)
+    private static string TitleToFolderName(string title)
         => title.ToLower()
             .Replace(" ", "-")
             .Replace("(", "")
-            .Replace(")", "") + ".md";
+            .Replace(")", "");
 }
