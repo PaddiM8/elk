@@ -33,7 +33,7 @@ public class AnsiFormat
         => new(Ansi.Italic(input.Value));
 
     /// <returns>A string containing the ansi escape code for resetting colors and other things to their default state.</returns>
-    [ElkFunction("ansiReset")]
+    [ElkFunction("reset")]
     public static RuntimeString Reset()
         => new(Ansi.Reset());
 }
