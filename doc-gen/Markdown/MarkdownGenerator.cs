@@ -25,6 +25,9 @@ public class MarkdownGenerator
         var summary = new StringBuilder();
         foreach (var module in modules)
         {
+            if (!module.Functions.Any())
+                continue;
+
             string title = module.DisplayName == "Globals"
                 ? "Globals"
                 : $"{module.DisplayName} ({module.Name})";
