@@ -8,7 +8,7 @@ namespace Elk.DocGen;
 
 public class SymbolReader
 {
-    private Dictionary<string, FunctionDocumentation> _docs;
+    private readonly Dictionary<string, FunctionDocumentation> _docs;
 
     public SymbolReader(string xmlPath)
     {
