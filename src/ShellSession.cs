@@ -126,6 +126,10 @@ public class ShellSession
             .Select(literal => new RuntimeString(literal));
         _interpreter.AddGlobalVariable("argv", new RuntimeList(argumentValues));
 
-        _interpreter.Interpret(File.ReadAllText(filePath), filePath);
+        var result = _interpreter.Interpret(File.ReadAllText(filePath), filePath);
+        if (result is RuntimeError err)
+        {
+            Console.Error.WriteLine(err.Value);
+        }
     }
 }
