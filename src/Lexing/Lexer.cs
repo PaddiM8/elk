@@ -77,9 +77,12 @@ internal class Lexer
             '<' => Peek == '='
                 ? Build(TokenKind.LessEquals, Eat(2))
                 : Build(TokenKind.Less, Eat()),
-            '=' => Peek == '='
-                ? Build(TokenKind.EqualsEquals, Eat(2))
-                : Build(TokenKind.Equals, Eat()),
+            '=' => Peek switch
+                {
+                    '=' => Build(TokenKind.EqualsEquals, Eat(2)),
+                    '>' => Build(TokenKind.EqualsGreater, Eat(2)),
+                    _ => Build(TokenKind.Equals, Eat()),
+                },
             '!' => Peek == '='
                 ? Build(TokenKind.NotEquals, Eat(2))
                 : Build(TokenKind.Unknown, Eat()),

@@ -219,8 +219,23 @@ internal class Parser
             functionScope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
         }
 
+        // Has closure?
+        bool hasClosure = false;
+        if (AdvanceIf(TokenKind.EqualsGreater))
+        {
+            if (MatchIdentifier("closure"))
+            {
+                Eat();
+                hasClosure = true;
+            }
+            else
+            {
+                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'closure'");
+            }
+        }
+
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
-        var function = new FunctionExpr(identifier, parameters, block, _scope.ModuleScope);
+        var function = new FunctionExpr(identifier, parameters, block, _scope.ModuleScope, hasClosure);
 
         _scope.ModuleScope.AddFunction(function);
 
@@ -354,14 +369,43 @@ internal class Parser
 
     private Expr ParsePipe()
     {
-        var left = ParseOr();
+        var left = ParseClosure();
 
         while (Match(TokenKind.Pipe))
         {
             var op = Eat().Kind;
-            var right = ParseOr();
+            var right = ParseClosure();
 
             left = new BinaryExpr(left, op, right);
+        }
+
+        return left;
+    }
+
+    private Expr ParseClosure()
+    {
+        var left = ParseOr();
+
+        if (Match(TokenKind.EqualsGreater))
+        {
+            Eat();
+
+            if (left is not CallExpr callExpr)
+                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call to the left of closure");
+
+            var scope = new LocalScope(_scope);
+            var parameters = new List<Token>();
+            do
+            {
+                var parameter = EatExpected(TokenKind.Identifier);
+                parameters.Add(parameter);
+                scope.AddVariable(parameter.Value, RuntimeNil.Value);
+            }
+            while (AdvanceIf(TokenKind.Comma));
+
+            var right = ParseBlockOrSingle(StructureKind.Other, scope);
+
+            return new ClosureExpr(callExpr, parameters, right);
         }
 
         return left;
@@ -988,7 +1032,7 @@ internal class Parser
     private bool ReachedTextEnd()
     {
         if (Previous?.Kind == TokenKind.WhiteSpace &&
-            (Current?.Kind is TokenKind.AmpersandAmpersand or TokenKind.PipePipe) &&
+            (Current?.Kind is TokenKind.AmpersandAmpersand or TokenKind.PipePipe or TokenKind.EqualsGreater) &&
             Peek()?.Kind == TokenKind.WhiteSpace)
         {
             return true;

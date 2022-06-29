@@ -29,6 +29,7 @@ enum TokenKind
 
     // Punctuation
     Comma, Colon, ColonColon, Dot, DotDot, Tilde, QuestionQuestion, Backslash, Semicolon,
+    EqualsGreater,
 
     // Other
     IntegerLiteral, FloatLiteral, StringLiteral,

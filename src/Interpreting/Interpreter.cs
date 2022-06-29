@@ -30,6 +30,7 @@ class Interpreter
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
+    private ClosureExpr? _currentClosureExpr;
 
     public Interpreter()
     {
@@ -132,8 +133,29 @@ class Interpreter
             VariableExpr e => Visit(e),
             TypeExpr e => Visit(e),
             CallExpr e => Visit(e),
+            ClosureExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
+    }
+
+    private IRuntimeValue NextBlockWithScope(BlockExpr blockExpr, LocalScope scope)
+    {
+        if (_returnHandler.Active)
+            return RuntimeNil.Value;
+
+        _lastExpr = blockExpr;
+
+        return Visit(blockExpr, scope);
+    }
+
+    private IRuntimeValue NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
+    {
+        if (_returnHandler.Active)
+            return RuntimeNil.Value;
+
+        _lastExpr = callExpr;
+
+        return Visit(callExpr, closureExpr);
     }
 
     private IRuntimeValue Visit(LetExpr expr)
@@ -228,7 +250,7 @@ class Interpreter
         foreach (var current in enumerableValue)
         {
             SetVariables(expr.IdentifierList, current, scope);
-            Visit(expr.Branch, scope);
+            NextBlockWithScope(expr.Branch, scope);
             scope.Clear();
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
@@ -568,7 +590,7 @@ class Interpreter
         return new RuntimeType(type);
     }
 
-    private IRuntimeValue Visit(CallExpr expr)
+    private IRuntimeValue Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
         string name = expr.Identifier.Value;
         if (name == "cd")
@@ -577,6 +599,8 @@ class Interpreter
             return EvaluateExec(expr);
         if (name == "scriptPath")
             return EvaluateScriptPath(expr.Arguments);
+        if (name == "closure")
+            return EvaluateClosureCall(expr.Arguments);
 
         string? moduleName = expr.ModuleName?.Value;
         bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
@@ -604,6 +628,8 @@ class Interpreter
             throw new RuntimeModuleNotFoundException(expr.ModuleName!.Value);
 
         var function = module.FindFunction(name);
+        if (function == null && closureExpr != null)
+            throw new RuntimeException("Unexpected closure");
 
         return function == null
             ? EvaluateProgramCall(
@@ -612,7 +638,7 @@ class Interpreter
                 globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                 isRoot: expr.IsRoot
             )
-            : EvaluateFunctionCall(expr, function);
+            : EvaluateFunctionCall(expr, function, closureExpr);
     }
 
     private IRuntimeValue EvaluateCd(List<Expr> argumentExpressions)
@@ -670,12 +696,51 @@ class Interpreter
         return new RuntimeString(path);
     }
 
-    private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function)
+    private IRuntimeValue EvaluateClosureCall(List<Expr> arguments)
     {
+        if (_currentClosureExpr == null)
+            throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
+
+        var scope = new LocalScope(_scope);
+        foreach (var (argumentExpr, i) in arguments.WithIndex())
+        {
+            var parameter = _currentClosureExpr.Parameters.ElementAtOrDefault(i)?.Value ??
+                throw new RuntimeException($"Expected exactly {_currentClosureExpr.Parameters.Count} closure parameters");
+            scope.AddVariable(parameter, Next(argumentExpr));
+        }
+
+        return NextBlockWithScope(_currentClosureExpr.Body, scope);
+    }
+
+    private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function, ClosureExpr? closureExpr = null)
+    {
+        if (closureExpr != null && !function.HasClosure)
+            throw new RuntimeException("Unexpected closure");
+
+        var arguments = new List<IRuntimeValue>();
+        if (_redirector.Status == RedirectorStatus.HasData)
+        {
+            arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
+        }
+
+        // TODO: Avoid duplication. This should be solved by having a new phase
+        foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
+        {
+            if (argument == null)
+            {
+                if (parameter?.DefaultValue != null)
+                    arguments.Add(Next(parameter.DefaultValue));
+            }
+            else
+            {
+                arguments.Add(Next(argument));
+            }
+        }
+
         var functionScope = new LocalScope(function.Module);
         bool encounteredDefaultParameter = false;
         RuntimeList? variadicArguments = null;
-        foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
+        foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (parameter?.DefaultValue != null)
                 encounteredDefaultParameter = true;
@@ -706,19 +771,21 @@ class Interpreter
             if (variadicArguments != null)
             {
                 if (argument != null)
-                    variadicArguments.Values.Add(Next(argument));
+                    variadicArguments.Values.Add(argument);
                 continue;
             }
             
-            functionScope.AddVariable(
-                parameter!.Identifier.Value,
-                argument == null ? Next(parameter.DefaultValue!) : Next(argument)
-            );
+            functionScope.AddVariable(parameter!.Identifier.Value, argument!);
         }
 
         function.Block.IsRoot = call.IsRoot;
 
-        return Visit(function.Block, functionScope);
+        var previousClosureExpr = _currentClosureExpr;
+        _currentClosureExpr = closureExpr;
+        var result = Visit(function.Block, functionScope);
+        _currentClosureExpr = previousClosureExpr;
+
+        return result;
     }
 
     private IRuntimeValue EvaluateProgramCall(string fileName, List<Expr> argumentExpressions, bool globbingEnabled, bool isRoot)
@@ -816,6 +883,11 @@ class Interpreter
         }
         
         return RuntimeNil.Value;
+    }
+
+    private IRuntimeValue Visit(ClosureExpr closureExpr)
+    {
+        return NextCallWithClosure(closureExpr.Call, closureExpr);
     }
 
     private static string EscapeArgument(string argument)

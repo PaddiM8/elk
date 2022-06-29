@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Newtonsoft.Json;
@@ -74,15 +75,18 @@ class FunctionExpr : Expr
 
     public BlockExpr Block { get; }
 
-    public ModuleScope Module { get;  }
+    public ModuleScope Module { get; }
 
-    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module)
+    public bool HasClosure { get; }
+
+    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module, bool hasClosure)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Parameters = parameters;
         Block = block;
         Module = module;
+        HasClosure = hasClosure;
     }
 }
 
@@ -363,5 +367,22 @@ class StringInterpolationExpr : Expr
         : base(pos)
     {
         Parts = parts;
+    }
+}
+
+class ClosureExpr : Expr
+{
+    public CallExpr Call { get; }
+
+    public List<Token> Parameters { get; }
+
+    public BlockExpr Body { get; }
+
+    public ClosureExpr(CallExpr call, List<Token> parameters, BlockExpr body)
+        : base(body.Position)
+    {
+        Call = call;
+        Parameters = parameters;
+        Body = body;
     }
 }
