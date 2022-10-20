@@ -17,12 +17,14 @@ static class AstBuilder
     public static Token Token(TokenKind kind, string value)
         => new(kind, value, TextPos.Default);
 
-    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block, ModuleScope module)
+    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block, ModuleScope module, bool hasClosure)
         => new(
             Token(TokenKind.Identifier, identifier),
             parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null, false)).ToList(),
             block,
-            module
+            module,
+            hasClosure,
+            isAnalysed: true
         );
 
     public static LetExpr Let(string identifier, Expr value)
@@ -46,8 +48,8 @@ static class AstBuilder
     public static IfExpr If(Expr condition, Expr thenBranch, Expr? elseBranch = null)
         => new(condition, thenBranch, elseBranch);
 
-    public static BlockExpr Block(List<Expr> expressions, StructureKind structureKind)
-        => new(expressions, structureKind, TextPos.Default);
+    public static BlockExpr Block(List<Expr> expressions, StructureKind structureKind, Scope scope)
+        => new(expressions, structureKind, TextPos.Default, scope);
 
     public static LiteralExpr Literal(object value)
         => value switch
@@ -55,8 +57,8 @@ static class AstBuilder
             null => new(Token(TokenKind.Nil, "nil")),
             true => new(Token(TokenKind.True, "true")),
             false => new(Token(TokenKind.False, "false")),
-            int x => new IntegerLiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
-            double x => new FloatLiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
+            int x => new LiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
+            double x => new LiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
             string x => new(Token(TokenKind.StringLiteral, x)),
             _ => new(Token(TokenKind.Unknown, value.ToString() ?? "")),
         };

@@ -235,7 +235,14 @@ internal class Parser
         }
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
-        var function = new FunctionExpr(identifier, parameters, block, _scope.ModuleScope, hasClosure);
+        var function = new FunctionExpr(
+            identifier,
+            parameters,
+            block,
+            _scope.ModuleScope,
+            hasClosure,
+            isAnalysed: false
+        );
 
         _scope.ModuleScope.AddFunction(function);
 
@@ -588,8 +595,7 @@ internal class Parser
         {
             return Current!.Kind switch
             {
-                TokenKind.IntegerLiteral => new IntegerLiteralExpr(Eat()),
-                TokenKind.FloatLiteral => new FloatLiteralExpr(Eat()),
+                TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
                 TokenKind.StringLiteral => ParseStringLiteral(),
                 _ => new LiteralExpr(Eat()),
             };
@@ -828,14 +834,16 @@ internal class Parser
     {
         if (AdvanceIf(TokenKind.Colon))
         {
-            _scope = scope ?? new LocalScope(_scope);
+            var blockScope = scope ?? new LocalScope(_scope);
+            _scope = blockScope;
             var expr = ParseExpr();
             _scope = _scope.Parent!;
 
             return new BlockExpr(
                 new() { expr },
                 parentStructureKind,
-                expr.Position
+                expr.Position,
+                blockScope
             );
         }
 
@@ -847,7 +855,8 @@ internal class Parser
         EatExpected(TokenKind.OpenBrace);
 
         var pos = Current!.Position;
-        _scope = scope ?? new LocalScope(_scope);
+        var blockScope = scope ?? new LocalScope(_scope);
+        _scope = blockScope;
 
         var expressions = new List<Expr>();
         while (!AdvanceIf(TokenKind.ClosedBrace))
@@ -855,7 +864,7 @@ internal class Parser
 
         _scope = _scope.Parent!;
 
-        return new BlockExpr(expressions, parentStructureKind, pos);
+        return new BlockExpr(expressions, parentStructureKind, pos, blockScope);
     }
 
     private Expr ParseIdentifier()

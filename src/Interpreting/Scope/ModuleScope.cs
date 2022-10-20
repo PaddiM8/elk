@@ -8,13 +8,12 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
-record FunctionSymbol(FunctionExpr Expr, bool IsImported);
 record Alias(string Name, LiteralExpr Value);
 
 class ModuleScope : Scope
 {
-    public IEnumerable<FunctionExpr> Functions
-        => _functions.Values.Select(x => x.Expr);
+    public IEnumerable<FunctionSymbol> Functions
+        => _functions.Values;
 
     private readonly Dictionary<string, FunctionSymbol> _functions = new();
 
@@ -41,10 +40,10 @@ class ModuleScope : Scope
 
     public void AddFunction(FunctionExpr function)
     {
-        var symbol = new FunctionSymbol(function, false);
+        var symbol = new FunctionSymbol(function);
         if (!_functions.TryAdd(function.Identifier.Value, symbol))
         {
-            _functions[function.Identifier.Value] = symbol;
+            _functions[function.Identifier.Value].Expr = function;
         }
     }
 
@@ -58,11 +57,11 @@ class ModuleScope : Scope
         return value;
     }
 
-    public FunctionExpr? FindFunction(string name)
+    public FunctionSymbol? FindFunction(string name)
     {
         _functions.TryGetValue(name, out var result);
 
-        return result?.Expr;
+        return result;
     }
 
     public string? FindImportedStdFunctionModule(string functionName)
@@ -72,9 +71,9 @@ class ModuleScope : Scope
         return result;
     }
 
-    public void ImportFunction(FunctionExpr function)
+    public void ImportFunction(FunctionSymbol symbol)
     {
-        var symbol = new FunctionSymbol(function, true);
+        var function = symbol.Expr;
         if (!_functions.TryAdd(function.Identifier.Value, symbol))
         {
             _functions[function.Identifier.Value] = symbol;

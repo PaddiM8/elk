@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Elk.Analysis;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -42,8 +43,10 @@ class Interpreter
         if (scope != null)
             _scope = scope;
 
+        var analysedAst = Analyser.Analyse(ast, _modules, _scope.ModuleScope);
+
         IRuntimeValue lastResult = RuntimeNil.Value;
-        foreach (var expr in ast)
+        foreach (var expr in analysedAst)
         {
             try
             {
@@ -138,7 +141,7 @@ class Interpreter
         };
     }
 
-    private IRuntimeValue NextBlockWithScope(BlockExpr blockExpr, LocalScope scope)
+    /*private IRuntimeValue NextBlockWithScope(BlockExpr blockExpr, LocalScope scope)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
@@ -146,7 +149,7 @@ class Interpreter
         _lastExpr = blockExpr;
 
         return Visit(blockExpr, scope);
-    }
+    }*/
 
     private IRuntimeValue NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
     {
@@ -246,12 +249,11 @@ class Interpreter
 
         expr.Branch.IsRoot = true;
 
-        var scope = new LocalScope(_scope);
         foreach (var current in enumerableValue)
         {
-            SetVariables(expr.IdentifierList, current, scope);
-            NextBlockWithScope(expr.Branch, scope);
-            scope.Clear();
+            expr.Branch.Scope.Clear();
+            SetVariables(expr.IdentifierList, current, expr.Branch.Scope);
+            Visit(expr.Branch, clearScope: false);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
             {
@@ -313,10 +315,12 @@ class Interpreter
         return new RuntimeDictionary(dict);
     }
 
-    private IRuntimeValue Visit(BlockExpr expr, LocalScope? scope = null)
+    private IRuntimeValue Visit(BlockExpr expr, bool clearScope = true)
     {
         var prevScope = _scope;
-        _scope = scope ?? new LocalScope(_scope);
+        _scope = expr.Scope;
+        if (clearScope)
+            expr.Scope.Clear();
 
         int i = 0;
         IRuntimeValue lastValue = RuntimeNil.Value;
@@ -366,18 +370,7 @@ class Interpreter
     }
 
     private IRuntimeValue Visit(LiteralExpr expr)
-    {
-        return expr.Value.Kind switch
-        {
-            TokenKind.IntegerLiteral => new RuntimeInteger(((IntegerLiteralExpr)expr).NumberValue),
-            TokenKind.FloatLiteral => new RuntimeFloat(((FloatLiteralExpr)expr).NumberValue),
-            TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
-            TokenKind.True => RuntimeBoolean.True,
-            TokenKind.False => RuntimeBoolean.False,
-            TokenKind.Nil => RuntimeNil.Value,
-            _ => throw new ArgumentOutOfRangeException(),
-        };
-    }
+        => expr.RuntimeValue!;
 
     private IRuntimeValue Visit(StringInterpolationExpr expr)
     {
@@ -569,9 +562,9 @@ class Interpreter
 
     private IRuntimeValue Visit(VariableExpr expr)
     {
-        string name = expr.Identifier.Value;
-        if (name.StartsWith('$'))
+        if (expr.VariableSymbol == null)
         {
+            string name = expr.Identifier.Value;
             string? value = Environment.GetEnvironmentVariable(name[1..]);
 
             return value == null
@@ -579,16 +572,11 @@ class Interpreter
                 : new RuntimeString(value);
         }
 
-        return _scope.FindVariable(name) ?? RuntimeNil.Value;
+        return expr.VariableSymbol.Value;
     }
 
     private IRuntimeValue Visit(TypeExpr expr)
-    {
-        if (!LanguageInfo.RuntimeTypes.TryGetValue(expr.Identifier.Value, out var type))
-            throw new RuntimeNotFoundException(expr.Identifier.Value);
-
-        return new RuntimeType(type);
-    }
+        => expr.RuntimeValue!;
 
     private IRuntimeValue Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
@@ -602,43 +590,30 @@ class Interpreter
         if (name == "closure")
             return EvaluateClosureCall(expr.Arguments);
 
-        string? moduleName = expr.ModuleName?.Value;
-        bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
-        if (isStdModule || StdGateway.Contains(name))
+        if (expr.StdFunction != null)
         {
-            if (isStdModule && !StdGateway.Contains(name, moduleName))
-                throw new RuntimeNotFoundException(name);
-
             var arguments = new List<object?>(expr.Arguments.Count + 1);
             if (_redirector.Status == RedirectorStatus.HasData)
             {
                 arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
             }
 
-            foreach (var argument in expr.Arguments)
-                arguments.Add(Next(argument));
+            arguments.AddRange(expr.Arguments.Select(Next).Cast<object?>());
 
-            return StdGateway.Call(name, moduleName, arguments, ShellEnvironment);
+            return StdGateway.Call(expr.StdFunction, arguments, ShellEnvironment);
         }
 
-        var module = expr.ModuleName == null
-            ? _scope.ModuleScope
-            : _modules.Find(expr.ModuleName.Value);
-        if (module == null)
-            throw new RuntimeModuleNotFoundException(expr.ModuleName!.Value);
-
-        var function = module.FindFunction(name);
-        if (function == null && closureExpr != null)
+        if (expr.FunctionSymbol == null && closureExpr != null)
             throw new RuntimeException("Unexpected closure");
 
-        return function == null
+        return expr.FunctionSymbol == null
             ? EvaluateProgramCall(
                 expr.Identifier.Value,
                 expr.Arguments,
                 globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                 isRoot: expr.IsRoot
             )
-            : EvaluateFunctionCall(expr, function, closureExpr);
+            : EvaluateFunctionCall(expr, expr.FunctionSymbol.Expr, closureExpr);
     }
 
     private IRuntimeValue EvaluateCd(List<Expr> argumentExpressions)
@@ -709,7 +684,8 @@ class Interpreter
             scope.AddVariable(parameter, Next(argumentExpr));
         }
 
-        return NextBlockWithScope(_currentClosureExpr.Body, scope);
+        throw new NotImplementedException();
+        //return NextBlockWithScope(_currentClosureExpr.Body, scope);
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function, ClosureExpr? closureExpr = null)
@@ -723,7 +699,6 @@ class Interpreter
             arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
         }
 
-        // TODO: Avoid duplication. This should be solved by having a new phase
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
         {
             if (argument == null)
@@ -737,7 +712,8 @@ class Interpreter
             }
         }
 
-        var functionScope = new LocalScope(function.Module);
+        var functionScope = (LocalScope)function.Block.Scope;
+        functionScope.Clear();
         bool encounteredDefaultParameter = false;
         RuntimeList? variadicArguments = null;
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
@@ -761,11 +737,11 @@ class Interpreter
             {
                 throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
             }
-            
+
             if (parameter?.Variadic is true)
             {
                 variadicArguments = new RuntimeList(new List<IRuntimeValue>());
-                functionScope.AddVariable(parameter.Identifier.Value, variadicArguments);
+                functionScope.UpdateVariable(parameter.Identifier.Value, variadicArguments);
             }
 
             if (variadicArguments != null)
@@ -775,14 +751,14 @@ class Interpreter
                 continue;
             }
             
-            functionScope.AddVariable(parameter!.Identifier.Value, argument!);
+            functionScope.UpdateVariable(parameter!.Identifier.Value, argument!);
         }
 
         function.Block.IsRoot = call.IsRoot;
 
         var previousClosureExpr = _currentClosureExpr;
         _currentClosureExpr = closureExpr;
-        var result = Visit(function.Block, functionScope);
+        var result = Visit(function.Block, clearScope: false);
         _currentClosureExpr = previousClosureExpr;
 
         return result;

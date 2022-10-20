@@ -2,9 +2,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
+using System.Reflection;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
+using Elk.Std.DataTypes;
 using Newtonsoft.Json;
 
 #endregion
@@ -79,7 +80,9 @@ class FunctionExpr : Expr
 
     public bool HasClosure { get; }
 
-    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module, bool hasClosure)
+    public bool IsAnalysed { get; }
+
+    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module, bool hasClosure, bool isAnalysed)
         : base(identifier.Position)
     {
         Identifier = identifier;
@@ -87,6 +90,7 @@ class FunctionExpr : Expr
         Block = block;
         Module = module;
         HasClosure = hasClosure;
+        IsAnalysed = isAnalysed;
     }
 }
 
@@ -133,6 +137,14 @@ class BinaryExpr : Expr
         Operator = op.ToOperationKind();
         Right = right;
     }
+
+    public BinaryExpr(Expr left, OperationKind op, Expr right)
+        : base(left.Position)
+    {
+        Left = left;
+        Operator = op;
+        Right = right;
+    }
 }
 
 class UnaryExpr : Expr
@@ -145,6 +157,13 @@ class UnaryExpr : Expr
         : base(value.Position)
     {
         Operator = op.ToOperationKind();
+        Value = value;
+    }
+
+    public UnaryExpr(OperationKind op, Expr value)
+        : base(value.Position)
+    {
+        Operator = op;
         Value = value;
     }
 }
@@ -186,6 +205,8 @@ class VariableExpr : Expr
 
     public Token? ModuleName { get; }
 
+    public VariableSymbol? VariableSymbol { get; set; }
+
     public VariableExpr(Token identifier, Token? moduleName = null)
         : base(identifier.Position)
     {
@@ -196,7 +217,9 @@ class VariableExpr : Expr
 
 class TypeExpr : Expr
 {
-    public Token Identifier { get;  }
+    public Token Identifier { get; }
+
+    public RuntimeType? RuntimeValue { get; set;  }
 
     public TypeExpr(Token identifier)
         : base(identifier.Position)
@@ -220,6 +243,10 @@ class CallExpr : Expr
     public CallStyle CallStyle { get; }
 
     public Token? ModuleName { get; }
+
+    public FunctionSymbol? FunctionSymbol { get; set; }
+
+    public MethodInfo? StdFunction { get; set; }
 
     public CallExpr(Token identifier, List<Expr> arguments, CallStyle callStyle, Token? moduleName = null)
         : base(identifier.Position)
@@ -318,11 +345,14 @@ class BlockExpr : Expr
 
     public StructureKind ParentStructureKind { get; }
 
-    public BlockExpr(List<Expr> expressions, StructureKind parentStructureKind, TextPos pos)
+    public Scope Scope { get; }
+
+    public BlockExpr(List<Expr> expressions, StructureKind parentStructureKind, TextPos pos, Scope scope)
         : base(pos)
     {
         Expressions = expressions;
         ParentStructureKind = parentStructureKind;
+        Scope = scope;
     }
 }
 
@@ -330,32 +360,12 @@ class LiteralExpr : Expr
 {
     public Token Value { get; }
 
+    public IRuntimeValue? RuntimeValue { get; set; }
+
     public LiteralExpr(Token value)
         : base(value.Position)
     {
         Value = value;
-    }
-}
-
-class IntegerLiteralExpr : LiteralExpr
-{
-    public int NumberValue { get; }
-
-    public IntegerLiteralExpr(Token value)
-        : base(value)
-    {
-        NumberValue = int.Parse(value.Value);
-    }
-}
-
-class FloatLiteralExpr : LiteralExpr
-{
-    public double NumberValue { get; }
-
-    public FloatLiteralExpr(Token value)
-        : base(value)
-    {
-        NumberValue = double.Parse(value.Value);
     }
 }
 

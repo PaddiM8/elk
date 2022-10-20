@@ -13,7 +13,7 @@ abstract class Scope
 
     public Scope? Parent { get; }
 
-    private readonly Dictionary<string, IRuntimeValue> _variables = new();
+    private readonly Dictionary<string, VariableSymbol> _variables = new();
 
     protected Scope(Scope? parent)
     {
@@ -28,7 +28,7 @@ abstract class Scope
 
     public void AddVariable(string name, IRuntimeValue value)
     {
-        if (!_variables.TryAdd(name, value))
+        if (!_variables.TryAdd(name, new VariableSymbol(value)))
         {
             UpdateVariable(name, value);
         }
@@ -36,13 +36,14 @@ abstract class Scope
 
     public void Clear()
     {
-        _variables.Clear();
+        foreach (var symbol in _variables.Values)
+            symbol.Value = RuntimeNil.Value;
     }
 
     public bool ContainsVariable(string name)
         => _variables.ContainsKey(name) || (Parent?.ContainsVariable(name) ?? false);
 
-    public IRuntimeValue? FindVariable(string name)
+    public VariableSymbol? FindVariable(string name)
     {
         _variables.TryGetValue(name, out var result);
 
@@ -53,7 +54,7 @@ abstract class Scope
     {
         if (_variables.ContainsKey(name))
         {
-            _variables[name] = value;
+            _variables[name].Value = value;
         }
         else
         {

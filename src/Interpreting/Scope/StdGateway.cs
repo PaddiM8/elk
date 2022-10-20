@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -27,9 +28,14 @@ static class StdGateway
     }
 
     public static bool ContainsModule(string name)
-        => _modules.ContainsKey(name);
+    {
+        if (!_modules.Any())
+            Initialize();
 
-    public static IRuntimeValue Call(string name, string? module, List<object?> arguments, ShellEnvironment shellEnvironment)
+        return _modules.ContainsKey(name);
+    }
+
+    public static MethodInfo? GetFunction(string name, string? module)
     {
         if (!_methods.Any())
             Initialize();
@@ -37,11 +43,13 @@ static class StdGateway
         string key = module == null
             ? name
             : $"{module}::{name}";
-        _methods.TryGetValue(key, out MethodInfo? methodInfo);
+        _methods.TryGetValue(key, out var methodInfo);
 
-        if (methodInfo == null)
-            return RuntimeNil.Value;
+        return methodInfo;
+    }
 
+    public static IRuntimeValue Call(MethodInfo methodInfo, List<object?> arguments, ShellEnvironment shellEnvironment)
+    {
         var parameters = methodInfo.GetParameters();
         if (parameters.LastOrDefault()?.ParameterType == typeof(ShellEnvironment))
             arguments.Add(shellEnvironment);

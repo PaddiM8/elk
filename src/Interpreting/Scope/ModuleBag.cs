@@ -1,13 +1,21 @@
 #region
 
+using System.Collections;
 using System.Collections.Generic;
 
 #endregion
 
 namespace Elk.Interpreting.Scope;
 
-class ModuleBag
+class ModuleBag : IEnumerable<ModuleScope>
 {
+
+    public IEnumerator<ModuleScope> GetEnumerator()
+        => _modules.Values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
+
     private readonly Dictionary<string, ModuleScope> _modules = new();
 
     public bool TryAdd(string absolutePath, ModuleScope scope)
