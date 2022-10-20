@@ -43,30 +43,42 @@ class Interpreter
         if (scope != null)
             _scope = scope;
 
-        var analysedAst = Analyser.Analyse(ast, _modules, _scope.ModuleScope);
+        List<Expr> analysedAst;
+        try
+        {
+            analysedAst = Analyser.Analyse(ast, _modules, _scope.ModuleScope);
+        }
+        catch (AggregateException e)
+        {
+            if (!PrintErrors)
+                throw;
+
+            // Make sure the redirector is emptied
+            _redirector.Receive();
+
+            return new RuntimeError(((DiagnosticInfo)e.Data["diagnosticInfo"]!).ToString());
+        }
 
         IRuntimeValue lastResult = RuntimeNil.Value;
-        foreach (var expr in analysedAst)
+        try
         {
-            try
+            foreach (var expr in analysedAst)
             {
                 lastResult = Next(expr);
             }
-            catch (RuntimeException e)
-            {
-                var pos = _lastExpr?.Position ?? TextPos.Default;
-                string message = $"[{pos.Line}:{pos.Column}] {e.Message}";
-                if (pos.FilePath != null)
-                    message = $"{pos.FilePath} {message}";
-                
-                if (!PrintErrors)
-                    throw new AggregateException(message, e);
-                
-                // Make sure the redirector is emptied
-                _redirector.Receive();
+        }
+        catch (RuntimeException e)
+        {
+            var pos = _lastExpr?.Position ?? TextPos.Default;
+            var error = new DiagnosticInfo(pos.Line, pos.Column, e.Message, pos.FilePath);
 
-                return new RuntimeError(message);
-            }
+            if (!PrintErrors)
+                throw new AggregateException(error.ToString(), e);
+
+            // Make sure the redirector is emptied
+            _redirector.Receive();
+
+            return new RuntimeError(error.ToString());
         }
 
         return lastResult;
@@ -88,14 +100,17 @@ class Interpreter
         }
         catch (ParseException e)
         {
-            string message = $"[{e.Position.Line}:{e.Position.Column}] {e.Message}";
-            if (e.Position.FilePath != null)
-                message = $"{e.Position.FilePath} {message}";
+            var error = new DiagnosticInfo(
+                e.Position.Line,
+                e.Position.Column,
+                e.Message,
+                e.Position.FilePath
+            );
             
             if (!PrintErrors)
-                throw new AggregateException(message, e);
+                throw new AggregateException(error.ToString(), e);
                 
-            return new RuntimeError(message);
+            return new RuntimeError(error.ToString());
         }
     }
 
@@ -141,15 +156,15 @@ class Interpreter
         };
     }
 
-    /*private IRuntimeValue NextBlockWithScope(BlockExpr blockExpr, LocalScope scope)
+    private IRuntimeValue NextBlock(BlockExpr blockExpr, bool clearScope = true)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
 
         _lastExpr = blockExpr;
 
-        return Visit(blockExpr, scope);
-    }*/
+        return Visit(blockExpr, clearScope);
+    }
 
     private IRuntimeValue NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
     {
@@ -253,7 +268,7 @@ class Interpreter
         {
             expr.Branch.Scope.Clear();
             SetVariables(expr.IdentifierList, current, expr.Branch.Scope);
-            Visit(expr.Branch, clearScope: false);
+            NextBlock(expr.Branch, clearScope: false);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
             {
@@ -685,7 +700,7 @@ class Interpreter
             scope.AddVariable(parameter, Next(argumentExpr));
         }
 
-        return Visit(_currentClosureExpr.Body, clearScope: false);
+        return NextBlock(_currentClosureExpr.Body, clearScope: false);
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function, ClosureExpr? closureExpr = null)
@@ -758,7 +773,7 @@ class Interpreter
 
         var previousClosureExpr = _currentClosureExpr;
         _currentClosureExpr = closureExpr;
-        var result = Visit(function.Block, clearScope: false);
+        var result = NextBlock(function.Block, clearScope: false);
         _currentClosureExpr = previousClosureExpr;
 
         return result;

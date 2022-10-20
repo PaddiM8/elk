@@ -14,6 +14,7 @@ class Analyser
 {
     private static Scope _scope = new ModuleScope();
     private ModuleBag _modules = new();
+    private Expr? _lastExpr;
 
     public static List<Expr> Analyse(List<Expr> ast, ModuleBag modules, ModuleScope scope)
     {
@@ -24,14 +25,35 @@ class Analyser
             _modules = modules,
         };
 
-        foreach (var functionSymbol in modules.SelectMany(x => x.Functions).Where(x => !x.Expr.IsAnalysed))
-            analyser.Next(functionSymbol.Expr);
+        try
+        {
+            foreach (var functionSymbol in modules.SelectMany(x => x.Functions).Where(x => !x.Expr.IsAnalysed))
+                analyser.Next(functionSymbol.Expr);
 
-        return ast.Where(expr => expr is not FunctionExpr).Select(expr => analyser.Next(expr)).ToList();
+            return ast
+                .Where(expr => expr is not FunctionExpr)
+                .Select(expr => analyser.Next(expr))
+                .ToList();
+        }
+        catch (RuntimeException e)
+        {
+            var pos = analyser._lastExpr?.Position ?? TextPos.Default;
+            var error = new DiagnosticInfo(pos.Line, pos.Column, e.Message, pos.FilePath);
+
+            throw new AggregateException(error.ToString(), e)
+            {
+                Data =
+                {
+                    ["diagnosticInfo"] = error,
+                },
+            };
+        }
     }
 
     private Expr Next(Expr expr)
     {
+        _lastExpr = expr;
+
         switch (expr)
         {
             case FunctionExpr e:
