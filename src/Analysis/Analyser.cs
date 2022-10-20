@@ -147,6 +147,12 @@ class Analyser
                 return Visit(e);
             case CallExpr e:
                 return Visit(e);
+            case ClosureExpr e:
+                return new ClosureExpr(
+                    (CallExpr)Next(e.Call),
+                    e.Parameters,
+                    (BlockExpr)Next(e.Body)
+                );
         }
 
         return expr;

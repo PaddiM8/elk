@@ -676,7 +676,8 @@ class Interpreter
         if (_currentClosureExpr == null)
             throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
 
-        var scope = new LocalScope(_scope);
+        var scope = _currentClosureExpr.Body.Scope;
+        scope.Clear();
         foreach (var (argumentExpr, i) in arguments.WithIndex())
         {
             var parameter = _currentClosureExpr.Parameters.ElementAtOrDefault(i)?.Value ??
@@ -684,8 +685,7 @@ class Interpreter
             scope.AddVariable(parameter, Next(argumentExpr));
         }
 
-        throw new NotImplementedException();
-        //return NextBlockWithScope(_currentClosureExpr.Body, scope);
+        return Visit(_currentClosureExpr.Body, clearScope: false);
     }
 
     private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function, ClosureExpr? closureExpr = null)
