@@ -90,7 +90,7 @@ fn hasWon(board):
     board["storedCrates"] == len(board["storageBlocks"])
 
 fn blockIsOnStorage(board, block):
-    block && blockToKey(block) in board["storageBlocks"]
+    block and blockToKey(block) in board["storageBlocks"]
 
 fn addBlock(board, type, x, y) {
     let block = ["block", type, x, y]
@@ -157,14 +157,14 @@ fn playerCanMove(board, direction) {
     let (adjacentX, adjacentY) = getAdjacentBlockPos(player, direction)
     let adjacentBlock = getBlock(board, adjacentX, adjacentY)
 
-    not adjacentBlock ||
-        getBlockType(adjacentBlock) == "storage" ||
-        getBlockType(adjacentBlock) == "crate" && crateCanMove(board, adjacentBlock, direction)
+    not adjacentBlock or
+        getBlockType(adjacentBlock) == "storage" or
+        getBlockType(adjacentBlock) == "crate" and crateCanMove(board, adjacentBlock, direction)
 }
 
 fn crateCanMove(board, crate, direction) {
     let (adjacentX, adjacentY) = getAdjacentBlockPos(crate, direction)
     let adjacentBlock = getBlock(board, adjacentX, adjacentY)
 
-    not adjacentBlock || getBlockType(adjacentBlock) == "storage"
+    not adjacentBlock or getBlockType(adjacentBlock) == "storage"
 }
