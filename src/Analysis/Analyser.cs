@@ -18,8 +18,6 @@ class Analyser
 
     public static List<Expr> Analyse(List<Expr> ast, ModuleBag modules, ModuleScope scope)
     {
-        _scope = scope;
-
         var analyser = new Analyser
         {
             _modules = modules,
@@ -28,7 +26,12 @@ class Analyser
         try
         {
             foreach (var functionSymbol in modules.SelectMany(x => x.Functions).Where(x => !x.Expr.IsAnalysed))
+            {
+                _scope = functionSymbol.Expr.Module;
                 analyser.Next(functionSymbol.Expr);
+            }
+
+            _scope = scope;
 
             return ast
                 .Where(expr => expr is not FunctionExpr)
