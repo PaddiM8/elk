@@ -157,7 +157,7 @@ fn playerCanMove(board, direction) {
     let (adjacentX, adjacentY) = getAdjacentBlockPos(player, direction)
     let adjacentBlock = getBlock(board, adjacentX, adjacentY)
 
-    !adjacentBlock ||
+    not adjacentBlock ||
         getBlockType(adjacentBlock) == "storage" ||
         getBlockType(adjacentBlock) == "crate" && crateCanMove(board, adjacentBlock, direction)
 }
@@ -166,5 +166,5 @@ fn crateCanMove(board, crate, direction) {
     let (adjacentX, adjacentY) = getAdjacentBlockPos(crate, direction)
     let adjacentBlock = getBlock(board, adjacentX, adjacentY)
 
-    !adjacentBlock || getBlockType(adjacentBlock) == "storage"
+    not adjacentBlock || getBlockType(adjacentBlock) == "storage"
 }
