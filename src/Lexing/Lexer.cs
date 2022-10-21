@@ -88,7 +88,7 @@ internal class Lexer
                 : Build(TokenKind.Unknown, Eat()),
             '&' => Peek == '&'
                 ? Build(TokenKind.AmpersandAmpersand, Eat(2))
-                : Build(TokenKind.Unknown, Eat()),
+                : Build(TokenKind.Ampersand, Eat()),
             '|' => Peek == '|'
                 ? Build(TokenKind.PipePipe, Eat(2))
                 : Build(TokenKind.Pipe, Eat()),

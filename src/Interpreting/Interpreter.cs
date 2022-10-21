@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Elk.Analysis;
 using Elk.Interpreting.Exceptions;
@@ -151,6 +152,7 @@ class Interpreter
             VariableExpr e => Visit(e),
             TypeExpr e => Visit(e),
             CallExpr e => Visit(e),
+            FunctionReferenceExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
@@ -876,9 +878,19 @@ class Interpreter
         return RuntimeNil.Value;
     }
 
+    private IRuntimeValue Visit(FunctionReferenceExpr functionReferenceExpr)
+    {
+        return functionReferenceExpr.StdFunction == null
+            ? new RuntimeFunction(functionReferenceExpr.FunctionSymbol!)
+            : new RuntimeFunction(functionReferenceExpr.StdFunction!);
+    }
+
     private IRuntimeValue Visit(ClosureExpr closureExpr)
     {
-        return NextCallWithClosure(closureExpr.Call, closureExpr);
+        if (closureExpr.Function is CallExpr callExpr)
+            return NextCallWithClosure(callExpr, closureExpr);
+
+        throw new NotImplementedException("Closure for function reference");
     }
 
     private static string EscapeArgument(string argument)

@@ -21,6 +21,7 @@ enum TokenKind
     Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
     AmpersandAmpersand, PipePipe,
     Pipe,
+    Ampersand,
 
     // Brackets
     OpenParenthesis, ClosedParenthesis,

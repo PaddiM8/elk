@@ -258,6 +258,24 @@ class CallExpr : Expr
     }
 }
 
+class FunctionReferenceExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public Token? ModuleName { get; }
+
+    public MethodInfo? StdFunction { get; init; }
+
+    public FunctionSymbol? FunctionSymbol { get; init; }
+
+    public FunctionReferenceExpr(Token identifier, Token? moduleName)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        ModuleName = moduleName;
+    }
+}
+
 class IfExpr : Expr
 {
     public Expr Condition { get; }
@@ -382,16 +400,16 @@ class StringInterpolationExpr : Expr
 
 class ClosureExpr : Expr
 {
-    public CallExpr Call { get; }
+    public Expr Function { get; }
 
     public List<Token> Parameters { get; }
 
     public BlockExpr Body { get; }
 
-    public ClosureExpr(CallExpr call, List<Token> parameters, BlockExpr body)
+    public ClosureExpr(Expr function, List<Token> parameters, BlockExpr body)
         : base(body.Position)
     {
-        Call = call;
+        Function = function;
         Parameters = parameters;
         Body = body;
     }

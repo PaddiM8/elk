@@ -397,8 +397,8 @@ internal class Parser
         {
             Eat();
 
-            if (left is not CallExpr callExpr)
-                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call to the left of closure");
+            if (left is not CallExpr or FunctionReferenceExpr)
+                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure");
 
             var scope = new LocalScope(_scope);
             var parameters = new List<Token>();
@@ -412,7 +412,7 @@ internal class Parser
 
             var right = ParseBlockOrSingle(StructureKind.Other, scope);
 
-            return new ClosureExpr(callExpr, parameters, right);
+            return new ClosureExpr(left, parameters, right);
         }
 
         return left;
@@ -653,6 +653,32 @@ internal class Parser
             _index = prevIndex;
 
             return ParseBlock(StructureKind.Other);
+        }
+
+        if (AdvanceIf(TokenKind.Ampersand))
+        {
+            Token? moduleName = null;
+            if (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
+            {
+                moduleName = Eat();
+                Eat(); // ::
+            }
+
+            var pos = Current?.Position ?? TextPos.Default;
+            var identifier = Match(TokenKind.Identifier)
+                ? Eat()
+                : new Token(TokenKind.Identifier, ParsePath(), pos);
+
+            if (LanguageInfo.RuntimeTypes.ContainsKey(identifier.Value))
+                return new TypeExpr(identifier);
+
+            string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
+            if (moduleName == null && importedStdModule != null)
+            {
+                moduleName = new Token(TokenKind.Identifier, importedStdModule, TextPos.Default);
+            }
+
+            return new FunctionReferenceExpr(identifier, moduleName);
         }
         
         if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))

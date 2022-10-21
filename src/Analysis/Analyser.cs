@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -172,9 +173,22 @@ class Analyser
                 return Visit(e);
             case CallExpr e:
                 return Visit(e);
+            case FunctionReferenceExpr e:
+                string name = e.Identifier.Value;
+                string? moduleName = e.ModuleName?.Value;
+                var stdFunction = ResolveStdFunction(name, moduleName);
+                return stdFunction != null
+                    ? new FunctionReferenceExpr(e.Identifier, e.ModuleName)
+                    {
+                        StdFunction = stdFunction,
+                    }
+                    : new FunctionReferenceExpr(e.Identifier, e.ModuleName)
+                    {
+                        FunctionSymbol = ResolveFunctionSymbol(name, moduleName),
+                    };
             case ClosureExpr e:
                 return new ClosureExpr(
-                    (CallExpr)Next(e.Call),
+                    Next(e.Function),
                     e.Parameters,
                     (BlockExpr)Next(e.Body)
                 );
@@ -228,25 +242,41 @@ class Analyser
 
         string name = expr.Identifier.Value;
         string? moduleName = expr.ModuleName?.Value;
+        var stdFunction = ResolveStdFunction(name, moduleName);
+        if (stdFunction != null)
+        {
+            newExpr.StdFunction = stdFunction;
+
+            return newExpr;
+        }
+
+        newExpr.FunctionSymbol = ResolveFunctionSymbol(name, moduleName);
+
+        return newExpr;
+    }
+
+    private MethodInfo? ResolveStdFunction(string name, string? moduleName)
+    {
         bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
         if (isStdModule || StdGateway.Contains(name))
         {
             if (isStdModule && !StdGateway.Contains(name, moduleName))
                 throw new RuntimeNotFoundException(name);
 
-            newExpr.StdFunction = StdGateway.GetFunction(name, moduleName);
-
-            return newExpr;
+            return StdGateway.GetFunction(name, moduleName);
         }
 
-        var module = expr.ModuleName == null
+        return null;
+    }
+
+    private FunctionSymbol? ResolveFunctionSymbol(string name, string? moduleName)
+    {
+        var module = moduleName == null
             ? _scope.ModuleScope
-            : _modules.Find(expr.ModuleName.Value);
+            : _modules.Find(moduleName);
         if (module == null)
-            throw new RuntimeModuleNotFoundException(expr.ModuleName!.Value);
+            throw new RuntimeModuleNotFoundException(moduleName!);
 
-        newExpr.FunctionSymbol = module.FindFunction(expr.Identifier.Value);
-
-        return newExpr;
+        return module.FindFunction(name);
     }
 }
