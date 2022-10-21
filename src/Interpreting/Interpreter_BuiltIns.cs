@@ -88,16 +88,19 @@ partial class Interpreter
 
         var functionReference = arguments.First().As<RuntimeFunction>();
         var actualArguments = arguments.Skip(1).ToList();
-        if (functionReference.FunctionSymbol != null)
-            return EvaluateFunctionCall(actualArguments, functionReference.FunctionSymbol.Expr, isRoot);
-        if (functionReference.StdFunction != null)
-            return EvaluateStdCall(actualArguments, functionReference.StdFunction);
-
-        return EvaluateProgramCall(
-            functionReference.ProgramName!,
-            actualArguments,
-            globbingEnabled: false,
-            isRoot
-        );
+        return functionReference switch
+        {
+            RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(actualArguments, runtimeStdFunction.StdFunction),
+            RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
+                actualArguments, runtimeSymbolFunction.FunctionSymbol.Expr, isRoot
+            ),
+            RuntimeClosureFunction runtimeClosureFunction => throw new NotImplementedException(),
+            _ => EvaluateProgramCall(
+                ((RuntimeProgramFunction)functionReference).ProgramName,
+                actualArguments,
+                globbingEnabled: false,
+                isRoot
+            ),
+        };
     }
 }

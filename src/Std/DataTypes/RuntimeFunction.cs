@@ -12,29 +12,8 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Function")]
-public class RuntimeFunction : IRuntimeValue
+public abstract class RuntimeFunction : IRuntimeValue
 {
-    internal MethodInfo? StdFunction { get; }
-
-    internal FunctionSymbol? FunctionSymbol { get; }
-
-    internal string? ProgramName { get; }
-
-    internal RuntimeFunction(MethodInfo stdFunction)
-    {
-        StdFunction = stdFunction;
-    }
-
-    internal RuntimeFunction(FunctionSymbol functionSymbol)
-    {
-        FunctionSymbol = functionSymbol;
-    }
-
-    internal RuntimeFunction(string? programName)
-    {
-        ProgramName = programName;
-    }
-
     public IRuntimeValue As(Type toType)
         => toType switch
         {
@@ -43,7 +22,7 @@ public class RuntimeFunction : IRuntimeValue
             var type when type == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
             var type when type == typeof(RuntimeString)
-                => new RuntimeString(ToString()),
+                => new RuntimeString(ToString() ?? "Function"),
             _
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),
         };
@@ -53,12 +32,68 @@ public class RuntimeFunction : IRuntimeValue
 
     public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
+}
+
+internal class RuntimeStdFunction : RuntimeFunction
+{
+    public MethodInfo StdFunction { get; }
+
+    public RuntimeStdFunction(MethodInfo stdFunction)
+    {
+        StdFunction = stdFunction;
+    }
 
     public override int GetHashCode()
-        => StdFunction?.GetHashCode()
-               ?? FunctionSymbol?.GetHashCode()
-               ?? ProgramName!.GetHashCode();
+        => StdFunction.GetHashCode();
 
     public override string ToString()
-        => StdFunction?.Name ?? FunctionSymbol?.Expr.Identifier.Value ?? ProgramName!;
+        => StdFunction.Name;
+}
+
+internal class RuntimeSymbolFunction : RuntimeFunction
+{
+    public FunctionSymbol FunctionSymbol { get; }
+
+    public RuntimeSymbolFunction(FunctionSymbol functionSymbol)
+    {
+        FunctionSymbol = functionSymbol;
+    }
+
+    public override int GetHashCode()
+        => FunctionSymbol.GetHashCode();
+
+    public override string ToString()
+        => FunctionSymbol.Expr.Identifier.Value;
+}
+
+internal class RuntimeProgramFunction : RuntimeFunction
+{
+    public string ProgramName { get; }
+
+    public RuntimeProgramFunction(string programName)
+    {
+        ProgramName = programName;
+    }
+
+    public override int GetHashCode()
+        => ProgramName.GetHashCode();
+
+    public override string ToString()
+        => ProgramName;
+}
+
+internal class RuntimeClosureFunction : RuntimeFunction
+{
+    public ClosureExpr Closure { get; }
+
+    public RuntimeClosureFunction(ClosureExpr closure)
+    {
+        Closure = closure;
+    }
+
+    public override int GetHashCode()
+        => Closure.GetHashCode();
+
+    public override string ToString()
+        => "<closure>";
 }

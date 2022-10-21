@@ -264,9 +264,7 @@ class FunctionReferenceExpr : Expr
 
     public Token? ModuleName { get; }
 
-    public MethodInfo? StdFunction { get; init; }
-
-    public FunctionSymbol? FunctionSymbol { get; init; }
+    public RuntimeFunction? RuntimeFunction { get; init; }
 
     public FunctionReferenceExpr(Token identifier, Token? moduleName)
         : base(identifier.Position)

@@ -817,12 +817,7 @@ partial class Interpreter
 
     private IRuntimeValue Visit(FunctionReferenceExpr functionReferenceExpr)
     {
-        if (functionReferenceExpr.StdFunction != null)
-            return new RuntimeFunction(functionReferenceExpr.StdFunction);
-        if (functionReferenceExpr.FunctionSymbol != null)
-            return new RuntimeFunction(functionReferenceExpr.FunctionSymbol);
-
-        return new RuntimeFunction(functionReferenceExpr.Identifier.Value);
+        return functionReferenceExpr.RuntimeFunction!;
     }
 
     private IRuntimeValue Visit(ClosureExpr closureExpr)
@@ -830,6 +825,7 @@ partial class Interpreter
         if (closureExpr.Function is CallExpr callExpr)
             return NextCallWithClosure(callExpr, closureExpr);
 
+        var functionReference = (FunctionReferenceExpr)closureExpr.Function;
         throw new NotImplementedException("Closure for function reference");
     }
 

@@ -176,16 +176,28 @@ class Analyser
             case FunctionReferenceExpr e:
                 string name = e.Identifier.Value;
                 string? moduleName = e.ModuleName?.Value;
+                RuntimeFunction? runtimeFunction = null;
+
+                // Try to resolve as std function
                 var stdFunction = ResolveStdFunction(name, moduleName);
-                return stdFunction != null
-                    ? new FunctionReferenceExpr(e.Identifier, e.ModuleName)
-                    {
-                        StdFunction = stdFunction,
-                    }
-                    : new FunctionReferenceExpr(e.Identifier, e.ModuleName)
-                    {
-                        FunctionSymbol = ResolveFunctionSymbol(name, moduleName),
-                    };
+                if (stdFunction != null)
+                    runtimeFunction = new RuntimeStdFunction(stdFunction);
+
+                // Try to resolve as regular function
+                if (runtimeFunction == null)
+                {
+                    var functionSymbol = ResolveFunctionSymbol(name, moduleName);
+                    if (functionSymbol != null)
+                        runtimeFunction = new RuntimeSymbolFunction(functionSymbol);
+                }
+
+                // Fallback: resolve as program
+                runtimeFunction ??= new RuntimeProgramFunction(e.Identifier.Value);
+
+                return new FunctionReferenceExpr(e.Identifier, e.ModuleName)
+                {
+                    RuntimeFunction = runtimeFunction,
+                };
             case ClosureExpr e:
                 return new ClosureExpr(
                     Next(e.Function),
