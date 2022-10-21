@@ -817,9 +817,12 @@ partial class Interpreter
 
     private IRuntimeValue Visit(FunctionReferenceExpr functionReferenceExpr)
     {
-        return functionReferenceExpr.StdFunction == null
-            ? new RuntimeFunction(functionReferenceExpr.FunctionSymbol!)
-            : new RuntimeFunction(functionReferenceExpr.StdFunction!);
+        if (functionReferenceExpr.StdFunction != null)
+            return new RuntimeFunction(functionReferenceExpr.StdFunction);
+        if (functionReferenceExpr.FunctionSymbol != null)
+            return new RuntimeFunction(functionReferenceExpr.FunctionSymbol);
+
+        return new RuntimeFunction(functionReferenceExpr.Identifier.Value);
     }
 
     private IRuntimeValue Visit(ClosureExpr closureExpr)

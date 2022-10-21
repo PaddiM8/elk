@@ -93,6 +93,11 @@ partial class Interpreter
         if (functionReference.StdFunction != null)
             return EvaluateStdCall(actualArguments, functionReference.StdFunction);
 
-        throw new NotImplementedException("Function reference of a program");
+        return EvaluateProgramCall(
+            functionReference.ProgramName!,
+            actualArguments,
+            globbingEnabled: false,
+            isRoot
+        );
     }
 }

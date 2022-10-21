@@ -18,6 +18,8 @@ public class RuntimeFunction : IRuntimeValue
 
     internal FunctionSymbol? FunctionSymbol { get; }
 
+    internal string? ProgramName { get; }
+
     internal RuntimeFunction(MethodInfo stdFunction)
     {
         StdFunction = stdFunction;
@@ -26,6 +28,11 @@ public class RuntimeFunction : IRuntimeValue
     internal RuntimeFunction(FunctionSymbol functionSymbol)
     {
         FunctionSymbol = functionSymbol;
+    }
+
+    internal RuntimeFunction(string? programName)
+    {
+        ProgramName = programName;
     }
 
     public IRuntimeValue As(Type toType)
@@ -48,8 +55,10 @@ public class RuntimeFunction : IRuntimeValue
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
 
     public override int GetHashCode()
-        => StdFunction?.GetHashCode() ?? FunctionSymbol!.GetHashCode();
+        => StdFunction?.GetHashCode()
+               ?? FunctionSymbol?.GetHashCode()
+               ?? ProgramName!.GetHashCode();
 
     public override string ToString()
-        => StdFunction?.Name ?? FunctionSymbol!.Expr.Identifier.Value;
+        => StdFunction?.Name ?? FunctionSymbol?.Expr.Identifier.Value ?? ProgramName!;
 }
