@@ -822,11 +822,9 @@ partial class Interpreter
 
     private IRuntimeValue Visit(ClosureExpr closureExpr)
     {
-        if (closureExpr.Function is CallExpr callExpr)
-            return NextCallWithClosure(callExpr, closureExpr);
-
-        var functionReference = (FunctionReferenceExpr)closureExpr.Function;
-        throw new NotImplementedException("Closure for function reference");
+        return closureExpr.Function is CallExpr callExpr
+            ? NextCallWithClosure(callExpr, closureExpr)
+            : new RuntimeClosureFunction(closureExpr);
     }
 
     private static string EscapeArgument(string argument)

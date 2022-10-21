@@ -397,7 +397,7 @@ internal class Parser
         {
             Eat();
 
-            if (left is not CallExpr or FunctionReferenceExpr)
+            if (left is not CallExpr and not FunctionReferenceExpr)
                 throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure");
 
             var scope = new LocalScope(_scope);

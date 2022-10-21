@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Parsing;
 using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting;
@@ -94,7 +95,7 @@ partial class Interpreter
             RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
                 actualArguments, runtimeSymbolFunction.FunctionSymbol.Expr, isRoot
             ),
-            RuntimeClosureFunction runtimeClosureFunction => throw new NotImplementedException(),
+            RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(actualArguments, runtimeClosure, isRoot),
             _ => EvaluateProgramCall(
                 ((RuntimeProgramFunction)functionReference).ProgramName,
                 actualArguments,
@@ -102,5 +103,21 @@ partial class Interpreter
                 isRoot
             ),
         };
+    }
+
+    private IRuntimeValue EvaluateRuntimeClosure(List<IRuntimeValue> arguments, RuntimeClosureFunction runtimeClosure, bool isRoot)
+    {
+        var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Closure.Function;
+        var innerFunction = functionReferenceExpr.RuntimeFunction!;
+
+        if (innerFunction is not RuntimeSymbolFunction runtimeSymbolFunction)
+            throw new RuntimeException("Closures are only supported for user-defined functions");
+
+        return EvaluateFunctionCall(
+            arguments,
+            runtimeSymbolFunction.FunctionSymbol.Expr,
+            isRoot,
+            runtimeClosure.Closure
+        );
     }
 }
