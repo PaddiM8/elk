@@ -21,7 +21,7 @@ using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 namespace Elk.Interpreting;
 
-class Interpreter
+partial class Interpreter
 {
     public ShellEnvironment ShellEnvironment { get; }
 
@@ -597,135 +597,45 @@ class Interpreter
 
     private IRuntimeValue Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
-        string name = expr.Identifier.Value;
-        if (name == "cd")
-            return EvaluateCd(expr.Arguments);
-        if (name == "exec")
-            return EvaluateExec(expr);
-        if (name == "scriptPath")
-            return EvaluateScriptPath(expr.Arguments);
-        if (name == "closure")
-            return EvaluateClosureCall(expr.Arguments);
-
-        if (expr.StdFunction != null)
-        {
-            var arguments = new List<object?>(expr.Arguments.Count + 1);
-            if (_redirector.Status == RedirectorStatus.HasData)
-            {
-                arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
-            }
-
-            arguments.AddRange(expr.Arguments.Select(Next).Cast<object?>());
-
-            return StdGateway.Call(expr.StdFunction, arguments, ShellEnvironment);
-        }
-
         if (expr.FunctionSymbol == null && closureExpr != null)
             throw new RuntimeException("Unexpected closure");
 
-        return expr.FunctionSymbol == null
-            ? EvaluateProgramCall(
-                expr.Identifier.Value,
-                expr.Arguments,
-                globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
-                isRoot: expr.IsRoot
-            )
-            : EvaluateFunctionCall(expr, expr.FunctionSymbol.Expr, closureExpr);
-    }
+        var evaluatedArguments = expr.Arguments.Select(Next).ToList();
 
-    private IRuntimeValue EvaluateCd(List<Expr> argumentExpressions)
-    {
-        if (argumentExpressions.Count > 1)
-            throw new RuntimeWrongNumberOfArgumentsException(1, argumentExpressions.Count);
-
-
-        string argument = argumentExpressions.Any()
-            ? Next(argumentExpressions.First()).As<RuntimeString>().Value
-            : "";
-        if (argument == "")
-        {
-            ShellEnvironment.WorkingDirectory = "";
-            return RuntimeNil.Value;
-        }
-
-        string path = argument == "-"
-            ? Environment.GetEnvironmentVariable("OLDPWD") ?? ""
-            : ShellEnvironment.GetAbsolutePath(argument);
-
-        if (Directory.Exists(path))
-        {
-            ShellEnvironment.WorkingDirectory = path;
-        }
-        else
-        {
-            return new RuntimeError($"cd: The directory \"{path}\" does not exist");
-        }
-
-        return RuntimeNil.Value;
-    }
-
-    private IRuntimeValue EvaluateExec(CallExpr callExpr)
-    {
-        string programName = Next(callExpr.Arguments[0]).As<RuntimeString>().Value;
+        if (expr.FunctionSymbol != null)
+            return EvaluateFunctionCall(evaluatedArguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
+        if (expr.StdFunction != null)
+            return EvaluateStdCall(evaluatedArguments, expr.StdFunction);
 
         return EvaluateProgramCall(
-            programName,
-            callExpr.Arguments.GetRange(1, callExpr.Arguments.Count - 1),
-            globbingEnabled: callExpr.CallStyle == CallStyle.TextArguments,
-            isRoot: callExpr.IsRoot
+            expr.Identifier.Value,
+            evaluatedArguments,
+            globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+            isRoot: expr.IsRoot
         );
     }
 
-    private IRuntimeValue EvaluateScriptPath(List<Expr> arguments)
-    {
-        if (arguments.Any())
-            throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
-
-        string path = _lastExpr!.Position.FilePath == null
-            ? ShellEnvironment.WorkingDirectory
-            : Path.GetDirectoryName(_lastExpr.Position.FilePath)!;
-
-        return new RuntimeString(path);
-    }
-
-    private IRuntimeValue EvaluateClosureCall(List<Expr> arguments)
-    {
-        if (_currentClosureExpr == null)
-            throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
-
-        var scope = _currentClosureExpr.Body.Scope;
-        scope.Clear();
-        foreach (var (argumentExpr, i) in arguments.WithIndex())
-        {
-            var parameter = _currentClosureExpr.Parameters.ElementAtOrDefault(i)?.Value ??
-                throw new RuntimeException($"Expected exactly {_currentClosureExpr.Parameters.Count} closure parameters");
-            scope.AddVariable(parameter, Next(argumentExpr));
-        }
-
-        return NextBlock(_currentClosureExpr.Body, clearScope: false);
-    }
-
-    private IRuntimeValue EvaluateFunctionCall(CallExpr call, FunctionExpr function, ClosureExpr? closureExpr = null)
+    private IRuntimeValue EvaluateFunctionCall(List<IRuntimeValue> arguments, FunctionExpr function, bool isRoot, ClosureExpr? closureExpr = null)
     {
         if (closureExpr != null && !function.HasClosure)
             throw new RuntimeException("Unexpected closure");
 
-        var arguments = new List<IRuntimeValue>();
+        var allArguments = new List<IRuntimeValue>();
         if (_redirector.Status == RedirectorStatus.HasData)
         {
-            arguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
+            allArguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
         }
 
-        foreach (var (parameter, argument) in function.Parameters.ZipLongest(call.Arguments))
+        foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (argument == null)
             {
                 if (parameter?.DefaultValue != null)
-                    arguments.Add(Next(parameter.DefaultValue));
+                    allArguments.Add(Next(parameter.DefaultValue));
             }
             else
             {
-                arguments.Add(Next(argument));
+                allArguments.Add(argument);
             }
         }
 
@@ -733,7 +643,7 @@ class Interpreter
         functionScope.Clear();
         bool encounteredDefaultParameter = false;
         RuntimeList? variadicArguments = null;
-        foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
+        foreach (var (parameter, argument) in function.Parameters.ZipLongest(allArguments))
         {
             if (parameter?.DefaultValue != null)
                 encounteredDefaultParameter = true;
@@ -742,9 +652,10 @@ class Interpreter
                 argument == null && parameter?.DefaultValue == null && parameter?.Variadic is false)
             {
                 bool variadic = function.Parameters.LastOrDefault()?.Variadic is true;
-                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, call.Arguments.Count, variadic);
+                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, arguments.Count, variadic);
             }
 
+            // TODO: Do this in analyser?
             if (encounteredDefaultParameter && parameter?.DefaultValue == null)
             {
                 throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
@@ -767,11 +678,11 @@ class Interpreter
                     variadicArguments.Values.Add(argument);
                 continue;
             }
-            
+
             functionScope.UpdateVariable(parameter!.Identifier.Value, argument!);
         }
 
-        function.Block.IsRoot = call.IsRoot;
+        function.Block.IsRoot = isRoot;
 
         var previousClosureExpr = _currentClosureExpr;
         _currentClosureExpr = closureExpr;
@@ -781,12 +692,38 @@ class Interpreter
         return result;
     }
 
-    private IRuntimeValue EvaluateProgramCall(string fileName, List<Expr> argumentExpressions, bool globbingEnabled, bool isRoot)
+    private IRuntimeValue EvaluateStdCall(List<IRuntimeValue> arguments, MethodInfo stdFunction)
     {
-        var arguments = new List<string>();
-        foreach (var argumentExpr in argumentExpressions)
+        var allArguments = new List<object?>(arguments.Count + 1);
+        if (_redirector.Status == RedirectorStatus.HasData)
         {
-            var argument = Next(argumentExpr);
+            allArguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
+        }
+
+        allArguments.AddRange(arguments.Cast<object?>());
+
+        return StdGateway.Call(stdFunction, allArguments, ShellEnvironment);
+    }
+
+    private IRuntimeValue EvaluateProgramCall(string name, List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
+    {
+        return name switch
+        {
+            // Interpreter_BuiltIns.cs
+            "cd" => EvaluateBuiltInCd(arguments),
+            "exec" => EvaluateBuiltInExec(arguments, globbingEnabled, isRoot),
+            "scriptPath" => EvaluateBuiltInScriptPath(arguments),
+            "closure" => EvaluateBuiltInClosureCall(arguments),
+            "call" => EvaluateBuiltInCall(arguments, isRoot),
+            _ => CallProgram(name, arguments, globbingEnabled, isRoot)
+        };
+    }
+
+    private IRuntimeValue CallProgram(string fileName, List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
+    {
+        var newArguments = new List<string>();
+        foreach (var argument in arguments)
+        {
             string value = argument is RuntimeNil
                 ? string.Empty
                 : argument.As<RuntimeString>().Value;
@@ -800,12 +737,12 @@ class Interpreter
 
                 if (result.HasMatches)
                 {
-                    arguments.AddRange(result.Files.Select(x => x.Path));
+                    newArguments.AddRange(result.Files.Select(x => x.Path));
                     continue;
                 }
             }
 
-            arguments.Add(value);
+            newArguments.Add(value);
         }
 
         bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !isRoot;
@@ -820,7 +757,7 @@ class Interpreter
 
             if (firstChars[0] == '#' && firstChars[1] == '!')
             {
-                arguments.Insert(0, fileName);
+                newArguments.Insert(0, fileName);
                 fileName = streamReader.ReadLine() ?? "";
                 hasShebang = true;
             }
@@ -836,7 +773,7 @@ class Interpreter
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = string.Join(" ", arguments.Select(EscapeArgument)),
+                Arguments = string.Join(" ", newArguments.Select(EscapeArgument)),
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
