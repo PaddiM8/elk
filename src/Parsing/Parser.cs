@@ -393,22 +393,23 @@ internal class Parser
     {
         var left = ParseOr();
 
-        if (Match(TokenKind.EqualsGreater))
+        if (AdvanceIf(TokenKind.EqualsGreater))
         {
-            Eat();
-
             if (left is not CallExpr and not FunctionReferenceExpr)
                 throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure");
 
             var scope = new LocalScope(_scope);
             var parameters = new List<Token>();
-            do
+            if (Match(TokenKind.Identifier))
             {
-                var parameter = EatExpected(TokenKind.Identifier);
-                parameters.Add(parameter);
-                scope.AddVariable(parameter.Value, RuntimeNil.Value);
+                do
+                {
+                    var parameter = EatExpected(TokenKind.Identifier);
+                    parameters.Add(parameter);
+                    scope.AddVariable(parameter.Value, RuntimeNil.Value);
+                }
+                while (AdvanceIf(TokenKind.Comma));
             }
-            while (AdvanceIf(TokenKind.Comma));
 
             var right = ParseBlockOrSingle(StructureKind.Other, scope);
 
@@ -1066,14 +1067,10 @@ internal class Parser
 
     private bool ReachedTextEnd()
     {
-        if (Previous?.Kind == TokenKind.WhiteSpace &&
-            (Current?.Kind is TokenKind.AmpersandAmpersand or TokenKind.PipePipe or TokenKind.EqualsGreater) &&
-            Peek()?.Kind == TokenKind.WhiteSpace)
-        {
-            return true;
-        }
-
         return ReachedEnd || MatchInclWhiteSpace(
+            TokenKind.AmpersandAmpersand,
+            TokenKind.PipePipe,
+            TokenKind.EqualsGreater,
             TokenKind.ClosedParenthesis,
             TokenKind.OpenBrace,
             TokenKind.ClosedBrace,
