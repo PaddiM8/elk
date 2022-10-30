@@ -12,9 +12,10 @@ partial class Interpreter
 {
     private IRuntimeValue EvaluateBuiltInCd(List<IRuntimeValue> arguments)
     {
+        EmptyRedirector(arguments);
+
         if (arguments.Count > 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
-
 
         string argument = arguments.Any()
             ? arguments.First().As<RuntimeString>().Value
@@ -43,6 +44,8 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateBuiltInExec(List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
     {
+        EmptyRedirector(arguments);
+
         string programName = arguments[0].As<RuntimeString>().Value;
 
         return CallProgram(
@@ -55,6 +58,8 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateBuiltInScriptPath(List<IRuntimeValue> arguments)
     {
+        EmptyRedirector(arguments);
+
         if (arguments.Any())
             throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
 
@@ -67,6 +72,8 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateBuiltInClosureCall(List<IRuntimeValue> arguments)
     {
+        EmptyRedirector(arguments);
+
         if (_currentClosureExpr == null)
             throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
 
@@ -84,6 +91,8 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateBuiltInCall(List<IRuntimeValue> arguments, bool isRoot)
     {
+        EmptyRedirector(arguments);
+
         if (arguments.Count == 0)
             throw new RuntimeWrongNumberOfArgumentsException(1, 0, true);
 
@@ -107,9 +116,12 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateRuntimeClosure(List<IRuntimeValue> arguments, RuntimeClosureFunction runtimeClosure, bool isRoot)
     {
+        EmptyRedirector(arguments);
+
         var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Closure.Function;
         var innerFunction = functionReferenceExpr.RuntimeFunction!;
 
+        // TODO: This should also work with std functions
         if (innerFunction is not RuntimeSymbolFunction runtimeSymbolFunction)
             throw new RuntimeException("Closures are only supported for user-defined functions");
 
@@ -119,5 +131,13 @@ partial class Interpreter
             isRoot,
             runtimeClosure.Closure
         );
+    }
+
+    private void EmptyRedirector(List<IRuntimeValue> arguments)
+    {
+        if (_redirector.Status == RedirectorStatus.HasData)
+        {
+            arguments.Insert(0, _redirector.Receive()!);
+        }
     }
 }
