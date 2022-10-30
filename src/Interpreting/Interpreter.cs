@@ -600,7 +600,18 @@ partial class Interpreter
         if (expr.FunctionSymbol == null && closureExpr != null)
             throw new RuntimeException("Unexpected closure");
 
+        // This needs to be done before evaluating the arguments,
+        // to make sure they don't receive the data instead.
+        IRuntimeValue? pipedValue = null;
+        if ((expr.FunctionSymbol != null || expr.StdFunction != null) &&
+            _redirector.Status == RedirectorStatus.HasData)
+        {
+            pipedValue = _redirector.Receive();
+        }
+
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
+        if (pipedValue != null)
+            evaluatedArguments.Insert(0, pipedValue);
 
         if (expr.FunctionSymbol != null)
             return EvaluateFunctionCall(evaluatedArguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
@@ -621,11 +632,6 @@ partial class Interpreter
             throw new RuntimeException("Unexpected closure");
 
         var allArguments = new List<IRuntimeValue>();
-        if (_redirector.Status == RedirectorStatus.HasData)
-        {
-            allArguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
-        }
-
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (argument == null)
@@ -694,15 +700,11 @@ partial class Interpreter
 
     private IRuntimeValue EvaluateStdCall(List<IRuntimeValue> arguments, MethodInfo stdFunction)
     {
-        var allArguments = new List<object?>(arguments.Count + 1);
-        if (_redirector.Status == RedirectorStatus.HasData)
-        {
-            allArguments.Add(_redirector.Receive() ?? RuntimeNil.Value);
-        }
-
-        allArguments.AddRange(arguments.Cast<object?>());
-
-        return StdGateway.Call(stdFunction, allArguments, ShellEnvironment);
+        return StdGateway.Call(
+            stdFunction,
+            arguments.Cast<object?>().ToList(),
+            ShellEnvironment
+        );
     }
 
     private IRuntimeValue EvaluateProgramCall(string name, List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)

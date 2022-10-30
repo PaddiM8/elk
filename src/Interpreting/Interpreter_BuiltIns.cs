@@ -82,7 +82,7 @@ partial class Interpreter
         foreach (var (argument, i) in arguments.WithIndex())
         {
             var parameter = _currentClosureExpr.Parameters.ElementAtOrDefault(i)?.Value ??
-                throw new RuntimeException($"Expected exactly {_currentClosureExpr.Parameters.Count} closure parameters");
+                throw new RuntimeException($"Expected exactly {_currentClosureExpr.Parameters.Count} closure parameter(s)");
             scope.AddVariable(parameter, argument);
         }
 

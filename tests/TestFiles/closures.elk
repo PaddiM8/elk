@@ -1,0 +1,18 @@
+fn select(container) => closure {
+    let values = []
+    for value in container: values | add(closure(value))
+
+    values
+}
+
+let ending = "!"
+let result = ["this", "is", "a", "test"]
+    | select => x: x + ending
+assert(result[0] == "this!")
+assert(result[3] == "test!")
+
+fn thing() => closure {
+    closure()
+}
+
+thing =>: assert(true)
