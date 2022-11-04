@@ -937,8 +937,15 @@ internal class Parser
             while (AdvanceIf(TokenKind.Comma));
 
             EatExpected(TokenKind.ClosedParenthesis);
+            var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
 
-            return new CallExpr(identifier, arguments, CallStyle.Parenthesized, moduleName);
+            return new CallExpr(
+                modifiedIdentifier,
+                arguments,
+                CallStyle.Parenthesized,
+                functionPlurality,
+                moduleName
+            );
         }
         
         if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
@@ -956,7 +963,29 @@ internal class Parser
             textArguments.Insert(0, aliasResult.Value);
         }
 
-        return new CallExpr(identifier, textArguments, CallStyle.TextArguments, moduleName);
+        var plurality = ParsePlurality(identifier, out var newIdentifier);
+
+        return new CallExpr(
+            newIdentifier,
+            textArguments,
+            CallStyle.TextArguments,
+            plurality,
+            moduleName
+        );
+    }
+
+    private Plurality ParsePlurality(Token identifier, out Token newToken)
+    {
+        if (identifier.Value.EndsWith("!"))
+        {
+            newToken = identifier with { Value = identifier.Value[..^1] };
+
+            return Plurality.Plural;
+        }
+
+        newToken = identifier;
+
+        return Plurality.Singular;
     }
 
     private List<Expr> ParseTextArguments()

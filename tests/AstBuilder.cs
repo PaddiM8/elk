@@ -43,7 +43,7 @@ static class AstBuilder
         => new(Token(TokenKind.Identifier, identifier));
 
     public static CallExpr Call(string identifier, List<Expr> arguments)
-        => new(Token(TokenKind.Identifier, identifier), arguments, CallStyle.Parenthesized);
+        => new(Token(TokenKind.Identifier, identifier), arguments, CallStyle.Parenthesized, Plurality.Singular);
 
     public static IfExpr If(Expr condition, Expr thenBranch, Expr? elseBranch = null)
         => new(condition, thenBranch, elseBranch);

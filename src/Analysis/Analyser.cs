@@ -249,6 +249,7 @@ class Analyser
             expr.Identifier,
             expr.Arguments.Select(Next).ToList(),
             expr.CallStyle,
+            expr.Plurality,
             expr.ModuleName
         );
 

@@ -613,17 +613,39 @@ partial class Interpreter
         if (pipedValue != null)
             evaluatedArguments.Insert(0, pipedValue);
 
-        if (expr.FunctionSymbol != null)
-            return EvaluateFunctionCall(evaluatedArguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
-        if (expr.StdFunction != null)
-            return EvaluateStdCall(evaluatedArguments, expr.StdFunction);
+        IRuntimeValue Evaluate(List<IRuntimeValue> arguments)
+        {
+            if (expr.FunctionSymbol != null)
+                return EvaluateFunctionCall(arguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
+            if (expr.StdFunction != null)
+                return EvaluateStdCall(arguments, expr.StdFunction);
 
-        return EvaluateProgramCall(
-            expr.Identifier.Value,
-            evaluatedArguments,
-            globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
-            isRoot: expr.IsRoot
-        );
+            return EvaluateProgramCall(
+                expr.Identifier.Value,
+                arguments,
+                globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+                isRoot: expr.IsRoot
+            );
+        }
+
+        if (expr.Plurality == Plurality.Singular)
+            return Evaluate(evaluatedArguments);
+
+        var firstArguments = evaluatedArguments
+            .FirstOrDefault()?
+            .As<RuntimeList>()
+            .Values;
+        if (firstArguments == null)
+            return Evaluate(evaluatedArguments);
+
+        var results = new List<IRuntimeValue>(evaluatedArguments.Count);
+        foreach (var firstArgument in firstArguments)
+        {
+            evaluatedArguments[0] = firstArgument;
+            results.Add(Evaluate(evaluatedArguments));
+        }
+
+        return new RuntimeList(results);
     }
 
     private IRuntimeValue EvaluateFunctionCall(List<IRuntimeValue> arguments, FunctionExpr function, bool isRoot, ClosureExpr? closureExpr = null)

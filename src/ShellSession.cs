@@ -73,7 +73,8 @@ public class ShellSession
             var call = new CallExpr(
                 new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
                 new(),
-                CallStyle.Parenthesized
+                CallStyle.Parenthesized,
+                Plurality.Singular
             )
             {
                 IsRoot = true,

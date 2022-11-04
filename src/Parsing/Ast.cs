@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -234,6 +235,12 @@ enum CallStyle
     TextArguments,
 }
 
+enum Plurality
+{
+    Singular,
+    Plural,
+}
+
 class CallExpr : Expr
 {
     public Token Identifier { get; }
@@ -242,18 +249,25 @@ class CallExpr : Expr
 
     public CallStyle CallStyle { get; }
 
+    public Plurality Plurality { get; }
+
     public Token? ModuleName { get; }
 
     public FunctionSymbol? FunctionSymbol { get; set; }
 
     public MethodInfo? StdFunction { get; set; }
 
-    public CallExpr(Token identifier, List<Expr> arguments, CallStyle callStyle, Token? moduleName = null)
+    public CallExpr(Token identifier,
+                    List<Expr> arguments,
+                    CallStyle callStyle,
+                    Plurality plurality,
+                    Token? moduleName = null)
         : base(identifier.Position)
     {
         Identifier = identifier;
         Arguments = arguments;
         CallStyle = callStyle;
+        Plurality = plurality;
         ModuleName = moduleName;
     }
 }
