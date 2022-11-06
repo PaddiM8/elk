@@ -9,6 +9,10 @@ namespace Elk.Std;
 [ElkModule("collections")]
 public class Collections
 {
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of values where the closure has been called on each value.</returns>
+    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("select", Reachability.Everywhere)]
     public static RuntimeList Select(IEnumerable<IRuntimeValue> items, Func<IRuntimeValue, IRuntimeValue> closure)
         => new(items.Select(closure));
