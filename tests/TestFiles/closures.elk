@@ -20,3 +20,8 @@ fn thing() => closure {
 }
 
 thing =>: assert(true)
+
+# independent closure
+let f = &Fn => x: x + "!"
+let result = f | call hi
+assert(result == "hi!")

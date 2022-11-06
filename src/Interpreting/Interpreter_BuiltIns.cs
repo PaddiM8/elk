@@ -121,9 +121,17 @@ partial class Interpreter
         var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Closure.Function;
         var innerFunction = functionReferenceExpr.RuntimeFunction!;
 
-        // TODO: This should also work with std functions
+        if (innerFunction is RuntimeStdFunction runtimeStdFunction)
+        {
+            return EvaluateStdCall(
+                arguments,
+                runtimeStdFunction.StdFunction,
+                runtimeClosure.Closure
+            );
+        }
+
         if (innerFunction is not RuntimeSymbolFunction runtimeSymbolFunction)
-            throw new RuntimeException("Closures are only supported for user-defined functions");
+            throw new RuntimeException("Closures are not supported for built-in non-std functions");
 
         return EvaluateFunctionCall(
             arguments,
