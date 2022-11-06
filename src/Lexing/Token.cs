@@ -18,7 +18,12 @@ record Token(TokenKind Kind, string Value, TextPos Position);
 
 class TokenConverter : JsonConverter<Token>
 {
-    public override Token ReadJson(JsonReader reader, Type objectType, Token? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override Token ReadJson(
+        JsonReader reader,
+        Type objectType,
+        Token? existingValue,
+        bool hasExistingValue,
+        JsonSerializer serializer)
     {
         throw new InvalidOperationException();
     }

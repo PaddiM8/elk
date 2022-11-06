@@ -28,7 +28,10 @@ static class Iteration
     /// dict | add("name", "John")
     /// </example>
     [ElkFunction("add", Reachability.Everywhere)]
-    public static IRuntimeValue Add(IRuntimeValue container, IRuntimeValue value1, IRuntimeValue? value2 = null)
+    public static IRuntimeValue Add(
+        IRuntimeValue container,
+        IRuntimeValue value1,
+        IRuntimeValue? value2 = null)
     {
         if (container is RuntimeList list)
         {

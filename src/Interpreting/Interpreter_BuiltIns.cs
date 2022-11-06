@@ -42,7 +42,10 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue EvaluateBuiltInExec(List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
+    private IRuntimeValue EvaluateBuiltInExec(
+        List<IRuntimeValue> arguments,
+        bool globbingEnabled,
+        bool isRoot)
     {
         EmptyRedirector(arguments);
 
@@ -114,7 +117,10 @@ partial class Interpreter
         };
     }
 
-    private IRuntimeValue EvaluateRuntimeClosure(List<IRuntimeValue> arguments, RuntimeClosureFunction runtimeClosure, bool isRoot)
+    private IRuntimeValue EvaluateRuntimeClosure(
+        List<IRuntimeValue> arguments,
+        RuntimeClosureFunction runtimeClosure,
+        bool isRoot)
     {
         EmptyRedirector(arguments);
 

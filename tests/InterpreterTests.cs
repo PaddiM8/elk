@@ -69,7 +69,9 @@ internal class InterpreterTests
     }
 
     private bool SameResult(object expectedResult, IRuntimeValue gotResult)
-        => ((RuntimeBoolean)RuntimeValue(expectedResult).Operation(OperationKind.EqualsEquals, gotResult)).Value;
+        => ((RuntimeBoolean)RuntimeValue(expectedResult)
+            .Operation(OperationKind.EqualsEquals, gotResult))
+            .Value;
 
     private IRuntimeValue RuntimeValue(object value)
         => value switch

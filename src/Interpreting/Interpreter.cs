@@ -644,7 +644,11 @@ partial class Interpreter
         return new RuntimeList(results);
     }
 
-    private IRuntimeValue EvaluateFunctionCall(List<IRuntimeValue> arguments, FunctionExpr function, bool isRoot, ClosureExpr? closureExpr = null)
+    private IRuntimeValue EvaluateFunctionCall(
+        List<IRuntimeValue> arguments,
+        FunctionExpr function,
+        bool isRoot,
+        ClosureExpr? closureExpr = null)
     {
         if (closureExpr != null && !function.HasClosure)
             throw new RuntimeException("Unexpected closure");
@@ -716,7 +720,10 @@ partial class Interpreter
         return result;
     }
 
-    private IRuntimeValue EvaluateStdCall(List<IRuntimeValue> arguments, MethodInfo stdFunction, ClosureExpr? closureExpr = null)
+    private IRuntimeValue EvaluateStdCall(
+        List<IRuntimeValue> arguments,
+        MethodInfo stdFunction,
+        ClosureExpr? closureExpr = null)
     {
         IRuntimeValue RunClosure(IEnumerable<IRuntimeValue> args)
         {
@@ -736,7 +743,11 @@ partial class Interpreter
         );
     }
 
-    private IRuntimeValue EvaluateProgramCall(string name, List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
+    private IRuntimeValue EvaluateProgramCall(
+        string name,
+        List<IRuntimeValue> arguments,
+        bool globbingEnabled,
+        bool isRoot)
     {
         return name switch
         {
@@ -750,7 +761,11 @@ partial class Interpreter
         };
     }
 
-    private IRuntimeValue CallProgram(string fileName, List<IRuntimeValue> arguments, bool globbingEnabled, bool isRoot)
+    private IRuntimeValue CallProgram(
+        string fileName,
+        List<IRuntimeValue> arguments,
+        bool globbingEnabled,
+        bool isRoot)
     {
         var newArguments = new List<string>();
         foreach (var argument in arguments)

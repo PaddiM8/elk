@@ -17,7 +17,12 @@ static class AstBuilder
     public static Token Token(TokenKind kind, string value)
         => new(kind, value, TextPos.Default);
 
-    public static FunctionExpr Function(string identifier, IEnumerable<string> parameters, BlockExpr block, ModuleScope module, bool hasClosure)
+    public static FunctionExpr Function(
+        string identifier,
+        IEnumerable<string> parameters,
+        BlockExpr block,
+        ModuleScope module,
+        bool hasClosure)
         => new(
             Token(TokenKind.Identifier, identifier),
             parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null, false)).ToList(),

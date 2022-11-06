@@ -12,7 +12,7 @@ public class MarkdownTable
 
     private readonly string[] _headerColumns;
     private readonly int[] _columnWidths;
-    private List<string[]> _rows = new();
+    private readonly List<string[]> _rows = new();
 
     public MarkdownTable(params string[] headerColumns)
     {

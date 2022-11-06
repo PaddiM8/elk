@@ -83,7 +83,13 @@ class FunctionExpr : Expr
 
     public bool IsAnalysed { get; }
 
-    public FunctionExpr(Token identifier, List<Parameter> parameters, BlockExpr block, ModuleScope module, bool hasClosure, bool isAnalysed)
+    public FunctionExpr(
+        Token identifier,
+        List<Parameter> parameters,
+        BlockExpr block,
+        ModuleScope module,
+        bool hasClosure,
+        bool isAnalysed)
         : base(identifier.Position)
     {
         Identifier = identifier;
@@ -257,11 +263,12 @@ class CallExpr : Expr
 
     public MethodInfo? StdFunction { get; set; }
 
-    public CallExpr(Token identifier,
-                    List<Expr> arguments,
-                    CallStyle callStyle,
-                    Plurality plurality,
-                    Token? moduleName = null)
+    public CallExpr(
+        Token identifier,
+        List<Expr> arguments,
+        CallStyle callStyle,
+        Plurality plurality,
+        Token? moduleName = null)
         : base(identifier.Position)
     {
         Identifier = identifier;
@@ -377,7 +384,11 @@ class BlockExpr : Expr
 
     public Scope Scope { get; }
 
-    public BlockExpr(List<Expr> expressions, StructureKind parentStructureKind, TextPos pos, Scope scope)
+    public BlockExpr(
+        List<Expr> expressions,
+        StructureKind parentStructureKind,
+        TextPos pos,
+        Scope scope)
         : base(pos)
     {
         Expressions = expressions;
