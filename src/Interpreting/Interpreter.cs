@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -819,13 +820,15 @@ partial class Interpreter
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = string.Join(" ", newArguments.Select(EscapeArgument)),
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
                 WorkingDirectory = ShellEnvironment.WorkingDirectory,
             },
         };
+
+        foreach (var arg in newArguments)
+            process.StartInfo.ArgumentList.Add(arg);
 
         try
         {
@@ -872,7 +875,4 @@ partial class Interpreter
             ? NextCallWithClosure(callExpr, closureExpr)
             : new RuntimeClosureFunction(closureExpr);
     }
-
-    private static string EscapeArgument(string argument)
-        => $"\"{argument.Replace("\"", "\"\"\"")}\"";
 }
