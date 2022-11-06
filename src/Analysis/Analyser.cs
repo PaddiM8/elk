@@ -297,28 +297,42 @@ class Analyser
 
     private CallExpr Visit(CallExpr expr)
     {
+
+        string name = expr.Identifier.Value;
+        string? moduleName = expr.ModuleName?.Value;
+        var stdFunction = ResolveStdFunction(name, moduleName);
+        var functionSymbol = stdFunction == null
+            ? ResolveFunctionSymbol(name, moduleName)
+            : null;
+        var callType = name switch
+        {
+            "cd" => CallType.BuiltInCd,
+            "exec" => CallType.BuiltInExec,
+            "scriptPath" => CallType.BuiltInScriptPath,
+            "closure" => CallType.BuiltInClosure,
+            "call" => CallType.BuiltInCall,
+            _ => (stdFunction, functionSymbol) switch
+            {
+                (not null, null) => CallType.StdFunction,
+                (null, not null) => CallType.Function,
+                (null, null) => CallType.Program,
+                _ => CallType.Function,
+            },
+        };
+
         var newExpr = new CallExpr(
             expr.Identifier,
             expr.Arguments.Select(Next).ToList(),
             expr.CallStyle,
             expr.Plurality,
+            callType,
             expr.ModuleName
         )
         {
             IsRoot = expr.IsRoot,
+            StdFunction = stdFunction,
+            FunctionSymbol = functionSymbol,
         };
-
-        string name = expr.Identifier.Value;
-        string? moduleName = expr.ModuleName?.Value;
-        var stdFunction = ResolveStdFunction(name, moduleName);
-        if (stdFunction != null)
-        {
-            newExpr.StdFunction = stdFunction;
-
-            return newExpr;
-        }
-
-        newExpr.FunctionSymbol = ResolveFunctionSymbol(name, moduleName);
 
         return newExpr;
     }

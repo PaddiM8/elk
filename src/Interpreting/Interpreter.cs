@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices.ObjectiveC;
 using System.Text;
 using Elk.Analysis;
 using Elk.Interpreting.Exceptions;
@@ -616,17 +617,28 @@ partial class Interpreter
 
         IRuntimeValue Evaluate(List<IRuntimeValue> arguments)
         {
-            if (expr.FunctionSymbol != null)
-                return EvaluateFunctionCall(arguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
-            if (expr.StdFunction != null)
-                return EvaluateStdCall(arguments, expr.StdFunction, closureExpr);
-
-            return EvaluateProgramCall(
-                expr.Identifier.Value,
-                arguments,
-                globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
-                isRoot: expr.IsRoot
-            );
+            return expr.CallType switch
+            {
+                CallType.Program => EvaluateProgramCall(
+                    expr.Identifier.Value,
+                    arguments,
+                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+                    isRoot: expr.IsRoot
+                ),
+                CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, closureExpr),
+                CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, closureExpr),
+                // Interpreter_BuiltIns.cs
+                CallType.BuiltInCd => EvaluateBuiltInCd(arguments),
+                CallType.BuiltInExec => EvaluateBuiltInExec(
+                    arguments,
+                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+                    isRoot: expr.IsRoot
+                ),
+                CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
+                CallType.BuiltInClosure => EvaluateBuiltInClosureCall(arguments),
+                CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
+                _ => throw new NotSupportedException(),
+            };
         }
 
         if (expr.Plurality == Plurality.Singular || evaluatedArguments.Count == 0)
@@ -745,24 +757,6 @@ partial class Interpreter
     }
 
     private IRuntimeValue EvaluateProgramCall(
-        string name,
-        List<IRuntimeValue> arguments,
-        bool globbingEnabled,
-        bool isRoot)
-    {
-        return name switch
-        {
-            // Interpreter_BuiltIns.cs
-            "cd" => EvaluateBuiltInCd(arguments),
-            "exec" => EvaluateBuiltInExec(arguments, globbingEnabled, isRoot),
-            "scriptPath" => EvaluateBuiltInScriptPath(arguments),
-            "closure" => EvaluateBuiltInClosureCall(arguments),
-            "call" => EvaluateBuiltInCall(arguments, isRoot),
-            _ => CallProgram(name, arguments, globbingEnabled, isRoot)
-        };
-    }
-
-    private IRuntimeValue CallProgram(
         string fileName,
         List<IRuntimeValue> arguments,
         bool globbingEnabled,

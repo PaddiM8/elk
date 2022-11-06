@@ -247,6 +247,19 @@ enum Plurality
     Plural,
 }
 
+enum CallType
+{
+    Unknown,
+    Program,
+    StdFunction,
+    Function,
+    BuiltInCd,
+    BuiltInExec,
+    BuiltInScriptPath,
+    BuiltInClosure,
+    BuiltInCall,
+}
+
 class CallExpr : Expr
 {
     public Token Identifier { get; }
@@ -257,17 +270,20 @@ class CallExpr : Expr
 
     public Plurality Plurality { get; }
 
+    public CallType CallType { get; }
+
     public Token? ModuleName { get; }
 
-    public FunctionSymbol? FunctionSymbol { get; set; }
+    public FunctionSymbol? FunctionSymbol { get; init; }
 
-    public MethodInfo? StdFunction { get; set; }
+    public MethodInfo? StdFunction { get; init; }
 
     public CallExpr(
         Token identifier,
         List<Expr> arguments,
         CallStyle callStyle,
         Plurality plurality,
+        CallType callType,
         Token? moduleName = null)
         : base(identifier.Position)
     {
@@ -275,6 +291,7 @@ class CallExpr : Expr
         Arguments = arguments;
         CallStyle = callStyle;
         Plurality = plurality;
+        CallType = callType;
         ModuleName = moduleName;
     }
 }

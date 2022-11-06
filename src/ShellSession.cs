@@ -74,7 +74,8 @@ public class ShellSession
                 new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
                 new(),
                 CallStyle.Parenthesized,
-                Plurality.Singular
+                Plurality.Singular,
+                CallType.Function
             )
             {
                 IsRoot = true,

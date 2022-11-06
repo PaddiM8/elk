@@ -51,7 +51,7 @@ partial class Interpreter
 
         string programName = arguments[0].As<RuntimeString>().Value;
 
-        return CallProgram(
+        return EvaluateProgramCall(
             programName,
             arguments.GetRange(1, arguments.Count - 1),
             globbingEnabled,

@@ -963,6 +963,7 @@ internal class Parser
                 arguments,
                 CallStyle.Parenthesized,
                 functionPlurality,
+                CallType.Unknown,
                 moduleName
             );
         }
@@ -989,6 +990,7 @@ internal class Parser
             textArguments,
             CallStyle.TextArguments,
             plurality,
+            CallType.Unknown,
             moduleName
         );
     }
