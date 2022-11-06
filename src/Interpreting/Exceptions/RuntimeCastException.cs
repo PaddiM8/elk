@@ -13,3 +13,11 @@ class RuntimeCastException<T> : RuntimeException
     {
     }
 }
+
+class RuntimeCastException : RuntimeException
+{
+    public RuntimeCastException(MemberInfo fromType, string toType)
+        : base($"Cannot cast from {fromType.Name[7..]} to {toType}")
+    {
+    }
+}

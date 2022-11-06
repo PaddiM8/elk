@@ -145,4 +145,23 @@ static class Iteration
 
         return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
     }
+
+    /// <param name="a">An iterable</param>
+    /// <param name="b">An iterable</param>
+    /// <returns>A list containing pairs of values.</returns>
+    /// <example>[1, 2, 3] | zip([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6)]</example>
+    [ElkFunction("zip")]
+    public static RuntimeList Zip(IRuntimeValue a, IRuntimeValue b)
+    {
+        if (a is not IEnumerable<IRuntimeValue> enum1)
+            throw new RuntimeCastException(a.GetType(), "iterable");
+        if (b is not IEnumerable<IRuntimeValue> enum2)
+            throw new RuntimeCastException(a.GetType(), "iterable");
+
+        var zip = enum1
+            .Zip(enum2)
+            .Select(x => new RuntimeTuple(new[] { x.First, x.Second }));
+
+        return new(zip);
+    }
 }
