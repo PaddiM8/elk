@@ -56,46 +56,47 @@ public class MarkdownGenerator
 
     private static string GenerateFunction(FunctionInfo functionInfo)
     {
-        var functionString = new StringBuilder();
         var parameters = functionInfo.Parameters;
 
         // Title
-        functionString.Append($"# {functionInfo.Name}(");
+        var titleString = new StringBuilder();
+        titleString.Append($"{functionInfo.Name}\\(");
 
         string? signatureWithoutOptionals = null;
         foreach (var parameter in parameters)
         {
             if (signatureWithoutOptionals == null && parameter.IsOptional)
             {
-                signatureWithoutOptionals = functionString.ToString()[3..]
-                    .RemoveTrailing(", ") + ")";
+                signatureWithoutOptionals = titleString.ToString()[3..]
+                    .RemoveTrailing(", ") + "\\)";
             }
 
-            functionString.Append(parameter.Name);
+            titleString.Append(parameter.Name);
 
             var typeName = parameter.ValueInfo.TypeName;
             if (typeName != null && typeName != "*" && parameter.ValueInfo.HasStaticType)
-                functionString.Append($": {typeName}");
+                titleString.Append($": {typeName}");
 
-            functionString.Append(", ");
+            titleString.Append(", ");
         }
 
         if (signatureWithoutOptionals != null)
         {
-            functionString.Insert(3, $"{signatureWithoutOptionals}<br>");
+            titleString.Insert(3, $"{signatureWithoutOptionals}<br>");
         }
 
         // Remove the trailing comma
         if (parameters.Any())
-            functionString.Remove(functionString.Length - 2, 2);
-        functionString.Append(')');
+            titleString.Remove(titleString.Length - 2, 2);
+        titleString.Append("\\)");
 
         const string alphabet = "abc";
         if (functionInfo.Closure != null)
-            functionString.Append($" => {string.Join(", ", alphabet[..(functionInfo.Closure.ParameterCount)])}");
+            titleString.Append($" => {string.Join(", ", alphabet[..functionInfo.Closure.ParameterCount])}");
 
-        functionString.AppendLine();
-        functionString.AppendLine();
+        var functionString = new StringBuilder();
+        functionString.AppendLine($"# {functionInfo.Name}");
+        functionString.AppendLine($"## {titleString}\n\n");
 
         // Parameter table
         var table = new MarkdownTable("Parameter", "Type", "Description");

@@ -1,4 +1,4 @@
-fn select(container) => closure {
+fn sel(container) => closure {
     let values = []
     for value in container: values | add(closure(value))
 
@@ -7,9 +7,13 @@ fn select(container) => closure {
 
 let ending = "!"
 let result = ["this", "is", "a", "test"]
-    | select => x: x + ending
+    | sel => x: x + ending
 assert(result[0] == "this!")
 assert(result[3] == "test!")
+
+let ints = ["1", "2"] | sel => &int
+assert(ints[0] == 1)
+assert(ints[1] == 2)
 
 fn thing() => closure {
     closure()

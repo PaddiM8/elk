@@ -398,6 +398,25 @@ internal class Parser
             if (left is not CallExpr and not FunctionReferenceExpr)
                 throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure");
 
+            if (AdvanceIf(TokenKind.Ampersand))
+            {
+                var variableToken = Previous! with { Value = "x" };
+                var call = (CallExpr)ParseIdentifier();
+                call.Arguments.Add(new VariableExpr(variableToken));
+                var implicitScope = new LocalScope(_scope);
+                var implicitParameters = new List<Token> { variableToken };
+
+                implicitScope.AddVariable("x", RuntimeNil.Value);
+                var block = new BlockExpr(
+                    new List<Expr> { call },
+                    StructureKind.Other,
+                    variableToken.Position,
+                    implicitScope
+                );
+
+                return new ClosureExpr(left, implicitParameters, block);
+            }
+
             var scope = new LocalScope(_scope);
             var parameters = new List<Token>();
             if (Match(TokenKind.Identifier))
