@@ -57,13 +57,11 @@ static class String
         => new(input.Value.Trim());
 
     /// <param name="input">String to split up into parts</param>
-    /// <param name="delimiter">Where to split</param>
+    /// <param name="delimiter">Where to split (default: " ")</param>
     /// <returns>A list of all the different parts as a result of splitting the string.</returns>
     [ElkFunction("split", Reachability.Everywhere)]
     public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null)
-        => delimiter == null
-            ? new(input.Select(x => x))
-            : new(input.Value.Split(delimiter.Value).Select(x => new RuntimeString(x)));
+        => new(input.Value.Split(delimiter?.Value ?? " ").Select(x => new RuntimeString(x)));
 
     /// <returns>A copy of the input string with all the letters made uppercase.</returns>
     [ElkFunction("upper")]
