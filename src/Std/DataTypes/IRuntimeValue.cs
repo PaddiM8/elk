@@ -20,4 +20,7 @@ public interface IRuntimeValue
     public IRuntimeValue Operation(OperationKind kind);
 
     public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other);
+
+    public string ToDisplayString()
+        => ToString()!;
 }

@@ -73,5 +73,5 @@ public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexabl
         => Values.GetHashCode();
 
     public override string ToString()
-        => $"({string.Join(", ", Values.Select(x => x.ToString()))})";
+        => $"({string.Join(", ", Values.Select(x => x.ToDisplayString()))})";
 }

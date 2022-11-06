@@ -73,7 +73,9 @@ public class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IInd
         foreach (var entry in Entries)
         {
             stringBuilder.Append('\t');
-            stringBuilder.AppendLine($"{entry.Value.Item1}: {entry.Value.Item2},");
+            string key = entry.Value.Item1.ToDisplayString();
+            string value = entry.Value.Item2.ToDisplayString();
+            stringBuilder.AppendLine($"{key}: {value},");
         }
 
         stringBuilder.Remove(stringBuilder.Length - 1, 1);

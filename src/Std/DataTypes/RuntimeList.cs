@@ -85,5 +85,5 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
         => Values.GetHashCode();
 
     public override string ToString()
-        => $"[{string.Join(", ", Values.Select(x => x.ToString()))}]";
+        => $"[{string.Join(", ", Values.Select(x => x.ToDisplayString()))}]";
 }
