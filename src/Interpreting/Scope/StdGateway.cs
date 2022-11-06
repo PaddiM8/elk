@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -47,11 +48,17 @@ static class StdGateway
         return methodInfo;
     }
 
-    public static IRuntimeValue Call(MethodInfo methodInfo, List<object?> arguments, ShellEnvironment shellEnvironment)
+    public static IRuntimeValue Call(MethodInfo methodInfo,
+        List<object?> arguments,
+        ShellEnvironment shellEnvironment,
+        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure)
     {
         var parameters = methodInfo.GetParameters();
         if (parameters.LastOrDefault()?.ParameterType == typeof(ShellEnvironment))
             arguments.Add(shellEnvironment);
+
+        if (ResolveClosure(closure, parameters.LastOrDefault()?.ParameterType, out object? closureArgument))
+            arguments.Add(closureArgument);
 
         foreach (var (parameter, i) in parameters.WithIndex())
         {
@@ -70,7 +77,7 @@ static class StdGateway
             var parameterType = parameter.ParameterType;
             if (arguments[i] != null &&
                 parameterType != typeof(IRuntimeValue) &&
-                arguments[i] is not ShellEnvironment)
+                arguments[i] is not ShellEnvironment and not Func<IRuntimeValue, IRuntimeValue>)
             {
                 arguments[i] = ((IRuntimeValue)arguments[i]!).As(parameter.ParameterType);
             }
@@ -85,6 +92,37 @@ static class StdGateway
         {
             throw e.InnerException ?? new RuntimeException("Unknown error");
         }
+    }
+
+    private static bool ResolveClosure(
+        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure,
+        Type? type,
+        out object? closureArgument)
+    {
+        if (type == typeof(Func<IRuntimeValue >))
+        {
+            closureArgument = new Func<IRuntimeValue>(()
+                => closure(Array.Empty<IRuntimeValue>()));
+            return true;
+        }
+
+        if (type == typeof(Func<IRuntimeValue, IRuntimeValue>))
+        {
+            closureArgument = new Func<IRuntimeValue, IRuntimeValue>(a
+                => closure(new[] { a }));
+            return true;
+        }
+
+        if (type == typeof(Func<IRuntimeValue, IRuntimeValue, IRuntimeValue>))
+        {
+            closureArgument = new Func<IRuntimeValue, IRuntimeValue, IRuntimeValue>((a, b)
+                => closure(new[] { a, b }));
+            return true;
+        }
+
+        closureArgument = null;
+
+        return false;
     }
 
     public static List<string>? FindModuleFunctions(string moduleName)

@@ -597,7 +597,7 @@ partial class Interpreter
 
     private IRuntimeValue Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
-        if (expr.FunctionSymbol == null && closureExpr != null)
+        if (expr.FunctionSymbol == null && expr.StdFunction == null && closureExpr != null)
             throw new RuntimeException("Unexpected closure");
 
         // This needs to be done before evaluating the arguments,
@@ -618,7 +618,7 @@ partial class Interpreter
             if (expr.FunctionSymbol != null)
                 return EvaluateFunctionCall(arguments, expr.FunctionSymbol.Expr, expr.IsRoot, closureExpr);
             if (expr.StdFunction != null)
-                return EvaluateStdCall(arguments, expr.StdFunction);
+                return EvaluateStdCall(arguments, expr.StdFunction, closureExpr);
 
             return EvaluateProgramCall(
                 expr.Identifier.Value,
@@ -720,12 +720,23 @@ partial class Interpreter
         return result;
     }
 
-    private IRuntimeValue EvaluateStdCall(List<IRuntimeValue> arguments, MethodInfo stdFunction)
+    private IRuntimeValue EvaluateStdCall(List<IRuntimeValue> arguments, MethodInfo stdFunction, ClosureExpr? closureExpr = null)
     {
+        IRuntimeValue RunClosure(IEnumerable<IRuntimeValue> args)
+        {
+            var body = closureExpr!.Body;
+            body.Scope.Clear();
+            foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
+                body.Scope.AddVariable(parameter.Value, argument);
+
+            return NextBlock(body, clearScope: false);
+        }
+
         return StdGateway.Call(
             stdFunction,
             arguments.Cast<object?>().ToList(),
-            ShellEnvironment
+            ShellEnvironment,
+            RunClosure
         );
     }
 

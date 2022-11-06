@@ -12,13 +12,22 @@ public enum Reachability
     Everywhere,
 }
 
+public enum ClosureArgs
+{
+    None,
+    One,
+    Two,
+    Three,
+}
+
 public class ElkFunctionAttribute : Attribute
 {
     public string Name { get; }
 
     public Reachability Reachability { get; }
 
-    public ElkFunctionAttribute(string name, Reachability reachability = Reachability.Module)
+    public ElkFunctionAttribute(string name,
+                                Reachability reachability = Reachability.Module)
     {
         Name = name;
         Reachability = reachability;
