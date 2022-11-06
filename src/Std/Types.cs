@@ -1,5 +1,7 @@
 #region
 
+using System;
+using System.Collections.Generic;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -17,4 +19,18 @@ public class Types
     [ElkFunction("isType", Reachability.Everywhere)]
     public static RuntimeBoolean IsType(IRuntimeValue value, RuntimeType type)
         => RuntimeBoolean.From(value.GetType() == type.Type);
+
+    /// <summary>
+    /// Helper function used to create independent closures.
+    /// </summary>
+    /// <param name="args">Closure arguments</param>
+    /// <param name="closure"></param>
+    /// <returns>The result of the closure.</returns>
+    [ElkFunction("Fn", Reachability.Everywhere)]
+    public static IRuntimeValue Fn(
+        [ElkVariadic] IEnumerable<IRuntimeValue> args,
+        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure)
+    {
+        return closure(args);
+    }
 }
