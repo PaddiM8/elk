@@ -76,7 +76,10 @@ class Analyser
                     e.Module,
                     e.HasClosure,
                     isAnalysed: true
-                );
+                )
+                {
+                    IsRoot = e.IsRoot,
+                };
 
                 e.Module.AddFunction(newFunction);
 
@@ -88,7 +91,10 @@ class Analyser
                 if (e.Value != null)
                     keywordValue = Next(e.Value);
 
-                return new KeywordExpr(e.Kind, keywordValue, e.Position);
+                return new KeywordExpr(e.Kind, keywordValue, e.Position)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case IfExpr e:
                 var ifCondition = Next(e.Condition);
                 var thenBranch = Next(e.ThenBranch);
@@ -96,7 +102,10 @@ class Analyser
                 if (e.ElseBranch != null)
                     elseBranch = Next(e.ElseBranch);
 
-                return new IfExpr(ifCondition, thenBranch, elseBranch);
+                return new IfExpr(ifCondition, thenBranch, elseBranch)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case ForExpr e:
                 var forValue = Next(e.Value);
                 foreach (var identifier in e.IdentifierList)
@@ -104,20 +113,32 @@ class Analyser
 
                 var branch = (BlockExpr)Next(e.Branch);
 
-                return new ForExpr(e.IdentifierList, forValue, branch);
+                return new ForExpr(e.IdentifierList, forValue, branch)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case WhileExpr e:
                 var whileCondition = Next(e.Condition);
                 var whileBranch = (BlockExpr)Next(e.Branch);
 
-                return new WhileExpr(whileCondition, whileBranch);
+                return new WhileExpr(whileCondition, whileBranch)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case TupleExpr e:
                 var tupleValues = e.Values.Select(Next).ToList();
 
-                return new TupleExpr(tupleValues, e.Position);
+                return new TupleExpr(tupleValues, e.Position)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case ListExpr e:
                 var listValues = e.Values.Select(Next).ToList();
 
-                return new ListExpr(listValues, e.Position);
+                return new ListExpr(listValues, e.Position)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case DictionaryExpr e:
                 foreach (var (_, value) in e.Entries)
                     Next(value);
@@ -125,7 +146,10 @@ class Analyser
                     .Select(x => (x.Item1, Next(x.Item2)))
                     .ToList();
 
-                return new DictionaryExpr(dictEntries, e.Position);
+                return new DictionaryExpr(dictEntries, e.Position)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case BlockExpr e:
                 _scope = e.Scope;
                 var blockExpressions = e.Expressions.Select(Next).ToList();
@@ -134,7 +158,10 @@ class Analyser
                     e.ParentStructureKind,
                     e.Position,
                     e.Scope
-                );
+                )
+                {
+                    IsRoot = e.IsRoot,
+                };
                 _scope = _scope.Parent!;
 
                 return newExpr;
@@ -143,11 +170,20 @@ class Analyser
             case StringInterpolationExpr e:
                 var parts = e.Parts.Select(Next).ToList();
 
-                return new StringInterpolationExpr(parts, e.Position);
+                return new StringInterpolationExpr(parts, e.Position)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case BinaryExpr e:
-                return new BinaryExpr(Next(e.Left), e.Operator, Next(e.Right));
+                return new BinaryExpr(Next(e.Left), e.Operator, Next(e.Right))
+                {
+                    IsRoot = e.IsRoot,
+                };
             case UnaryExpr e:
-                return new UnaryExpr(e.Operator, Next(e.Value));
+                return new UnaryExpr(e.Operator, Next(e.Value))
+                {
+                    IsRoot = e.IsRoot,
+                };
             case RangeExpr e:
                 var from = e.From == null
                     ? null
@@ -156,11 +192,21 @@ class Analyser
                     ? null
                     : Next(e.To);
 
-                return new RangeExpr(from, to, e.Inclusive);
+                return new RangeExpr(from, to, e.Inclusive)
+                {
+                    IsRoot = e.IsRoot,
+                };
             case IndexerExpr e:
-                return new IndexerExpr(Next(e.Value), Next(e.Index));
+                return new IndexerExpr(Next(e.Value), Next(e.Index))
+                {
+                    IsRoot = e.IsRoot,
+                };
             case VariableExpr e:
-                var variableExpr = new VariableExpr(e.Identifier, e.ModuleName);
+                var variableExpr = new VariableExpr(e.Identifier, e.ModuleName)
+                {
+                    IsRoot = e.IsRoot,
+                };
+
                 if (!e.Identifier.Value.StartsWith("$"))
                 {
                     variableExpr.VariableSymbol = _scope.FindVariable(e.Identifier.Value);
@@ -197,13 +243,17 @@ class Analyser
                 return new FunctionReferenceExpr(e.Identifier, e.ModuleName)
                 {
                     RuntimeFunction = runtimeFunction,
+                    IsRoot = e.IsRoot,
                 };
             case ClosureExpr e:
                 return new ClosureExpr(
                     Next(e.Function),
                     e.Parameters,
                     (BlockExpr)Next(e.Body)
-                );
+                )
+                {
+                    IsRoot = e.IsRoot,
+                };
         }
 
         return expr;
@@ -225,6 +275,7 @@ class Analyser
         var newExpr = new LiteralExpr(expr.Value)
         {
             RuntimeValue = value,
+            IsRoot = expr.IsRoot,
         };
 
         return newExpr;
@@ -237,7 +288,8 @@ class Analyser
 
         var newExpr = new TypeExpr(expr.Identifier)
         {
-            RuntimeValue = new RuntimeType(type)
+            RuntimeValue = new RuntimeType(type),
+            IsRoot = expr.IsRoot,
         };
 
         return newExpr;
@@ -251,7 +303,10 @@ class Analyser
             expr.CallStyle,
             expr.Plurality,
             expr.ModuleName
-        );
+        )
+        {
+            IsRoot = expr.IsRoot,
+        };
 
         string name = expr.Identifier.Value;
         string? moduleName = expr.ModuleName?.Value;

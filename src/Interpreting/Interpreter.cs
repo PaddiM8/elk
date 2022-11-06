@@ -823,7 +823,7 @@ partial class Interpreter
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
-                WorkingDirectory = ShellEnvironment.WorkingDirectory,
+                WorkingDirectory = ShellEnvironment.WorkingDirectory
             },
         };
 
