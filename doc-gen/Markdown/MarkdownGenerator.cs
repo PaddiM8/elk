@@ -61,6 +61,7 @@ public class MarkdownGenerator
 
         // Title
         functionString.Append($"# {functionInfo.Name}(");
+
         string? signatureWithoutOptionals = null;
         foreach (var parameter in parameters)
         {
@@ -87,7 +88,13 @@ public class MarkdownGenerator
         // Remove the trailing comma
         if (parameters.Any())
             functionString.Remove(functionString.Length - 2, 2);
-        functionString.AppendLine(")");
+        functionString.Append(')');
+
+        const string alphabet = "abc";
+        if (functionInfo.Closure != null)
+            functionString.Append($" => {string.Join(", ", alphabet[..(functionInfo.Closure.ParameterCount)])}");
+
+        functionString.AppendLine();
         functionString.AppendLine();
 
         // Parameter table

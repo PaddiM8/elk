@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes;
 
 namespace Elk.DocGen;
 
@@ -38,18 +39,33 @@ public class SymbolReader
                 _docs.TryGetValue(fullName, out var functionDocs);
 
                 var parameters = new List<ParameterInfo>();
+                ClosureInfo? closure = null;
                 foreach (var (parameter, i) in methodInfo.GetParameters().WithIndex())
                 {
-                    if (parameter.ParameterType.Name == "ShellEnvironment")
+                    // Need to do a string comparison here since ShellEnvironment
+                    // is internal.
+                    string typeName = parameter.ParameterType.Name;
+                    if (typeName == "ShellEnvironment")
                         continue;
+
+                    if (typeName.StartsWith("Func`"))
+                    {
+                        closure = new ClosureInfo(typeName.Last() - '0' - 1);
+                        continue;
+                    }
 
                     var parameterDocs = functionDocs?.Parameters.ElementAtOrDefault(i);
                     string description = parameterDocs?.descrption ?? "";
-                    var valueInfo = parameterDocs?.types == null
-                        ? new ValueInfo(parameter.ParameterType, description)
-                        : new ValueInfo(parameterDocs.Value.types, description);
-                    var parameterInfo = new ParameterInfo(parameter.Name!, valueInfo, parameter.HasDefaultValue);
 
+                    ValueInfo valueInfo;
+                    if (parameterDocs?.types != null)
+                        valueInfo = new ValueInfo(parameterDocs.Value.types, description);
+                    else if (parameter.ParameterType == typeof(IEnumerable<IRuntimeValue>))
+                        valueInfo = new ValueInfo("iterable", description);
+                    else
+                        valueInfo = new ValueInfo(parameter.ParameterType, description);
+
+                    var parameterInfo = new ParameterInfo(parameter.Name!, valueInfo, parameter.HasDefaultValue);
                     parameters.Add(parameterInfo);
                 }
 
@@ -65,6 +81,7 @@ public class SymbolReader
                 {
                     Example = functionDocs?.Example,
                     Summary = functionDocs?.Summary,
+                    Closure = closure,
                 };
                 functionList.Add(function);
             }

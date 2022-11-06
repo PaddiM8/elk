@@ -146,8 +146,8 @@ static class Iteration
         return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
     }
 
-    /// <param name="a">An iterable</param>
-    /// <param name="b">An iterable</param>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
     /// <returns>A list containing pairs of values.</returns>
     /// <example>[1, 2, 3] | iter::zip([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6)]</example>
     [ElkFunction("zip")]

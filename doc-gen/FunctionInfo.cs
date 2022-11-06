@@ -36,9 +36,13 @@ public class ValueInfo
 
 public record ParameterInfo(string Name, ValueInfo ValueInfo, bool IsOptional);
 
+public record ClosureInfo(int ParameterCount);
+
 public record FunctionInfo(string Name, IEnumerable<ParameterInfo> Parameters, ValueInfo ReturnValue)
 {
     public string? Example { get; init; }
 
     public string? Summary { get; init; }
+
+    public ClosureInfo? Closure { get; init; }
 }
