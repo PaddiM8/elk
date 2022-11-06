@@ -1044,13 +1044,15 @@ internal class Parser
             }
 
             var next = Peek();
+            bool isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
+            bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) && Current!.Value.StartsWith('$');
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
                 (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
             {
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             }
-            else if (MatchInclWhiteSpace(TokenKind.StringLiteral))
+            else if (isStringLiteral || isDollar)
             {
                 var stringToken = new Token(
                     TokenKind.StringLiteral,
@@ -1059,18 +1061,21 @@ internal class Parser
                 );
                 interpolationParts.Add(new LiteralExpr(stringToken));
                 currentText.Clear();
-                interpolationParts.Add(ParseStringLiteral());
-            }
-            else if (MatchInclWhiteSpace(TokenKind.Identifier) && Current!.Value.StartsWith('$'))
-            {
-                var stringToken = new Token(
-                    TokenKind.StringLiteral,
-                    currentText.ToString(),
-                    pos
-                );
-                interpolationParts.Add(new LiteralExpr(stringToken));
-                currentText.Clear();
-                interpolationParts.Add(new VariableExpr(Eat()));
+
+                if (isStringLiteral)
+                {
+                    interpolationParts.Add(ParseStringLiteral());
+                }
+                else if (isDollar && Current!.Value.Length > 1)
+                {
+                    // Environment variable
+                    interpolationParts.Add(new VariableExpr(Eat()));
+                }
+                else if (isDollar && next?.Kind == TokenKind.OpenBrace)
+                {
+                    Eat();
+                    interpolationParts.Add(ParseBlock(StructureKind.Other));
+                }
             }
             else
             {

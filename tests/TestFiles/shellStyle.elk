@@ -1,0 +1,21 @@
+fn values(x...): x
+
+let a = values hello world
+assert(a[0] == "hello")
+assert(a[1] == "world")
+
+let b = values hello "world"
+assert(b[0] == "hello")
+assert(b[1] == "world")
+
+let c = values "hello world"
+assert(c[0] == "hello world")
+
+let x = 5
+let d = values hello "{x}"
+assert(d[0] == "hello")
+assert(d[1] == "5")
+
+let e = values hello ${x}
+assert(e[0] == "hello")
+assert(e[1] == "5")
