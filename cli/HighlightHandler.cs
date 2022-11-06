@@ -20,7 +20,7 @@ class HighlightHandler : IHighlightHandler
         const string textArgument = "(?<textArgument>([A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
         var rules = new[]
         {
-            @"(?<keywords>\b(fn|if|else|return|with|using|from|let|true|false|for|while|in|nil|break|continue)\b)",
+            @"(?<keywords>\b(fn|if|else|return|with|using|from|let|true|false|for|while|in|nil|break|continue|and|or)\b)",
             @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
