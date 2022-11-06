@@ -95,7 +95,7 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
         => Value.GetHashCode();
 
     public override string ToString()
-        => $"{Value}";
+        => $"\"{Value}\"";
 }
 
 class RuntimeStringEnumerator : IEnumerator<IRuntimeValue>

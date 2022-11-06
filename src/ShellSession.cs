@@ -99,7 +99,9 @@ public class ShellSession
         if (result is RuntimeNil)
             return;
 
-        string resultString = result.ToString() ?? "";
+        string resultString = result is RuntimeString runtimeString
+            ? runtimeString.Value
+            : result.ToString() ?? "";
         var textWriter = Console.Out;
         if (result is RuntimeError)
         {
