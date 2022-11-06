@@ -628,18 +628,14 @@ partial class Interpreter
             );
         }
 
-        if (expr.Plurality == Plurality.Singular)
+        if (expr.Plurality == Plurality.Singular || evaluatedArguments.Count == 0)
             return Evaluate(evaluatedArguments);
 
-        var firstArguments = evaluatedArguments
-            .FirstOrDefault()?
-            .As<RuntimeList>()
-            .Values;
-        if (firstArguments == null)
-            return Evaluate(evaluatedArguments);
+        if (evaluatedArguments[0] is not IEnumerable<IRuntimeValue> firstArguments)
+            throw new RuntimeCastException(evaluatedArguments.GetType(), "iterable");
 
         var results = new List<IRuntimeValue>(evaluatedArguments.Count);
-        foreach (var firstArgument in firstArguments)
+        foreach (var firstArgument in firstArguments.ToArray())
         {
             evaluatedArguments[0] = firstArgument;
             results.Add(Evaluate(evaluatedArguments));
