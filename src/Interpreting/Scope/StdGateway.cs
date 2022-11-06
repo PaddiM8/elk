@@ -54,12 +54,7 @@ static class StdGateway
         Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure)
     {
         var parameters = methodInfo.GetParameters();
-        if (parameters.LastOrDefault()?.ParameterType == typeof(ShellEnvironment))
-            arguments.Add(shellEnvironment);
-
-        if (ResolveClosure(closure, parameters.LastOrDefault()?.ParameterType, out object? closureArgument))
-            arguments.Add(closureArgument);
-
+        int? variadicStart = null;
         foreach (var (parameter, i) in parameters.WithIndex())
         {
             if (i >= arguments.Count)
@@ -74,22 +69,33 @@ static class StdGateway
                 }
             }
 
-            var parameterType = parameter.ParameterType;
-            if (arguments[i] != null &&
-                parameterType != typeof(IRuntimeValue) &&
-                arguments[i] is not ShellEnvironment and not Func<IRuntimeValue, IRuntimeValue>)
+            if (parameter.GetCustomAttribute<ElkVariadicAttribute>() == null)
             {
-                if (parameterType == typeof(IEnumerable<IRuntimeValue>))
-                {
-                    if (arguments[i] is not IEnumerable<IRuntimeValue>)
-                        throw new RuntimeCastException(arguments[i]!.GetType(), "iterable");
-                }
-                else
-                {
-                    arguments[i] = ((IRuntimeValue)arguments[i]!).As(parameter.ParameterType);
-                }
+                arguments[i] = ResolveArgument(arguments[i], parameter.ParameterType);
+            }
+            else
+            {
+                variadicStart = i;
+                break;
             }
         }
+
+        if (variadicStart != null)
+        {
+            var variadicArgument = arguments
+                .Skip(variadicStart.Value)
+                .Where(argument => argument != null)
+                .Cast<IRuntimeValue>()
+                .ToList();
+            arguments.RemoveRange(variadicStart.Value, variadicArgument.Count);
+            arguments.Add(variadicArgument);
+        }
+
+        if (parameters.LastOrDefault()?.ParameterType == typeof(ShellEnvironment))
+            arguments.Add(shellEnvironment);
+
+        if (ResolveClosure(closure, parameters.LastOrDefault()?.ParameterType, out object? closureArgument))
+            arguments.Add(closureArgument);
 
         try
         {
@@ -100,6 +106,26 @@ static class StdGateway
         {
             throw e.InnerException ?? new RuntimeException("Unknown error");
         }
+    }
+
+    private static object? ResolveArgument(object? argument, Type parameterType)
+    {
+        if (argument != null &&
+            parameterType != typeof(IRuntimeValue) &&
+            argument is not ShellEnvironment and not Func<IRuntimeValue, IRuntimeValue>)
+        {
+            if (parameterType == typeof(IEnumerable<IRuntimeValue>))
+            {
+                if (argument is not IEnumerable<IRuntimeValue>)
+                    throw new RuntimeCastException(argument.GetType(), "iterable");
+            }
+            else
+            {
+                return ((IRuntimeValue)argument).As(parameterType);
+            }
+        }
+
+        return argument;
     }
 
     private static bool ResolveClosure(
@@ -125,6 +151,12 @@ static class StdGateway
         {
             closureArgument = new Func<IRuntimeValue, IRuntimeValue, IRuntimeValue>((a, b)
                 => closure(new[] { a, b }));
+            return true;
+        }
+
+        if (type == typeof(Func<IEnumerable<IRuntimeValue>, IRuntimeValue>))
+        {
+            closureArgument = new Func<IEnumerable<IRuntimeValue>, IRuntimeValue>(closure);
             return true;
         }
 

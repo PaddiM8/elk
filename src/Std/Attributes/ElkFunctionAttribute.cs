@@ -12,14 +12,6 @@ public enum Reachability
     Everywhere,
 }
 
-public enum ClosureArgs
-{
-    None,
-    One,
-    Two,
-    Three,
-}
-
 public class ElkFunctionAttribute : Attribute
 {
     public string Name { get; }
