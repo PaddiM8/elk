@@ -79,7 +79,15 @@ static class StdGateway
                 parameterType != typeof(IRuntimeValue) &&
                 arguments[i] is not ShellEnvironment and not Func<IRuntimeValue, IRuntimeValue>)
             {
-                arguments[i] = ((IRuntimeValue)arguments[i]!).As(parameter.ParameterType);
+                if (parameterType == typeof(IEnumerable<IRuntimeValue>))
+                {
+                    if (arguments[i] is not IEnumerable<IRuntimeValue>)
+                        throw new RuntimeCastException(arguments[i]!.GetType(), "iterable");
+                }
+                else
+                {
+                    arguments[i] = ((IRuntimeValue)arguments[i]!).As(parameter.ParameterType);
+                }
             }
         }
 
