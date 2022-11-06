@@ -1024,6 +1024,7 @@ internal class Parser
         while (!ReachedTextEnd())
         {
             AdvanceIf(TokenKind.Backslash);
+
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
@@ -1048,6 +1049,17 @@ internal class Parser
             {
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            }
+            else if (MatchInclWhiteSpace(TokenKind.StringLiteral))
+            {
+                var stringToken = new Token(
+                    TokenKind.StringLiteral,
+                    currentText.ToString(),
+                    pos
+                );
+                interpolationParts.Add(new LiteralExpr(stringToken));
+                currentText.Clear();
+                interpolationParts.Add(ParseStringLiteral());
             }
             else if (MatchInclWhiteSpace(TokenKind.Identifier) && Current!.Value.StartsWith('$'))
             {
