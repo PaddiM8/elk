@@ -13,7 +13,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Range")]
-public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
+public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
 {
     public int? From { get; }
 
@@ -21,7 +21,7 @@ public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
 
     public int Increment { get; set; }
 
-    public IEnumerator<IRuntimeValue> GetEnumerator()
+    public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeRangeEnumerator(From, To, Increment);
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -34,7 +34,7 @@ public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
         Increment = increment;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeRange)
@@ -49,10 +49,10 @@ public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Range");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherRange = other.As<RuntimeRange>();
         return kind switch
@@ -78,9 +78,9 @@ public class RuntimeRange : IRuntimeValue, IEnumerable<IRuntimeValue>
     }
 }
 
-class RuntimeRangeEnumerator : IEnumerator<IRuntimeValue>
+class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
 {
-    public IRuntimeValue Current
+    public RuntimeObject Current
         => _reversed
             ?  new RuntimeInteger(_to!.Value - _pos)
             : new RuntimeInteger(_pos);

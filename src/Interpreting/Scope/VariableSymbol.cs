@@ -4,9 +4,9 @@ namespace Elk.Interpreting.Scope;
 
 class VariableSymbol
 {
-    public IRuntimeValue Value { get; set; }
+    public RuntimeObject Value { get; set; }
 
-    public VariableSymbol(IRuntimeValue value)
+    public VariableSymbol(RuntimeObject value)
     {
         Value = value;
     }

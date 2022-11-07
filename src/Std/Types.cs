@@ -17,7 +17,7 @@ public class Types
 {
     /// <returns>Whether or not the given value is of a specific type.</returns>
     [ElkFunction("isType", Reachability.Everywhere)]
-    public static RuntimeBoolean IsType(IRuntimeValue value, RuntimeType type)
+    public static RuntimeBoolean IsType(RuntimeObject value, RuntimeType type)
         => RuntimeBoolean.From(value.GetType() == type.Type);
 
     /// <summary>
@@ -27,9 +27,9 @@ public class Types
     /// <param name="closure"></param>
     /// <returns>The result of the closure.</returns>
     [ElkFunction("Fn", Reachability.Everywhere)]
-    public static IRuntimeValue Fn(
-        [ElkVariadic] IEnumerable<IRuntimeValue> args,
-        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure)
+    public static RuntimeObject Fn(
+        [ElkVariadic] IEnumerable<RuntimeObject> args,
+        Func<IEnumerable<RuntimeObject>, RuntimeObject> closure)
     {
         return closure(args);
     }

@@ -418,7 +418,7 @@ class LiteralExpr : Expr
 {
     public Token Value { get; }
 
-    public IRuntimeValue? RuntimeValue { get; set; }
+    public RuntimeObject? RuntimeValue { get; set; }
 
     public LiteralExpr(Token value)
         : base(value.Position)

@@ -11,7 +11,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Type")]
-public class RuntimeType : IRuntimeValue
+public class RuntimeType : RuntimeObject
 {
     public string Name
         => Type.GetCustomAttribute<ElkTypeAttribute>()!.Name;
@@ -23,7 +23,7 @@ public class RuntimeType : IRuntimeValue
         Type = type;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeType)
@@ -36,10 +36,10 @@ public class RuntimeType : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Type");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Type");
 
     public override int GetHashCode()

@@ -48,10 +48,10 @@ static class StdGateway
         return methodInfo;
     }
 
-    public static IRuntimeValue Call(MethodInfo methodInfo,
+    public static RuntimeObject Call(MethodInfo methodInfo,
         List<object?> arguments,
         ShellEnvironment shellEnvironment,
-        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure)
+        Func<IEnumerable<RuntimeObject>, RuntimeObject> closure)
     {
         var parameters = methodInfo.GetParameters();
         int? variadicStart = null;
@@ -85,7 +85,7 @@ static class StdGateway
             var variadicArgument = arguments
                 .Skip(variadicStart.Value)
                 .Where(argument => argument != null)
-                .Cast<IRuntimeValue>()
+                .Cast<RuntimeObject>()
                 .ToList();
             arguments.RemoveRange(variadicStart.Value, variadicArgument.Count);
             arguments.Add(variadicArgument);
@@ -99,7 +99,7 @@ static class StdGateway
 
         try
         {
-            return methodInfo.Invoke(null, arguments.ToArray()) as IRuntimeValue
+            return methodInfo.Invoke(null, arguments.ToArray()) as RuntimeObject
                 ?? RuntimeNil.Value;
         }
         catch(TargetInvocationException e)
@@ -111,17 +111,17 @@ static class StdGateway
     private static object? ResolveArgument(object? argument, Type parameterType)
     {
         if (argument != null &&
-            parameterType != typeof(IRuntimeValue) &&
-            argument is not ShellEnvironment and not Func<IRuntimeValue, IRuntimeValue>)
+            parameterType != typeof(RuntimeObject) &&
+            argument is not ShellEnvironment and not Func<RuntimeObject, RuntimeObject>)
         {
-            if (parameterType == typeof(IEnumerable<IRuntimeValue>))
+            if (parameterType == typeof(IEnumerable<RuntimeObject>))
             {
-                if (argument is not IEnumerable<IRuntimeValue>)
+                if (argument is not IEnumerable<RuntimeObject>)
                     throw new RuntimeCastException(argument.GetType(), "iterable");
             }
             else
             {
-                return ((IRuntimeValue)argument).As(parameterType);
+                return ((RuntimeObject)argument).As(parameterType);
             }
         }
 
@@ -129,34 +129,34 @@ static class StdGateway
     }
 
     private static bool ResolveClosure(
-        Func<IEnumerable<IRuntimeValue>, IRuntimeValue> closure,
+        Func<IEnumerable<RuntimeObject>, RuntimeObject> closure,
         Type? type,
         out object? closureArgument)
     {
-        if (type == typeof(Func<IRuntimeValue >))
+        if (type == typeof(Func<RuntimeObject >))
         {
-            closureArgument = new Func<IRuntimeValue>(()
-                => closure(Array.Empty<IRuntimeValue>()));
+            closureArgument = new Func<RuntimeObject>(()
+                => closure(Array.Empty<RuntimeObject>()));
             return true;
         }
 
-        if (type == typeof(Func<IRuntimeValue, IRuntimeValue>))
+        if (type == typeof(Func<RuntimeObject, RuntimeObject>))
         {
-            closureArgument = new Func<IRuntimeValue, IRuntimeValue>(a
+            closureArgument = new Func<RuntimeObject, RuntimeObject>(a
                 => closure(new[] { a }));
             return true;
         }
 
-        if (type == typeof(Func<IRuntimeValue, IRuntimeValue, IRuntimeValue>))
+        if (type == typeof(Func<RuntimeObject, RuntimeObject, RuntimeObject>))
         {
-            closureArgument = new Func<IRuntimeValue, IRuntimeValue, IRuntimeValue>((a, b)
+            closureArgument = new Func<RuntimeObject, RuntimeObject, RuntimeObject>((a, b)
                 => closure(new[] { a, b }));
             return true;
         }
 
-        if (type == typeof(Func<IEnumerable<IRuntimeValue>, IRuntimeValue>))
+        if (type == typeof(Func<IEnumerable<RuntimeObject>, RuntimeObject>))
         {
-            closureArgument = new Func<IEnumerable<IRuntimeValue>, IRuntimeValue>(closure);
+            closureArgument = new Func<IEnumerable<RuntimeObject>, RuntimeObject>(closure);
             return true;
         }
 

@@ -14,6 +14,6 @@ public class Collections
     /// <returns>A list of values where the closure has been called on each value.</returns>
     /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("select", Reachability.Everywhere)]
-    public static RuntimeList Select(IEnumerable<IRuntimeValue> items, Func<IRuntimeValue, IRuntimeValue> closure)
+    public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
 }

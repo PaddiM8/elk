@@ -69,7 +69,7 @@ static class IO
     /// </summary>
     /// <param name="input">Value to print</param>
     [ElkFunction("print", Reachability.Everywhere)]
-    public static void Print(IRuntimeValue input)
+    public static void Print(RuntimeObject input)
     {
         if (input is RuntimeError err)
         {
@@ -87,7 +87,7 @@ static class IO
     /// </summary>
     /// <param name="input">Value to print</param>
     [ElkFunction("println", Reachability.Everywhere)]
-    public static void PrintLine(IRuntimeValue input)
+    public static void PrintLine(RuntimeObject input)
     {
         if (input is RuntimeError err)
         {

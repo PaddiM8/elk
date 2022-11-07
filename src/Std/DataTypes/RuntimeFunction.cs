@@ -12,9 +12,9 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Function")]
-public abstract class RuntimeFunction : IRuntimeValue
+public abstract class RuntimeFunction : RuntimeObject
 {
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeFunction)
@@ -27,10 +27,10 @@ public abstract class RuntimeFunction : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
 }
 

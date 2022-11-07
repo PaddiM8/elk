@@ -17,20 +17,20 @@ class Redirector
 {
     public RedirectorStatus Status { get; private set; } = RedirectorStatus.Closed;
 
-    private IRuntimeValue? _buffer;
+    private RuntimeObject? _buffer;
 
     public void Open()
     {
         Status = RedirectorStatus.ExpectingInput;
     }
 
-    public void Send(IRuntimeValue input)
+    public void Send(RuntimeObject input)
     {
         Status = RedirectorStatus.HasData;
         _buffer = input;
     }
 
-    public IRuntimeValue? Receive()
+    public RuntimeObject? Receive()
     {
         Status = RedirectorStatus.Closed;
 

@@ -10,7 +10,7 @@ namespace Elk.Interpreting;
 
 partial class Interpreter
 {
-    private IRuntimeValue EvaluateBuiltInCd(List<IRuntimeValue> arguments)
+    private RuntimeObject EvaluateBuiltInCd(List<RuntimeObject> arguments)
     {
         EmptyRedirector(arguments);
 
@@ -42,8 +42,8 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue EvaluateBuiltInExec(
-        List<IRuntimeValue> arguments,
+    private RuntimeObject EvaluateBuiltInExec(
+        List<RuntimeObject> arguments,
         bool globbingEnabled,
         bool isRoot)
     {
@@ -59,7 +59,7 @@ partial class Interpreter
         );
     }
 
-    private IRuntimeValue EvaluateBuiltInScriptPath(List<IRuntimeValue> arguments)
+    private RuntimeObject EvaluateBuiltInScriptPath(List<RuntimeObject> arguments)
     {
         EmptyRedirector(arguments);
 
@@ -73,7 +73,7 @@ partial class Interpreter
         return new RuntimeString(path);
     }
 
-    private IRuntimeValue EvaluateBuiltInClosure(List<IRuntimeValue> arguments)
+    private RuntimeObject EvaluateBuiltInClosure(List<RuntimeObject> arguments)
     {
         EmptyRedirector(arguments);
 
@@ -92,7 +92,7 @@ partial class Interpreter
         return NextBlock(_currentClosureExpr.Body, clearScope: false);
     }
 
-    private IRuntimeValue EvaluateBuiltInCall(List<IRuntimeValue> arguments, bool isRoot)
+    private RuntimeObject EvaluateBuiltInCall(List<RuntimeObject> arguments, bool isRoot)
     {
         EmptyRedirector(arguments);
 
@@ -117,8 +117,8 @@ partial class Interpreter
         };
     }
 
-    private IRuntimeValue EvaluateRuntimeClosure(
-        List<IRuntimeValue> arguments,
+    private RuntimeObject EvaluateRuntimeClosure(
+        List<RuntimeObject> arguments,
         RuntimeClosureFunction runtimeClosure,
         bool isRoot)
     {
@@ -147,7 +147,7 @@ partial class Interpreter
         );
     }
 
-    private void EmptyRedirector(List<IRuntimeValue> arguments)
+    private void EmptyRedirector(List<RuntimeObject> arguments)
     {
         if (_redirector.Status == RedirectorStatus.HasData)
         {

@@ -60,7 +60,7 @@ public class SymbolReader
                     ValueInfo valueInfo;
                     if (parameterDocs?.types != null)
                         valueInfo = new ValueInfo(parameterDocs.Value.types, description);
-                    else if (parameter.ParameterType == typeof(IEnumerable<IRuntimeValue>))
+                    else if (parameter.ParameterType == typeof(IEnumerable<RuntimeObject>))
                         valueInfo = new ValueInfo("iterable", description);
                     else
                         valueInfo = new ValueInfo(parameter.ParameterType, description);

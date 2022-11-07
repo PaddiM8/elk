@@ -68,12 +68,12 @@ internal class InterpreterTests
         Assert.True(SameResult(2, result));
     }
 
-    private bool SameResult(object expectedResult, IRuntimeValue gotResult)
+    private bool SameResult(object expectedResult, RuntimeObject gotResult)
         => ((RuntimeBoolean)RuntimeValue(expectedResult)
             .Operation(OperationKind.EqualsEquals, gotResult))
             .Value;
 
-    private IRuntimeValue RuntimeValue(object value)
+    private RuntimeObject RuntimeValue(object value)
         => value switch
         {
             true => RuntimeBoolean.True,

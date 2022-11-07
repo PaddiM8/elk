@@ -26,7 +26,7 @@ abstract class Scope
         Parent = parent;
     }
 
-    public void AddVariable(string name, IRuntimeValue value)
+    public void AddVariable(string name, RuntimeObject value)
     {
         if (!_variables.TryAdd(name, new VariableSymbol(value)))
         {
@@ -50,7 +50,7 @@ abstract class Scope
         return result ?? Parent?.FindVariable(name);
     }
 
-    public bool UpdateVariable(string name, IRuntimeValue value)
+    public bool UpdateVariable(string name, RuntimeObject value)
     {
         if (_variables.ContainsKey(name))
         {

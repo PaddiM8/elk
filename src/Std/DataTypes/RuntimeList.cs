@@ -13,22 +13,22 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("List")]
-public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<IRuntimeValue> Values { get; }
+    public List<RuntimeObject> Values { get; }
 
-    public RuntimeList(IEnumerable<IRuntimeValue> values)
+    public RuntimeList(IEnumerable<RuntimeObject> values)
     {
         Values = values.ToList();
     }
 
-    public IEnumerator<IRuntimeValue> GetEnumerator()
+    public IEnumerator<RuntimeObject> GetEnumerator()
         => Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public IRuntimeValue this[IRuntimeValue index]
+    public RuntimeObject this[RuntimeObject index]
     {
         get
         {
@@ -55,7 +55,7 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
         }
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeList)
@@ -68,10 +68,10 @@ public class RuntimeList : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "List");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherList = other.As<RuntimeList>();
         return kind switch

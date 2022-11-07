@@ -12,7 +12,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("String")]
-public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
     public string Value { get; }
 
@@ -21,7 +21,7 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
         Value = value;
     }
 
-    public IRuntimeValue this[IRuntimeValue index]
+    public RuntimeObject this[RuntimeObject index]
     {
         get
         {
@@ -41,13 +41,13 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
         }
     }
 
-    public IEnumerator<IRuntimeValue> GetEnumerator()
+    public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeStringEnumerator(Value);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeString)
@@ -62,19 +62,19 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => kind switch
         {
-            OperationKind.Subtraction => ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind),
+            OperationKind.Subtraction => ((RuntimeObject)this).As<RuntimeFloat>().Operation(kind),
             OperationKind.Not => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         if (kind is OperationKind.Subtraction or OperationKind.Multiplication or OperationKind.Division)
         {
-            return ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind, other);
+            return As<RuntimeFloat>().Operation(kind, other);
         }
 
         var otherString = other.As<RuntimeString>();
@@ -97,13 +97,13 @@ public class RuntimeString : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexab
     public override string ToString()
         => Value;
 
-    public string ToDisplayString()
+    public override string ToDisplayString()
         => $"\"{Value}\"";
 }
 
-class RuntimeStringEnumerator : IEnumerator<IRuntimeValue>
+class RuntimeStringEnumerator : IEnumerator<RuntimeObject>
 {
-    public IRuntimeValue Current
+    public RuntimeObject Current
         => new RuntimeString(_currentChar.ToString());
     
     object IEnumerator.Current

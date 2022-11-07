@@ -2,5 +2,5 @@ namespace Elk.Std.DataTypes;
 
 interface IIndexable<T>
 {
-    T this[IRuntimeValue index] { get; set; }
+    T this[RuntimeObject index] { get; set; }
 }

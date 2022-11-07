@@ -10,7 +10,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Float")]
-public class RuntimeFloat : IRuntimeValue
+public class RuntimeFloat : RuntimeObject
 {
     public double Value { get; }
 
@@ -19,7 +19,7 @@ public class RuntimeFloat : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeFloat)
@@ -34,7 +34,7 @@ public class RuntimeFloat : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeFloat>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => kind switch
         {
             OperationKind.Subtraction => new RuntimeFloat(-Value),
@@ -42,7 +42,7 @@ public class RuntimeFloat : IRuntimeValue
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherNumber = other.As<RuntimeFloat>();
         return kind switch

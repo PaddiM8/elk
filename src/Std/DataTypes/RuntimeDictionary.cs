@@ -14,16 +14,16 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Dictionary")]
-public class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public Dictionary<int, (IRuntimeValue, IRuntimeValue)> Entries { get; }
+    public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; }
 
-    public RuntimeDictionary(Dictionary<int, (IRuntimeValue, IRuntimeValue)> entries)
+    public RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> entries)
     {
         Entries = entries;
     }
 
-    public IRuntimeValue this[IRuntimeValue index]
+    public RuntimeObject this[RuntimeObject index]
     {
         get
         {
@@ -39,13 +39,13 @@ public class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IInd
         }
     }
 
-    public IEnumerator<IRuntimeValue> GetEnumerator()
+    public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeDictionaryEnumerator(Entries.Values);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeDictionary)
@@ -58,10 +58,10 @@ public class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IInd
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
 
     public override int GetHashCode()
@@ -85,17 +85,17 @@ public class RuntimeDictionary : IRuntimeValue, IEnumerable<IRuntimeValue>, IInd
     }
 }
 
-class RuntimeDictionaryEnumerator : IEnumerator<IRuntimeValue>
+class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
 {
-    public IRuntimeValue Current { get; private set; }
+    public RuntimeObject Current { get; private set; }
 
     object IEnumerator.Current
         => Current;
 
-    private readonly IEnumerable<(IRuntimeValue, IRuntimeValue)> _keyValueSets;
-    private IEnumerator<(IRuntimeValue, IRuntimeValue)> _enumerator;
+    private readonly IEnumerable<(RuntimeObject, RuntimeObject)> _keyValueSets;
+    private IEnumerator<(RuntimeObject, RuntimeObject)> _enumerator;
 
-    public RuntimeDictionaryEnumerator(IEnumerable<(IRuntimeValue, IRuntimeValue)> keyValueSets)
+    public RuntimeDictionaryEnumerator(IEnumerable<(RuntimeObject, RuntimeObject)> keyValueSets)
     {
         _keyValueSets = keyValueSets;
         _enumerator = _keyValueSets.GetEnumerator();

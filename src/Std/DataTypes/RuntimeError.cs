@@ -10,7 +10,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Error")]
-public class RuntimeError : IRuntimeValue
+public class RuntimeError : RuntimeObject
 {
     public string Value { get; }
 
@@ -19,7 +19,7 @@ public class RuntimeError : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeError)
@@ -30,10 +30,10 @@ public class RuntimeError : IRuntimeValue
                 => throw new RuntimeUserException(Value),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
 
     public override int GetHashCode()

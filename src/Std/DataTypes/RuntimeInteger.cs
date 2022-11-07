@@ -10,7 +10,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Integer")]
-public class RuntimeInteger : IRuntimeValue
+public class RuntimeInteger : RuntimeObject
 {
     public long Value { get; }
 
@@ -19,7 +19,7 @@ public class RuntimeInteger : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeInteger)
@@ -34,7 +34,7 @@ public class RuntimeInteger : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => kind switch
         {
             OperationKind.Subtraction => new RuntimeInteger(-Value),
@@ -42,11 +42,11 @@ public class RuntimeInteger : IRuntimeValue
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         if (other is RuntimeFloat)
         {
-            return ((IRuntimeValue)this).As<RuntimeFloat>().Operation(kind, other);
+            return ((RuntimeObject)this).As<RuntimeFloat>().Operation(kind, other);
         }
 
         var otherNumber = other.As<RuntimeInteger>();

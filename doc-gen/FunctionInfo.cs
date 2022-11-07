@@ -26,7 +26,7 @@ public class ValueInfo
     public ValueInfo(Type type, string description)
     {
         TypeName = type.GetCustomAttribute<ElkTypeAttribute>()?.Name;
-        if (type == typeof(IRuntimeValue))
+        if (type == typeof(RuntimeObject))
             TypeName = "*";
 
         Description = description;

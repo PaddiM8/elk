@@ -24,7 +24,7 @@ public class HardCoded
     /// </summary>
     /// <param name="programName">The name of the program to execute.</param>
     [ElkFunction("exec", Reachability.Everywhere)]
-    public static IRuntimeValue Exec(RuntimeString programName)
+    public static RuntimeObject Exec(RuntimeString programName)
         => throw new NotSupportedException();
 
     /// <returns>The file path of the script that is currently being evaluated.</returns>
@@ -41,7 +41,7 @@ public class HardCoded
     /// <param name="closureArguments">Arguments for the closure call.</param>
     /// <returns>The result of the closure call.</returns>
     [ElkFunction("closure", Reachability.Everywhere)]
-    public static IRuntimeValue Closure([ElkVariadic] IEnumerable<IRuntimeValue> closureArguments)
+    public static RuntimeObject Closure([ElkVariadic] IEnumerable<RuntimeObject> closureArguments)
         => throw new NotSupportedException();
 
     /// <summary>Calls a function with the help of a function reference.</summary>
@@ -49,6 +49,6 @@ public class HardCoded
     /// <param name="callArguments">Arguments for the function call.</param>
     /// <returns>The value returned by the function that was called.</returns>
     [ElkFunction("call", Reachability.Everywhere)]
-    public static IRuntimeValue Call(RuntimeFunction function, [ElkVariadic] IEnumerable<IRuntimeValue> callArguments)
+    public static RuntimeObject Call(RuntimeFunction function, [ElkVariadic] IEnumerable<RuntimeObject> callArguments)
         => throw new NotSupportedException();
 }

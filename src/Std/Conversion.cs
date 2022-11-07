@@ -14,7 +14,7 @@ static class Conversion
 {
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("bool", Reachability.Everywhere)]
-    public static RuntimeBoolean ToBool(IRuntimeValue value)
+    public static RuntimeBoolean ToBool(RuntimeObject value)
         => value.As<RuntimeBoolean>();
 
     /// <param name="message">Error message</param>
@@ -25,27 +25,27 @@ static class Conversion
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("float", Reachability.Everywhere)]
-    public static RuntimeFloat ToFloat(IRuntimeValue value)
+    public static RuntimeFloat ToFloat(RuntimeObject value)
         => value.As<RuntimeFloat>();
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("int", Reachability.Everywhere)]
-    public static RuntimeInteger ToInt(IRuntimeValue value)
+    public static RuntimeInteger ToInt(RuntimeObject value)
         => value.As<RuntimeInteger>();
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("list", Reachability.Everywhere)]
-    public static RuntimeList ToList(IRuntimeValue value)
+    public static RuntimeList ToList(RuntimeObject value)
         => value.As<RuntimeList>();
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("str", Reachability.Everywhere)]
-    public static RuntimeString ToString(IRuntimeValue value)
+    public static RuntimeString ToString(RuntimeObject value)
         => value.As<RuntimeString>();
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("type", Reachability.Everywhere)]
-    public static RuntimeType ToType(IRuntimeValue value)
+    public static RuntimeType ToType(RuntimeObject value)
         => new(value.GetType());
 
     /// <returns>The message stored in the given error.</returns>

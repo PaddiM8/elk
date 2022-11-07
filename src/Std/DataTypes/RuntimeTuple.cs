@@ -13,22 +13,22 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Tuple")]
-public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexable<IRuntimeValue>
+public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<IRuntimeValue> Values { get; }
+    public List<RuntimeObject> Values { get; }
 
-    public RuntimeTuple(IEnumerable<IRuntimeValue> values)
+    public RuntimeTuple(IEnumerable<RuntimeObject> values)
     {
         Values = values.ToList();
     }
 
-    public IEnumerator<IRuntimeValue> GetEnumerator()
+    public IEnumerator<RuntimeObject> GetEnumerator()
         => Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public IRuntimeValue this[IRuntimeValue index]
+    public RuntimeObject this[RuntimeObject index]
     {
         get
         {
@@ -48,7 +48,7 @@ public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexabl
         }
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeTuple)
@@ -63,10 +63,10 @@ public class RuntimeTuple : IRuntimeValue, IEnumerable<IRuntimeValue>, IIndexabl
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
 
     public override int GetHashCode()

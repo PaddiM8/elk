@@ -10,11 +10,11 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Nil")]
-public class RuntimeNil : IRuntimeValue
+public class RuntimeNil : RuntimeObject
 {
     public static readonly RuntimeNil Value = new();
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeBoolean)
@@ -23,12 +23,12 @@ public class RuntimeNil : IRuntimeValue
                 => throw new RuntimeCastException<RuntimeNil>(toType),
         };
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => kind == OperationKind.Not
             ? RuntimeBoolean.True
             : this;
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
         => kind switch
         {
             OperationKind.Equals => RuntimeBoolean.From(other is RuntimeNil),

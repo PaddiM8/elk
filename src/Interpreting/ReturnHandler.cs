@@ -22,15 +22,15 @@ class ReturnHandler
 
     public ReturnKind ReturnKind { get; private set; }
 
-    private IRuntimeValue? _returnValue;
+    private RuntimeObject? _returnValue;
 
-    public void TriggerReturn(ReturnKind type, IRuntimeValue value)
+    public void TriggerReturn(ReturnKind type, RuntimeObject value)
     {
         ReturnKind = type;
         _returnValue = value;
     }
 
-    public IRuntimeValue Collect()
+    public RuntimeObject Collect()
     {
         ReturnKind = ReturnKind.None;
         var value = _returnValue ?? throw new InvalidOperationException("Cannot collect return value. No value is being returned.");

@@ -10,7 +10,7 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Boolean")]
-public class RuntimeBoolean : IRuntimeValue
+public class RuntimeBoolean : RuntimeObject
 {
     public static RuntimeBoolean True => new(true);
     public static RuntimeBoolean False => new(false);
@@ -22,7 +22,7 @@ public class RuntimeBoolean : IRuntimeValue
         Value = value;
     }
 
-    public IRuntimeValue As(Type toType)
+    public override RuntimeObject As(Type toType)
         => toType switch
         {
             var type when type == typeof(RuntimeBoolean)
@@ -36,10 +36,10 @@ public class RuntimeBoolean : IRuntimeValue
     public static RuntimeBoolean From(bool value)
         => value ? True : False;
 
-    public IRuntimeValue Operation(OperationKind kind)
+    public override RuntimeObject Operation(OperationKind kind)
         => new RuntimeBoolean(!Value);
 
-    public IRuntimeValue Operation(OperationKind kind, IRuntimeValue other)
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherBoolean = other.As<RuntimeBoolean>();
         var newValue = kind switch

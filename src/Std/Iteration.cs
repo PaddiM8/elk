@@ -28,10 +28,10 @@ static class Iteration
     /// dict | add("name", "John")
     /// </example>
     [ElkFunction("add", Reachability.Everywhere)]
-    public static IRuntimeValue Add(
-        IRuntimeValue container,
-        IRuntimeValue value1,
-        IRuntimeValue? value2 = null)
+    public static RuntimeObject Add(
+        RuntimeObject container,
+        RuntimeObject value1,
+        RuntimeObject? value2 = null)
     {
         if (container is RuntimeList list)
         {
@@ -70,7 +70,7 @@ static class Iteration
     /// <param name="value">Value to insert</param>
     /// <returns>The same list.</returns>
     [ElkFunction("insert", Reachability.Everywhere)]
-    public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, IRuntimeValue value)
+    public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, RuntimeObject value)
     {
         list.Values.Insert((int)index.Value, value);
 
@@ -87,7 +87,7 @@ static class Iteration
     /// <param name="container" types="Tuple, List, Dictionary"></param>
     /// <returns>The amount of items in the container.</returns>
     [ElkFunction("len", Reachability.Everywhere)]
-    public static RuntimeInteger Length(IRuntimeValue container)
+    public static RuntimeInteger Length(RuntimeObject container)
         => container switch
         {
             RuntimeTuple tuple => new(tuple.Values.Count),
@@ -103,7 +103,7 @@ static class Iteration
     /// <param name="index">Index of the item to remove</param>
     /// <returns>The same container.</returns>
     [ElkFunction("remove", Reachability.Everywhere)]
-    public static IRuntimeValue Remove(IRuntimeValue container, IRuntimeValue index)
+    public static RuntimeObject Remove(RuntimeObject container, RuntimeObject index)
     {
         if (container is RuntimeList list)
         {
@@ -142,9 +142,9 @@ static class Iteration
     /// The first item of the tuple is the item from the original container, while the second item is the index of that item.</returns>
     /// <example>for item, i in values: echo("{i}: {item}")</example>
     [ElkFunction("withIndex", Reachability.Everywhere)]
-    public static RuntimeList WithIndex(IRuntimeValue values)
+    public static RuntimeList WithIndex(RuntimeObject values)
     {
-        var items = values as IEnumerable<IRuntimeValue> ?? values.As<RuntimeList>().Values;
+        var items = values as IEnumerable<RuntimeObject> ?? values.As<RuntimeList>().Values;
 
         return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
     }
@@ -154,6 +154,6 @@ static class Iteration
     /// <returns>A list containing pairs of values.</returns>
     /// <example>[1, 2, 3] | iter::zip([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6)]</example>
     [ElkFunction("zip")]
-    public static RuntimeList Zip(IEnumerable<IRuntimeValue> a, IEnumerable<IRuntimeValue> b)
+    public static RuntimeList Zip(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
         => new(a.Zip(b).Select(x => new RuntimeTuple(new[] { x.First, x.Second })));
 }

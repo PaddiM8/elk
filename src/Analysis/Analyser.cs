@@ -261,7 +261,7 @@ class Analyser
 
     private LiteralExpr Visit(LiteralExpr expr)
     {
-        IRuntimeValue value = expr.Value.Kind switch
+        RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(int.Parse(expr.Value.Value)),
             TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),

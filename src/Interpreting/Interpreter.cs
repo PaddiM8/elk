@@ -41,7 +41,7 @@ partial class Interpreter
         ShellEnvironment = new ShellEnvironment();
     }
 
-    public IRuntimeValue Interpret(List<Expr> ast, ModuleScope? scope = null)
+    public RuntimeObject Interpret(List<Expr> ast, ModuleScope? scope = null)
     {
         if (scope != null)
             _scope = scope;
@@ -62,7 +62,7 @@ partial class Interpreter
             return new RuntimeError(((DiagnosticInfo)e.Data["diagnosticInfo"]!).ToString());
         }
 
-        IRuntimeValue lastResult = RuntimeNil.Value;
+        RuntimeObject lastResult = RuntimeNil.Value;
         try
         {
             foreach (var expr in analysedAst)
@@ -87,7 +87,7 @@ partial class Interpreter
         return lastResult;
     }
 
-    public IRuntimeValue Interpret(string input, string? filePath)
+    public RuntimeObject Interpret(string input, string? filePath)
     {
         try
         {
@@ -123,10 +123,10 @@ partial class Interpreter
     public bool VariableExists(string name)
         => _scope.ModuleScope.ContainsVariable(name);
 
-    public void AddGlobalVariable(string name, IRuntimeValue value)
+    public void AddGlobalVariable(string name, RuntimeObject value)
         => _scope.ModuleScope.AddVariable(name, value);
 
-    private IRuntimeValue Next(Expr expr)
+    private RuntimeObject Next(Expr expr)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
@@ -160,7 +160,7 @@ partial class Interpreter
         };
     }
 
-    private IRuntimeValue NextBlock(BlockExpr blockExpr, bool clearScope = true)
+    private RuntimeObject NextBlock(BlockExpr blockExpr, bool clearScope = true)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
@@ -170,7 +170,7 @@ partial class Interpreter
         return Visit(blockExpr, clearScope);
     }
 
-    private IRuntimeValue NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
+    private RuntimeObject NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
@@ -180,18 +180,18 @@ partial class Interpreter
         return Visit(callExpr, closureExpr);
     }
 
-    private IRuntimeValue Visit(LetExpr expr)
+    private RuntimeObject Visit(LetExpr expr)
     {
         SetVariables(expr.IdentifierList, Next(expr.Value));
         
         return RuntimeNil.Value;
     }
 
-    private void SetVariables(List<Token> identifiers, IRuntimeValue value, Scope.Scope? scope = null)
+    private void SetVariables(List<Token> identifiers, RuntimeObject value, Scope.Scope? scope = null)
     {
         if (identifiers.Count > 1)
         {
-            if (value is not IEnumerable<IRuntimeValue> values)
+            if (value is not IEnumerable<RuntimeObject> values)
             {
                 throw new RuntimeException("Unable to deconstruct value");
             }
@@ -207,7 +207,7 @@ partial class Interpreter
         }
     }
 
-    private void SetVariable(string name, IRuntimeValue value, Scope.Scope scope)
+    private void SetVariable(string name, RuntimeObject value, Scope.Scope scope)
     {
         if (name.StartsWith('$'))
         {
@@ -222,7 +222,7 @@ partial class Interpreter
         }
     }
 
-    private IRuntimeValue Visit(KeywordExpr expr)
+    private RuntimeObject Visit(KeywordExpr expr)
     {
         var returnKind = expr.Kind switch
         {
@@ -240,7 +240,7 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(IfExpr expr)
+    private RuntimeObject Visit(IfExpr expr)
     {
         var condition = Next(expr.Condition);
         var conditionValue = condition.As<RuntimeBoolean>();
@@ -259,11 +259,11 @@ partial class Interpreter
             : Next(expr.ElseBranch);
     }
 
-    private IRuntimeValue Visit(ForExpr expr)
+    private RuntimeObject Visit(ForExpr expr)
     {
         var value = Next(expr.Value);
 
-        if (value is not IEnumerable<IRuntimeValue> enumerableValue)
+        if (value is not IEnumerable<RuntimeObject> enumerableValue)
             throw new RuntimeIterationException(value.GetType());
 
         expr.Branch.IsRoot = true;
@@ -288,7 +288,7 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(WhileExpr expr)
+    private RuntimeObject Visit(WhileExpr expr)
     {
         expr.Branch.IsRoot = true;
 
@@ -310,21 +310,21 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(TupleExpr expr)
+    private RuntimeObject Visit(TupleExpr expr)
     {
         var values = expr.Values.Select(Next).ToList();
 
         return new RuntimeTuple(values);
     }
 
-    private IRuntimeValue Visit(ListExpr expr)
+    private RuntimeObject Visit(ListExpr expr)
     {
         return new RuntimeList(expr.Values.Select(Next).ToList());
     }
 
-    private IRuntimeValue Visit(DictionaryExpr expr)
+    private RuntimeObject Visit(DictionaryExpr expr)
     {
-        var dict = new Dictionary<int, (IRuntimeValue, IRuntimeValue)>();
+        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
         foreach (var entry in expr.Entries)
         {
             var key = new RuntimeString(entry.Item1);
@@ -334,7 +334,7 @@ partial class Interpreter
         return new RuntimeDictionary(dict);
     }
 
-    private IRuntimeValue Visit(BlockExpr expr, bool clearScope = true)
+    private RuntimeObject Visit(BlockExpr expr, bool clearScope = true)
     {
         var prevScope = _scope;
         _scope = expr.Scope;
@@ -342,7 +342,7 @@ partial class Interpreter
             expr.Scope.Clear();
 
         int i = 0;
-        IRuntimeValue lastValue = RuntimeNil.Value;
+        RuntimeObject lastValue = RuntimeNil.Value;
         foreach (var child in expr.Expressions)
         {
             // If there is a value to be returned, stop immediately
@@ -373,7 +373,7 @@ partial class Interpreter
         return explicitReturnValue ?? lastValue;
     }
 
-    private bool BlockShouldExit(BlockExpr expr, out IRuntimeValue? returnValue)
+    private bool BlockShouldExit(BlockExpr expr, out RuntimeObject? returnValue)
     {
         returnValue = null;
         if (!_returnHandler.Active)
@@ -388,10 +388,10 @@ partial class Interpreter
         return true;
     }
 
-    private IRuntimeValue Visit(LiteralExpr expr)
+    private RuntimeObject Visit(LiteralExpr expr)
         => expr.RuntimeValue!;
 
-    private IRuntimeValue Visit(StringInterpolationExpr expr)
+    private RuntimeObject Visit(StringInterpolationExpr expr)
     {
         var result = new StringBuilder();
         foreach (var part in expr.Parts)
@@ -402,7 +402,7 @@ partial class Interpreter
         return new RuntimeString(result.ToString());
     }
 
-    private IRuntimeValue Visit(BinaryExpr expr)
+    private RuntimeObject Visit(BinaryExpr expr)
     {
         if (expr.Operator == OperationKind.Pipe)
         {
@@ -510,7 +510,7 @@ partial class Interpreter
         };
     }
 
-    private IRuntimeValue EvaluateAssignment(Expr assignee, IRuntimeValue value)
+    private RuntimeObject EvaluateAssignment(Expr assignee, RuntimeObject value)
     {
         if (assignee is VariableExpr variable)
         {
@@ -521,7 +521,7 @@ partial class Interpreter
         }
         else if (assignee is IndexerExpr indexer)
         {
-            if (Next(indexer.Value) is not IIndexable<IRuntimeValue> indexable)
+            if (Next(indexer.Value) is not IIndexable<RuntimeObject> indexable)
                 throw new RuntimeUnableToIndexException(value.GetType());
 
             indexable[Next(indexer.Index)] = value;
@@ -534,7 +534,7 @@ partial class Interpreter
         return value;
     }
 
-    private IRuntimeValue Visit(UnaryExpr expr)
+    private RuntimeObject Visit(UnaryExpr expr)
     {
         var value = Next(expr.Value);
 
@@ -544,7 +544,7 @@ partial class Interpreter
         return value.Operation(expr.Operator);
     }
 
-    private IRuntimeValue Visit(RangeExpr expr)
+    private RuntimeObject Visit(RangeExpr expr)
     {
         int? from = expr.From == null
             ? null
@@ -568,10 +568,10 @@ partial class Interpreter
         return new RuntimeRange(from, to);
     }
 
-    private IRuntimeValue Visit(IndexerExpr expr)
+    private RuntimeObject Visit(IndexerExpr expr)
     {
         var value = Next(expr.Value);
-        if (value is IIndexable<IRuntimeValue> indexableValue)
+        if (value is IIndexable<RuntimeObject> indexableValue)
         {
             return indexableValue[Next(expr.Index)];
         }
@@ -579,7 +579,7 @@ partial class Interpreter
         throw new RuntimeUnableToIndexException(value.GetType());
     }
 
-    private IRuntimeValue Visit(VariableExpr expr)
+    private RuntimeObject Visit(VariableExpr expr)
     {
         if (expr.VariableSymbol == null)
         {
@@ -594,17 +594,17 @@ partial class Interpreter
         return expr.VariableSymbol.Value;
     }
 
-    private IRuntimeValue Visit(TypeExpr expr)
+    private RuntimeObject Visit(TypeExpr expr)
         => expr.RuntimeValue!;
 
-    private IRuntimeValue Visit(CallExpr expr, ClosureExpr? closureExpr = null)
+    private RuntimeObject Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
         if (expr.FunctionSymbol == null && expr.StdFunction == null && closureExpr != null)
             throw new RuntimeException("Unexpected closure");
 
         // This needs to be done before evaluating the arguments,
         // to make sure they don't receive the data instead.
-        IRuntimeValue? pipedValue = null;
+        RuntimeObject? pipedValue = null;
         if ((expr.FunctionSymbol != null || expr.StdFunction != null) &&
             _redirector.Status == RedirectorStatus.HasData)
         {
@@ -615,7 +615,7 @@ partial class Interpreter
         if (pipedValue != null)
             evaluatedArguments.Insert(0, pipedValue);
 
-        IRuntimeValue Evaluate(List<IRuntimeValue> arguments)
+        RuntimeObject Evaluate(List<RuntimeObject> arguments)
         {
             return expr.CallType switch
             {
@@ -644,10 +644,10 @@ partial class Interpreter
         if (expr.Plurality == Plurality.Singular || evaluatedArguments.Count == 0)
             return Evaluate(evaluatedArguments);
 
-        if (evaluatedArguments[0] is not IEnumerable<IRuntimeValue> firstArguments)
+        if (evaluatedArguments[0] is not IEnumerable<RuntimeObject> firstArguments)
             throw new RuntimeCastException(evaluatedArguments.GetType(), "iterable");
 
-        var results = new List<IRuntimeValue>(evaluatedArguments.Count);
+        var results = new List<RuntimeObject>(evaluatedArguments.Count);
         foreach (var firstArgument in firstArguments.ToArray())
         {
             evaluatedArguments[0] = firstArgument;
@@ -657,8 +657,8 @@ partial class Interpreter
         return new RuntimeList(results);
     }
 
-    private IRuntimeValue EvaluateFunctionCall(
-        List<IRuntimeValue> arguments,
+    private RuntimeObject EvaluateFunctionCall(
+        List<RuntimeObject> arguments,
         FunctionExpr function,
         bool isRoot,
         ClosureExpr? closureExpr = null)
@@ -666,7 +666,7 @@ partial class Interpreter
         if (closureExpr != null && !function.HasClosure)
             throw new RuntimeException("Unexpected closure");
 
-        var allArguments = new List<IRuntimeValue>();
+        var allArguments = new List<RuntimeObject>();
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (argument == null)
@@ -709,7 +709,7 @@ partial class Interpreter
 
             if (parameter?.Variadic is true)
             {
-                variadicArguments = new RuntimeList(new List<IRuntimeValue>());
+                variadicArguments = new RuntimeList(new List<RuntimeObject>());
                 functionScope.UpdateVariable(parameter.Identifier.Value, variadicArguments);
             }
 
@@ -733,12 +733,12 @@ partial class Interpreter
         return result;
     }
 
-    private IRuntimeValue EvaluateStdCall(
-        List<IRuntimeValue> arguments,
+    private RuntimeObject EvaluateStdCall(
+        List<RuntimeObject> arguments,
         MethodInfo stdFunction,
         ClosureExpr? closureExpr = null)
     {
-        IRuntimeValue RunClosure(IEnumerable<IRuntimeValue> args)
+        RuntimeObject RunClosure(IEnumerable<RuntimeObject> args)
         {
             var body = closureExpr!.Body;
             body.Scope.Clear();
@@ -756,9 +756,9 @@ partial class Interpreter
         );
     }
 
-    private IRuntimeValue EvaluateProgramCall(
+    private RuntimeObject EvaluateProgramCall(
         string fileName,
-        List<IRuntimeValue> arguments,
+        List<RuntimeObject> arguments,
         bool globbingEnabled,
         bool isRoot)
     {
@@ -858,12 +858,12 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private IRuntimeValue Visit(FunctionReferenceExpr functionReferenceExpr)
+    private RuntimeObject Visit(FunctionReferenceExpr functionReferenceExpr)
     {
         return functionReferenceExpr.RuntimeFunction!;
     }
 
-    private IRuntimeValue Visit(ClosureExpr closureExpr)
+    private RuntimeObject Visit(ClosureExpr closureExpr)
     {
         return closureExpr.Function is CallExpr callExpr
             ? NextCallWithClosure(callExpr, closureExpr)

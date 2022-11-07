@@ -36,7 +36,7 @@ public class Path
     public static RuntimeList All()
     {
         if (!File.Exists(CommonPaths.PathFile))
-            return new(new IRuntimeValue[] {});
+            return new(new RuntimeObject[] {});
 
         var lines = File.ReadAllLines(CommonPaths.PathFile)
             .Select(x => new RuntimeString(x));
@@ -60,7 +60,7 @@ public class Path
     /// <summary>Removes the path of the given index from $PATH and ~/.config/elk/path.txt. The index can be found with the help of the path::list function.</summary>
     /// <returns>(nil or Error) An error if the index is out of range.</returns>
     [ElkFunction("remove")]
-    public static IRuntimeValue Remove(RuntimeInteger index)
+    public static RuntimeObject Remove(RuntimeInteger index)
     {
         if (!File.Exists(CommonPaths.PathFile))
             return new RuntimeError("Index out of range");
