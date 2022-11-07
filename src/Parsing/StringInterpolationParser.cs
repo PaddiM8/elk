@@ -32,8 +32,9 @@ class StringInterpolationParser
                 continue;
             }
 
-            if (literal[i] == '{')
+            if (literal[i] == '$' && literal.Length > i + 1 && literal[i + 1] == '{')
             {
+                i++;
                 if (textString.Length > 0)
                 {
                     yield return new(textString.ToString(), InterpolationPartKind.Text);
