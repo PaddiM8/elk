@@ -54,13 +54,16 @@ static class String
         RuntimeInteger index,
         RuntimeString? divider = null)
     {
-        var column = from line in input.Value.ToLines()
+        var result = from line in input.Value.ToLines()
             select line.Split(divider?.Value ?? "\t")
             into columns
             where index.Value < columns.Length
-            select new RuntimeString(columns[index.Value]);
+            select columns[index.Value]
+            into column
+            where !string.IsNullOrEmpty(column)
+            select new RuntimeString(column);
 
-        return new(column);
+        return new(result);
     }
 
     /// <param name="input">Entire string</param>
