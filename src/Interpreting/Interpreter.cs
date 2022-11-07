@@ -635,7 +635,7 @@ partial class Interpreter
                     isRoot: expr.IsRoot
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
-                CallType.BuiltInClosure => EvaluateBuiltInClosureCall(arguments),
+                CallType.BuiltInClosure => EvaluateBuiltInClosure(arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 _ => throw new NotSupportedException(),
             };

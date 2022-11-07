@@ -73,7 +73,7 @@ partial class Interpreter
         return new RuntimeString(path);
     }
 
-    private IRuntimeValue EvaluateBuiltInClosureCall(List<IRuntimeValue> arguments)
+    private IRuntimeValue EvaluateBuiltInClosure(List<IRuntimeValue> arguments)
     {
         EmptyRedirector(arguments);
 
