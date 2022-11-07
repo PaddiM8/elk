@@ -5,6 +5,8 @@
 
 #region
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -16,6 +18,42 @@ namespace Elk.Std;
 [ElkModule("str")]
 static class String
 {
+    /// <summary>
+    /// Gets the text at a specific row and line.
+    /// </summary>
+    /// <param name="input">A string consisting of several lines and columns.</param>
+    /// <param name="rowIndex">The index of the row.</param>
+    /// <param name="columnIndex">The index of the column.</param>
+    /// <returns>A string if the cell was found, otherwise null.</returns>
+    [ElkFunction("cell", Reachability.Everywhere)]
+    public static RuntimeObject Cell(RuntimeString input, RuntimeInteger rowIndex, RuntimeInteger columnIndex)
+    {
+        var line = input.Value.ToLines().ElementAtOrDefault((int)rowIndex.Value);
+        var column = line?.Split('\t').ElementAtOrDefault((int)columnIndex.Value);
+        if (line == null || column == null)
+            return RuntimeNil.Value;
+
+        return new RuntimeString(column);
+    }
+
+    /// <summary>
+    /// Gets a column from a multi-line string.
+    /// </summary>
+    /// <param name="input">A string consisting of several columns.</param>
+    /// <param name="index">The index of the column.</param>
+    /// <returns>A list of lines within the specific column.</returns>
+    [ElkFunction("column", Reachability.Everywhere)]
+    public static RuntimeList Column(RuntimeString input, RuntimeInteger index)
+    {
+        var column = from line in input.Value.ToLines()
+            select line.Split('\t')
+            into columns
+            where index.Value < columns.Length
+            select new RuntimeString(columns[index.Value]);
+
+        return new(column);
+    }
+
     /// <param name="input">Entire string</param>
     /// <param name="ending">Substring</param>
     /// <returns>Whether or not the input string ends with the string provided as the second argument.</returns>
@@ -32,7 +70,7 @@ static class String
     [ElkFunction("lines", Reachability.Everywhere)]
     public static RuntimeList Lines(RuntimeString input)
     {
-        var lines = input.Value.Split(System.Environment.NewLine).ToList();
+        var lines = input.Value.ToLines().ToList();
         if (lines.LastOrDefault() == "")
             lines.RemoveAt(lines.Count - 1);
 

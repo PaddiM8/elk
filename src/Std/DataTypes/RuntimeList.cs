@@ -55,6 +55,9 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         }
     }
 
+    public int Count
+        => Values.Count;
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

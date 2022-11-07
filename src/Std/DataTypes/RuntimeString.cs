@@ -41,6 +41,9 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         }
     }
 
+    public int Count
+        => Value.Length;
+
     public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeStringEnumerator(Value);
 

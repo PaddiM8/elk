@@ -38,4 +38,7 @@ public static class Extensions
             hasNext2 = enumerator2.MoveNext();
         }
     }
+
+    public static string[] ToLines(this string input)
+        => input.Split(new[] {"\r\n", "\r", "\n"}, StringSplitOptions.None);
 }

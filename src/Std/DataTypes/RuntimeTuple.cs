@@ -48,6 +48,9 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
         }
     }
 
+    public int Count
+        => Values.Count;
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

@@ -39,6 +39,9 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         }
     }
 
+    public int Count
+        => Entries.Count;
+
     public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeDictionaryEnumerator(Entries.Values);
 
