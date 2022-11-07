@@ -16,7 +16,7 @@ static class Testing
     [ElkFunction("assert", Reachability.Everywhere)]
     public static void Assert(RuntimeBoolean boolean)
     {
-        if (!boolean.Value)
+        if (!boolean.IsTrue)
             throw new RuntimeAssertException();
     }
 }

@@ -74,5 +74,5 @@ public class Collections
     /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("where", Reachability.Everywhere)]
     public static RuntimeList Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => new(items.Where(x => closure(x).As<RuntimeBoolean>().Value));
+        => new(items.Where(x => closure(x).As<RuntimeBoolean>().IsTrue));
 }

@@ -32,10 +32,10 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
         if (other == null)
             return 1;
 
-        if (((RuntimeBoolean)Operation(OperationKind.Less, other)).Value)
+        if (((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
             return -1;
 
-        if (((RuntimeBoolean)Operation(OperationKind.EqualsEquals, other)).Value)
+        if (((RuntimeBoolean)Operation(OperationKind.EqualsEquals, other)).IsTrue)
             return 0;
 
         return 1;

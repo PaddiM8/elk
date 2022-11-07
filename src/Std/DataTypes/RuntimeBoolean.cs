@@ -15,11 +15,11 @@ public class RuntimeBoolean : RuntimeObject
     public static RuntimeBoolean True => new(true);
     public static RuntimeBoolean False => new(false);
 
-    public bool Value { get; }
+    public bool IsTrue { get; }
 
-    private RuntimeBoolean(bool value)
+    private RuntimeBoolean(bool isTrue)
     {
-        Value = value;
+        IsTrue = isTrue;
     }
 
     public override RuntimeObject As(Type toType)
@@ -28,7 +28,7 @@ public class RuntimeBoolean : RuntimeObject
             var type when type == typeof(RuntimeBoolean)
                 => this,
             var type when type == typeof(RuntimeString)
-                => new RuntimeString(Value.ToString()),
+                => new RuntimeString(IsTrue.ToString()),
             _
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),
         };
@@ -37,17 +37,17 @@ public class RuntimeBoolean : RuntimeObject
         => value ? True : False;
 
     public override RuntimeObject Operation(OperationKind kind)
-        => new RuntimeBoolean(!Value);
+        => new RuntimeBoolean(!IsTrue);
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherBoolean = other.As<RuntimeBoolean>();
         var newValue = kind switch
         {
-            OperationKind.EqualsEquals => Value == otherBoolean.Value,
-            OperationKind.NotEquals => Value != otherBoolean.Value,
-            OperationKind.And => Value && otherBoolean.Value,
-            OperationKind.Or => Value || otherBoolean.Value,
+            OperationKind.EqualsEquals => IsTrue == otherBoolean.IsTrue,
+            OperationKind.NotEquals => IsTrue != otherBoolean.IsTrue,
+            OperationKind.And => IsTrue && otherBoolean.IsTrue,
+            OperationKind.Or => IsTrue || otherBoolean.IsTrue,
             _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Boolean"),
         };
 
@@ -55,8 +55,8 @@ public class RuntimeBoolean : RuntimeObject
     }
 
     public override int GetHashCode()
-        => Value.GetHashCode();
+        => IsTrue.GetHashCode();
 
     public override string ToString()
-        => Value.ToString();
+        => IsTrue.ToString();
 }

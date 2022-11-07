@@ -71,7 +71,7 @@ internal class InterpreterTests
     private bool SameResult(object expectedResult, RuntimeObject gotResult)
         => ((RuntimeBoolean)RuntimeValue(expectedResult)
             .Operation(OperationKind.EqualsEquals, gotResult))
-            .Value;
+            .IsTrue;
 
     private RuntimeObject RuntimeValue(object value)
         => value switch

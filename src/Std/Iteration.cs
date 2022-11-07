@@ -20,8 +20,8 @@ static class Iteration
     /// Adds the given value to the container.
     /// </summary>
     /// <param name="container" types="List, Dictionary"></param>
-    /// <param name="value1">List: Value to add<br />Dictionary: Key</param>
-    /// <param name="value2">Dictionary: Value to add</param>
+    /// <param name="value1">List: IsTrue to add<br />Dictionary: Key</param>
+    /// <param name="value2">Dictionary: IsTrue to add</param>
     /// <returns>The same container.</returns>
     /// <example>
     /// list | add(x)
@@ -55,19 +55,19 @@ static class Iteration
     /// <returns>Whether or not all the values in the list evaluate to true.</returns>
     [ElkFunction("all")]
     public static RuntimeBoolean All(RuntimeList list)
-        => RuntimeBoolean.From(list.Values.All(x => x.As<RuntimeBoolean>().Value));
+        => RuntimeBoolean.From(list.Values.All(x => x.As<RuntimeBoolean>().IsTrue));
 
     /// <returns>Whether or not one of the values in the list evaluates to true.</returns>
     [ElkFunction("any")]
     public static RuntimeBoolean Any(RuntimeList list)
-        => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().Value));
+        => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
     /// <summary>
     /// Inserts a value at the specified index in a list.
     /// </summary>
     /// <param name="list">List to act on</param>
     /// <param name="index">Index the item should be placed at</param>
-    /// <param name="value">Value to insert</param>
+    /// <param name="value">IsTrue to insert</param>
     /// <returns>The same list.</returns>
     [ElkFunction("insert", Reachability.Everywhere)]
     public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, RuntimeObject value)

@@ -249,7 +249,7 @@ partial class Interpreter
         if (expr.ElseBranch != null)
             expr.ElseBranch.IsRoot = expr.IsRoot;
 
-        if (conditionValue.Value)
+        if (conditionValue.IsTrue)
         {
             return Next(expr.ThenBranch);
         }
@@ -292,7 +292,7 @@ partial class Interpreter
     {
         expr.Branch.IsRoot = true;
 
-        while (Next(expr.Condition).As<RuntimeBoolean>().Value)
+        while (Next(expr.Condition).As<RuntimeBoolean>().IsTrue)
         {
             Next(expr.Branch);
 
@@ -420,7 +420,7 @@ partial class Interpreter
         
         if (expr.Operator == OperationKind.If)
         {
-            return Next(expr.Right).As<RuntimeBoolean>().Value
+            return Next(expr.Right).As<RuntimeBoolean>().IsTrue
                 ? Next(expr.Left)
                 : RuntimeNil.Value;
         }
@@ -448,23 +448,23 @@ partial class Interpreter
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Coalescing)
         {
-            return left.As<RuntimeBoolean>().Value
+            return left.As<RuntimeBoolean>().IsTrue
                 ? left
                 : Next(expr.Right);
         }
 
         if (expr.Operator == OperationKind.And)
         {
-            bool result = left.As<RuntimeBoolean>().Value &&
-                Next(expr.Right).As<RuntimeBoolean>().Value;
+            bool result = left.As<RuntimeBoolean>().IsTrue &&
+                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }
 
         if (expr.Operator == OperationKind.Or)
         {
-            bool result = left.As<RuntimeBoolean>().Value ||
-                Next(expr.Right).As<RuntimeBoolean>().Value;
+            bool result = left.As<RuntimeBoolean>().IsTrue ||
+                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }
@@ -475,7 +475,7 @@ partial class Interpreter
             bool result = right switch
             {
                 RuntimeList list => list.Values
-                    .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().Value) != null,
+                    .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
                 RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
                 _ => throw new RuntimeInvalidOperationException("in", right.GetType().ToString()[7..]),
