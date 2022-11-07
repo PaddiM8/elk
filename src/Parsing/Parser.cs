@@ -430,7 +430,25 @@ internal class Parser
                 while (AdvanceIf(TokenKind.Comma));
             }
 
-            var right = ParseBlockOrSingle(StructureKind.Other, scope);
+            BlockExpr right;
+            if (AdvanceIf(TokenKind.Colon))
+            {
+                _scope = scope;
+
+                var bodyExpr = ParseOr();
+                right = new BlockExpr(
+                    new List<Expr> { bodyExpr },
+                    StructureKind.Other,
+                    Previous!.Position,
+                    scope
+                );
+
+                _scope = _scope.Parent!;
+            }
+            else
+            {
+                right = ParseBlock(StructureKind.Other, scope);
+            }
 
             return new ClosureExpr(left, parameters, right);
         }
