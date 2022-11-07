@@ -67,4 +67,12 @@ public class Collections
     [ElkFunction("select", Reachability.Everywhere)]
     public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
+
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of values containing only those who evaluated to true in the closure.</returns>
+    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
+    [ElkFunction("where", Reachability.Everywhere)]
+    public static RuntimeList Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.Where(x => closure(x).As<RuntimeBoolean>().Value));
 }
