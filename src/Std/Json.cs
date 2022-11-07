@@ -14,8 +14,20 @@ public class Json
         => JsonConvert.DeserializeObject<RuntimeObject>(input.Value, new RuntimeObjectJsonConverter())
            ?? RuntimeNil.Value;
 
+    /// <param name="input"></param>
+    /// <param name="indentationStyle">One of: "indented", "i", nil</param>
     /// <returns>A JSON string.</returns>
     [ElkFunction("write")]
-    public static RuntimeString Write(RuntimeObject input)
-        => new(JsonConvert.SerializeObject(input, new RuntimeObjectJsonConverter()));
+    public static RuntimeString Write(RuntimeObject input, RuntimeString? indentationStyle = null)
+    {
+        var formatting = indentationStyle?.Value is "indented" or "i"
+            ? Formatting.Indented
+            : Formatting.None;
+
+        return new(JsonConvert.SerializeObject(
+            input,
+            formatting,
+            new RuntimeObjectJsonConverter()
+        ));
+    }
 }
