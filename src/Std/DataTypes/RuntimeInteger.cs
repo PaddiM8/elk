@@ -45,9 +45,7 @@ public class RuntimeInteger : RuntimeObject
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         if (other is RuntimeFloat)
-        {
-            return ((RuntimeObject)this).As<RuntimeFloat>().Operation(kind, other);
-        }
+            return As<RuntimeFloat>().Operation(kind, other);
 
         var otherNumber = other.As<RuntimeInteger>();
         return kind switch
