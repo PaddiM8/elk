@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -62,11 +63,16 @@ static class StdGateway
                 if (parameter.HasDefaultValue)
                 {
                     arguments.Add(null);
+                    continue;
                 }
-                else
+
+                if (parameter.ParameterType == typeof(RuntimeObject) ||
+                    parameter.ParameterType == typeof(IEnumerable<RuntimeObject>))
                 {
                     throw new RuntimeWrongNumberOfArgumentsException(parameters.Length, arguments.Count);
                 }
+
+                break;
             }
 
             if (parameter.GetCustomAttribute<ElkVariadicAttribute>() == null)
