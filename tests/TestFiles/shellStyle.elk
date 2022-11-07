@@ -12,7 +12,7 @@ let c = values "hello world"
 assert(c[0] == "hello world")
 
 let x = 5
-let d = values hello "{x}"
+let d = values hello "${x}"
 assert(d[0] == "hello")
 assert(d[1] == "5")
 
