@@ -24,12 +24,17 @@ static class String
     /// <param name="input">A string consisting of several lines and columns.</param>
     /// <param name="rowIndex">The index of the row.</param>
     /// <param name="columnIndex">The index of the column.</param>
+    /// <param name="divider">The character sequence that divides the column. Default: "\t"</param>
     /// <returns>A string if the cell was found, otherwise null.</returns>
     [ElkFunction("cell", Reachability.Everywhere)]
-    public static RuntimeObject Cell(RuntimeString input, RuntimeInteger rowIndex, RuntimeInteger columnIndex)
+    public static RuntimeObject Cell(
+        RuntimeString input,
+        RuntimeInteger rowIndex,
+        RuntimeInteger columnIndex,
+        RuntimeString? divider = null)
     {
         var line = input.Value.ToLines().ElementAtOrDefault((int)rowIndex.Value);
-        var column = line?.Split('\t').ElementAtOrDefault((int)columnIndex.Value);
+        var column = line?.Split(divider?.Value ?? "\t").ElementAtOrDefault((int)columnIndex.Value);
         if (line == null || column == null)
             return RuntimeNil.Value;
 
@@ -41,12 +46,16 @@ static class String
     /// </summary>
     /// <param name="input">A string consisting of several columns.</param>
     /// <param name="index">The index of the column.</param>
+    /// <param name="divider">The character sequence that divides the column. Default: "\t"</param>
     /// <returns>A list of lines within the specific column.</returns>
     [ElkFunction("column", Reachability.Everywhere)]
-    public static RuntimeList Column(RuntimeString input, RuntimeInteger index)
+    public static RuntimeList Column(
+        RuntimeString input,
+        RuntimeInteger index,
+        RuntimeString? divider = null)
     {
         var column = from line in input.Value.ToLines()
-            select line.Split('\t')
+            select line.Split(divider?.Value ?? "\t")
             into columns
             where index.Value < columns.Length
             select new RuntimeString(columns[index.Value]);
