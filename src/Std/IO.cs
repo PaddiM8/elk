@@ -67,7 +67,7 @@ static class IO
     /// Prints the given value to the terminal, without adding a new line to the end.
     /// If the input value is of the type Error, the error message is forwarded to stderr instead of stdout.
     /// </summary>
-    /// <param name="input">IsTrue to print</param>
+    /// <param name="input">Value to print</param>
     [ElkFunction("print", Reachability.Everywhere)]
     public static void Print(RuntimeObject input)
     {
@@ -85,7 +85,7 @@ static class IO
     /// Prints the given value to the terminal while also adding a new line to the end.
     /// If the input value is of the type Error, the error message is forwarded to stderr instead of stdout.
     /// </summary>
-    /// <param name="input">IsTrue to print</param>
+    /// <param name="input">Value to print</param>
     [ElkFunction("println", Reachability.Everywhere)]
     public static void PrintLine(RuntimeObject input)
     {

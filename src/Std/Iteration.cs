@@ -17,18 +17,18 @@ namespace Elk.Std;
 static class Iteration
 {
     /// <summary>
-    /// Adds the given value to the container.
+    /// Pushes the given value to the container.
     /// </summary>
     /// <param name="container" types="List, Dictionary"></param>
-    /// <param name="value1">List: IsTrue to add<br />Dictionary: Key</param>
-    /// <param name="value2">Dictionary: IsTrue to add</param>
+    /// <param name="value1">List: Value to push<br />Dictionary: Key</param>
+    /// <param name="value2">Dictionary: Value to push</param>
     /// <returns>The same container.</returns>
     /// <example>
-    /// list | add(x)
-    /// dict | add("name", "John")
+    /// list | push(x)
+    /// dict | push("name", "John")
     /// </example>
-    [ElkFunction("add", Reachability.Everywhere)]
-    public static RuntimeObject Add(
+    [ElkFunction("push", Reachability.Everywhere)]
+    public static RuntimeObject Push(
         RuntimeObject container,
         RuntimeObject value1,
         RuntimeObject? value2 = null)
@@ -67,7 +67,7 @@ static class Iteration
     /// </summary>
     /// <param name="list">List to act on</param>
     /// <param name="index">Index the item should be placed at</param>
-    /// <param name="value">IsTrue to insert</param>
+    /// <param name="value">Value to insert</param>
     /// <returns>The same list.</returns>
     [ElkFunction("insert", Reachability.Everywhere)]
     public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, RuntimeObject value)
