@@ -121,10 +121,11 @@ static class StdGateway
         if (parameterType == typeof(RuntimeObject))
             return argument;
 
-        if (parameterType == typeof(IEnumerable<RuntimeObject>) &&
-            argument is not IEnumerable<RuntimeObject>)
+        if (parameterType == typeof(IEnumerable<RuntimeObject>))
         {
-            throw new RuntimeCastException(argument.GetType(), "Iterable");
+            return argument is IEnumerable<RuntimeObject>
+               ? argument
+               : throw new RuntimeCastException(argument.GetType(), "Iterable");
         }
 
         return argument.As(parameterType);
