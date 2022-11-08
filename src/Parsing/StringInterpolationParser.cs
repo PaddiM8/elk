@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Elk.Lexing;
@@ -24,15 +25,18 @@ class StringInterpolationParser
         var textString = new StringBuilder();
         for (int i = 0; i < literal.Length; i++)
         {
-            // Parse escaped braces literally
-            if (literal[i] == '\\' && i + 1 < literal.Length && literal[i + 1] == '{')
+            // Parse escaped dollar signs literally
+            var next = literal.Length > i + 1
+                ? literal[i + 1]
+                : default;
+            if (literal[i] == '\\' && next == '$')
             {
                 i++;
-                textString.Append('{');
+                textString.Append('$');
                 continue;
             }
 
-            if (literal[i] == '$' && literal.Length > i + 1 && literal[i + 1] == '{')
+            if (literal[i] == '$' && next == '{')
             {
                 i++;
                 if (textString.Length > 0)
@@ -61,14 +65,17 @@ class StringInterpolationParser
         var exprString = new StringBuilder();
         int openBraceCount = 0;
         int i = startIndex;
+        bool inString = false;
         while (i < literal.Length && (openBraceCount > 0 || literal[i] != '}'))
         {
             if (i >= literal.Length)
                 throw new ParseException(textPos, "Expected '}' inside string literal");
-                
-            if (literal[i] == '{')
+
+            if (literal[i] == '"')
+                inString = !inString;
+            if (!inString && literal[i] == '{')
                 openBraceCount++;
-            else if (literal[i] == '}')
+            else if (!inString && literal[i] == '}')
                 openBraceCount--;
 
             exprString.Append(literal[i]);

@@ -264,10 +264,9 @@ internal class Lexer
         Eat(); // Initial quote
 
         var value = new StringBuilder();
-        int openBraces = 0;
-        while (!ReachedEnd && (Current != '"' || openBraces > 0))
+        while (!ReachedEnd && Current != '"')
         {
-            if (AdvanceIf('\\') && openBraces == 0)
+            if (AdvanceIf('\\'))
             {
                 char c = Current switch
                 {
@@ -282,10 +281,10 @@ internal class Lexer
                 };
                 Eat();
 
-                // Keep the backslash for braces to allow the
-                // string interpolation parser to know when a
-                // brace is escaped.
-                if (c == '{')
+                // Keep the backslash for dollar signs to allow
+                // the string interpolation parser to know when
+                // a brace is escaped.
+                if (c == '$')
                     value.Append('\\');
 
                 if (c == 'x')
@@ -305,15 +304,28 @@ internal class Lexer
                 }
 
                 value.Append(c);
-                continue;
             }
-
-            if (Current == '{')
-                openBraces++;
-            if (Current == '}')
-                openBraces--;
-
-            value.Append(Eat());
+            else if (Current == '$' && Peek == '{')
+            {
+                value.Append(Eat());
+                value.Append(Eat());
+                int openBraces = 1;
+                bool inString = false;
+                while (!ReachedEnd && (Current != '"' || openBraces > 0))
+                {
+                    if (Current == '"' && Previous != '\\')
+                        inString = !inString;
+                    if (!inString && Current == '{')
+                        openBraces++;
+                    if (!inString && Current == '}')
+                        openBraces--;
+                    value.Append(Eat());
+                }
+            }
+            else
+            {
+                value.Append(Eat());
+            }
         }
 
         if (Current != '"')
