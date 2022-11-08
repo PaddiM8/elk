@@ -341,14 +341,10 @@ internal class Lexer
     }
     
     private static bool IsValidIdentifierStart(char c)
-    {
-        return !(char.IsDigit(c) || "+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
-    }
+        => !(char.IsDigit(c) || "+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
 
     private static bool IsValidIdentifierMiddle(char c)
-    {
-        return IsValidIdentifierStart(c) || "-%.".Contains(c) || char.IsDigit(c);
-    }
+        => c != '$' && (IsValidIdentifierStart(c) || "-%.".Contains(c) || char.IsDigit(c));
 
     private Token Build(TokenKind kind, char value)
     {

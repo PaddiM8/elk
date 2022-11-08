@@ -1,6 +1,6 @@
 let x = 5
 assert("${x}" == "5")
-assert("a ${x}b" == "a 5b")
+assert("a${x}b" == "a5b")
 assert("${"x"}" == "x")
 assert(len("\${\"x\"}") == 6)
 assert(len("\${x}") == 4)
