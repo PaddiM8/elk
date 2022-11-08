@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
 
@@ -36,7 +37,7 @@ partial class Interpreter
         }
         else
         {
-            return new RuntimeError($"cd: The directory \"{path}\" does not exist");
+            return Error($"cd: The directory \"{path}\" does not exist");
         }
 
         return RuntimeNil.Value;
@@ -144,6 +145,19 @@ partial class Interpreter
             runtimeSymbolFunction.FunctionSymbol.Expr,
             isRoot,
             runtimeClosure.Closure
+        );
+    }
+
+    private RuntimeError EvaluateBuiltInError(List<RuntimeObject> arguments)
+    {
+        EmptyRedirector(arguments);
+
+        if (arguments.Count != 1)
+            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count, true);
+
+        return new RuntimeError(
+            arguments[0].As<RuntimeString>().Value,
+            _lastExpr?.Position ?? TextPos.Default
         );
     }
 

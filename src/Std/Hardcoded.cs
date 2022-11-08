@@ -51,4 +51,10 @@ public class HardCoded
     [ElkFunction("call", Reachability.Everywhere)]
     public static RuntimeObject Call(RuntimeFunction function, [ElkVariadic] IEnumerable<RuntimeObject> callArguments)
         => throw new NotSupportedException();
+
+    /// <param name="message">Error message</param>
+    /// <returns>An Error with the provided message.</returns>
+    [ElkFunction("error", Reachability.Everywhere)]
+    public static RuntimeError ToError(RuntimeString message)
+        => throw new NotSupportedException();
 }

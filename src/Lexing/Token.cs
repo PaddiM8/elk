@@ -11,6 +11,11 @@ record TextPos(int Line, int Column, string? FilePath)
 {
     public static TextPos Default
         => new(1, 1, null);
+
+    public override string ToString()
+        => FilePath == null
+            ? $"[{Line}:{Column}]"
+            : $"{FilePath} [{Line}:{Column}]";
 }
 
 [JsonConverter(typeof(TokenConverter))]

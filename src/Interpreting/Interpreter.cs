@@ -56,21 +56,18 @@ partial class Interpreter
             // Make sure the redirector is emptied
             _redirector.Receive();
 
-            return new RuntimeError(((DiagnosticInfo)e.Data["diagnosticInfo"]!).ToString());
+            return (RuntimeError)e.Data["error"]!;
         }
 
         RuntimeObject lastResult = RuntimeNil.Value;
         try
         {
             foreach (var expr in analysedAst)
-            {
                 lastResult = Next(expr);
-            }
         }
         catch (RuntimeException e)
         {
-            var pos = _lastExpr?.Position ?? TextPos.Default;
-            var error = new DiagnosticInfo(pos.Line, pos.Column, e.Message, pos.FilePath);
+            var error = new RuntimeError(e.Message, _lastExpr?.Position ?? TextPos.Default);
 
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);
@@ -78,7 +75,7 @@ partial class Interpreter
             // Make sure the redirector is emptied
             _redirector.Receive();
 
-            return new RuntimeError(error.ToString());
+            return error;
         }
 
         return lastResult;
@@ -100,19 +97,17 @@ partial class Interpreter
         }
         catch (ParseException e)
         {
-            var error = new DiagnosticInfo(
-                e.Position.Line,
-                e.Position.Column,
-                e.Message,
-                e.Position.FilePath
-            );
-            
+            var error = new RuntimeError(e.Message, e.Position);
+
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);
-                
-            return new RuntimeError(error.ToString());
+
+            return error;
         }
     }
+
+    public RuntimeError Error(string message)
+        => new RuntimeError(message, _lastExpr?.Position ?? TextPos.Default);
 
     public bool FunctionExists(string name)
         => _scope.ModuleScope.ContainsFunction(name);
@@ -634,6 +629,7 @@ partial class Interpreter
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
                 CallType.BuiltInClosure => EvaluateBuiltInClosure(arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
+                CallType.BuiltInError => EvaluateBuiltInError(arguments),
                 _ => throw new NotSupportedException(),
             };
         }
@@ -749,6 +745,7 @@ partial class Interpreter
             stdFunction,
             arguments,
             ShellEnvironment,
+            _lastExpr?.Position ?? TextPos.Default,
             RunClosure
         );
     }
@@ -849,7 +846,7 @@ partial class Interpreter
         {
             return process.ExitCode == 0
                 ? new RuntimeString(process.StandardOutput.ReadToEnd())
-                : new RuntimeError(process.StandardError.ReadToEnd());
+                : Error(process.StandardError.ReadToEnd());
         }
         
         return RuntimeNil.Value;

@@ -2,6 +2,7 @@
 
 using System.IO;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -58,20 +59,18 @@ public class Path
     }
 
     /// <summary>Removes the path of the given index from $PATH and ~/.config/elk/path.txt. The index can be found with the help of the path::list function.</summary>
-    /// <returns>(nil or Error) An error if the index is out of range.</returns>
+    /// <throws>If the index is out of range.</throws>
     [ElkFunction("remove")]
-    public static RuntimeObject Remove(RuntimeInteger index)
+    public static void Remove(RuntimeInteger index)
     {
         if (!File.Exists(CommonPaths.PathFile))
-            return new RuntimeError("Index out of range");
+            throw new RuntimeStdException("Index out of range");
 
         var lines = File.ReadAllLines(CommonPaths.PathFile).ToList();
         if (index.Value >= lines.Count)
-            return new RuntimeError("Index out of range");
+            throw new RuntimeStdException("Index out of range");
 
         lines.RemoveAt((int)index.Value);
         File.WriteAllLines(CommonPaths.PathFile, lines);
-
-        return RuntimeNil.Value;
     }
 }

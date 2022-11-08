@@ -17,12 +17,6 @@ static class Conversion
     public static RuntimeBoolean ToBool(RuntimeObject value)
         => value.As<RuntimeBoolean>();
 
-    /// <param name="message">Error message</param>
-    /// <returns>An Error with the provided message.</returns>
-    [ElkFunction("error", Reachability.Everywhere)]
-    public static RuntimeError ToError(RuntimeString message)
-        => new(message.Value);
-
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("float", Reachability.Everywhere)]
     public static RuntimeFloat ToFloat(RuntimeObject value)

@@ -40,14 +40,16 @@ class Analyser
         }
         catch (RuntimeException e)
         {
-            var pos = analyser._lastExpr?.Position ?? TextPos.Default;
-            var error = new DiagnosticInfo(pos.Line, pos.Column, e.Message, pos.FilePath);
+            var error = new RuntimeError(
+                e.Message,
+                analyser._lastExpr?.Position ?? TextPos.Default
+            );
 
             throw new AggregateException(error.ToString(), e)
             {
                 Data =
                 {
-                    ["diagnosticInfo"] = error,
+                    ["error"] = error,
                 },
             };
         }
@@ -290,6 +292,7 @@ class Analyser
             "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
+            "error" => CallType.BuiltInError,
             _ => null,
         };
         var stdFunction = !builtIn.HasValue

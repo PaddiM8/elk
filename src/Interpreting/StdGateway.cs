@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elk.Interpreting.Exceptions;
+using Elk.Lexing;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -69,6 +70,7 @@ static class StdGateway
     public static RuntimeObject Call(StdFunction stdFunction,
         List<RuntimeObject> arguments,
         ShellEnvironment shellEnvironment,
+        TextPos position,
         Func<IEnumerable<RuntimeObject>, RuntimeObject> closure)
     {
         int extraArgumentCount = 0;
@@ -110,8 +112,13 @@ static class StdGateway
             return stdFunction.MethodInfo.Invoke(null, invokeArguments.ToArray()) as RuntimeObject
                    ?? RuntimeNil.Value;
         }
-        catch (TargetInvocationException)
+        catch (TargetInvocationException e)
         {
+            if (e.InnerException is RuntimeStdException stdException)
+                return new RuntimeError(stdException.Message, position);
+            if (e.InnerException is RuntimeException runtimeException)
+                throw runtimeException;
+
             throw new RuntimeException("An unknown error occured while calling a function in the standard library");
         }
     }

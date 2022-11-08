@@ -2,6 +2,7 @@
 
 using System;
 using Elk.Interpreting.Exceptions;
+using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Attributes;
 
@@ -14,9 +15,17 @@ public class RuntimeError : RuntimeObject
 {
     public string Value { get; }
 
+    internal TextPos? Position { get; }
+
     public RuntimeError(string value)
     {
         Value = value;
+    }
+
+    internal RuntimeError(string value, TextPos position)
+    {
+        Value = value;
+        Position = position;
     }
 
     public override RuntimeObject As(Type toType)
@@ -40,5 +49,5 @@ public class RuntimeError : RuntimeObject
         => Value.GetHashCode();
 
     public override string ToString()
-        => Value;
+        => $"{Position} {Value}";
 }
