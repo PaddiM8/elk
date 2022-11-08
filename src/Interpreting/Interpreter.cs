@@ -2,13 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices.ObjectiveC;
 using System.Text;
 using Elk.Analysis;
 using Elk.Interpreting.Exceptions;
@@ -735,7 +732,7 @@ partial class Interpreter
 
     private RuntimeObject EvaluateStdCall(
         List<RuntimeObject> arguments,
-        MethodInfo stdFunction,
+        StdFunction stdFunction,
         ClosureExpr? closureExpr = null)
     {
         RuntimeObject RunClosure(IEnumerable<RuntimeObject> args)
@@ -750,7 +747,7 @@ partial class Interpreter
 
         return StdGateway.Call(
             stdFunction,
-            arguments.Cast<object?>().ToList(),
+            arguments,
             ShellEnvironment,
             RunClosure
         );

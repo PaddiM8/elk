@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Std.DataTypes;
@@ -276,7 +277,7 @@ class CallExpr : Expr
 
     public FunctionSymbol? FunctionSymbol { get; init; }
 
-    public MethodInfo? StdFunction { get; init; }
+    public StdFunction? StdFunction { get; init; }
 
     public CallExpr(
         Token identifier,

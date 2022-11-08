@@ -2,6 +2,7 @@
 
 using System;
 using System.Reflection;
+using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Parsing;
@@ -36,9 +37,9 @@ public abstract class RuntimeFunction : RuntimeObject
 
 internal class RuntimeStdFunction : RuntimeFunction
 {
-    public MethodInfo StdFunction { get; }
+    public StdFunction StdFunction { get; }
 
-    public RuntimeStdFunction(MethodInfo stdFunction)
+    public RuntimeStdFunction(StdFunction stdFunction)
     {
         StdFunction = stdFunction;
     }

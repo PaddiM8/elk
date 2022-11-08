@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -175,7 +174,11 @@ class Analyser
                     IsRoot = e.IsRoot,
                 };
             case BinaryExpr e:
-                return new BinaryExpr(Next(e.Left), e.Operator, Next(e.Right))
+                var rightBinary = e.Operator == OperationKind.Pipe
+                    ? NextCallOrClosure(e.Right, calledFromPipe: true)
+                    : Next(e.Right);
+
+                return new BinaryExpr(Next(e.Left), e.Operator, rightBinary)
                 {
                     IsRoot = e.IsRoot,
                 };
@@ -220,43 +223,24 @@ class Analyser
             case CallExpr e:
                 return Visit(e);
             case FunctionReferenceExpr e:
-                string name = e.Identifier.Value;
-                string? moduleName = e.ModuleName?.Value;
-                RuntimeFunction? runtimeFunction = null;
-
-                // Try to resolve as std function
-                var stdFunction = ResolveStdFunction(name, moduleName);
-                if (stdFunction != null)
-                    runtimeFunction = new RuntimeStdFunction(stdFunction);
-
-                // Try to resolve as regular function
-                if (runtimeFunction == null)
-                {
-                    var functionSymbol = ResolveFunctionSymbol(name, moduleName);
-                    if (functionSymbol != null)
-                        runtimeFunction = new RuntimeSymbolFunction(functionSymbol);
-                }
-
-                // Fallback: resolve as program
-                runtimeFunction ??= new RuntimeProgramFunction(e.Identifier.Value);
-
-                return new FunctionReferenceExpr(e.Identifier, e.ModuleName)
-                {
-                    RuntimeFunction = runtimeFunction,
-                    IsRoot = e.IsRoot,
-                };
+                return Visit(e);
             case ClosureExpr e:
-                return new ClosureExpr(
-                    Next(e.Function),
-                    e.Parameters,
-                    (BlockExpr)Next(e.Body)
-                )
-                {
-                    IsRoot = e.IsRoot,
-                };
+                return Visit(e);
         }
 
         return expr;
+    }
+
+    private Expr NextCallOrClosure(Expr expr, bool calledFromPipe)
+    {
+        _lastExpr = expr;
+
+        return expr switch
+        {
+            ClosureExpr closureExpr => Visit(closureExpr, calledFromPipe),
+            CallExpr callExpr => Visit(callExpr, calledFromPipe),
+            _ => throw new RuntimeException("Expected a function call to the right of pipe.")
+        };
     }
 
     private LiteralExpr Visit(LiteralExpr expr)
@@ -295,22 +279,28 @@ class Analyser
         return newExpr;
     }
 
-    private CallExpr Visit(CallExpr expr)
+    private CallExpr Visit(CallExpr expr, bool calledFromPipe = false)
     {
-
         string name = expr.Identifier.Value;
         string? moduleName = expr.ModuleName?.Value;
-        var stdFunction = ResolveStdFunction(name, moduleName);
-        var functionSymbol = stdFunction == null
-            ? ResolveFunctionSymbol(name, moduleName)
-            : null;
-        var callType = name switch
+        CallType? builtIn = name switch
         {
             "cd" => CallType.BuiltInCd,
             "exec" => CallType.BuiltInExec,
             "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
+            _ => null,
+        };
+        var stdFunction = !builtIn.HasValue
+            ? ResolveStdFunction(name, moduleName)
+            : null;
+        var functionSymbol = stdFunction == null
+            ? ResolveFunctionSymbol(name, moduleName)
+            : null;
+        var callType = builtIn switch
+        {
+            not null => builtIn.Value,
             _ => (stdFunction, functionSymbol) switch
             {
                 (not null, null) => CallType.StdFunction,
@@ -319,6 +309,23 @@ class Analyser
                 _ => CallType.Function,
             },
         };
+
+        int argumentCount = expr.Arguments.Count;
+        if (calledFromPipe)
+            argumentCount++;
+
+        if (stdFunction != null)
+        {
+            if (argumentCount < stdFunction.MinArgumentCount ||
+                argumentCount > stdFunction.MaxArgumentCount)
+            {
+                throw new RuntimeWrongNumberOfArgumentsException(
+                    stdFunction.MinArgumentCount,
+                    argumentCount,
+                    stdFunction.VariadicStart.HasValue
+                );
+            }
+        }
 
         var newExpr = new CallExpr(
             expr.Identifier,
@@ -337,7 +344,52 @@ class Analyser
         return newExpr;
     }
 
-    private MethodInfo? ResolveStdFunction(string name, string? moduleName)
+    private Expr Visit(FunctionReferenceExpr expr)
+    {
+        string name = expr.Identifier.Value;
+        string? moduleName = expr.ModuleName?.Value;
+        RuntimeFunction? runtimeFunction = null;
+
+        // Try to resolve as std function
+        var stdFunction = ResolveStdFunction(name, moduleName);
+        if (stdFunction != null)
+            runtimeFunction = new RuntimeStdFunction(stdFunction);
+
+        // Try to resolve as regular function
+        if (runtimeFunction == null)
+        {
+            var functionSymbol = ResolveFunctionSymbol(name, moduleName);
+            if (functionSymbol != null)
+                runtimeFunction = new RuntimeSymbolFunction(functionSymbol);
+        }
+
+        // Fallback: resolve as program
+        runtimeFunction ??= new RuntimeProgramFunction(expr.Identifier.Value);
+
+        return new FunctionReferenceExpr(expr.Identifier, expr.ModuleName)
+        {
+            RuntimeFunction = runtimeFunction,
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private Expr Visit(ClosureExpr e, bool calledFromPipe = false)
+    {
+        var function = e.Function is CallExpr callExpr
+            ? NextCallOrClosure(callExpr, calledFromPipe)
+            : Next(e.Function);
+
+        return new ClosureExpr(
+            function,
+            e.Parameters,
+            (BlockExpr)Next(e.Body)
+        )
+        {
+            IsRoot = e.IsRoot,
+        };
+    }
+
+    private StdFunction? ResolveStdFunction(string name, string? moduleName)
     {
         bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
         if (isStdModule || StdGateway.Contains(name))
