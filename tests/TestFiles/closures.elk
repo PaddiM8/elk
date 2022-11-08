@@ -1,6 +1,6 @@
 fn sel(container) => closure {
     let values = []
-    for value in container: values | add(closure(value))
+    for value in container: values | push(closure(value))
 
     values
 }

@@ -175,7 +175,7 @@ class Analyser
                 };
             case BinaryExpr e:
                 var rightBinary = e.Operator == OperationKind.Pipe
-                    ? NextCallOrClosure(e.Right, calledFromPipe: true)
+                    ? NextCallOrClosure(e.Right, calledFromPipe: true, hasClosure: false)
                     : Next(e.Right);
 
                 return new BinaryExpr(Next(e.Left), e.Operator, rightBinary)
@@ -231,14 +231,14 @@ class Analyser
         return expr;
     }
 
-    private Expr NextCallOrClosure(Expr expr, bool calledFromPipe)
+    private Expr NextCallOrClosure(Expr expr, bool calledFromPipe, bool hasClosure)
     {
         _lastExpr = expr;
 
         return expr switch
         {
             ClosureExpr closureExpr => Visit(closureExpr, calledFromPipe),
-            CallExpr callExpr => Visit(callExpr, calledFromPipe),
+            CallExpr callExpr => Visit(callExpr, calledFromPipe, hasClosure),
             _ => throw new RuntimeException("Expected a function call to the right of pipe.")
         };
     }
@@ -279,7 +279,7 @@ class Analyser
         return newExpr;
     }
 
-    private CallExpr Visit(CallExpr expr, bool calledFromPipe = false)
+    private CallExpr Visit(CallExpr expr, bool calledFromPipe = false, bool hasClosure = false)
     {
         string name = expr.Identifier.Value;
         string? moduleName = expr.ModuleName?.Value;
@@ -325,6 +325,9 @@ class Analyser
                     stdFunction.VariadicStart.HasValue
                 );
             }
+
+            if (stdFunction.ClosureParameterCount.HasValue && !hasClosure)
+                throw new RuntimeException("Expected closure.");
         }
 
         var newExpr = new CallExpr(
@@ -376,7 +379,7 @@ class Analyser
     private Expr Visit(ClosureExpr e, bool calledFromPipe = false)
     {
         var function = e.Function is CallExpr callExpr
-            ? NextCallOrClosure(callExpr, calledFromPipe)
+            ? NextCallOrClosure(callExpr, calledFromPipe, hasClosure: true)
             : Next(e.Function);
 
         return new ClosureExpr(
