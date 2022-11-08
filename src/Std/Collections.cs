@@ -60,6 +60,37 @@ public class Collections
         throw new RuntimeCastException(input.GetType(), "indexable");
     }
 
+    /// <summary>
+    /// Gets the item at the specified index or
+    /// the line at the specified index.
+    /// </summary>
+    /// <param name="input">An indexable object.</param>
+    /// <param name="startIndex"></param>
+    /// <param name="endIndex"></param>
+    /// <returns>
+    /// Given a string: The lines between the specified indices.<br />
+    /// Given any other indexable object: the elements between the specified indices.
+    /// </returns>
+    [ElkFunction("rows", Reachability.Everywhere)]
+    public static RuntimeObject Rows(RuntimeObject input, RuntimeInteger startIndex, RuntimeInteger endIndex)
+    {
+        if (input is RuntimeString str)
+        {
+            var lines = str.Value.ToLines();
+            if (lines.Length == 0 || startIndex.Value < 0 || endIndex.Value >= lines.Length)
+                return RuntimeNil.Value;
+
+            var range = lines[(int)startIndex.Value..(int)endIndex.Value];
+
+            return new RuntimeList(range.Select(x => new RuntimeString(x)));
+        }
+
+        if (input is IIndexable<RuntimeObject> indexable)
+            return indexable[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
+
+        throw new RuntimeCastException(input.GetType(), "indexable");
+    }
+
     /// <param name="items"></param>
     /// <param name="closure"></param>
     /// <returns>A list of values where the closure has been called on each value.</returns>
