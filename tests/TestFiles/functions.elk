@@ -18,3 +18,10 @@ assert(empty() == "empty")
 fn empty() {
     "empty"
 }
+
+# recursion
+fn rec(x) {
+    if x > 0: rec(x - 1) else x
+}
+
+assert(rec(10) == 0)
