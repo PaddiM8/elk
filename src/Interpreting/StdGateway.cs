@@ -114,12 +114,14 @@ static class StdGateway
         }
         catch (TargetInvocationException e)
         {
-            if (e.InnerException is RuntimeStdException stdException)
-                return new RuntimeError(stdException.Message, position);
-            if (e.InnerException is RuntimeException runtimeException)
-                throw runtimeException;
-
-            throw new RuntimeException("An unknown error occured while calling a function in the standard library");
+            return e.InnerException switch
+            {
+                RuntimeStdException stdException => new RuntimeError(stdException.Message, position),
+                RuntimeException runtimeException => throw runtimeException,
+                _ => throw new RuntimeException(
+                    "An unknown error occured while calling a function in the standard library"
+                )
+            };
         }
     }
 

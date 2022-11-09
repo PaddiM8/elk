@@ -67,7 +67,8 @@ partial class Interpreter
         }
         catch (RuntimeException e)
         {
-            var error = new RuntimeError(e.Message, _lastExpr?.Position ?? TextPos.Default);
+            var position = e.Position ?? _lastExpr?.Position ?? TextPos.Default;
+            var error = new RuntimeError(e.Message, position);
 
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);

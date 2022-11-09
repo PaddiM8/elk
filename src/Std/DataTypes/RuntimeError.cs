@@ -40,10 +40,10 @@ public class RuntimeError : RuntimeObject
         };
 
     public override RuntimeObject Operation(OperationKind kind)
-        => throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+        => throw new RuntimeException(Value, Position);
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+        => throw new RuntimeException(Value, Position);
 
     public override int GetHashCode()
         => Value.GetHashCode();
