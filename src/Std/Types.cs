@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -18,7 +19,15 @@ public class Types
     /// <returns>Whether or not the given value is of a specific type.</returns>
     [ElkFunction("isType", Reachability.Everywhere)]
     public static RuntimeBoolean IsType(RuntimeObject value, RuntimeType type)
-        => RuntimeBoolean.From(value.GetType() == type.Type);
+    {
+        if (type.Type == typeof(IEnumerable<>))
+            return RuntimeBoolean.From(value is IIndexable<RuntimeObject>);
+
+        if (type.Type == typeof(IIndexable<>))
+            return RuntimeBoolean.From(value is IIndexable<RuntimeObject>);
+
+        return RuntimeBoolean.From(type.Type.IsInstanceOfType(value));
+    }
 
     /// <summary>
     /// Helper function used to create independent closures.

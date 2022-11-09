@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes;
 
 #endregion
 
@@ -33,6 +34,8 @@ static class LanguageInfo
             string typeName = type.GetCustomAttribute<ElkTypeAttribute>()!.Name;
             _runtimeTypes.Add(typeName, type);
         }
+
+        _runtimeTypes.Add("Iterable", typeof(IEnumerable<RuntimeObject>));
 
         return _runtimeTypes;
     }
