@@ -135,6 +135,13 @@ static class StdGateway
                : throw new RuntimeCastException(argument.GetType(), "Iterable");
         }
 
+        if (parameterType == typeof(IIndexable<RuntimeObject>))
+        {
+            return argument is IIndexable<RuntimeObject>
+               ? argument
+               : throw new RuntimeCastException(argument.GetType(), "Indexable");
+        }
+
         return argument.As(parameterType);
     }
 
@@ -224,7 +231,8 @@ static class StdGateway
         foreach (var (parameter, i) in method.GetParameters().WithIndex())
         {
             if (typeof(RuntimeObject).IsAssignableFrom(parameter.ParameterType) ||
-                parameter.ParameterType == typeof(IEnumerable<RuntimeObject>))
+                parameter.ParameterType == typeof(IEnumerable<RuntimeObject>) ||
+                parameter.ParameterType == typeof(IIndexable<RuntimeObject>))
             {
                 if (parameter.HasDefaultValue && minArgumentCount == 0)
                     minArgumentCount = parameters.Count;

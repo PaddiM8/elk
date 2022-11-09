@@ -43,7 +43,7 @@ public class Collections
     /// Given any other indexable object: the element at the specified index.
     /// </returns>
     [ElkFunction("row", Reachability.Everywhere)]
-    public static RuntimeObject Row(RuntimeObject input, RuntimeInteger index)
+    public static RuntimeObject Row(IIndexable<RuntimeObject> input, RuntimeInteger index)
     {
         if (input is RuntimeString str)
         {
@@ -54,10 +54,7 @@ public class Collections
                 : new RuntimeString(line);
         }
 
-        if (input is IIndexable<RuntimeObject> indexable)
-            return indexable[index];
-
-        throw new RuntimeCastException(input.GetType(), "indexable");
+        return input[index];
     }
 
     /// <summary>
@@ -72,7 +69,7 @@ public class Collections
     /// Given any other indexable object: the elements between the specified indices.
     /// </returns>
     [ElkFunction("rows", Reachability.Everywhere)]
-    public static RuntimeObject Rows(RuntimeObject input, RuntimeInteger startIndex, RuntimeInteger endIndex)
+    public static RuntimeObject Rows(IIndexable<RuntimeObject> input, RuntimeInteger startIndex, RuntimeInteger endIndex)
     {
         if (input is RuntimeString str)
         {
@@ -85,10 +82,7 @@ public class Collections
             return new RuntimeList(range.Select(x => new RuntimeString(x)));
         }
 
-        if (input is IIndexable<RuntimeObject> indexable)
-            return indexable[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
-
-        throw new RuntimeCastException(input.GetType(), "indexable");
+        return input[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
     }
 
     /// <param name="items"></param>

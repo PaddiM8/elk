@@ -1,6 +1,6 @@
 namespace Elk.Std.DataTypes;
 
-interface IIndexable<T>
+public interface IIndexable<T>
 {
     T this[RuntimeObject index] { get; set; }
 
