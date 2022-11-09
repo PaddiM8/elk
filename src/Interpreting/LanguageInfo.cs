@@ -23,10 +23,13 @@ static class LanguageInfo
 
         var types = Assembly.GetExecutingAssembly()
             .GetTypes()
-            .Where(x => x.Namespace?.StartsWith("Elk.Interpreting") ?? false)
+            .Where(x => x.Namespace?.StartsWith("Elk.Std.DataTypes") ?? false)
             .Where(x => x.GetCustomAttribute<ElkTypeAttribute>() != null);
         foreach (var type in types)
         {
+            if (type.BaseType?.GetCustomAttribute<ElkTypeAttribute>() != null)
+                continue;
+
             string typeName = type.GetCustomAttribute<ElkTypeAttribute>()!.Name;
             _runtimeTypes.Add(typeName, type);
         }
