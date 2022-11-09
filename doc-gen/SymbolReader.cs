@@ -61,7 +61,9 @@ public class SymbolReader
                     if (parameterDocs?.types != null)
                         valueInfo = new ValueInfo(parameterDocs.Value.types, description);
                     else if (parameter.ParameterType == typeof(IEnumerable<RuntimeObject>))
-                        valueInfo = new ValueInfo("iterable", description);
+                        valueInfo = new ValueInfo("Iterable", description);
+                    else if (parameter.ParameterType == typeof(IIndexable<RuntimeObject>))
+                        valueInfo = new ValueInfo("Indexable", description);
                     else
                         valueInfo = new ValueInfo(parameter.ParameterType, description);
 
@@ -81,6 +83,7 @@ public class SymbolReader
                 {
                     Example = functionDocs?.Example,
                     Summary = functionDocs?.Summary,
+                    Errors = functionDocs?.Errors ?? new(),
                     Closure = closure,
                 };
                 functionList.Add(function);

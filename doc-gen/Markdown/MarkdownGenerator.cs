@@ -143,12 +143,21 @@ public class MarkdownGenerator
         if (functionInfo.Example != null)
         {
             functionString.AppendLine("\n## Example\n");
-            string lang = functionInfo.Example.Contains("#")
+            string lang = functionInfo.Example.Contains('#')
                 ? "nim"
                 : "rust";
             functionString.AppendLine($"```{lang}");
             functionString.AppendLine(functionInfo.Example);
             functionString.AppendLine("```");
+        }
+
+        // Error
+        if (functionInfo.Errors.Count > 0)
+        {
+            functionString.AppendLine("\n## Errors\n");
+
+            foreach (var error in functionInfo.Errors)
+                functionString.AppendLine($"{error}<br>");
         }
 
         return functionString.ToString();
