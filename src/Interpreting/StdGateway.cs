@@ -117,10 +117,8 @@ static class StdGateway
             return e.InnerException switch
             {
                 RuntimeStdException stdException => new RuntimeError(stdException.Message, position),
-                RuntimeException runtimeException => throw runtimeException,
-                _ => throw new RuntimeException(
-                    "An unknown error occured while calling a function in the standard library"
-                )
+                RuntimeException runtimeException => throw new RuntimeException(runtimeException.Message, position),
+                _ => throw new RuntimeException($"Std: {e.InnerException?.Message}", position),
             };
         }
     }
