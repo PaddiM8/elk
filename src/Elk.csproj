@@ -16,14 +16,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+      <ProjectReference Include="../generators/Elk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
 
   <PropertyGroup>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>

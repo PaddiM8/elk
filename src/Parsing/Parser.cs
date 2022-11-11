@@ -8,6 +8,7 @@ using System.Text;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 #endregion
@@ -109,11 +110,11 @@ internal class Parser
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        if (StdGateway.ContainsModule(moduleName))
+        if (FunctionBindings.HasModule(moduleName))
         {
             foreach (var symbolImportToken in symbolImportTokens)
             {
-                if (!StdGateway.Contains(symbolImportToken.Value, moduleName))
+                if (FunctionBindings.GetFunction(symbolImportToken.Value, moduleName) == null)
                     throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
 
                 _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
@@ -143,7 +144,7 @@ internal class Parser
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        var stdFunctionNames = StdGateway.FindModuleFunctions(moduleName);
+        var stdFunctionNames = FunctionBindings.GetModuleFunctionNames(moduleName);
         if (stdFunctionNames != null)
         {
             foreach (string stdFunctionName in stdFunctionNames)

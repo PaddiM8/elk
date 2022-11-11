@@ -5,6 +5,7 @@ using System.Linq;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 using Newtonsoft.Json;
 

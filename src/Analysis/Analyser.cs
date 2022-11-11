@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Std.Bindings;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -329,7 +330,7 @@ class Analyser
                 );
             }
 
-            if (stdFunction.ClosureParameterCount.HasValue && !hasClosure)
+            if (stdFunction.HasClosure && !hasClosure)
                 throw new RuntimeException("Expected closure.");
         }
 
@@ -397,16 +398,11 @@ class Analyser
 
     private StdFunction? ResolveStdFunction(string name, string? moduleName)
     {
-        bool isStdModule = moduleName != null && StdGateway.ContainsModule(moduleName);
-        if (isStdModule || StdGateway.Contains(name))
-        {
-            if (isStdModule && !StdGateway.Contains(name, moduleName))
+        var function = FunctionBindings.GetFunction(name, moduleName);
+        if (function == null && moduleName != null && FunctionBindings.HasModule(moduleName))
                 throw new RuntimeNotFoundException(name);
 
-            return StdGateway.GetFunction(name, moduleName);
-        }
-
-        return null;
+        return function;
     }
 
     private FunctionSymbol? ResolveFunctionSymbol(string name, string? moduleName)

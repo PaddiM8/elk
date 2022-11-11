@@ -7,6 +7,7 @@ using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.Std.Attributes;
+using Elk.Std.Bindings;
 
 #endregion
 

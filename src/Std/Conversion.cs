@@ -10,6 +10,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std;
 
+[ElkModule("conversion")]
 static class Conversion
 {
     /// <param name="value">Value that should be cast</param>

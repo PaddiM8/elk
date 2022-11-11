@@ -12,6 +12,7 @@ using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
@@ -732,23 +733,90 @@ partial class Interpreter
         StdFunction stdFunction,
         ClosureExpr? closureExpr = null)
     {
-        RuntimeObject RunClosure(IEnumerable<RuntimeObject> args)
-        {
-            var body = closureExpr!.Body;
-            body.Scope.Clear();
-            foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
-                body.Scope.AddVariable(parameter.Value, argument);
-
-            return NextBlock(body, clearScope: false);
-        }
-
-        return StdGateway.Call(
+        /*return StdGateway.Call(
             stdFunction,
             arguments,
             ShellEnvironment,
             _lastExpr?.Position ?? TextPos.Default,
             RunClosure
-        );
+        );*/
+        var allArguments = new List<object?>(arguments.Count + 2);
+
+        if (stdFunction.VariadicStart.HasValue)
+        {
+            var variadicArguments = arguments.GetRange(
+                stdFunction.VariadicStart.Value,
+                arguments.Count
+            );
+            allArguments.Add(variadicArguments);
+            allArguments.AddRange(arguments.GetRange(0, stdFunction.VariadicStart.Value));
+        }
+        else
+        {
+            allArguments.AddRange(arguments);
+        }
+
+        int additionalsIndex = allArguments.Count;
+        foreach (var parameter in stdFunction.Parameters.Reverse())
+        {
+            if (parameter.IsNullable)
+                allArguments.Insert(additionalsIndex, null);
+            else if (parameter.Type == typeof(ShellEnvironment))
+                allArguments.Insert(additionalsIndex, ShellEnvironment);
+            else if (parameter.IsClosure)
+                allArguments.Insert(additionalsIndex, ConstructClosureFunc(parameter.Type, closureExpr!));
+        }
+
+        return stdFunction.Invoke(allArguments);
+    }
+
+    private object ConstructClosureFunc(Type closureFuncType, ClosureExpr closureExpr)
+    {
+        var parameters = closureExpr.Parameters;
+
+        // TODO: Do something about this mess...
+        if (closureFuncType == typeof(Func<RuntimeObject>))
+        {
+            return new Func<RuntimeObject>(() => NextBlock(closureExpr.Body));
+        }
+
+        if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
+        {
+            return new Func<RuntimeObject, RuntimeObject>(
+            a =>
+            {
+                var scope = closureExpr.Body.Scope;
+                scope.Clear();
+                scope.AddVariable(parameters[0].Value, a);
+
+                return NextBlock(closureExpr.Body, clearScope: false);
+            });
+        }
+
+        if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject, RuntimeObject>))
+        {
+            return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
+            (a, b) =>
+            {
+                var scope = closureExpr.Body.Scope;
+                scope.Clear();
+                scope.AddVariable(parameters[0].Value, a);
+                scope.AddVariable(parameters[1].Value, b);
+
+                return NextBlock(closureExpr.Body, clearScope: false);
+            });
+        }
+
+        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
+        args =>
+        {
+            var scope = closureExpr.Body.Scope;
+            scope.Clear();
+            foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
+                scope.AddVariable(parameter.Value, argument);
+
+            return NextBlock(closureExpr.Body, clearScope: false);
+        });
     }
 
     private RuntimeObject EvaluateProgramCall(

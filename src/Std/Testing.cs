@@ -8,6 +8,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std;
 
+[ElkModule("testing")]
 static class Testing
 {
     /// <summary>

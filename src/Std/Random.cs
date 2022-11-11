@@ -12,6 +12,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std;
 
+[ElkModule("random")]
 static class Random
 {
     private static readonly System.Random _rand = new();
