@@ -1063,7 +1063,9 @@ internal class Parser
 
             var next = Peek();
             bool isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
-            bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) && Current!.Value.StartsWith('$');
+            bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
+                            Current!.Value.StartsWith('$') &&
+                            Previous?.Value != "\\";
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
                 (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
             {
