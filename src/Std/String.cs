@@ -104,6 +104,16 @@ static class String
     public static RuntimeString Trim(RuntimeString input)
         => new(input.Value.Trim());
 
+    /// <param name="source"></param>
+    /// <param name="pattern" types="String, Regex"></param>
+    /// <param name="replacement"></param>
+    /// <returns>A new string with all occurrences of the pattern string replaced with the replacement string.</returns>
+    [ElkFunction("replace")]
+    public static RuntimeString Replace(RuntimeString source, RuntimeObject pattern, RuntimeString replacement)
+        => pattern is RuntimeRegex regex
+            ? new(regex.Value.Replace(source.Value, replacement.Value))
+            : new(source.Value.Replace(pattern.As<RuntimeString>().Value, replacement.Value));
+
     /// <param name="input">String to split up into parts</param>
     /// <param name="delimiter">Where to split (default: " ")</param>
     /// <returns>A list of all the different parts as a result of splitting the string.</returns>

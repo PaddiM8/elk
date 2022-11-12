@@ -33,7 +33,7 @@ enum TokenKind
     EqualsGreater,
 
     // Other
-    IntegerLiteral, FloatLiteral, StringLiteral,
+    IntegerLiteral, FloatLiteral, StringLiteral, RegexLiteral,
     NewLine, WhiteSpace,
     Comment,
     Identifier,
