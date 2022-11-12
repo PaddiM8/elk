@@ -1,7 +1,6 @@
 #region
 
 using System;
-using System.Text.RegularExpressions;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -13,9 +12,9 @@ namespace Elk.Std.DataTypes;
 [ElkType("Regex")]
 public class RuntimeRegex : RuntimeObject
 {
-    public Regex Value { get; }
+    public System.Text.RegularExpressions.Regex Value { get; }
 
-    public RuntimeRegex(Regex value)
+    public RuntimeRegex(System.Text.RegularExpressions.Regex value)
     {
         Value = value;
     }
