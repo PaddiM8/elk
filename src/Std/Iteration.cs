@@ -16,42 +16,6 @@ namespace Elk.Std;
 [ElkModule("iter")]
 static class Iteration
 {
-    /// <summary>
-    /// Pushes the given value to the container.
-    /// </summary>
-    /// <param name="container" types="List, Dictionary"></param>
-    /// <param name="value1">List: Value to push<br />Dictionary: Key</param>
-    /// <param name="value2">Dictionary: Value to push</param>
-    /// <returns>The same container.</returns>
-    /// <example>
-    /// list | push(x)
-    /// dict | push("name", "John")
-    /// </example>
-    [ElkFunction("push", Reachability.Everywhere)]
-    public static RuntimeObject Push(
-        RuntimeObject container,
-        RuntimeObject value1,
-        RuntimeObject? value2 = null)
-    {
-        if (container is RuntimeList list)
-        {
-            list.Values.Add(value1);
-        }
-        else if (container is RuntimeDictionary dict)
-        {
-            if (value2 == null)
-                throw new RuntimeWrongNumberOfArgumentsException(3, 2);
-
-            dict.Entries.Add(value1.GetHashCode(), (value1, value2));
-        }
-        else
-        {
-            throw new RuntimeException("Can only use function 'add' on lists and dictionaries");
-        }
-
-        return container;
-    }
-
     /// <returns>Whether or not all the values in the list evaluate to true.</returns>
     [ElkFunction("all")]
     public static RuntimeBoolean All(RuntimeList list)
@@ -62,64 +26,12 @@ static class Iteration
     public static RuntimeBoolean Any(RuntimeList list)
         => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
-    /// <summary>
-    /// Inserts a value at the specified index in a list.
-    /// </summary>
-    /// <param name="list">List to act on</param>
-    /// <param name="index">Index the item should be placed at</param>
-    /// <param name="value">Value to insert</param>
-    /// <returns>The same list.</returns>
-    [ElkFunction("insert", Reachability.Everywhere)]
-    public static RuntimeList Insert(RuntimeList list, RuntimeInteger index, RuntimeObject value)
-    {
-        list.Values.Insert((int)index.Value, value);
-
-        return list;
-    }
-
     /// <param name="list">A list of values that will be stringified</param>
     /// <param name="separator">Character sequence that should be put between each value</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>
     [ElkFunction("join", Reachability.Everywhere)]
     public static RuntimeString Join(RuntimeList list, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", list.Values.Select(x => x.As<RuntimeString>())));
-
-    /// <param name="container" types="Tuple, List, Dictionary"></param>
-    /// <returns>The amount of items in the container.</returns>
-    [ElkFunction("len", Reachability.Everywhere)]
-    public static RuntimeInteger Length(RuntimeObject container)
-        => container switch
-        {
-            RuntimeTuple tuple => new(tuple.Values.Count),
-            RuntimeList list => new(list.Values.Count),
-            RuntimeDictionary dict => new(dict.Entries.Count),
-            _ => new(container.As<RuntimeString>().Value.Length),
-        };
-
-    /// <summary>
-    /// Removes the item at the given index.
-    /// </summary>
-    /// <param name="container" types="List, Dictionary"></param>
-    /// <param name="index">Index of the item to remove</param>
-    /// <returns>The same container.</returns>
-    [ElkFunction("remove", Reachability.Everywhere)]
-    public static RuntimeObject Remove(RuntimeObject container, RuntimeObject index)
-    {
-        if (container is RuntimeList list)
-        {
-            list.Values.RemoveAt((int)index.As<RuntimeInteger>().Value);
-        }
-        else if (container is RuntimeDictionary dict)
-        {
-            dict.Entries.Remove(index.GetHashCode());
-        }
-        else
-        {
-            throw new RuntimeException("Can only use function 'remove' on lists and dictionaries");
-        }
-
-        return container;
-    }
 
     /// <summary>Changes the step size of the given range. The step size determines how much the range value should increase by after each iteration.</summary>
     /// <param name="range">Range to modify</param>
