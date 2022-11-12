@@ -7,7 +7,7 @@
 ## Installation
 
 Installation steps:
-* Install `.NET 6 SDK`
+* Install `.NET 7 SDK`
 * Build the program `./build.sh`
 * Install the program `install -D ./build/elk /usr/bin/elk`
 * Run the program `elk`
