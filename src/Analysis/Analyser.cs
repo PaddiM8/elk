@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Std.Bindings;
-using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -270,7 +269,8 @@ class Analyser
 
     private TypeExpr Visit(TypeExpr expr)
     {
-        if (!LanguageInfo.RuntimeTypes.TryGetValue(expr.Identifier.Value, out var type))
+        var type = StdBindings.GetRuntimeType(expr.Identifier.Value);
+        if (type == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
         var newExpr = new TypeExpr(expr.Identifier)
@@ -398,8 +398,8 @@ class Analyser
 
     private StdFunction? ResolveStdFunction(string name, string? moduleName)
     {
-        var function = FunctionBindings.GetFunction(name, moduleName);
-        if (function == null && moduleName != null && FunctionBindings.HasModule(moduleName))
+        var function = StdBindings.GetFunction(name, moduleName);
+        if (function == null && moduleName != null && StdBindings.HasModule(moduleName))
                 throw new RuntimeNotFoundException(name);
 
         return function;

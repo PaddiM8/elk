@@ -110,11 +110,11 @@ internal class Parser
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        if (FunctionBindings.HasModule(moduleName))
+        if (StdBindings.HasModule(moduleName))
         {
             foreach (var symbolImportToken in symbolImportTokens)
             {
-                if (FunctionBindings.GetFunction(symbolImportToken.Value, moduleName) == null)
+                if (StdBindings.HasFunction(symbolImportToken.Value, moduleName))
                     throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
 
                 _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
@@ -144,7 +144,7 @@ internal class Parser
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        var stdFunctionNames = FunctionBindings.GetModuleFunctionNames(moduleName);
+        var stdFunctionNames = StdBindings.GetModuleFunctionNames(moduleName);
         if (stdFunctionNames != null)
         {
             foreach (string stdFunctionName in stdFunctionNames)
@@ -708,7 +708,7 @@ internal class Parser
                 ? Eat()
                 : new Token(TokenKind.Identifier, ParsePath(), pos);
 
-            if (LanguageInfo.RuntimeTypes.ContainsKey(identifier.Value))
+            if (StdBindings.HasRuntimeType(identifier.Value))
                 return new TypeExpr(identifier);
 
             string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
@@ -946,7 +946,7 @@ internal class Parser
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
 
-        if (LanguageInfo.RuntimeTypes.ContainsKey(identifier.Value))
+        if (StdBindings.HasRuntimeType(identifier.Value))
             return new TypeExpr(identifier);
 
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);

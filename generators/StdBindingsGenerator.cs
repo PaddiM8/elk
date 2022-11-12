@@ -21,7 +21,7 @@ record StdFunctionInfo(
     MethodDeclarationSyntax Syntax);
 
 [Generator]
-public class StdFunctionBindingsGenerator : ISourceGenerator
+public class StdBindingsGenerator : ISourceGenerator
 {
     /// <summary>
     /// In order to debug this in Rider, set this to true,
@@ -29,9 +29,21 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
     /// -> the dotnet compiler one.
     /// </summary>
     private readonly bool _useDebugger = false;
+    private readonly HashSet<string> _typeNames = new();
+    private const string BaseObjectName = "RuntimeObject";
+
+    private readonly Dictionary<string, string> _additionalTypes = new()
+    {
+        { "Iterable", $"IEnumerable<{BaseObjectName}>" },
+        { "Indexable", $"IIndexable<{BaseObjectName}>" },
+    };
+
 
     public void Initialize(GeneratorInitializationContext context)
     {
+        _typeNames.Add(BaseObjectName);
+        foreach (var additionalType in _additionalTypes)
+            _typeNames.Add(additionalType.Value);
     }
 
     public void Execute(GeneratorExecutionContext context)
@@ -50,15 +62,80 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
 
         namespace Elk.Std.Bindings;
 
-        public static partial class FunctionBindings
+        public static partial class StdBindings
         {
+
+        """
+        );
+
+        // Types
+        sourceBuilder.Append(
+            """
+            private static Dictionary<string, Type> _types = new()
+            {
+        """
+        );
+        GenerateTypeEntries(context.Compilation, sourceBuilder);
+        sourceBuilder.AppendLine("\n\t};\n");
+
+        // Functions
+        var modules = new Dictionary<string, List<string>>();
+        sourceBuilder.Append(
+            """
             private static Dictionary<string, StdFunction> _functions = new()
             {
         """
         );
+        GenerateFunctionEntries(context.Compilation, sourceBuilder, modules);
+        sourceBuilder.AppendLine("\n\t};\n");
 
-        var modules = new Dictionary<string, List<string>>();
-        foreach (var function in FindMethods(context.Compilation))
+        // Modules
+        sourceBuilder.Append(
+            """
+            private static Dictionary<string, ImmutableArray<string>> _modules = new()
+            {
+        """
+        );
+        GenerateModuleEntries(sourceBuilder, modules);
+        sourceBuilder.AppendLine("\n\t};");
+
+        // End
+        sourceBuilder.Append("}");
+        context.AddSource("StdBindings", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+    }
+
+    private void GenerateTypeEntries(Compilation compilation, StringBuilder sourceBuilder)
+    {
+        // Iterable, Indexable, etc.
+        foreach (var (key, value) in _additionalTypes)
+            sourceBuilder.Append($"\n\t\t{{ \"{key}\", typeof({value}) }},");
+
+        foreach (var declaredClass in FindClasses(compilation))
+        {
+            var attribute = FindAttribute(declaredClass, "ElkType");
+            if (attribute == null)
+                continue;
+
+            var nameExpr = (LiteralExpressionSyntax)attribute
+                .ArgumentList!
+                .Arguments
+                .First()
+                .Expression;
+            var typeName = nameExpr.Token.ValueText;
+
+            var classType = declaredClass.Identifier.ValueText;
+
+            _typeNames.Add(classType);
+            sourceBuilder.Append($"\n\t\t{{ \"{typeName}\", typeof({classType}) }},");
+        }
+    }
+
+    private void GenerateFunctionEntries(
+        Compilation compilation,
+        StringBuilder sourceBuilder,
+        Dictionary<string, List<string>> modules)
+    {
+        foreach (var function in FindMethods(compilation))
         {
             string fullName = function.ModuleName == null
                 ? function.FunctionName
@@ -138,59 +215,42 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
                     : "";
                 sourceBuilder.Append(
                     isStdType
-                        ? $"((RuntimeObject{nullable})"
+                        ? $"(({BaseObjectName}{nullable})"
                         : $"({typeName})"
                 );
 
                 sourceBuilder.Append($"args[{i}]");
                 if (string.IsNullOrEmpty(nullable))
-                    sourceBuilder.Append("!");
+                    sourceBuilder.Append('!');
 
                 if (isStdType)
                 {
-                    sourceBuilder.Append(")");
+                    sourceBuilder.Append(')');
 
                     // It is not possible to convert a value to RuntimeObject
                     // with As<T>(). Therefore, this method should only be
                     // added if it is not expecting just a RuntimeObject.
-                    if (typeName != "RuntimeObject")
+                    if (typeName != BaseObjectName)
                         sourceBuilder.Append($"{nullable}.As<{typeName.TrimEnd('?')}>()");
                 }
             }
 
-            sourceBuilder.Append(")");
+            sourceBuilder.Append(')');
 
             if (isVoid)
                 sourceBuilder.Append("; return RuntimeNil.Value; }");
 
             sourceBuilder.Append(") },");
         }
+    }
 
-        sourceBuilder.AppendLine();
-        sourceBuilder.Append(
-            """
-            };
-
-            private static Dictionary<string, ImmutableArray<string>> _modules = new()
-            {
-        """
-        );
-
+    private void GenerateModuleEntries(StringBuilder sourceBuilder, Dictionary<string, List<string>> modules)
+    {
         foreach (var module in modules)
         {
             var functionNames = string.Join(", ", module.Value.Select(x => $"\"{x}\""));
             sourceBuilder.Append($"\n\t\t{{ {module.Key}, ImmutableArray.Create(new[] {{ {functionNames} }}) }},");
         }
-
-        sourceBuilder.Append(
-            """
-
-            };
-        }
-        """
-        );
-
-        context.AddSource("FunctionBindings", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
 
     private AttributeSyntax? FindAttribute(SyntaxNode node, string name)
@@ -204,65 +264,47 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
             );
     }
 
-    private IEnumerable<StdModuleInfo> FindClasses(Compilation compilation)
+    private IEnumerable<ClassDeclarationSyntax> FindClasses(Compilation compilation)
     {
-        var treesWithAttributes = compilation
+        return compilation
             .SyntaxTrees
-            .Where(tree =>
+            .SelectMany(tree =>
                 tree
                     .GetRoot()
                     .DescendantNodes()
                     .OfType<ClassDeclarationSyntax>()
-                    .Any(p => p.DescendantNodes().OfType<AttributeSyntax>().Any())
+                    .Where(p => p.DescendantNodes().OfType<AttributeSyntax>().Any())
             );
-        foreach (var tree in treesWithAttributes)
-        {
-            var declaredClasses = tree
-                .GetRoot()
-                .DescendantNodes()
-                .OfType<ClassDeclarationSyntax>()
-                .Where(cd => cd.DescendantNodes().OfType<AttributeSyntax>().Any());
-            foreach (var declaredClass in declaredClasses)
-            {
-                var attribute = FindAttribute(declaredClass, "ElkModule");
-                if (attribute != null)
-                {
-                    var nameExpr = (LiteralExpressionSyntax)attribute
-                        .ArgumentList!
-                        .Arguments
-                        .First()
-                        .Expression;
+    }
 
-                    yield return new StdModuleInfo(nameExpr.Token.ValueText, declaredClass);
-                }
-            }
-        }
+    private IEnumerable<StdModuleInfo> FindModules(Compilation compilation)
+    {
+        return from declaredClass in FindClasses(compilation)
+            let attribute = FindAttribute(declaredClass, "ElkModule")
+            where attribute != null
+            let nameExpr = (LiteralExpressionSyntax)attribute
+                .ArgumentList!
+                .Arguments
+                .First()
+                .Expression
+            select new StdModuleInfo(nameExpr.Token.ValueText, declaredClass);
     }
 
     private IEnumerable<StdFunctionInfo> FindMethods(Compilation compilation)
     {
-        foreach (var module in FindClasses(compilation))
-        {
-            var declaredMethods = module
+        return from module in FindModules(compilation)
+            let declaredMethods = module
                 .Syntax
                 .Members
                 .Where(x => x.IsKind(SyntaxKind.MethodDeclaration))
-                .OfType<MethodDeclarationSyntax>();
-            foreach (var declaredMethod in declaredMethods)
-            {
-                var attribute = FindAttribute(declaredMethod, "ElkFunction");
-                if (attribute == null)
-                    continue;
-
-                var semanticModel = compilation.GetSemanticModel(declaredMethod.SyntaxTree);
-
-                yield return AnalyseMethod(semanticModel, declaredMethod, attribute, module);
-            }
-        }
+                .OfType<MethodDeclarationSyntax>()
+            from declaredMethod in declaredMethods
+            let attribute = FindAttribute(declaredMethod, "ElkFunction")
+            where attribute != null
+            select AnalyseMethod(declaredMethod, attribute, module);
     }
 
     private StdFunctionInfo AnalyseMethod(
-        SemanticModel model,
         MethodDeclarationSyntax methodSyntax,
         AttributeSyntax attribute,
         StdModuleInfo module)
@@ -289,9 +331,7 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
         {
             var type = parameter.Type!;
             string typeName = type.ToString().TrimEnd('?');
-            if (typeName == "RuntimeObject" ||
-                TypeHasAncestor(model.GetTypeInfo(type).Type!, "RuntimeObject") ||
-                typeName is "IEnumerable<RuntimeObject>" or "IIndexable<RuntimeObject>")
+            if (_typeNames.Contains(typeName))
             {
                 bool isVariadic = FindAttribute(parameter, "ElkVariadic") != null;
                 if (isVariadic)
@@ -323,19 +363,5 @@ public class StdFunctionBindingsGenerator : ISourceGenerator
             parameters,
             methodSyntax
         );
-    }
-
-    private bool TypeHasAncestor(ITypeSymbol typeSymbol, string ancestorName)
-    {
-        var baseType = typeSymbol.BaseType;
-        while (baseType?.Name != ancestorName)
-        {
-            if (baseType == null)
-                break;
-
-            baseType = baseType.BaseType;
-        }
-
-        return baseType?.Name == ancestorName;
     }
 }
