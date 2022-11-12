@@ -27,6 +27,9 @@ partial class Interpreter
 
     public bool PrintErrors { get; init; } = true;
 
+    private TextPos Position
+        => _lastExpr?.Position ?? TextPos.Default;
+
     private Scope.Scope _scope = new ModuleScope();
     private readonly ModuleBag _modules = new();
     private readonly Redirector _redirector = new();
@@ -68,7 +71,7 @@ partial class Interpreter
         }
         catch (RuntimeException e)
         {
-            var position = e.Position ?? _lastExpr?.Position ?? TextPos.Default;
+            var position = e.Position ?? Position;
             var error = new RuntimeError(e.Message, position);
 
             if (!PrintErrors)
@@ -109,7 +112,7 @@ partial class Interpreter
     }
 
     private RuntimeError Error(string message)
-        => new(message, _lastExpr?.Position ?? TextPos.Default);
+        => new(message, Position);
 
     public bool FunctionExists(string name)
         => _scope.ModuleScope.ContainsFunction(name);
@@ -733,13 +736,6 @@ partial class Interpreter
         StdFunction stdFunction,
         ClosureExpr? closureExpr = null)
     {
-        /*return StdGateway.Call(
-            stdFunction,
-            arguments,
-            ShellEnvironment,
-            _lastExpr?.Position ?? TextPos.Default,
-            RunClosure
-        );*/
         var allArguments = new List<object?>(arguments.Count + 2);
 
         if (stdFunction.VariadicStart.HasValue)
@@ -767,7 +763,22 @@ partial class Interpreter
                 allArguments.Insert(additionalsIndex, ConstructClosureFunc(parameter.Type, closureExpr!));
         }
 
-        return stdFunction.Invoke(allArguments);
+        try
+        {
+            return stdFunction.Invoke(allArguments);
+        }
+        catch (RuntimeStdException e)
+        {
+            return new RuntimeError(e.Message, Position);
+        }
+        catch (RuntimeException e)
+        {
+            throw new RuntimeException(e.Message, Position);
+        }
+        catch (Exception e)
+        {
+            return new RuntimeError($"Std: {e.Message}", Position);
+        }
     }
 
     private object ConstructClosureFunc(Type closureFuncType, ClosureExpr closureExpr)
