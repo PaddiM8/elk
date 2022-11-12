@@ -32,7 +32,7 @@ public class ValueInfo
     }
 }
 
-public record ParameterInfo(string Name, ValueInfo ValueInfo, bool IsOptional);
+public record ParameterInfo(string Name, ValueInfo ValueInfo, bool IsOptional, bool IsVariadic);
 
 public record ClosureInfo(int ParameterCount);
 

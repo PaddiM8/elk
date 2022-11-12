@@ -67,7 +67,14 @@ public class SymbolReader
                     else
                         valueInfo = new ValueInfo(parameter.ParameterType, description);
 
-                    var parameterInfo = new ParameterInfo(parameter.Name!, valueInfo, parameter.HasDefaultValue);
+                    bool isVariadic = parameter.GetCustomAttribute<ElkVariadicAttribute>() != null;
+                    var parameterInfo = new ParameterInfo(
+                        parameter.Name!,
+                        valueInfo,
+                        parameter.HasDefaultValue,
+                        isVariadic
+                    );
+
                     parameters.Add(parameterInfo);
                 }
 

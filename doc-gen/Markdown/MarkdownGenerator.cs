@@ -67,7 +67,7 @@ public class MarkdownGenerator
         {
             if (signatureWithoutOptionals == null && parameter.IsOptional)
             {
-                signatureWithoutOptionals = titleString.ToString()[3..]
+                signatureWithoutOptionals = titleString.ToString()
                     .RemoveTrailing(", ") + "\\)";
             }
 
@@ -76,13 +76,15 @@ public class MarkdownGenerator
             var typeName = parameter.ValueInfo.TypeName;
             if (typeName != null && typeName != "*" && parameter.ValueInfo.HasStaticType)
                 titleString.Append($": {typeName}");
+            if (parameter.IsVariadic)
+                titleString.Append("...");
 
             titleString.Append(", ");
         }
 
         if (signatureWithoutOptionals != null)
         {
-            titleString.Insert(3, $"{signatureWithoutOptionals}<br>");
+            titleString.Insert(0, $"{signatureWithoutOptionals}<br>");
         }
 
         // Remove the trailing comma
@@ -100,11 +102,19 @@ public class MarkdownGenerator
 
         // Parameter table
         var table = new MarkdownTable("Parameter", "Type", "Description");
-        foreach (var (name, valueInfo, isOptional) in parameters)
+        foreach (var (name, valueInfo, isOptional, isVariadic) in parameters)
         {
+            string firstColumn = isOptional ? $"(optional) {name}" : name;
+            string typeName = valueInfo.TypeName ?? "*";
+            if (isVariadic)
+            {
+                firstColumn = $"(variadic) {name}";
+                typeName = "*";
+            }
+
             table.AddRow(
-                isOptional ? $"(optional) {name}" : name,
-                valueInfo.TypeName ?? "*",
+                firstColumn,
+                typeName,
                 valueInfo.Description ?? ""
             );
         }
