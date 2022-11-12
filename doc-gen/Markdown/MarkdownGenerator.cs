@@ -16,7 +16,7 @@ public class MarkdownGenerator
 
         Directory.CreateDirectory(dir);
 
-        var modules = new List<ModuleInfo>()
+        var modules = new List<ModuleInfo>
         {
             new("built-in", "Built-in", stdInfo.GlobalFunctions),
         };

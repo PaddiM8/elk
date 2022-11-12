@@ -12,6 +12,7 @@ public enum Reachability
     Everywhere,
 }
 
+[AttributeUsage(AttributeTargets.Method)]
 public class ElkFunctionAttribute : Attribute
 {
     public string Name { get; }

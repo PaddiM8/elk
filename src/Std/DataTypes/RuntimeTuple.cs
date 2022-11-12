@@ -54,13 +54,13 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeTuple)
+            _ when toType == typeof(RuntimeTuple)
                 => this,
-            var type when type == typeof(RuntimeList)
+            _ when toType == typeof(RuntimeList)
                 => new RuntimeList(Values),
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),

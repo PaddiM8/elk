@@ -22,13 +22,13 @@ public class RuntimeInteger : RuntimeObject
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeInteger)
+            _ when toType == typeof(RuntimeInteger)
                 => this,
-            var type when type == typeof(RuntimeFloat)
+            _ when toType == typeof(RuntimeFloat)
                 => new RuntimeFloat(Value),
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(Value.ToString()),
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value != 0),
             _
                 => throw new RuntimeCastException<RuntimeInteger>(toType),

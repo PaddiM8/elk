@@ -161,7 +161,7 @@ partial class Interpreter
         );
     }
 
-    private void EmptyRedirector(List<RuntimeObject> arguments)
+    private void EmptyRedirector(IList<RuntimeObject> arguments)
     {
         if (_redirector.Status == RedirectorStatus.HasData)
         {

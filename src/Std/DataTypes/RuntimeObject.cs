@@ -9,9 +9,6 @@ namespace Elk.Std.DataTypes;
 
 public abstract class RuntimeObject : IComparable<RuntimeObject>
 {
-    public string GetTypeName
-        => GetType().ToString()[7..];
-
     public abstract RuntimeObject As(Type toType);
 
     public T As<T>()

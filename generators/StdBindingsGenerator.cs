@@ -28,6 +28,7 @@ public class StdBindingsGenerator : ISourceGenerator
     /// rebuild the project, click Run -> Attach Process...
     /// -> the dotnet compiler one.
     /// </summary>
+    // ReSharper disable once ConvertToConstant.Local
     private readonly bool _useDebugger = false;
     private readonly HashSet<string> _typeNames = new();
     private const string BaseObjectName = "RuntimeObject";
@@ -133,7 +134,7 @@ public class StdBindingsGenerator : ISourceGenerator
     private void GenerateFunctionEntries(
         Compilation compilation,
         StringBuilder sourceBuilder,
-        Dictionary<string, List<string>> modules)
+        IDictionary<string, List<string>> modules)
     {
         foreach (var function in FindMethods(compilation))
         {

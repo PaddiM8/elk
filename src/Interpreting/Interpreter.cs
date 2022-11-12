@@ -108,8 +108,8 @@ partial class Interpreter
         }
     }
 
-    public RuntimeError Error(string message)
-        => new RuntimeError(message, _lastExpr?.Position ?? TextPos.Default);
+    private RuntimeError Error(string message)
+        => new(message, _lastExpr?.Position ?? TextPos.Default);
 
     public bool FunctionExists(string name)
         => _scope.ModuleScope.ContainsFunction(name);
@@ -181,7 +181,7 @@ partial class Interpreter
         return RuntimeNil.Value;
     }
 
-    private void SetVariables(List<Token> identifiers, RuntimeObject value, Scope.Scope? scope = null)
+    private void SetVariables(IReadOnlyCollection<Token> identifiers, RuntimeObject value, Scope.Scope? scope = null)
     {
         if (identifiers.Count > 1)
         {
@@ -653,7 +653,7 @@ partial class Interpreter
     }
 
     private RuntimeObject EvaluateFunctionCall(
-        List<RuntimeObject> arguments,
+        IReadOnlyCollection<RuntimeObject> arguments,
         FunctionExpr function,
         bool isRoot,
         ClosureExpr? closureExpr = null)
@@ -880,7 +880,7 @@ partial class Interpreter
                 RedirectStandardOutput = stealOutput,
                 RedirectStandardError = stealOutput,
                 RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
-                WorkingDirectory = ShellEnvironment.WorkingDirectory
+                WorkingDirectory = ShellEnvironment.WorkingDirectory,
             },
         };
 

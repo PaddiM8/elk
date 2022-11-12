@@ -61,11 +61,11 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeList)
+            _ when toType == typeof(RuntimeList)
                 => this,
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),

@@ -49,6 +49,6 @@ internal class StringInterpolationParserTests
         Assert.AreEqual(InterpolationPartKind.Expression, parts[1].Kind);
     }
 
-    private Token StringToken(string value)
+    private static Token StringToken(string value)
         => new(TokenKind.StringLiteral, value, TextPos.Default);
 }

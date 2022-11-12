@@ -14,7 +14,7 @@ public class IntegrationTests
     [TestCaseSource(nameof(ElkFiles))]
     public void RunIntegrationTests(string filePath)
     {
-        var interpreter = new Interpreter()
+        var interpreter = new Interpreter
         {
             PrintErrors = false,
         };

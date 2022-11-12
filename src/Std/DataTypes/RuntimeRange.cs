@@ -37,13 +37,13 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeRange)
+            _ when toType == typeof(RuntimeRange)
                 => this,
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
-            var type when type == typeof(RuntimeList)
+            _ when toType == typeof(RuntimeList)
                 => new RuntimeList(AsEnumerable()),
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeInteger>(toType),

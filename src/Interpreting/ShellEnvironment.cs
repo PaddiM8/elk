@@ -9,7 +9,7 @@ namespace Elk.Interpreting;
 
 class ShellEnvironment
 {
-    public string WorkingDirectory
+    public static string WorkingDirectory
     {
         get
         {

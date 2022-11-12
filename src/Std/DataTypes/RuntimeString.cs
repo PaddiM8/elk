@@ -53,13 +53,13 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => this,
-            var type when type == typeof(RuntimeInteger) && int.TryParse(Value, out int number)
+            _ when toType == typeof(RuntimeInteger) && int.TryParse(Value, out int number)
                 => new RuntimeInteger(number),
-            var type when type == typeof(RuntimeFloat) && double.TryParse(Value, out double number)
+            _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out double number)
                 => new RuntimeFloat(number),
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value.Length != 0),
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
@@ -68,7 +68,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
     public override RuntimeObject Operation(OperationKind kind)
         => kind switch
         {
-            OperationKind.Subtraction => ((RuntimeObject)this).As<RuntimeFloat>().Operation(kind),
+            OperationKind.Subtraction => As<RuntimeFloat>().Operation(kind),
             OperationKind.Not => RuntimeBoolean.From(Value.Length == 0),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };

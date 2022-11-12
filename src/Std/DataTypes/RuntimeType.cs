@@ -26,11 +26,11 @@ public class RuntimeType : RuntimeObject
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeType)
+            _ when toType == typeof(RuntimeType)
                 => this,
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),

@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
@@ -37,7 +38,7 @@ public class Path
     public static RuntimeList All()
     {
         if (!File.Exists(CommonPaths.PathFile))
-            return new(new RuntimeObject[] {});
+            return new(Array.Empty<RuntimeObject>());
 
         var lines = File.ReadAllLines(CommonPaths.PathFile)
             .Select(x => new RuntimeString(x));

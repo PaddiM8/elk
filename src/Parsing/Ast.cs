@@ -2,7 +2,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Std.Bindings;
@@ -226,7 +225,7 @@ class TypeExpr : Expr
 {
     public Token Identifier { get; }
 
-    public RuntimeType? RuntimeValue { get; set;  }
+    public RuntimeType? RuntimeValue { get; init; }
 
     public TypeExpr(Token identifier)
         : base(identifier.Position)
@@ -419,7 +418,7 @@ class LiteralExpr : Expr
 {
     public Token Value { get; }
 
-    public RuntimeObject? RuntimeValue { get; set; }
+    public RuntimeObject? RuntimeValue { get; init; }
 
     public LiteralExpr(Token value)
         : base(value.Position)

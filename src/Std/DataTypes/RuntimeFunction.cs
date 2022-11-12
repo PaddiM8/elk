@@ -1,8 +1,6 @@
 #region
 
 using System;
-using System.Reflection;
-using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Parsing;
@@ -19,11 +17,11 @@ public abstract class RuntimeFunction : RuntimeObject
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeFunction)
+            _ when toType == typeof(RuntimeFunction)
                 => this,
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString() ?? "Function"),
             _
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),

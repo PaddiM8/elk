@@ -45,7 +45,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         string fullPath = Path.Combine(_shell.WorkingDirectory, path);
 
         if (!Directory.Exists(fullPath))
-            return new string[] {};
+            return Array.Empty<string>();
 
         return Directory.GetFileSystemEntries(fullPath)
             .Select(Path.GetFileName)
@@ -54,7 +54,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .ToArray();
     }
 
-    private string FormatSuggestion(string suggestion, string preceding)
+    private static string FormatSuggestion(string suggestion, string preceding)
     {
         string escaped = new Regex("[{}()|$ ]").Replace(suggestion, m => $"\\{m.Value}");
 

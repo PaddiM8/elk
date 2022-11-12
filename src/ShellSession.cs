@@ -16,17 +16,15 @@ namespace Elk;
 
 public class ShellSession
 {
-    public string WorkingDirectory => _interpreter.ShellEnvironment.WorkingDirectory;
-
-    public string WorkingDirectoryUnexpanded
+    public static string WorkingDirectoryUnexpanded
     {
         get
         {
             string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             
-            return WorkingDirectory.StartsWith(homePath)
-                ? "~" + WorkingDirectory[homePath.Length..]
-                : WorkingDirectory;
+            return ShellEnvironment.WorkingDirectory.StartsWith(homePath)
+                ? "~" + ShellEnvironment.WorkingDirectory[homePath.Length..]
+                : ShellEnvironment.WorkingDirectory;
         }
     }
 

@@ -25,9 +25,9 @@ public class RuntimeBoolean : RuntimeObject
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => this,
-            var type when type == typeof(RuntimeString)
+            _ when toType == typeof(RuntimeString)
                 => new RuntimeString(IsTrue.ToString()),
             _
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),

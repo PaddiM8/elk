@@ -6,6 +6,7 @@ using System;
 
 namespace Elk.Std.Attributes;
 
+[AttributeUsage(AttributeTargets.Class)]
 public class ElkModuleAttribute : Attribute
 {
     public string Name { get; }

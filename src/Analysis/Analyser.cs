@@ -16,7 +16,7 @@ class Analyser
     private ModuleBag _modules = new();
     private Expr? _lastExpr;
 
-    public static List<Expr> Analyse(List<Expr> ast, ModuleBag modules, ModuleScope scope)
+    public static List<Expr> Analyse(IEnumerable<Expr> ast, ModuleBag modules, ModuleScope scope)
     {
         var analyser = new Analyser
         {
@@ -241,7 +241,7 @@ class Analyser
         {
             ClosureExpr closureExpr => Visit(closureExpr, calledFromPipe),
             CallExpr callExpr => Visit(callExpr, calledFromPipe, hasClosure),
-            _ => throw new RuntimeException("Expected a function call to the right of pipe.")
+            _ => throw new RuntimeException("Expected a function call to the right of pipe."),
         };
     }
 

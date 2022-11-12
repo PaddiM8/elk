@@ -26,7 +26,7 @@ internal class ParserTests
     [Test]
     public void TestBinary()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.IntegerLiteral, "2"),
             Token(TokenKind.Plus, "+"),
@@ -46,7 +46,7 @@ internal class ParserTests
     [Test]
     public void TestUnary()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.Minus, "-"),
             Token(TokenKind.IntegerLiteral, "2"),
@@ -59,7 +59,7 @@ internal class ParserTests
     [Test]
     public void TestVariable()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.Identifier, "var"),
         };
@@ -72,7 +72,7 @@ internal class ParserTests
     [Test]
     public void TestBashStyleCall()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.OpenParenthesis, "("),
             Token(TokenKind.Identifier, "echo"),
@@ -100,7 +100,7 @@ internal class ParserTests
     [Test]
     public void TestParenthesizedCall()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.Identifier, "echo"),
             Token(TokenKind.OpenParenthesis, "("),
@@ -120,7 +120,7 @@ internal class ParserTests
     [Test]
     public void TestIf()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.If, "if"),
             Token(TokenKind.True, "true"),
@@ -141,7 +141,7 @@ internal class ParserTests
     [Test]
     public void TestFunction()
     {
-        var tokens = new List<Token>()
+        var tokens = new List<Token>
         {
             Token(TokenKind.Fn, "fn"),
             Token(TokenKind.Identifier, "main"),

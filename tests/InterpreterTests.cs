@@ -37,7 +37,7 @@ internal class InterpreterTests
             op,
             Literal(right)
         );
-        var result = new Interpreter().Interpret(new List<Expr>() { ast });
+        var result = new Interpreter().Interpret(new List<Expr> { ast });
         Assert.AreEqual(RuntimeValue(expectedResult).GetType(), result.GetType());
         Assert.True(SameResult(expectedResult, result));
     }
@@ -49,7 +49,7 @@ internal class InterpreterTests
             TokenKind.Minus,
             Literal(2)
         );
-        var result = new Interpreter().Interpret(new List<Expr>() { ast });
+        var result = new Interpreter().Interpret(new List<Expr> { ast });
         Assert.True(SameResult(-2, result));
     }
 
@@ -73,7 +73,7 @@ internal class InterpreterTests
             .Operation(OperationKind.EqualsEquals, gotResult))
             .IsTrue;
 
-    private RuntimeObject RuntimeValue(object value)
+    private static RuntimeObject RuntimeValue(object value)
         => value switch
         {
             true => RuntimeBoolean.True,

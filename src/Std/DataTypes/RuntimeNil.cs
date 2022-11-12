@@ -17,7 +17,7 @@ public class RuntimeNil : RuntimeObject
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
             _
                 => throw new RuntimeCastException<RuntimeNil>(toType),

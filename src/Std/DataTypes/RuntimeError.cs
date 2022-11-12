@@ -15,39 +15,34 @@ public class RuntimeError : RuntimeObject
 {
     public string Value { get; }
 
-    internal TextPos? Position { get; }
-
-    public RuntimeError(string value)
-    {
-        Value = value;
-    }
+    private readonly TextPos? _position;
 
     internal RuntimeError(string value, TextPos position)
     {
         Value = value;
-        Position = position;
+        _position = position;
     }
 
     public override RuntimeObject As(Type toType)
         => toType switch
         {
-            var type when type == typeof(RuntimeError)
+            _ when toType == typeof(RuntimeError)
                 => this,
-            var type when type == typeof(RuntimeBoolean)
+            _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
             _
                 => throw new RuntimeUserException(Value),
         };
 
     public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeException(Value, Position);
+        => throw new RuntimeException(Value, _position);
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeException(Value, Position);
+        => throw new RuntimeException(Value, _position);
 
     public override int GetHashCode()
         => Value.GetHashCode();
 
     public override string ToString()
-        => $"{Position} {Value}";
+        => $"{_position} {Value}";
 }
