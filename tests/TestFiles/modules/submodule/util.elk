@@ -5,3 +5,4 @@ fn increment(x): someLocalFunction(addition(x, 1))
 fn someLocalFunction(x): x
 
 assert(main::hello() == "hello")
+assert(main::internal::hello2() == "hello2")

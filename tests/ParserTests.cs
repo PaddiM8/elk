@@ -14,14 +14,16 @@ namespace Elk.Tests;
 
 internal class ParserTests
 {
-    private static ModuleBag _modules = new();
+    private static RootModuleScope _scope = new(null);
 
     [SetUp]
     public void SetUp()
     {
-        _modules = new ModuleBag();
-        _modules.TryAdd("main", new ModuleScope());
+        _scope = new RootModuleScope(null);
     }
+
+    private List<Expr> Parse(List<Token> tokens)
+        => Parser.Parse(tokens, _scope);
 
     [Test]
     public void TestBinary()
@@ -38,7 +40,7 @@ internal class ParserTests
             Token(TokenKind.Minus, "/"),
             Token(TokenKind.IntegerLiteral, "13"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         Assert.AreEqual("7", ast[0].Left.Right.Right.Value.Value);
         Assert.AreEqual("13", ast[0].Right.Right.Value.Value);
     }
@@ -51,7 +53,7 @@ internal class ParserTests
             Token(TokenKind.Minus, "-"),
             Token(TokenKind.IntegerLiteral, "2"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         Assert.AreEqual(OperationKind.Subtraction, ast[0].Operator);
         Assert.AreEqual("2", ast[0].Value.Value.Value);
     }
@@ -63,8 +65,8 @@ internal class ParserTests
         {
             Token(TokenKind.Identifier, "var"),
         };
-        _modules.Find("main")!.AddVariable("var", RuntimeNil.Value);
-        dynamic ast = Parser.Parse(tokens, _modules, "", _modules.Find("main"));
+        _scope.AddVariable("var", RuntimeNil.Value);
+        dynamic ast = Parse(tokens);
         Assert.IsInstanceOf<VariableExpr>(ast[0]);
         Assert.AreEqual("var", ast[0].Identifier.Value);
     }
@@ -84,7 +86,7 @@ internal class ParserTests
             Token(TokenKind.Plus, "+"),
             Token(TokenKind.Identifier, "world"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         dynamic left = ast[0].Left;
         Assert.IsInstanceOf<CallExpr>(left);
         Assert.AreEqual("echo", left.Identifier.Value);
@@ -109,7 +111,7 @@ internal class ParserTests
             Token(TokenKind.StringLiteral, "world"),
             Token(TokenKind.ClosedParenthesis, ")"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         Assert.IsInstanceOf<CallExpr>(ast[0]);
         Assert.AreEqual("echo", ast[0].Identifier.Value);
         Assert.AreEqual(2, ast[0].Arguments.Count);
@@ -131,7 +133,7 @@ internal class ParserTests
             Token(TokenKind.IntegerLiteral, "3"),
             Token(TokenKind.ClosedBrace, "}"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         Assert.IsInstanceOf<IfExpr>(ast[0]);
         Assert.AreEqual("true", ast[0].Condition.Value.Value);
         Assert.AreEqual("2", ast[0].ThenBranch.Expressions[0].Value.Value);
@@ -153,7 +155,7 @@ internal class ParserTests
             Token(TokenKind.Colon, ":"),
             Token(TokenKind.IntegerLiteral, "2"),
         };
-        dynamic ast = Parser.Parse(tokens, _modules, "");
+        dynamic ast = Parse(tokens);
         Assert.IsInstanceOf<FunctionExpr>(ast[0]);
         Assert.AreEqual("main", ast[0].Identifier.Value);
         Assert.AreEqual(2, ast[0].Parameters.Count);

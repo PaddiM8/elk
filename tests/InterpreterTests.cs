@@ -37,7 +37,7 @@ internal class InterpreterTests
             op,
             Literal(right)
         );
-        var result = new Interpreter().Interpret(new List<Expr> { ast });
+        var result = new Interpreter(null).Interpret(new List<Expr> { ast });
         Assert.AreEqual(RuntimeValue(expectedResult).GetType(), result.GetType());
         Assert.True(SameResult(expectedResult, result));
     }
@@ -49,7 +49,7 @@ internal class InterpreterTests
             TokenKind.Minus,
             Literal(2)
         );
-        var result = new Interpreter().Interpret(new List<Expr> { ast });
+        var result = new Interpreter(null).Interpret(new List<Expr> { ast });
         Assert.True(SameResult(-2, result));
     }
 
@@ -61,10 +61,10 @@ internal class InterpreterTests
             Let("x", Literal(2)),
             Var("x"),
         };
-        var scope = new ModuleScope();
+        var scope = new RootModuleScope(null);
         scope.AddVariable("x", RuntimeNil.Value);
 
-        var result = new Interpreter().Interpret(ast, scope);
+        var result = new Interpreter(null).Interpret(ast, scope);
         Assert.True(SameResult(2, result));
     }
 

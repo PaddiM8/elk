@@ -17,6 +17,7 @@ enum StructureKind
     Other,
     Loop,
     Function,
+    Module,
 }
 
 public enum OperationKind
@@ -80,15 +81,12 @@ class FunctionExpr : Expr
 
     public bool HasClosure { get; }
 
-    public bool IsAnalysed { get; }
-
     public FunctionExpr(
         Token identifier,
         List<Parameter> parameters,
         BlockExpr block,
         ModuleScope module,
-        bool hasClosure,
-        bool isAnalysed)
+        bool hasClosure)
         : base(identifier.Position)
     {
         Identifier = identifier;
@@ -96,7 +94,6 @@ class FunctionExpr : Expr
         Block = block;
         Module = module;
         HasClosure = hasClosure;
-        IsAnalysed = isAnalysed;
     }
 }
 
@@ -209,15 +206,12 @@ class VariableExpr : Expr
 {
     public Token Identifier { get; }
 
-    public Token? ModuleName { get; }
-
     public VariableSymbol? VariableSymbol { get; set; }
 
-    public VariableExpr(Token identifier, Token? moduleName = null)
+    public VariableExpr(Token identifier)
         : base(identifier.Position)
     {
         Identifier = identifier;
-        ModuleName = moduleName;
     }
 }
 
@@ -260,11 +254,27 @@ enum CallType
     BuiltInError,
 }
 
+class ModuleExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public BlockExpr Body { get; }
+
+    public ModuleExpr(Token identifier, BlockExpr body)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Body = body;
+    }
+}
+
 class CallExpr : Expr
 {
     public Token Identifier { get; }
 
-    public List<Expr> Arguments { get; }
+    public IList<Token> ModulePath { get; }
+
+    public IList<Expr> Arguments { get; }
 
     public CallStyle CallStyle { get; }
 
@@ -272,27 +282,25 @@ class CallExpr : Expr
 
     public CallType CallType { get; }
 
-    public Token? ModuleName { get; }
-
     public FunctionSymbol? FunctionSymbol { get; init; }
 
     public StdFunction? StdFunction { get; init; }
 
     public CallExpr(
         Token identifier,
-        List<Expr> arguments,
+        IList<Token> modulePath,
+        IList<Expr> arguments,
         CallStyle callStyle,
         Plurality plurality,
-        CallType callType,
-        Token? moduleName = null)
+        CallType callType)
         : base(identifier.Position)
     {
         Identifier = identifier;
+        ModulePath = modulePath;
         Arguments = arguments;
         CallStyle = callStyle;
         Plurality = plurality;
         CallType = callType;
-        ModuleName = moduleName;
     }
 }
 
@@ -300,15 +308,15 @@ class FunctionReferenceExpr : Expr
 {
     public Token Identifier { get; }
 
-    public Token? ModuleName { get; }
+    public IList<Token> ModulePath { get; }
 
     public RuntimeFunction? RuntimeFunction { get; init; }
 
-    public FunctionReferenceExpr(Token identifier, Token? moduleName)
+    public FunctionReferenceExpr(Token identifier, IList<Token> modulePath)
         : base(identifier.Position)
     {
         Identifier = identifier;
-        ModuleName = moduleName;
+        ModulePath = modulePath;
     }
 }
 

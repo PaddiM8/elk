@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Scope;
 
 abstract class Scope
 {
-    public ModuleScope ModuleScope { get; }
+    public ModuleScope ModuleScope { get; init; }
 
     public Scope? Parent { get; }
 

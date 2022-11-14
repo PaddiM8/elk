@@ -1,3 +1,7 @@
 fn addition(x, y): x + y
 fn subtraction(x, y): x - y
 fn multiplication(x, y): x * y
+
+module sub {
+    fn division(x, y): x / y
+}

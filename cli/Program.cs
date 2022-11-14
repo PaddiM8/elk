@@ -15,6 +15,6 @@ Parser.Default.ParseArguments<CliOptions>(args)
         }
         else
         {
-            new ShellSession().RunFile(options.FilePath, options.Arguments);
+            ShellSession.RunFile(options.FilePath, options.Arguments);
         }
     });

@@ -14,12 +14,12 @@ public class IntegrationTests
     [TestCaseSource(nameof(ElkFiles))]
     public void RunIntegrationTests(string filePath)
     {
-        var interpreter = new Interpreter
+        var interpreter = new Interpreter(filePath)
         {
             PrintErrors = false,
         };
 
-        Assert.DoesNotThrow(() => interpreter.Interpret(File.ReadAllText(filePath), filePath));
+        Assert.DoesNotThrow(() => interpreter.Interpret(File.ReadAllText(filePath)));
     }
 
     public static IEnumerable<string> ElkFiles()

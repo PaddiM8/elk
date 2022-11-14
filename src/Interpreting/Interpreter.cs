@@ -30,16 +30,18 @@ partial class Interpreter
     private TextPos Position
         => _lastExpr?.Position ?? TextPos.Default;
 
-    private Scope.Scope _scope = new ModuleScope();
-    private readonly ModuleBag _modules = new();
+    private Scope.Scope _scope;
+    private readonly RootModuleScope _rootModule;
     private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
     private ClosureExpr? _currentClosureExpr;
 
-    public Interpreter()
+    public Interpreter(string? filePath)
     {
         ShellEnvironment = new ShellEnvironment();
+        _rootModule = new(filePath);
+        _scope = _rootModule;
     }
 
     public RuntimeObject Interpret(List<Expr> ast, ModuleScope? scope = null)
@@ -50,7 +52,7 @@ partial class Interpreter
         List<Expr> analysedAst;
         try
         {
-            analysedAst = Analyser.Analyse(ast, _modules, _scope.ModuleScope);
+            analysedAst = Analyser.Analyse(ast, _scope.ModuleScope);
         }
         catch (AggregateException e)
         {
@@ -86,15 +88,12 @@ partial class Interpreter
         return lastResult;
     }
 
-    public RuntimeObject Interpret(string input, string? filePath)
+    public RuntimeObject Interpret(string input)
     {
         try
         {
-            string path = filePath ?? ShellEnvironment.WorkingDirectory;
             var ast = Parser.Parse(
-                Lexer.Lex(input, filePath),
-                _modules,
-                path,
+                Lexer.Lex(input, _rootModule.FilePath),
                 _scope
             );
 
@@ -115,7 +114,7 @@ partial class Interpreter
         => new(message, Position);
 
     public bool FunctionExists(string name)
-        => _scope.ModuleScope.ContainsFunction(name);
+        => _scope.ModuleScope.HasFunction(name);
 
     public bool VariableExists(string name)
         => _scope.ModuleScope.ContainsVariable(name);
@@ -132,6 +131,7 @@ partial class Interpreter
 
         return expr switch
         {
+            ModuleExpr => RuntimeNil.Value,
             FunctionExpr => RuntimeNil.Value,
             LetExpr e => Visit(e),
             KeywordExpr e => Visit(e),
@@ -635,7 +635,7 @@ partial class Interpreter
                 CallType.BuiltInClosure => EvaluateBuiltInClosure(arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 CallType.BuiltInError => EvaluateBuiltInError(arguments),
-                _ => throw new NotSupportedException(),
+                _ => throw new NotSupportedException(expr.CallType.ToString()),
             };
         }
 

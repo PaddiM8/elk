@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Elk.Std.Bindings;
@@ -13,26 +14,22 @@ namespace Elk.Analysis;
 
 class Analyser
 {
-    private static Scope _scope = new ModuleScope();
-    private ModuleBag _modules = new();
+    private Scope _scope;
     private Expr? _lastExpr;
 
-    public static List<Expr> Analyse(IEnumerable<Expr> ast, ModuleBag modules, ModuleScope scope)
+    private Analyser(RootModuleScope rootModule)
     {
-        var analyser = new Analyser
-        {
-            _modules = modules,
-        };
+        _scope = rootModule;
+    }
+
+    public static List<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module)
+    {
+        var analyser = new Analyser(module.RootModule);
 
         try
         {
-            foreach (var functionSymbol in modules.SelectMany(x => x.Functions).Where(x => !x.Expr.IsAnalysed))
-            {
-                _scope = functionSymbol.Expr.Module;
-                analyser.Next(functionSymbol.Expr);
-            }
-
-            _scope = scope;
+            analyser.AnalyseModule(module);
+            analyser._scope = module;
 
             return ast
                 .Where(expr => expr is not FunctionExpr)
@@ -56,12 +53,31 @@ class Analyser
         }
     }
 
+    private void AnalyseModule(ModuleScope module)
+    {
+        module.IsAnalysed = true;
+
+        foreach (var functionSymbol in module.Functions
+                     .Concat(module.ImportedFunctions))
+        {
+            _scope = functionSymbol.Expr.Module;
+            Next(functionSymbol.Expr);
+        }
+
+        foreach (var submodule in module.Modules
+                     .Concat(module.ImportedModules)
+                     .Where(x => !x.IsAnalysed))
+            AnalyseModule(submodule);
+    }
+
     private Expr Next(Expr expr)
     {
         _lastExpr = expr;
 
         switch (expr)
         {
+            case ModuleExpr e:
+                return new ModuleExpr(e.Identifier, (BlockExpr)Next(e.Body));
             case FunctionExpr e:
                 foreach (var parameter in e.Parameters)
                 {
@@ -76,8 +92,7 @@ class Analyser
                     e.Parameters,
                     (BlockExpr)Next(e.Block),
                     e.Module,
-                    e.HasClosure,
-                    isAnalysed: true
+                    e.HasClosure
                 )
                 {
                     IsRoot = e.IsRoot,
@@ -208,7 +223,7 @@ class Analyser
                     IsRoot = e.IsRoot,
                 };
             case VariableExpr e:
-                var variableExpr = new VariableExpr(e.Identifier, e.ModuleName)
+                var variableExpr = new VariableExpr(e.Identifier)
                 {
                     IsRoot = e.IsRoot,
                 };
@@ -287,7 +302,6 @@ class Analyser
     private CallExpr Visit(CallExpr expr, bool calledFromPipe = false, bool hasClosure = false)
     {
         string name = expr.Identifier.Value;
-        string? moduleName = expr.ModuleName?.Value;
         CallType? builtIn = name switch
         {
             "cd" => CallType.BuiltInCd,
@@ -299,10 +313,10 @@ class Analyser
             _ => null,
         };
         var stdFunction = !builtIn.HasValue
-            ? ResolveStdFunction(name, moduleName)
+            ? ResolveStdFunction(name, expr.ModulePath)
             : null;
         var functionSymbol = stdFunction == null
-            ? ResolveFunctionSymbol(name, moduleName)
+            ? ResolveFunctionSymbol(name, expr.ModulePath)
             : null;
         var callType = builtIn switch
         {
@@ -338,11 +352,11 @@ class Analyser
 
         var newExpr = new CallExpr(
             expr.Identifier,
+            expr.ModulePath,
             expr.Arguments.Select(Next).ToList(),
             expr.CallStyle,
             expr.Plurality,
-            callType,
-            expr.ModuleName
+            callType
         )
         {
             IsRoot = expr.IsRoot,
@@ -356,18 +370,17 @@ class Analyser
     private Expr Visit(FunctionReferenceExpr expr)
     {
         string name = expr.Identifier.Value;
-        string? moduleName = expr.ModuleName?.Value;
         RuntimeFunction? runtimeFunction = null;
 
         // Try to resolve as std function
-        var stdFunction = ResolveStdFunction(name, moduleName);
+        var stdFunction = ResolveStdFunction(name, expr.ModulePath);
         if (stdFunction != null)
             runtimeFunction = new RuntimeStdFunction(stdFunction);
 
         // Try to resolve as regular function
         if (runtimeFunction == null)
         {
-            var functionSymbol = ResolveFunctionSymbol(name, moduleName);
+            var functionSymbol = ResolveFunctionSymbol(name, expr.ModulePath);
             if (functionSymbol != null)
                 runtimeFunction = new RuntimeSymbolFunction(functionSymbol);
         }
@@ -375,7 +388,7 @@ class Analyser
         // Fallback: resolve as program
         runtimeFunction ??= new RuntimeProgramFunction(expr.Identifier.Value);
 
-        return new FunctionReferenceExpr(expr.Identifier, expr.ModuleName)
+        return new FunctionReferenceExpr(expr.Identifier, expr.ModulePath)
         {
             RuntimeFunction = runtimeFunction,
             IsRoot = expr.IsRoot,
@@ -398,8 +411,12 @@ class Analyser
         };
     }
 
-    private StdFunction? ResolveStdFunction(string name, string? moduleName)
+    private StdFunction? ResolveStdFunction(string name, IList<Token> modulePath)
     {
+        if (modulePath.Count > 1)
+            return null;
+
+        var moduleName = modulePath.FirstOrDefault()?.Value;
         var function = StdBindings.GetFunction(name, moduleName);
         if (function == null && moduleName != null && StdBindings.HasModule(moduleName))
                 throw new RuntimeNotFoundException(name);
@@ -407,14 +424,12 @@ class Analyser
         return function;
     }
 
-    private FunctionSymbol? ResolveFunctionSymbol(string name, string? moduleName)
+    private FunctionSymbol? ResolveFunctionSymbol(string name, IList<Token> modulePath)
     {
-        var module = moduleName == null
-            ? _scope.ModuleScope
-            : _modules.Find(moduleName);
+        var module = _scope.ModuleScope.FindModule(modulePath, lookInImports: true);
         if (module == null)
-            throw new RuntimeModuleNotFoundException(moduleName!);
+            throw new RuntimeModuleNotFoundException(modulePath);
 
-        return module.FindFunction(name);
+        return module.FindFunction(name, lookInImports: true);
     }
 }

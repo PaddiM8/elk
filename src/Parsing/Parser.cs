@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Std.Bindings;
@@ -18,8 +19,6 @@ internal class Parser
 {
     private bool _allowEndOfExpression;
     private int _index;
-    private readonly string _filePath;
-    private readonly ModuleBag _modules;
     private Scope _scope;
     private readonly List<Token> _tokens;
 
@@ -39,19 +38,23 @@ internal class Parser
     private bool UseAliases
         => Current?.Position.FilePath == null;
 
-    private Parser(List<Token> tokens, ModuleBag modules, string filePath, Scope scope)
+    private Parser(
+        List<Token> tokens,
+        Scope scope)
     {
-        _filePath = filePath;
-        _modules = modules;
         _tokens = tokens;
-
         _scope = scope;
-        _modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), scope.ModuleScope);
+        //_modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), scope.ModuleScope);
     }
 
-    public static List<Expr> Parse(List<Token> tokens, ModuleBag modules, string filePath, Scope? scope = null)
+    public static List<Expr> Parse(
+        List<Token> tokens,
+        Scope scope)
     {
-        var parser = new Parser(tokens, modules, filePath, scope ?? new ModuleScope());
+        var parser = new Parser(
+            tokens,
+            scope
+        );
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
@@ -125,12 +128,21 @@ internal class Parser
         var importScope = ImportUserModule(relativePath, moduleName, pos);
         foreach (var symbolImportToken in symbolImportTokens)
         {
-            var importedFunction = importScope.FindFunction(symbolImportToken.Value);
+            var importedFunction = importScope.FindFunction(symbolImportToken.Value, lookInImports: false);
             if (importedFunction == null)
-                throw new ParseException(
-                    symbolImportToken.Position,
-                    $"Module does not contain function '{symbolImportToken.Value}'"
-                );
+            {
+                var importedModule = importScope.FindModule(new[] { symbolImportToken }, lookInImports: false);
+                if (importedModule == null)
+                {
+                    throw new ParseException(
+                        symbolImportToken.Position,
+                        $"Module does not contain symbol '{symbolImportToken.Value}'"
+                    );
+                }
+
+                _scope.ModuleScope.ImportModule(symbolImportToken.Value, importedModule);
+                continue;
+            }
 
             _scope.ModuleScope.ImportFunction(importedFunction);
         }
@@ -155,35 +167,50 @@ internal class Parser
         var importScope = ImportUserModule(relativePath, moduleName, pos);
         foreach (var functionExpr in importScope.Functions)
             _scope.ModuleScope.ImportFunction(functionExpr);
+
+        foreach (var module in importScope.Modules.Where(x => x.Name != null))
+            _scope.ModuleScope.ImportModule(module.Name!, module);
     }
 
     private ModuleScope ImportUserModule(string path, string moduleName, TextPos pos)
     {
-        string directoryPath = Path.GetDirectoryName(_filePath)!;
+        string directoryPath = Path.GetDirectoryName(
+            _scope.ModuleScope.FilePath ?? ShellEnvironment.WorkingDirectory
+        )!;
         string absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
         if (!File.Exists(absolutePath))
         {
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
         }
 
-        var importScope = _modules.Find(moduleName);
+        var importScope = _scope.ModuleScope.RootModule.FindRegisteredModule(absolutePath);
         if (importScope == null)
         {
-            importScope = new ModuleScope();
+            importScope = ModuleScope.CreateAsImported(
+                moduleName,
+                _scope.ModuleScope.RootModule,
+                absolutePath
+            );
+
             Parse(
                 Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
-                _modules,
-                absolutePath,
                 importScope
             );
-            _modules.TryAdd(moduleName, importScope);
+            _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
         }
+
+        _scope.ModuleScope.ImportModule(moduleName, importScope);
 
         return importScope;
     }
 
     private Expr ParseExpr()
     {
+        if (Match(TokenKind.Module))
+        {
+            return ParseModule();
+        }
+
         if (Match(TokenKind.Fn))
         {
             return ParseFn();
@@ -205,6 +232,17 @@ internal class Parser
         }
 
         return ParseBinaryIf();
+    }
+
+    private Expr ParseModule()
+    {
+        EatExpected(TokenKind.Module);
+        var identifier = EatExpected(TokenKind.Identifier);
+        var moduleScope = new ModuleScope(identifier.Value, _scope, _scope.ModuleScope.FilePath);
+        _scope.ModuleScope.AddModule(identifier.Value, moduleScope);
+        var block = ParseBlock(StructureKind.Module, moduleScope);
+
+        return new ModuleExpr(identifier, block);
     }
 
     private Expr ParseFn()
@@ -240,8 +278,7 @@ internal class Parser
             parameters,
             block,
             _scope.ModuleScope,
-            hasClosure,
-            isAnalysed: false
+            hasClosure
         );
 
         _scope.ModuleScope.AddFunction(function);
@@ -697,10 +734,13 @@ internal class Parser
 
         if (AdvanceIf(TokenKind.Ampersand))
         {
-            Token? moduleName = null;
-            if (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
+            IList<Token> modulePath = Array.Empty<Token>();
+            while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
             {
-                moduleName = Eat();
+                if (modulePath.IsReadOnly)
+                    modulePath = new List<Token>();
+
+                modulePath.Add(Eat());
                 Eat(); // ::
             }
 
@@ -713,12 +753,12 @@ internal class Parser
                 return new TypeExpr(identifier);
 
             string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
-            if (moduleName == null && importedStdModule != null)
+            if (modulePath.Count == 0 && importedStdModule != null)
             {
-                moduleName = new Token(TokenKind.Identifier, importedStdModule, TextPos.Default);
+                modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
             }
 
-            return new FunctionReferenceExpr(identifier, moduleName);
+            return new FunctionReferenceExpr(identifier, modulePath);
         }
         
         if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
@@ -744,7 +784,7 @@ internal class Parser
         int column = stringLiteral.Position.Column;
         foreach (var part in parts)
         {
-            var textPos = new TextPos(stringLiteral.Position.Line, column, _filePath);
+            var textPos = new TextPos(stringLiteral.Position.Line, column, _scope.ModuleScope.FilePath);
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(
@@ -757,7 +797,7 @@ internal class Parser
             else
             {
                 var tokens = Lexer.Lex(part.Value, textPos);
-                var ast = Parse(tokens, _modules, _filePath, _scope);
+                var ast = Parse(tokens, _scope);
                 if (ast.Count != 1)
                     throw new ParseException(textPos, "Expected exactly one expression in the string interpolation block");
                 
@@ -933,7 +973,7 @@ internal class Parser
         return ParseBlock(parentStructureKind, scope);
     }
 
-    private BlockExpr ParseBlock(StructureKind parentStructureKind, LocalScope? scope = null)
+    private BlockExpr ParseBlock(StructureKind parentStructureKind, Scope? scope = null)
     {
         EatExpected(TokenKind.OpenBrace);
 
@@ -953,10 +993,13 @@ internal class Parser
     private Expr ParseIdentifier()
     {
         var pos = Current?.Position ?? TextPos.Default;
-        Token? moduleName = null;
-        if (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
+        IList<Token> modulePath = Array.Empty<Token>();
+        while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
         {
-            moduleName = Eat();
+            if (modulePath.IsReadOnly)
+                modulePath = new List<Token>();
+
+            modulePath.Add(Eat());
             Eat(); // ::
         }
 
@@ -968,9 +1011,9 @@ internal class Parser
             return new TypeExpr(identifier);
 
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
-        if (moduleName == null && importedStdModule != null)
+        if (modulePath.Count == 0 && importedStdModule != null)
         {
-            moduleName = new Token(TokenKind.Identifier, importedStdModule, TextPos.Default);
+            modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
         }
 
         if (AdvanceIf(TokenKind.OpenParenthesis))
@@ -997,17 +1040,18 @@ internal class Parser
 
             return new CallExpr(
                 modifiedIdentifier,
+                modulePath,
                 arguments,
                 CallStyle.Parenthesized,
                 functionPlurality,
-                CallType.Unknown,
-                moduleName
+                CallType.Unknown
             );
         }
         
-        if (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value))
+        if (modulePath.Count == 0 &&
+            (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value)))
         {
-            return new VariableExpr(identifier, moduleName);
+            return new VariableExpr(identifier);
         }
 
         var textArguments = ParseTextArguments();
@@ -1024,11 +1068,11 @@ internal class Parser
 
         return new CallExpr(
             newIdentifier,
+            modulePath,
             textArguments,
             CallStyle.TextArguments,
             plurality,
-            CallType.Unknown,
-            moduleName
+            CallType.Unknown
         );
     }
 

@@ -227,6 +227,7 @@ internal class Lexer
             "false" => TokenKind.False,
             "alias" => TokenKind.Alias,
             "unalias" => TokenKind.Unalias,
+            "module" => TokenKind.Module,
             _ => TokenKind.Identifier,
         };
 

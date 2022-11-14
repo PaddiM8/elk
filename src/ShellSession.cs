@@ -31,7 +31,7 @@ public class ShellSession
         }
     }
 
-    private readonly Interpreter _interpreter = new();
+    private readonly Interpreter _interpreter = new(null);
     
     public ShellSession()
     {
@@ -44,7 +44,7 @@ public class ShellSession
         RunCommand(Defaults.init_file);
 
         if (File.Exists(CommonPaths.InitFile))
-            RunFile(CommonPaths.InitFile);
+            RunFile(_interpreter, CommonPaths.InitFile);
     }
 
     private void LoadPaths()
@@ -71,7 +71,8 @@ public class ShellSession
         {
             var call = new CallExpr(
                 new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
-                new(),
+                Array.Empty<Token>(),
+                Array.Empty<Expr>(),
                 CallStyle.Parenthesized,
                 Plurality.Singular,
                 CallType.Function
@@ -79,7 +80,7 @@ public class ShellSession
             {
                 IsRoot = true,
             };
-            _interpreter.Interpret(new() { call });
+            _interpreter.Interpret(new List<Expr> { call });
 
             return;
         }
@@ -95,7 +96,7 @@ public class ShellSession
 
     public void RunCommand(string command)
     {
-        var result = _interpreter.Interpret(command, null);
+        var result = _interpreter.Interpret(command);
         if (result is RuntimeNil)
             return;
 
@@ -119,15 +120,20 @@ public class ShellSession
         Console.ResetColor();
     }
 
-    public void RunFile(string filePath, IEnumerable<string>? arguments = null)
+    public static void RunFile(string filePath, IEnumerable<string>? arguments)
+    {
+        RunFile(new Interpreter(filePath), filePath, arguments);
+    }
+
+    private static void RunFile(Interpreter interpreter, string filePath, IEnumerable<string>? arguments = null)
     {
         arguments ??= new List<string>();
 
         var argumentValues = arguments.Prepend(filePath)
             .Select(literal => new RuntimeString(literal));
-        _interpreter.AddGlobalVariable("argv", new RuntimeList(argumentValues));
+        interpreter.AddGlobalVariable("argv", new RuntimeList(argumentValues));
 
-        var result = _interpreter.Interpret(File.ReadAllText(filePath), filePath);
+        var result = interpreter.Interpret(File.ReadAllText(filePath));
         if (result is RuntimeError err)
         {
             Console.Error.WriteLine(err.Value);

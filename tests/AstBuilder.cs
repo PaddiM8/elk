@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Scope;
@@ -28,8 +29,7 @@ static class AstBuilder
             parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null, false)).ToList(),
             block,
             module,
-            hasClosure,
-            isAnalysed: true
+            hasClosure
         );
 
     public static LetExpr Let(string identifier, Expr value)
@@ -50,6 +50,7 @@ static class AstBuilder
     public static CallExpr Call(string identifier, List<Expr> arguments)
         => new(
             Token(TokenKind.Identifier, identifier),
+            Array.Empty<Token>(),
             arguments,
             CallStyle.Parenthesized,
             Plurality.Singular,
