@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Elk.Std.Bindings;
@@ -74,179 +73,32 @@ class Analyser
     {
         _lastExpr = expr;
 
-        switch (expr)
+        return expr switch
         {
-            case ModuleExpr e:
-                return new ModuleExpr(e.Identifier, (BlockExpr)Next(e.Body));
-            case FunctionExpr e:
-                foreach (var parameter in e.Parameters)
-                {
-                    if (parameter.DefaultValue != null)
-                        Next(parameter.DefaultValue!);
-
-                    e.Block.Scope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
-                }
-
-                var newFunction = new FunctionExpr(
-                    e.Identifier,
-                    e.Parameters,
-                    (BlockExpr)Next(e.Block),
-                    e.Module,
-                    e.HasClosure
-                )
-                {
-                    IsRoot = e.IsRoot,
-                };
-
-                e.Module.AddFunction(newFunction);
-
-                return newFunction;
-            case LetExpr e:
-                return new LetExpr(e.IdentifierList, Next(e.Value));
-            case KeywordExpr e:
-                Expr? keywordValue = null;
-                if (e.Value != null)
-                    keywordValue = Next(e.Value);
-
-                return new KeywordExpr(e.Kind, keywordValue, e.Position)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case IfExpr e:
-                var ifCondition = Next(e.Condition);
-                var thenBranch = Next(e.ThenBranch);
-                Expr? elseBranch = null;
-                if (e.ElseBranch != null)
-                    elseBranch = Next(e.ElseBranch);
-
-                return new IfExpr(ifCondition, thenBranch, elseBranch)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case ForExpr e:
-                var forValue = Next(e.Value);
-                foreach (var identifier in e.IdentifierList)
-                    e.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
-
-                var branch = (BlockExpr)Next(e.Branch);
-
-                return new ForExpr(e.IdentifierList, forValue, branch)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case WhileExpr e:
-                var whileCondition = Next(e.Condition);
-                var whileBranch = (BlockExpr)Next(e.Branch);
-
-                return new WhileExpr(whileCondition, whileBranch)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case TupleExpr e:
-                var tupleValues = e.Values.Select(Next).ToList();
-
-                return new TupleExpr(tupleValues, e.Position)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case ListExpr e:
-                var listValues = e.Values.Select(Next).ToList();
-
-                return new ListExpr(listValues, e.Position)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case DictionaryExpr e:
-                foreach (var (_, value) in e.Entries)
-                    Next(value);
-                var dictEntries = e.Entries
-                    .Select(x => (x.Item1, Next(x.Item2)))
-                    .ToList();
-
-                return new DictionaryExpr(dictEntries, e.Position)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case BlockExpr e:
-                _scope = e.Scope;
-                var blockExpressions = e.Expressions.Select(Next).ToList();
-                var newExpr = new BlockExpr(
-                    blockExpressions,
-                    e.ParentStructureKind,
-                    e.Position,
-                    e.Scope
-                )
-                {
-                    IsRoot = e.IsRoot,
-                };
-                _scope = _scope.Parent!;
-
-                return newExpr;
-            case LiteralExpr e:
-                return Visit(e);
-            case StringInterpolationExpr e:
-                var parts = e.Parts.Select(Next).ToList();
-
-                return new StringInterpolationExpr(parts, e.Position)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case BinaryExpr e:
-                var rightBinary = e.Operator == OperationKind.Pipe
-                    ? NextCallOrClosure(e.Right, calledFromPipe: true, hasClosure: false)
-                    : Next(e.Right);
-
-                return new BinaryExpr(Next(e.Left), e.Operator, rightBinary)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case UnaryExpr e:
-                return new UnaryExpr(e.Operator, Next(e.Value))
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case RangeExpr e:
-                var from = e.From == null
-                    ? null
-                    : Next(e.From);
-                var to = e.To == null
-                    ? null
-                    : Next(e.To);
-
-                return new RangeExpr(from, to, e.Inclusive)
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case IndexerExpr e:
-                return new IndexerExpr(Next(e.Value), Next(e.Index))
-                {
-                    IsRoot = e.IsRoot,
-                };
-            case VariableExpr e:
-                var variableExpr = new VariableExpr(e.Identifier)
-                {
-                    IsRoot = e.IsRoot,
-                };
-
-                if (!e.Identifier.Value.StartsWith("$"))
-                {
-                    variableExpr.VariableSymbol = _scope.FindVariable(e.Identifier.Value);
-                    if (variableExpr.VariableSymbol == null)
-                        throw new RuntimeNotFoundException(e.Identifier.Value);
-                }
-
-                return variableExpr;
-            case TypeExpr e:
-                return Visit(e);
-            case CallExpr e:
-                return Visit(e);
-            case FunctionReferenceExpr e:
-                return Visit(e);
-            case ClosureExpr e:
-                return Visit(e);
-        }
-
-        return expr;
+            ModuleExpr e => Visit(e),
+            FunctionExpr e => Visit(e),
+            LetExpr e => Visit(e),
+            IfExpr e => Visit(e),
+            ForExpr e => Visit(e),
+            WhileExpr e => Visit(e),
+            TupleExpr e => Visit(e),
+            ListExpr e => Visit(e),
+            DictionaryExpr e => Visit(e),
+            BlockExpr e => Visit(e),
+            KeywordExpr e => Visit(e),
+            BinaryExpr e => Visit(e),
+            UnaryExpr e => Visit(e),
+            RangeExpr e => Visit(e),
+            IndexerExpr e => Visit(e),
+            TypeExpr e => Visit(e),
+            VariableExpr e => Visit(e),
+            CallExpr e => Visit(e),
+            LiteralExpr e => Visit(e),
+            FunctionReferenceExpr e => Visit(e),
+            StringInterpolationExpr e => Visit(e),
+            ClosureExpr e => Visit(e),
+            _ => throw new NotSupportedException(),
+        };
     }
 
     private Expr NextCallOrClosure(Expr expr, bool calledFromPipe, bool hasClosure)
@@ -258,6 +110,185 @@ class Analyser
             ClosureExpr closureExpr => Visit(closureExpr, calledFromPipe),
             CallExpr callExpr => Visit(callExpr, calledFromPipe, hasClosure),
             _ => throw new RuntimeException("Expected a function call to the right of pipe."),
+        };
+    }
+
+    private ModuleExpr Visit(ModuleExpr expr)
+    {
+        return new ModuleExpr(expr.Identifier, (BlockExpr)Next(expr.Body));
+    }
+
+    private FunctionExpr Visit(FunctionExpr expr)
+    {
+        foreach (var parameter in expr.Parameters)
+        {
+            if (parameter.DefaultValue != null)
+                Next(parameter.DefaultValue!);
+
+            expr.Block.Scope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
+        }
+
+        var newFunction = new FunctionExpr(
+            expr.Identifier,
+            expr.Parameters,
+            (BlockExpr)Next(expr.Block),
+            expr.Module,
+            expr.HasClosure
+        )
+        {
+            IsRoot = expr.IsRoot,
+        };
+
+        expr.Module.AddFunction(newFunction);
+
+        return newFunction;
+    }
+
+    private LetExpr Visit(LetExpr expr)
+    {
+        return new LetExpr(expr.IdentifierList, Next(expr.Value));
+    }
+
+    private KeywordExpr Visit(KeywordExpr expr)
+    {
+        Expr? keywordValue = null;
+        if (expr.Value != null)
+            keywordValue = Next(expr.Value);
+
+        return new KeywordExpr(expr.Kind, keywordValue, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private IfExpr Visit(IfExpr expr)
+    {
+        var ifCondition = Next(expr.Condition);
+        var thenBranch = Next(expr.ThenBranch);
+        Expr? elseBranch = null;
+        if (expr.ElseBranch != null)
+            elseBranch = Next(expr.ElseBranch);
+
+        return new IfExpr(ifCondition, thenBranch, elseBranch)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private ForExpr Visit(ForExpr expr)
+    {
+        var forValue = Next(expr.Value);
+        foreach (var identifier in expr.IdentifierList)
+            expr.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
+
+        var branch = (BlockExpr)Next(expr.Branch);
+
+        return new ForExpr(expr.IdentifierList, forValue, branch)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private WhileExpr Visit(WhileExpr expr)
+    {
+        var whileCondition = Next(expr.Condition);
+        var whileBranch = (BlockExpr)Next(expr.Branch);
+
+        return new WhileExpr(whileCondition, whileBranch)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private TupleExpr Visit(TupleExpr expr)
+    {
+        var tupleValues = expr.Values.Select(Next).ToList();
+
+        return new TupleExpr(tupleValues, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private ListExpr Visit(ListExpr expr)
+    {
+        var listValues = expr.Values.Select(Next).ToList();
+
+        return new ListExpr(listValues, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private DictionaryExpr Visit(DictionaryExpr expr)
+    {
+        foreach (var (_, value) in expr.Entries)
+            Next(value);
+        var dictEntries = expr.Entries
+            .Select(x => (x.Item1, Next(x.Item2)))
+            .ToList();
+
+        return new DictionaryExpr(dictEntries, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private BlockExpr Visit(BlockExpr expr)
+    {
+        _scope = expr.Scope;
+        var blockExpressions = expr.Expressions.Select(Next).ToList();
+        var newExpr = new BlockExpr(
+            blockExpressions,
+            expr.ParentStructureKind,
+            expr.Position,
+            expr.Scope
+        )
+        {
+            IsRoot = expr.IsRoot,
+        };
+        _scope = _scope.Parent!;
+
+        return newExpr;
+    }
+
+    private RangeExpr Visit(RangeExpr expr)
+    {
+        var from = expr.From == null
+            ? null
+            : Next(expr.From);
+        var to = expr.To == null
+            ? null
+            : Next(expr.To);
+
+        return new RangeExpr(from, to, expr.Inclusive)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private VariableExpr Visit(VariableExpr expr)
+    {
+        var variableExpr = new VariableExpr(expr.Identifier)
+        {
+            IsRoot = expr.IsRoot,
+        };
+
+        if (!expr.Identifier.Value.StartsWith("$"))
+        {
+            variableExpr.VariableSymbol = _scope.FindVariable(expr.Identifier.Value);
+            if (variableExpr.VariableSymbol == null)
+                throw new RuntimeNotFoundException(expr.Identifier.Value);
+        }
+
+        return variableExpr;
+    }
+
+    private IndexerExpr Visit(IndexerExpr expr)
+    {
+        return new IndexerExpr(Next(expr.Value), Next(expr.Index))
+        {
+            IsRoot = expr.IsRoot,
         };
     }
 
@@ -282,6 +313,36 @@ class Analyser
         };
 
         return newExpr;
+    }
+
+    private StringInterpolationExpr Visit(StringInterpolationExpr expr)
+    {
+        var parts = expr.Parts.Select(Next).ToList();
+
+        return new StringInterpolationExpr(parts, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private BinaryExpr Visit(BinaryExpr expr)
+    {
+        var rightBinary = expr.Operator == OperationKind.Pipe
+            ? NextCallOrClosure(expr.Right, calledFromPipe: true, hasClosure: false)
+            : Next(expr.Right);
+
+        return new BinaryExpr(Next(expr.Left), expr.Operator, rightBinary)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private UnaryExpr Visit(UnaryExpr expr)
+    {
+        return new UnaryExpr(expr.Operator, Next(expr.Value))
+        {
+            IsRoot = expr.IsRoot,
+        };
     }
 
     private TypeExpr Visit(TypeExpr expr)
@@ -395,19 +456,19 @@ class Analyser
         };
     }
 
-    private Expr Visit(ClosureExpr e, bool calledFromPipe = false)
+    private Expr Visit(ClosureExpr expr, bool calledFromPipe = false)
     {
-        var function = e.Function is CallExpr callExpr
+        var function = expr.Function is CallExpr callExpr
             ? NextCallOrClosure(callExpr, calledFromPipe, hasClosure: true)
-            : Next(e.Function);
+            : Next(expr.Function);
 
         return new ClosureExpr(
             function,
-            e.Parameters,
-            (BlockExpr)Next(e.Body)
+            expr.Parameters,
+            (BlockExpr)Next(expr.Body)
         )
         {
-            IsRoot = e.IsRoot,
+            IsRoot = expr.IsRoot,
         };
     }
 
@@ -419,7 +480,7 @@ class Analyser
         var moduleName = modulePath.FirstOrDefault()?.Value;
         var function = StdBindings.GetFunction(name, moduleName);
         if (function == null && moduleName != null && StdBindings.HasModule(moduleName))
-                throw new RuntimeNotFoundException(name);
+            throw new RuntimeNotFoundException(name);
 
         return function;
     }

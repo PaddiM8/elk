@@ -134,7 +134,6 @@ partial class Interpreter
             ModuleExpr => RuntimeNil.Value,
             FunctionExpr => RuntimeNil.Value,
             LetExpr e => Visit(e),
-            KeywordExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
             WhileExpr e => Visit(e),
@@ -142,16 +141,17 @@ partial class Interpreter
             ListExpr e => Visit(e),
             DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
-            LiteralExpr e => Visit(e),
-            StringInterpolationExpr e => Visit(e),
+            KeywordExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
             RangeExpr e => Visit(e),
             IndexerExpr e => Visit(e),
-            VariableExpr e => Visit(e),
             TypeExpr e => Visit(e),
+            VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
+            LiteralExpr e => Visit(e),
             FunctionReferenceExpr e => Visit(e),
+            StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
@@ -217,24 +217,6 @@ partial class Interpreter
         {
             scope.AddVariable(name, value);
         }
-    }
-
-    private RuntimeObject Visit(KeywordExpr expr)
-    {
-        var returnKind = expr.Kind switch
-        {
-            TokenKind.Break => ReturnKind.BreakLoop,
-            TokenKind.Continue => ReturnKind.ContinueLoop,
-            TokenKind.Return => ReturnKind.ReturnFunction,
-            _ => throw new ArgumentOutOfRangeException(),
-        };
-        var value = expr.Value == null
-            ? RuntimeNil.Value
-            : Next(expr.Value);
-
-        _returnHandler.TriggerReturn(returnKind, value);
-
-        return RuntimeNil.Value;
     }
 
     private RuntimeObject Visit(IfExpr expr)
@@ -385,18 +367,22 @@ partial class Interpreter
         return true;
     }
 
-    private RuntimeObject Visit(LiteralExpr expr)
-        => expr.RuntimeValue!;
-
-    private RuntimeObject Visit(StringInterpolationExpr expr)
+    private RuntimeObject Visit(KeywordExpr expr)
     {
-        var result = new StringBuilder();
-        foreach (var part in expr.Parts)
+        var returnKind = expr.Kind switch
         {
-            result.Append(Next(part).As<RuntimeString>().Value);
-        }
+            TokenKind.Break => ReturnKind.BreakLoop,
+            TokenKind.Continue => ReturnKind.ContinueLoop,
+            TokenKind.Return => ReturnKind.ReturnFunction,
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+        var value = expr.Value == null
+            ? RuntimeNil.Value
+            : Next(expr.Value);
 
-        return new RuntimeString(result.ToString());
+        _returnHandler.TriggerReturn(returnKind, value);
+
+        return RuntimeNil.Value;
     }
 
     private RuntimeObject Visit(BinaryExpr expr)
@@ -409,12 +395,12 @@ partial class Interpreter
 
             return result;
         }
-        
+
         if (expr.Operator == OperationKind.Equals)
         {
             return EvaluateAssignment(expr.Left, Next(expr.Right));
         }
-        
+
         if (expr.Operator == OperationKind.If)
         {
             return Next(expr.Right).As<RuntimeBoolean>().IsTrue
@@ -549,7 +535,7 @@ partial class Interpreter
         int? to = expr.To == null
             ? null
             : (int)Next(expr.To).As<RuntimeInteger>().Value;
-        
+
         if (expr.Inclusive)
         {
             if (to > from)
@@ -576,6 +562,9 @@ partial class Interpreter
         throw new RuntimeUnableToIndexException(value.GetType());
     }
 
+    private RuntimeObject Visit(TypeExpr expr)
+        => expr.RuntimeValue!;
+
     private RuntimeObject Visit(VariableExpr expr)
     {
         if (expr.VariableSymbol == null)
@@ -590,9 +579,6 @@ partial class Interpreter
 
         return expr.VariableSymbol.Value;
     }
-
-    private RuntimeObject Visit(TypeExpr expr)
-        => expr.RuntimeValue!;
 
     private RuntimeObject Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
@@ -928,13 +914,27 @@ partial class Interpreter
                 ? new RuntimeString(process.StandardOutput.ReadToEnd())
                 : Error(process.StandardError.ReadToEnd());
         }
-        
+
         return RuntimeNil.Value;
     }
+
+    private RuntimeObject Visit(LiteralExpr expr)
+        => expr.RuntimeValue!;
 
     private RuntimeObject Visit(FunctionReferenceExpr functionReferenceExpr)
     {
         return functionReferenceExpr.RuntimeFunction!;
+    }
+
+    private RuntimeObject Visit(StringInterpolationExpr expr)
+    {
+        var result = new StringBuilder();
+        foreach (var part in expr.Parts)
+        {
+            result.Append(Next(part).As<RuntimeString>().Value);
+        }
+
+        return new RuntimeString(result.ToString());
     }
 
     private RuntimeObject Visit(ClosureExpr closureExpr)

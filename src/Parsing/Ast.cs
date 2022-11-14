@@ -69,6 +69,20 @@ class EmptyExpr : Expr
 
 record Parameter(Token Identifier, Expr? DefaultValue, bool Variadic);
 
+class ModuleExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public BlockExpr Body { get; }
+
+    public ModuleExpr(Token identifier, BlockExpr body)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Body = body;
+    }
+}
+
 class FunctionExpr : Expr
 {
     public Token Identifier { get; }
@@ -108,215 +122,6 @@ class LetExpr : Expr
     {
         IdentifierList = identifierList;
         Value = value;
-    }
-}
-
-class KeywordExpr : Expr
-{
-    public TokenKind Kind { get; }
-
-    public Expr? Value { get; }
-
-    public KeywordExpr(TokenKind kind, Expr? value, TextPos pos)
-        : base(pos)
-    {
-        Kind = kind;
-        Value = value;
-    }
-}
-
-class BinaryExpr : Expr
-{
-    public Expr Left { get; }
-
-    public OperationKind Operator { get; }
-
-    public Expr Right { get; }
-    
-    public BinaryExpr(Expr left, TokenKind op, Expr right)
-        : base(left.Position)
-    {
-        Left = left;
-        Operator = op.ToOperationKind();
-        Right = right;
-    }
-
-    public BinaryExpr(Expr left, OperationKind op, Expr right)
-        : base(left.Position)
-    {
-        Left = left;
-        Operator = op;
-        Right = right;
-    }
-}
-
-class UnaryExpr : Expr
-{
-    public OperationKind Operator { get; }
-
-    public Expr Value { get; }
-    
-    public UnaryExpr(TokenKind op, Expr value)
-        : base(value.Position)
-    {
-        Operator = op.ToOperationKind();
-        Value = value;
-    }
-
-    public UnaryExpr(OperationKind op, Expr value)
-        : base(value.Position)
-    {
-        Operator = op;
-        Value = value;
-    }
-}
-
-class RangeExpr : Expr
-{
-    public Expr? From { get; }
-
-    public Expr? To { get; }
-
-    public bool Inclusive { get; }
-
-    public RangeExpr(Expr? from, Expr? to, bool inclusive)
-        : base(from?.Position ?? to!.Position)
-    {
-        From = from;
-        To = to;
-        Inclusive = inclusive;
-    }
-}
-
-class IndexerExpr : Expr
-{
-    public Expr Value { get; }
-
-    public Expr Index { get; }
-
-    public IndexerExpr(Expr value, Expr index)
-        : base(index.Position)
-    {
-        Value = value;
-        Index = index;
-    }
-}
-
-class VariableExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public VariableSymbol? VariableSymbol { get; set; }
-
-    public VariableExpr(Token identifier)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-    }
-}
-
-class TypeExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public RuntimeType? RuntimeValue { get; init; }
-
-    public TypeExpr(Token identifier)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-    }
-}
-
-enum CallStyle
-{
-    Parenthesized,
-    TextArguments,
-}
-
-enum Plurality
-{
-    Singular,
-    Plural,
-}
-
-enum CallType
-{
-    Unknown,
-    Program,
-    StdFunction,
-    Function,
-    BuiltInCd,
-    BuiltInExec,
-    BuiltInScriptPath,
-    BuiltInClosure,
-    BuiltInCall,
-    BuiltInError,
-}
-
-class ModuleExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public BlockExpr Body { get; }
-
-    public ModuleExpr(Token identifier, BlockExpr body)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        Body = body;
-    }
-}
-
-class CallExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public IList<Token> ModulePath { get; }
-
-    public IList<Expr> Arguments { get; }
-
-    public CallStyle CallStyle { get; }
-
-    public Plurality Plurality { get; }
-
-    public CallType CallType { get; }
-
-    public FunctionSymbol? FunctionSymbol { get; init; }
-
-    public StdFunction? StdFunction { get; init; }
-
-    public CallExpr(
-        Token identifier,
-        IList<Token> modulePath,
-        IList<Expr> arguments,
-        CallStyle callStyle,
-        Plurality plurality,
-        CallType callType)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        ModulePath = modulePath;
-        Arguments = arguments;
-        CallStyle = callStyle;
-        Plurality = plurality;
-        CallType = callType;
-    }
-}
-
-class FunctionReferenceExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public IList<Token> ModulePath { get; }
-
-    public RuntimeFunction? RuntimeFunction { get; init; }
-
-    public FunctionReferenceExpr(Token identifier, IList<Token> modulePath)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        ModulePath = modulePath;
     }
 }
 
@@ -422,6 +227,185 @@ class BlockExpr : Expr
     }
 }
 
+class KeywordExpr : Expr
+{
+    public TokenKind Kind { get; }
+
+    public Expr? Value { get; }
+
+    public KeywordExpr(TokenKind kind, Expr? value, TextPos pos)
+        : base(pos)
+    {
+        Kind = kind;
+        Value = value;
+    }
+}
+
+class BinaryExpr : Expr
+{
+    public Expr Left { get; }
+
+    public OperationKind Operator { get; }
+
+    public Expr Right { get; }
+    
+    public BinaryExpr(Expr left, TokenKind op, Expr right)
+        : base(left.Position)
+    {
+        Left = left;
+        Operator = op.ToOperationKind();
+        Right = right;
+    }
+
+    public BinaryExpr(Expr left, OperationKind op, Expr right)
+        : base(left.Position)
+    {
+        Left = left;
+        Operator = op;
+        Right = right;
+    }
+}
+
+class UnaryExpr : Expr
+{
+    public OperationKind Operator { get; }
+
+    public Expr Value { get; }
+    
+    public UnaryExpr(TokenKind op, Expr value)
+        : base(value.Position)
+    {
+        Operator = op.ToOperationKind();
+        Value = value;
+    }
+
+    public UnaryExpr(OperationKind op, Expr value)
+        : base(value.Position)
+    {
+        Operator = op;
+        Value = value;
+    }
+}
+
+class RangeExpr : Expr
+{
+    public Expr? From { get; }
+
+    public Expr? To { get; }
+
+    public bool Inclusive { get; }
+
+    public RangeExpr(Expr? from, Expr? to, bool inclusive)
+        : base(from?.Position ?? to!.Position)
+    {
+        From = from;
+        To = to;
+        Inclusive = inclusive;
+    }
+}
+
+class IndexerExpr : Expr
+{
+    public Expr Value { get; }
+
+    public Expr Index { get; }
+
+    public IndexerExpr(Expr value, Expr index)
+        : base(index.Position)
+    {
+        Value = value;
+        Index = index;
+    }
+}
+
+class TypeExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public RuntimeType? RuntimeValue { get; init; }
+
+    public TypeExpr(Token identifier)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+    }
+}
+
+class VariableExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public VariableSymbol? VariableSymbol { get; set; }
+
+    public VariableExpr(Token identifier)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+    }
+}
+
+enum CallStyle
+{
+    Parenthesized,
+    TextArguments,
+}
+
+enum Plurality
+{
+    Singular,
+    Plural,
+}
+
+enum CallType
+{
+    Unknown,
+    Program,
+    StdFunction,
+    Function,
+    BuiltInCd,
+    BuiltInExec,
+    BuiltInScriptPath,
+    BuiltInClosure,
+    BuiltInCall,
+    BuiltInError,
+}
+
+class CallExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public IList<Token> ModulePath { get; }
+
+    public IList<Expr> Arguments { get; }
+
+    public CallStyle CallStyle { get; }
+
+    public Plurality Plurality { get; }
+
+    public CallType CallType { get; }
+
+    public FunctionSymbol? FunctionSymbol { get; init; }
+
+    public StdFunction? StdFunction { get; init; }
+
+    public CallExpr(
+        Token identifier,
+        IList<Token> modulePath,
+        IList<Expr> arguments,
+        CallStyle callStyle,
+        Plurality plurality,
+        CallType callType)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        ModulePath = modulePath;
+        Arguments = arguments;
+        CallStyle = callStyle;
+        Plurality = plurality;
+        CallType = callType;
+    }
+}
+
 class LiteralExpr : Expr
 {
     public Token Value { get; }
@@ -432,6 +416,22 @@ class LiteralExpr : Expr
         : base(value.Position)
     {
         Value = value;
+    }
+}
+
+class FunctionReferenceExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public IList<Token> ModulePath { get; }
+
+    public RuntimeFunction? RuntimeFunction { get; init; }
+
+    public FunctionReferenceExpr(Token identifier, IList<Token> modulePath)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        ModulePath = modulePath;
     }
 }
 
