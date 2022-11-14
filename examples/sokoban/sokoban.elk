@@ -45,7 +45,7 @@ fn getPoints(board):
     board["storedCrates"]
 
 fn coordinatesToKey(x, y):
-    "{x}:{y}"
+    "${x}:${y}"
 
 fn blockToKey(block):
     coordinatesToKey(block[2], block[3])
