@@ -22,6 +22,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
         {
             RuntimeList list => BuildList(list),
             RuntimeDictionary dictionary => BuildDictionary(dictionary),
+            RuntimeStruct @struct => BuildStruct(@struct),
             _ => BuildValue(value),
         };
 
@@ -36,6 +37,15 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
             var keyString = key.As<RuntimeString>().Value;
             result[keyString] = Build(value);
         }
+
+        return result;
+    }
+
+    private JObject BuildStruct(RuntimeStruct structValue)
+    {
+        var result = new JObject();
+        foreach (var (key, value) in structValue.Values)
+            result[key] = Build(value);
 
         return result;
     }
