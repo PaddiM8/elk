@@ -301,7 +301,8 @@ partial class Interpreter
         foreach (var entry in expr.Entries)
         {
             var key = new RuntimeString(entry.Item1);
-            dict.Add(key.GetHashCode(), (key, Next(entry.Item2)));
+            if (!dict.TryAdd(key.GetHashCode(), (key, Next(entry.Item2))))
+                throw new RuntimeException("Duplicate value in dictionary");
         }
 
         return new RuntimeDictionary(dict);
