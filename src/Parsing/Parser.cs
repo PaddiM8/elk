@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -45,7 +44,6 @@ internal class Parser
     {
         _tokens = tokens;
         _scope = scope;
-        //_modules.TryAdd(Path.GetFileNameWithoutExtension(filePath), scope.ModuleScope);
     }
 
     public static List<Expr> Parse(

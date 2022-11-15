@@ -83,16 +83,16 @@ partial class Interpreter
 
     public RuntimeObject Interpret(string input)
     {
-        //try
-        //{
+        try
+        {
             var ast = Parser.Parse(
                 Lexer.Lex(input, _rootModule.FilePath),
                 _scope
             );
 
             return Interpret(ast);
-        //}
-        /*catch (ParseException e)
+        }
+        catch (ParseException e)
         {
             var error = new RuntimeError(e.Message, e.Position);
 
@@ -100,7 +100,7 @@ partial class Interpreter
                 throw new AggregateException(error.ToString(), e);
 
             return error;
-        }*/
+        }
     }
 
     private RuntimeError Error(string message)

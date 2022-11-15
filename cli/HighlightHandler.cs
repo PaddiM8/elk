@@ -20,12 +20,12 @@ class HighlightHandler : IHighlightHandler
         const string textArgument = "(?<textArgument>([A-Za-z0-9\\-~.](&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
         var rules = new[]
         {
-            @"(?<keywords>\b(fn|if|else|return|with|using|from|let|true|false|for|while|in|nil|break|continue|and|or)\b)",
+            @"(?<keywords>\b(module|struct|fn|if|else|return|with|using|from|let|new|true|false|for|while|in|nil|break|continue|and|or)\b)",
             @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
             @"(?<comment>#.*(\n|\0))",
-            @"(?<variableDeclaration>(?<=let |for |with )(\w+|\((\w+[ ]*,?[ ]*)*))",
+            @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
             @$"(?<identifier>\b\w+ {textArgument})",
         };
@@ -49,7 +49,7 @@ class HighlightHandler : IHighlightHandler
                 colorCode = 93;
             else if (m.Groups["comment"].Value.Any())
                 colorCode = 90;
-            else if (m.Groups["variableDeclaration"].Value.Any())
+            else if (m.Groups["namedDeclaration"].Value.Any())
                 return m.Value;
             else if (m.Groups["path"].Value.Any())
             {
