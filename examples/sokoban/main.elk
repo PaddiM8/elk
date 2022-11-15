@@ -97,7 +97,7 @@ fn updateScreen(board) {
     let boardString = getBoardString(board)
     print("\x1b[?25l")
     clear()
-    println("Points: {sokoban::getPoints(board)}")
+    println("Points: ${sokoban::getPoints(board)}")
     println(boardString)
     print("\x1b[?25h")
 }
@@ -111,11 +111,11 @@ while runGame {
 
     for (mapPath, i) in maps | withIndex {
         let mapName = (mapPath | split("."))[0]
-        println("{i + 1}. {mapName}")
+        println("${i + 1}. ${mapName}")
     }
 
     let quitId = str(len(maps) + 1)
-    println("{quitId}. Quit")
+    println("${quitId}. Quit")
 
     let mapId = input("Choose: ")
     runGame = mapId != quitId
