@@ -19,6 +19,12 @@ class ModuleScope : Scope
     public IEnumerable<ModuleScope> ImportedModules
         => _importedModules.Values;
 
+    public IEnumerable<StructSymbol> Structs
+        => _structs.Values;
+
+    public IEnumerable<StructSymbol> ImportedStructs
+        => _importedStructs.Values;
+
     public IEnumerable<FunctionSymbol> Functions
         => _functions.Values;
 
@@ -34,15 +40,12 @@ class ModuleScope : Scope
     public RootModuleScope RootModule { get; }
 
     private readonly Dictionary<string, ModuleScope> _modules = new();
-
     private readonly Dictionary<string, ModuleScope> _importedModules = new();
-
+    private readonly Dictionary<string, StructSymbol> _structs = new();
+    private readonly Dictionary<string, StructSymbol> _importedStructs = new();
     private readonly Dictionary<string, FunctionSymbol> _functions = new();
-
     private readonly Dictionary<string, FunctionSymbol> _importedFunctions = new();
-
     private readonly Dictionary<string, Alias> _aliases = new();
-
     private readonly Dictionary<string, string> _importedStdFunctions = new();
 
     public ModuleScope(string? name, Scope? parent, string? filePath)
@@ -79,16 +82,23 @@ class ModuleScope : Scope
             _aliases[name] = alias;
     }
 
+    public void AddModule(string name, ModuleScope module)
+    {
+        _modules.TryAdd(name, module);
+    }
+
+    public void AddStruct(StructExpr structExpr)
+    {
+        var symbol = new StructSymbol(structExpr);
+        if (!_structs.TryAdd(structExpr.Identifier.Value, symbol))
+            _structs[structExpr.Identifier.Value].Expr = structExpr;
+    }
+
     public void AddFunction(FunctionExpr function)
     {
         var symbol = new FunctionSymbol(function);
         if (!_functions.TryAdd(function.Identifier.Value, symbol))
             _functions[function.Identifier.Value].Expr = function;
-    }
-
-    public void AddModule(string name, ModuleScope module)
-    {
-        _modules.TryAdd(name, module);
     }
 
     public bool HasFunction(string name)
@@ -99,17 +109,6 @@ class ModuleScope : Scope
         _aliases.TryGetValue(name, out var value);
 
         return value;
-    }
-
-    public FunctionSymbol? FindFunction(string name, bool lookInImports)
-    {
-        if (_functions.TryGetValue(name, out var result))
-            return result;
-
-        if (lookInImports && _importedFunctions.TryGetValue(name, out var resultImport))
-            return resultImport;
-
-        return result ?? Parent?.ModuleScope.FindFunction(name, lookInImports);
     }
 
     public ModuleScope? FindModule(IEnumerable<Token> modulePath, bool lookInImports)
@@ -151,6 +150,41 @@ class ModuleScope : Scope
         return result;
     }
 
+    public StructSymbol? FindStruct(string name, bool lookInImports)
+    {
+        if (_structs.TryGetValue(name, out var result))
+            return result;
+
+        if (lookInImports && _importedStructs.TryGetValue(name, out var resultImport))
+            return resultImport;
+
+        return result ?? Parent?.ModuleScope.FindStruct(name, lookInImports);
+    }
+
+    public FunctionSymbol? FindFunction(string name, bool lookInImports)
+    {
+        if (_functions.TryGetValue(name, out var result))
+            return result;
+
+        if (lookInImports && _importedFunctions.TryGetValue(name, out var resultImport))
+            return resultImport;
+
+        return result ?? Parent?.ModuleScope.FindFunction(name, lookInImports);
+    }
+
+    public void ImportModule(string name, ModuleScope module)
+    {
+        if (!_importedModules.TryAdd(name, module))
+            _importedModules[name] = module;
+    }
+
+    public void ImportStruct(StructSymbol symbol)
+    {
+        var structExpr = symbol.Expr;
+        if (!_importedStructs.TryAdd(structExpr.Identifier.Value, symbol))
+            _importedStructs[structExpr.Identifier.Value] = symbol;
+    }
+
     public void ImportFunction(FunctionSymbol symbol)
     {
         var function = symbol.Expr;
@@ -162,12 +196,6 @@ class ModuleScope : Scope
     {
         if (!_importedStdFunctions.TryAdd(name, module))
             _importedStdFunctions[name] = module;
-    }
-
-    public void ImportModule(string name, ModuleScope module)
-    {
-        if (!_importedModules.TryAdd(name, module))
-            _importedModules[name] = module;
     }
 
     public void RemoveAlias(string name)

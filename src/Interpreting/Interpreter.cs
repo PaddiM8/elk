@@ -83,16 +83,16 @@ partial class Interpreter
 
     public RuntimeObject Interpret(string input)
     {
-        try
-        {
+        //try
+        //{
             var ast = Parser.Parse(
                 Lexer.Lex(input, _rootModule.FilePath),
                 _scope
             );
 
             return Interpret(ast);
-        }
-        catch (ParseException e)
+        //}
+        /*catch (ParseException e)
         {
             var error = new RuntimeError(e.Message, e.Position);
 
@@ -100,7 +100,7 @@ partial class Interpreter
                 throw new AggregateException(error.ToString(), e);
 
             return error;
-        }
+        }*/
     }
 
     private RuntimeError Error(string message)
@@ -125,8 +125,10 @@ partial class Interpreter
         return expr switch
         {
             ModuleExpr => RuntimeNil.Value,
+            StructExpr => RuntimeNil.Value,
             FunctionExpr => RuntimeNil.Value,
             LetExpr e => Visit(e),
+            NewExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
             WhileExpr e => Visit(e),
@@ -137,6 +139,7 @@ partial class Interpreter
             KeywordExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
+            FieldAccessExpr e => Visit(e),
             RangeExpr e => Visit(e),
             IndexerExpr e => Visit(e),
             TypeExpr e => Visit(e),
@@ -175,6 +178,21 @@ partial class Interpreter
         SetVariables(expr.IdentifierList, Next(expr.Value));
         
         return RuntimeNil.Value;
+    }
+
+    private RuntimeObject Visit(NewExpr expr)
+    {
+        var dict = new Dictionary<string, RuntimeObject>();
+        var parameters = expr
+            .StructSymbol!
+            .Expr
+            .Parameters
+            .Select(x => x.Identifier.Value);
+        var arguments = expr.Arguments.Select(Next);
+        foreach (var (key, value) in parameters.Zip(arguments))
+            dict[key] = value;
+
+        return new RuntimeStruct(dict);
     }
 
     private void SetVariables(IReadOnlyCollection<Token> identifiers, RuntimeObject value, Scope.Scope? scope = null)
@@ -491,6 +509,18 @@ partial class Interpreter
             value = value.As<RuntimeBoolean>();
 
         return value.Operation(expr.Operator);
+    }
+
+    private RuntimeObject Visit(FieldAccessExpr expr)
+    {
+        var objectValue = Next(expr.Object);
+        if (objectValue is not RuntimeStruct structValue)
+            throw new RuntimeCastException(objectValue.GetType(), "Struct");
+
+        if (structValue.Values.TryGetValue(expr.Identifier.Value, out var result))
+            return result;
+
+        throw new RuntimeNotFoundException(expr.Identifier.Value);
     }
 
     private RuntimeObject Visit(RangeExpr expr)

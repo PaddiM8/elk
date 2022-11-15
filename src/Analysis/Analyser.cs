@@ -76,8 +76,10 @@ class Analyser
         return expr switch
         {
             ModuleExpr e => Visit(e),
+            StructExpr e => Visit(e),
             FunctionExpr e => Visit(e),
             LetExpr e => Visit(e),
+            NewExpr e => Visit(e),
             IfExpr e => Visit(e),
             ForExpr e => Visit(e),
             WhileExpr e => Visit(e),
@@ -88,6 +90,7 @@ class Analyser
             KeywordExpr e => Visit(e),
             BinaryExpr e => Visit(e),
             UnaryExpr e => Visit(e),
+            FieldAccessExpr e => Visit(e),
             RangeExpr e => Visit(e),
             IndexerExpr e => Visit(e),
             TypeExpr e => Visit(e),
@@ -121,31 +124,34 @@ class Analyser
         return new ModuleExpr(expr.Identifier, block);
     }
 
+    private StructExpr Visit(StructExpr expr)
+    {
+        var newStruct = new StructExpr(
+            expr.Identifier,
+            AnalyseParameters(expr.Parameters),
+            expr.Module
+        );
+
+        var uniqueParameters = new HashSet<string>(newStruct.Parameters.Select(x => x.Identifier.Value));
+        if (uniqueParameters.Count != newStruct.Parameters.Count)
+            throw new RuntimeException("Duplicate field in struct");
+
+        expr.Module.AddStruct(newStruct);
+
+        return newStruct;
+    }
+
     private FunctionExpr Visit(FunctionExpr expr)
     {
-        bool encounteredDefaultParameter = false;
-        foreach (var (parameter, i) in expr.Parameters.WithIndex())
+        var parameters = AnalyseParameters(expr.Parameters);
+        foreach (var parameter in parameters)
         {
-            if (parameter.DefaultValue == null)
-            {
-                if (encounteredDefaultParameter)
-                    throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
-            }
-            else
-            {
-                Next(parameter.DefaultValue!);
-                encounteredDefaultParameter = true;
-            }
-
-            if (parameter.IsVariadic && i != expr.Parameters.Count - 1)
-                throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
-
             expr.Block.Scope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
         }
 
         var newFunction = new FunctionExpr(
             expr.Identifier,
-            expr.Parameters,
+            parameters,
             (BlockExpr)Next(expr.Block),
             expr.Module,
             expr.HasClosure
@@ -159,9 +165,64 @@ class Analyser
         return newFunction;
     }
 
+    private List<Parameter> AnalyseParameters(ICollection<Parameter> parameters)
+    {
+        bool encounteredDefaultParameter = false;
+        var newParameters = new List<Parameter>();
+        foreach (var (parameter, i) in parameters.WithIndex())
+        {
+            if (parameter.DefaultValue == null)
+            {
+                if (encounteredDefaultParameter)
+                    throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
+
+                newParameters.Add(parameter);
+            }
+            else
+            {
+                newParameters.Add(
+                    parameter with { DefaultValue = Next(parameter.DefaultValue) }
+                );
+                encounteredDefaultParameter = true;
+            }
+
+            if (parameter.IsVariadic)
+            {
+                if (i != parameters.Count - 1)
+                    throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
+
+                break;
+            }
+        }
+
+        return newParameters;
+    }
+
     private LetExpr Visit(LetExpr expr)
     {
         return new LetExpr(expr.IdentifierList, Next(expr.Value));
+    }
+
+    private NewExpr Visit(NewExpr expr)
+    {
+        var module = _scope.ModuleScope.FindModule(expr.ModulePath, lookInImports: true);
+        if (module == null)
+            throw new RuntimeModuleNotFoundException(expr.ModulePath);
+
+        var symbol = module.FindStruct(expr.Identifier.Value, lookInImports: true);
+        if (symbol == null)
+            throw new RuntimeNotFoundException(expr.Identifier.Value);
+
+        ValidateArguments(expr.Arguments, symbol.Expr.Parameters);
+
+        return new NewExpr(
+            expr.Identifier,
+            expr.ModulePath,
+            expr.Arguments.Select(Next).ToList()
+        )
+        {
+            StructSymbol = symbol,
+        };
     }
 
     private IfExpr Visit(IfExpr expr)
@@ -302,6 +363,11 @@ class Analyser
         };
     }
 
+    private FieldAccessExpr Visit(FieldAccessExpr expr)
+    {
+        return new FieldAccessExpr(Next(expr.Object), expr.Identifier);
+    }
+
     private RangeExpr Visit(RangeExpr expr)
     {
         var from = expr.From == null
@@ -416,29 +482,7 @@ class Analyser
             if (hasClosure && !functionSymbol.Expr.HasClosure)
                 throw new RuntimeException("Expected closure.");
 
-            var parameters = functionSymbol.Expr.Parameters;
-            bool isVariadic = functionSymbol.Expr.Parameters.LastOrDefault()?.IsVariadic is true;
-            bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
-            bool tooFewArguments = parameters.Count > argumentCount &&
-               parameters[argumentCount].DefaultValue == null && !isVariadic;
-
-            if (tooManyArguments || tooFewArguments)
-                throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
-
-            if (parameters.LastOrDefault()?.IsVariadic is true)
-            {
-                int variadicStart = parameters.Count - 1;
-                var variadicArguments = new Expr[expr.Arguments.Count - variadicStart];
-                for (int i = 0; i < variadicArguments.Length; i++)
-                {
-                    variadicArguments[^(i + 1)] = expr.Arguments.Last();
-                    expr.Arguments.RemoveAt(expr.Arguments.Count - 1);
-                }
-
-                expr.Arguments.Add(
-                    new ListExpr(variadicArguments, variadicArguments.FirstOrDefault()?.Position ?? TextPos.Default)
-                );
-            }
+            ValidateArguments(expr.Arguments, functionSymbol.Expr.Parameters);
         }
 
         var newExpr = new CallExpr(
@@ -459,6 +503,33 @@ class Analyser
         };
 
         return newExpr;
+    }
+
+    private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters)
+    {
+        int argumentCount = arguments.Count;
+        bool isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
+        bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
+        bool tooFewArguments = parameters.Count > argumentCount &&
+           parameters[argumentCount].DefaultValue == null && !isVariadic;
+
+        if (tooManyArguments || tooFewArguments)
+            throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
+
+        if (parameters.LastOrDefault()?.IsVariadic is true)
+        {
+            int variadicStart = parameters.Count - 1;
+            var variadicArguments = new Expr[arguments.Count - variadicStart];
+            for (int i = 0; i < variadicArguments.Length; i++)
+            {
+                variadicArguments[^(i + 1)] = arguments.Last();
+                arguments.RemoveAt(arguments.Count - 1);
+            }
+
+            arguments.Add(
+                new ListExpr(variadicArguments, variadicArguments.FirstOrDefault()?.Position ?? TextPos.Default)
+            );
+        }
     }
 
     private LiteralExpr Visit(LiteralExpr expr)

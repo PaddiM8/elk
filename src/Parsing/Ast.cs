@@ -83,6 +83,26 @@ class ModuleExpr : Expr
     }
 }
 
+class StructExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public IList<Parameter> Parameters { get; }
+
+    public ModuleScope Module { get; }
+
+    public StructExpr(
+        Token identifier,
+        IList<Parameter> parameters,
+        ModuleScope module)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        Parameters = parameters;
+        Module = module;
+    }
+}
+
 class FunctionExpr : Expr
 {
     public Token Identifier { get; }
@@ -122,6 +142,25 @@ class LetExpr : Expr
     {
         IdentifierList = identifierList;
         Value = value;
+    }
+}
+
+class NewExpr : Expr
+{
+    public Token Identifier { get; }
+
+    public IList<Token> ModulePath { get; }
+
+    public IList<Expr> Arguments { get; }
+
+    public StructSymbol? StructSymbol { get; init; }
+
+    public NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
+        : base(identifier.Position)
+    {
+        Identifier = identifier;
+        ModulePath = modulePath;
+        Arguments = arguments;
     }
 }
 
@@ -284,6 +323,20 @@ class UnaryExpr : Expr
     {
         Operator = op;
         Value = value;
+    }
+}
+
+class FieldAccessExpr : Expr
+{
+    public Expr Object { get; }
+
+    public Token Identifier { get; }
+
+    public FieldAccessExpr(Expr objectExpr, Token identifier)
+        : base(identifier.Position)
+    {
+        Object = objectExpr;
+        Identifier = identifier;
     }
 }
 

@@ -60,9 +60,12 @@ internal class Lexer
             '+' => Peek == '='
                 ? Build(TokenKind.PlusEquals, Eat(2))
                 : Build(TokenKind.Plus, Eat()),
-            '-' => Peek == '='
-                ? Build(TokenKind.MinusEquals, Eat(2))
-                : Build(TokenKind.Minus, Eat()),
+            '-' => Peek switch
+            {
+                '=' => Build(TokenKind.MinusEquals, Eat(2)),
+                '>' => Build(TokenKind.Arrow, Eat(2)),
+                _ => Build(TokenKind.Minus, Eat()),
+            },
             '*' => Peek == '='
                 ? Build(TokenKind.StarEquals, Eat(2))
                 : Build(TokenKind.Star, Eat()),
@@ -78,11 +81,11 @@ internal class Lexer
                 ? Build(TokenKind.LessEquals, Eat(2))
                 : Build(TokenKind.Less, Eat()),
             '=' => Peek switch
-                {
-                    '=' => Build(TokenKind.EqualsEquals, Eat(2)),
-                    '>' => Build(TokenKind.EqualsGreater, Eat(2)),
-                    _ => Build(TokenKind.Equals, Eat()),
-                },
+            {
+                '=' => Build(TokenKind.EqualsEquals, Eat(2)),
+                '>' => Build(TokenKind.EqualsGreater, Eat(2)),
+                _ => Build(TokenKind.Equals, Eat()),
+            },
             '!' => Peek == '='
                 ? Build(TokenKind.NotEquals, Eat(2))
                 : Build(TokenKind.Unknown, Eat()),
@@ -197,7 +200,7 @@ internal class Lexer
     {
         var value = new StringBuilder();
         value.Append(Eat());
-        while (IsValidIdentifierMiddle(Current))
+        while (IsValidIdentifierMiddle(Current, Peek))
         {
             if (Current == '.' && Peek == '.')
                 break;
@@ -228,6 +231,8 @@ internal class Lexer
             "alias" => TokenKind.Alias,
             "unalias" => TokenKind.Unalias,
             "module" => TokenKind.Module,
+            "struct" => TokenKind.Struct,
+            "new" => TokenKind.New,
             _ => TokenKind.Identifier,
         };
 
@@ -344,8 +349,11 @@ internal class Lexer
     private static bool IsValidIdentifierStart(char c)
         => !(char.IsDigit(c) || "+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
 
-    private static bool IsValidIdentifierMiddle(char c)
-        => c != '$' && (IsValidIdentifierStart(c) || "-%.".Contains(c) || char.IsDigit(c));
+    private static bool IsValidIdentifierMiddle(char c, char next)
+        => c != '$' && (IsValidIdentifierStart(c) ||
+           c == '-' && next != '>' ||
+           "%.".Contains(c) ||
+           char.IsDigit(c));
 
     private Token Build(TokenKind kind, char value)
     {

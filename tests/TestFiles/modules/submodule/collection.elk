@@ -3,5 +3,7 @@ fn subtraction(x, y): x - y
 fn multiplication(x, y): x * y
 
 module sub {
+    struct Ting(a, b);
+
     fn division(x, y): x / y
 }

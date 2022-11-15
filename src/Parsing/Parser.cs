@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -129,22 +130,33 @@ internal class Parser
         foreach (var symbolImportToken in symbolImportTokens)
         {
             var importedFunction = importScope.FindFunction(symbolImportToken.Value, lookInImports: false);
-            if (importedFunction == null)
+            if (importedFunction != null)
             {
-                var importedModule = importScope.FindModule(new[] { symbolImportToken }, lookInImports: false);
-                if (importedModule == null)
-                {
-                    throw new ParseException(
-                        symbolImportToken.Position,
-                        $"Module does not contain symbol '{symbolImportToken.Value}'"
-                    );
-                }
+                _scope.ModuleScope.ImportFunction(importedFunction);
+                continue;
+            }
 
+            var importedStruct = importScope.FindStruct(symbolImportToken.Value, lookInImports: false);
+            if (importedStruct != null)
+            {
+                _scope.ModuleScope.ImportStruct(importedStruct);
+                continue;
+            }
+
+            var importedModule = importScope.FindModule(new[] { symbolImportToken }, lookInImports: false);
+            if (importedModule != null)
+            {
                 _scope.ModuleScope.ImportModule(symbolImportToken.Value, importedModule);
                 continue;
             }
 
-            _scope.ModuleScope.ImportFunction(importedFunction);
+            if (importedModule == null)
+            {
+                throw new ParseException(
+                    symbolImportToken.Position,
+                    $"Module does not contain symbol '{symbolImportToken.Value}'"
+                );
+            }
         }
     }
 
@@ -165,8 +177,11 @@ internal class Parser
         }
 
         var importScope = ImportUserModule(relativePath, moduleName, pos);
-        foreach (var functionExpr in importScope.Functions)
-            _scope.ModuleScope.ImportFunction(functionExpr);
+        foreach (var symbol in importScope.Functions)
+            _scope.ModuleScope.ImportFunction(symbol);
+
+        foreach (var symbol in importScope.Structs)
+            _scope.ModuleScope.ImportStruct(symbol);
 
         foreach (var module in importScope.Modules.Where(x => x.Name != null))
             _scope.ModuleScope.ImportModule(module.Name!, module);
@@ -206,32 +221,18 @@ internal class Parser
 
     private Expr ParseExpr()
     {
-        if (Match(TokenKind.Module))
-        {
-            return ParseModule();
-        }
+        SkipWhiteSpace();
 
-        if (Match(TokenKind.Fn))
+        return Current?.Kind switch
         {
-            return ParseFn();
-        }
-        
-        if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
-        {
-            return ParseKeywordExpr();
-        }
-
-        if (Match(TokenKind.Alias))
-        {
-            return ParseAlias();
-        }
-
-        if (Match(TokenKind.Unalias))
-        {
-            return ParseUnalias();
-        }
-
-        return ParseBinaryIf();
+            TokenKind.Module => ParseModule(),
+            TokenKind.Struct => ParseStruct(),
+            TokenKind.Fn => ParseFn(),
+            TokenKind.Return or TokenKind.Break or TokenKind.Continue => ParseKeywordExpr(),
+            TokenKind.Alias => ParseAlias(),
+            TokenKind.Unalias => ParseUnalias(),
+            _ => ParseBinaryIf(),
+        };
     }
 
     private Expr ParseModule()
@@ -243,6 +244,18 @@ internal class Parser
         var block = ParseBlock(StructureKind.Module, moduleScope);
 
         return new ModuleExpr(identifier, block);
+    }
+
+    private Expr ParseStruct()
+    {
+        EatExpected(TokenKind.Struct);
+        var identifier = EatExpected(TokenKind.Identifier);
+        var parameters = ParseParameterList();
+
+        var structExpr = new StructExpr(identifier, parameters, _scope.ModuleScope);
+        _scope.ModuleScope.AddStruct(structExpr);
+
+        return structExpr;
     }
 
     private Expr ParseFn()
@@ -371,7 +384,6 @@ internal class Parser
     private Expr ParseAssignment()
     {
         var left = ParsePipe();
-
         if (Match(TokenKind.Equals,
             TokenKind.PlusEquals,
             TokenKind.MinusEquals,
@@ -414,7 +426,6 @@ internal class Parser
     private Expr ParsePipe()
     {
         var left = ParseClosure();
-
         while (Match(TokenKind.Pipe))
         {
             var op = Eat().Kind;
@@ -429,7 +440,6 @@ internal class Parser
     private Expr ParseClosure()
     {
         var left = ParseOr();
-
         if (AdvanceIf(TokenKind.EqualsGreater))
         {
             if (left is not CallExpr and not FunctionReferenceExpr)
@@ -496,7 +506,6 @@ internal class Parser
     private Expr ParseOr()
     {
         var left = ParseAnd();
-
         while (Match(TokenKind.Or, TokenKind.PipePipe))
         {
             var op = Eat().Kind;
@@ -511,7 +520,6 @@ internal class Parser
     private Expr ParseAnd()
     {
         var left = ParseComparison();
-
         while (Match(TokenKind.And, TokenKind.AmpersandAmpersand))
         {
             var op = Eat().Kind;
@@ -526,7 +534,6 @@ internal class Parser
     private Expr ParseComparison()
     {
         var left = ParseRange();
-
         while (Match(
             TokenKind.Greater, 
             TokenKind.GreaterEquals,
@@ -575,7 +582,6 @@ internal class Parser
     private Expr ParseCoalescing()
     {
         var left = ParseAdditive();
-
         while (Match(TokenKind.QuestionQuestion))
         {
             var op = Eat().Kind;
@@ -590,7 +596,6 @@ internal class Parser
     private Expr ParseAdditive()
     {
         var left = ParseMultiplicative();
-
         while (Match(TokenKind.Plus, TokenKind.Minus))
         {
             var op = Eat().Kind;
@@ -605,7 +610,6 @@ internal class Parser
     private Expr ParseMultiplicative()
     {
         var left = ParseExponent();
-
         while (Match(TokenKind.Star, TokenKind.Slash, TokenKind.Percent))
         {
             var op = Eat().Kind;
@@ -620,7 +624,6 @@ internal class Parser
     private Expr ParseExponent()
     {
         var left = ParseUnary();
-
         if (Match(TokenKind.Caret))
         {
             Eat();
@@ -636,12 +639,25 @@ internal class Parser
         if (Match(TokenKind.Minus, TokenKind.Not))
         {
             var op = Eat().Kind;
-            var value = ParseIndexer();
+            var value = ParseFieldAccess();
 
             return new UnaryExpr(op, value);
         }
 
-        return ParseIndexer();
+        return ParseFieldAccess();
+    }
+
+    private Expr ParseFieldAccess()
+    {
+        var left = ParseIndexer();
+        while (AdvanceIf(TokenKind.Arrow))
+        {
+            var identifier = EatExpected(TokenKind.Identifier);
+
+            left = new FieldAccessExpr(left, identifier);
+        }
+
+        return left;
     }
 
     private Expr ParseIndexer()
@@ -686,6 +702,11 @@ internal class Parser
         if (Match(TokenKind.Let))
         {
             return ParseLet();
+        }
+
+        if (Match(TokenKind.New))
+        {
+            return ParseNew();
         }
         
         if (Match(TokenKind.If))
@@ -854,6 +875,34 @@ internal class Parser
             _scope.AddVariable(identifier.Value, RuntimeNil.Value);
 
         return new LetExpr(identifierList, ParseExpr());
+    }
+
+    private Expr ParseNew()
+    {
+        EatExpected(TokenKind.New);
+
+        var modulePath = new List<Token>();
+        do
+        {
+            modulePath.Add(EatExpected(TokenKind.Identifier));
+        }
+        while (AdvanceIf(TokenKind.ColonColon));
+
+        var identifier = modulePath.Last();
+        modulePath.RemoveAt(modulePath.Count - 1);
+
+        EatExpected(TokenKind.OpenParenthesis);
+        var arguments = new List<Expr>();
+        do
+        {
+            if (!Match(TokenKind.ClosedParenthesis))
+                arguments.Add(ParseExpr());
+        }
+        while (AdvanceIf(TokenKind.Comma));
+
+        EatExpected(TokenKind.ClosedParenthesis);
+
+        return new NewExpr(identifier, modulePath, arguments);
     }
 
     private Expr ParseIf()

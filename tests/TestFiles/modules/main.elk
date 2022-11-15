@@ -14,6 +14,9 @@ module internal {
 fn hello(): "hello"
 fn x(): assert(internal::hello2() == "hello2")
 
+assert((new sub::Ting(2, 3))->b == 3)
+assert((new util::Ting2(2, 3))->field2 == 3)
+
 assert(util::increment(2) == 3)
 assert(util2::decrement(2) == 1)
 assert(addition(1, 2) == 3)

@@ -13,7 +13,7 @@ enum TokenKind
 
     // Keywords
     Not, And, Or, Fn, Let, If, Else, For, While, In, Return, Break, Continue, With, Using,
-    Nil, True, False, Alias, Unalias, Module,
+    Nil, True, False, Alias, Unalias, Module, Struct, New,
 
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,
@@ -22,6 +22,7 @@ enum TokenKind
     AmpersandAmpersand, PipePipe,
     Pipe,
     Ampersand,
+    Arrow,
 
     // Brackets
     OpenParenthesis, ClosedParenthesis,
