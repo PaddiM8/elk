@@ -28,11 +28,25 @@ public class RuntimeStruct : RuntimeObject
                 => this,
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
+            _ when toType == typeof(RuntimeDictionary)
+                => ToDictionary(),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
             _
                 => throw new RuntimeCastException<RuntimeStruct>(toType),
         };
+
+    private RuntimeDictionary ToDictionary()
+    {
+        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
+        foreach (var (key, value) in Values)
+        {
+            var keyValue = new RuntimeString(key);
+            dict[keyValue.GetHashCode()] = (keyValue, value);
+        }
+
+        return new(dict);
+    }
 
     public override RuntimeObject Operation(OperationKind kind)
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Struct");

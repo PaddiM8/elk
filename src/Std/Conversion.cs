@@ -19,6 +19,11 @@ static class Conversion
         => value.As<RuntimeBoolean>();
 
     /// <param name="value">Value that should be cast</param>
+    [ElkFunction("dict", Reachability.Everywhere)]
+    public static RuntimeDictionary ToDictionary(RuntimeObject value)
+        => value.As<RuntimeDictionary>();
+
+    /// <param name="value">Value that should be cast</param>
     [ElkFunction("float", Reachability.Everywhere)]
     public static RuntimeFloat ToFloat(RuntimeObject value)
         => value.As<RuntimeFloat>();
