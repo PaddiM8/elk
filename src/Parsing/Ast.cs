@@ -67,7 +67,7 @@ class EmptyExpr : Expr
     }
 }
 
-record Parameter(Token Identifier, Expr? DefaultValue, bool Variadic);
+record Parameter(Token Identifier, Expr? DefaultValue, bool IsVariadic);
 
 class ModuleExpr : Expr
 {
@@ -186,9 +186,9 @@ class TupleExpr : Expr
 
 class ListExpr : Expr
 {
-    public List<Expr> Values { get; }
+    public IList<Expr> Values { get; }
 
-    public ListExpr(List<Expr> values, TextPos position)
+    public ListExpr(IList<Expr> values, TextPos position)
         : base(position)
     {
         Values = values;
@@ -387,6 +387,8 @@ class CallExpr : Expr
     public FunctionSymbol? FunctionSymbol { get; init; }
 
     public StdFunction? StdFunction { get; init; }
+
+    public Expr? PipedToProgram { get; init; }
 
     public CallExpr(
         Token identifier,

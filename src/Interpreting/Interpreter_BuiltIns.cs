@@ -13,8 +13,6 @@ partial class Interpreter
 {
     private RuntimeObject EvaluateBuiltInCd(List<RuntimeObject> arguments)
     {
-        EmptyRedirector(arguments);
-
         if (arguments.Count > 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
 
@@ -48,13 +46,12 @@ partial class Interpreter
         bool globbingEnabled,
         bool isRoot)
     {
-        EmptyRedirector(arguments);
-
         string programName = arguments[0].As<RuntimeString>().Value;
 
         return EvaluateProgramCall(
             programName,
             arguments.GetRange(1, arguments.Count - 1),
+            pipedValue: null,
             globbingEnabled,
             isRoot
         );
@@ -62,8 +59,6 @@ partial class Interpreter
 
     private RuntimeObject EvaluateBuiltInScriptPath(List<RuntimeObject> arguments)
     {
-        EmptyRedirector(arguments);
-
         if (arguments.Any())
             throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
 
@@ -76,8 +71,6 @@ partial class Interpreter
 
     private RuntimeObject EvaluateBuiltInClosure(List<RuntimeObject> arguments)
     {
-        EmptyRedirector(arguments);
-
         if (_currentClosureExpr == null)
             throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
 
@@ -95,8 +88,6 @@ partial class Interpreter
 
     private RuntimeObject EvaluateBuiltInCall(List<RuntimeObject> arguments, bool isRoot)
     {
-        EmptyRedirector(arguments);
-
         if (arguments.Count == 0)
             throw new RuntimeWrongNumberOfArgumentsException(1, 0, true);
 
@@ -112,6 +103,7 @@ partial class Interpreter
             _ => EvaluateProgramCall(
                 ((RuntimeProgramFunction)functionReference).ProgramName,
                 actualArguments,
+                pipedValue: null,
                 globbingEnabled: false,
                 isRoot
             ),
@@ -123,8 +115,6 @@ partial class Interpreter
         RuntimeClosureFunction runtimeClosure,
         bool isRoot)
     {
-        EmptyRedirector(arguments);
-
         var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Closure.Function;
         var innerFunction = functionReferenceExpr.RuntimeFunction!;
 
@@ -150,8 +140,6 @@ partial class Interpreter
 
     private RuntimeError EvaluateBuiltInError(List<RuntimeObject> arguments)
     {
-        EmptyRedirector(arguments);
-
         if (arguments.Count != 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count, true);
 
@@ -159,13 +147,5 @@ partial class Interpreter
             arguments[0].As<RuntimeString>().Value,
             _lastExpr?.Position ?? TextPos.Default
         );
-    }
-
-    private void EmptyRedirector(IList<RuntimeObject> arguments)
-    {
-        if (_redirector.Status == RedirectorStatus.HasData)
-        {
-            arguments.Insert(0, _redirector.Receive()!);
-        }
     }
 }

@@ -32,7 +32,6 @@ partial class Interpreter
 
     private Scope.Scope _scope;
     private readonly RootModuleScope _rootModule;
-    private readonly Redirector _redirector = new();
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
     private ClosureExpr? _currentClosureExpr;
@@ -59,9 +58,6 @@ partial class Interpreter
             if (!PrintErrors)
                 throw;
 
-            // Make sure the redirector is emptied
-            _redirector.Receive();
-
             return (RuntimeError)e.Data["error"]!;
         }
 
@@ -78,9 +74,6 @@ partial class Interpreter
 
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);
-
-            // Make sure the redirector is emptied
-            _redirector.Receive();
 
             return error;
         }
@@ -223,16 +216,9 @@ partial class Interpreter
     {
         var condition = Next(expr.Condition);
         var conditionValue = condition.As<RuntimeBoolean>();
-
-        expr.ThenBranch.IsRoot = expr.IsRoot;
-        if (expr.ElseBranch != null)
-            expr.ElseBranch.IsRoot = expr.IsRoot;
-
         if (conditionValue.IsTrue)
-        {
             return Next(expr.ThenBranch);
-        }
-        
+
         return expr.ElseBranch == null
             ? RuntimeNil.Value
             : Next(expr.ElseBranch);
@@ -245,8 +231,6 @@ partial class Interpreter
         if (value is not IEnumerable<RuntimeObject> enumerableValue)
             throw new RuntimeIterationException(value.GetType());
 
-        expr.Branch.IsRoot = true;
-
         foreach (var current in enumerableValue)
         {
             expr.Branch.Scope.Clear();
@@ -254,14 +238,10 @@ partial class Interpreter
             NextBlock(expr.Branch, clearScope: false);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
-            {
                 return _returnHandler.Collect();
-            }
 
             if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
-            {
                 _returnHandler.Collect();
-            }
         }
 
         return RuntimeNil.Value;
@@ -269,8 +249,6 @@ partial class Interpreter
 
     private RuntimeObject Visit(WhileExpr expr)
     {
-        expr.Branch.IsRoot = true;
-
         while (Next(expr.Condition).As<RuntimeBoolean>().IsTrue)
         {
             Next(expr.Branch);
@@ -291,9 +269,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(TupleExpr expr)
     {
-        var values = expr.Values.Select(Next).ToList();
-
-        return new RuntimeTuple(values);
+        return new RuntimeTuple(expr.Values.Select(Next).ToList());
     }
 
     private RuntimeObject Visit(ListExpr expr)
@@ -320,9 +296,8 @@ partial class Interpreter
         if (clearScope)
             expr.Scope.Clear();
 
-        int i = 0;
         RuntimeObject lastValue = RuntimeNil.Value;
-        foreach (var child in expr.Expressions)
+        foreach (var (child, i) in expr.Expressions.WithIndex())
         {
             // If there is a value to be returned, stop immediately
             // and make sure it's passed upwards.
@@ -340,9 +315,7 @@ partial class Interpreter
                 break;
             }
 
-            child.IsRoot = true;
             Next(child);
-            i++;
         }
 
         _scope = prevScope;
@@ -387,14 +360,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(BinaryExpr expr)
     {
-        if (expr.Operator == OperationKind.Pipe)
-        {
-            _redirector.Open();
-            _redirector.Send(Next(expr.Left));
-            var result = Next(expr.Right);
-
-            return result;
-        }
+        Debug.Assert(expr.Operator != OperationKind.Pipe);
 
         if (expr.Operator == OperationKind.Equals)
         {
@@ -555,9 +521,7 @@ partial class Interpreter
     {
         var value = Next(expr.Value);
         if (value is IIndexable<RuntimeObject> indexableValue)
-        {
             return indexableValue[Next(expr.Index)];
-        }
 
         throw new RuntimeUnableToIndexException(value.GetType());
     }
@@ -582,22 +546,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(CallExpr expr, ClosureExpr? closureExpr = null)
     {
-        if (expr.FunctionSymbol == null && expr.StdFunction == null && closureExpr != null)
-            throw new RuntimeException("Unexpected closure");
-
-        // This needs to be done before evaluating the arguments,
-        // to make sure they don't receive the data instead.
-        RuntimeObject? pipedValue = null;
-        if ((expr.FunctionSymbol != null || expr.StdFunction != null) &&
-            _redirector.Status == RedirectorStatus.HasData)
-        {
-            pipedValue = _redirector.Receive();
-        }
-
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
-        if (pipedValue != null)
-            evaluatedArguments.Insert(0, pipedValue);
-
         RuntimeObject Evaluate(List<RuntimeObject> arguments)
         {
             return expr.CallType switch
@@ -605,6 +554,9 @@ partial class Interpreter
                 CallType.Program => EvaluateProgramCall(
                     expr.Identifier.Value,
                     arguments,
+                    expr.PipedToProgram != null
+                        ? Next(expr.PipedToProgram)
+                        : null,
                     globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                     isRoot: expr.IsRoot
                 ),
@@ -647,64 +599,30 @@ partial class Interpreter
         bool isRoot,
         ClosureExpr? closureExpr = null)
     {
-        if (closureExpr != null && !function.HasClosure)
-            throw new RuntimeException("Unexpected closure");
-
-        var allArguments = new List<RuntimeObject>();
+        var allArguments = new List<RuntimeObject>(
+            Math.Max(arguments.Count, function.Parameters.Count)
+        );
+        var functionScope = (LocalScope)function.Block.Scope;
+        functionScope.Clear();
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
-            if (argument == null)
+            if (argument == null && parameter?.DefaultValue != null)
             {
-                if (parameter?.DefaultValue != null)
-                    allArguments.Add(Next(parameter.DefaultValue));
+                allArguments.Add(Next(parameter.DefaultValue));
             }
-            else
+            else if (argument != null)
             {
                 allArguments.Add(argument);
             }
-        }
-
-        var functionScope = (LocalScope)function.Block.Scope;
-        functionScope.Clear();
-        bool encounteredDefaultParameter = false;
-        RuntimeList? variadicArguments = null;
-        foreach (var (parameter, argument) in function.Parameters.ZipLongest(allArguments))
-        {
-            if (parameter?.DefaultValue != null)
-                encounteredDefaultParameter = true;
-
-            if (parameter == null && variadicArguments == null ||
-                argument == null && parameter?.DefaultValue == null && parameter?.Variadic is false)
+            else
             {
-                bool variadic = function.Parameters.LastOrDefault()?.Variadic is true;
-                throw new RuntimeWrongNumberOfArgumentsException(function.Parameters.Count, arguments.Count, variadic);
-            }
-
-            // TODO: Do this in analyser?
-            if (encounteredDefaultParameter && parameter?.DefaultValue == null)
-            {
-                throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
-            }
-
-            if (variadicArguments != null && parameter != null)
-            {
-                throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
-            }
-
-            if (parameter?.Variadic is true)
-            {
-                variadicArguments = new RuntimeList(new List<RuntimeObject>());
-                functionScope.UpdateVariable(parameter.Identifier.Value, variadicArguments);
-            }
-
-            if (variadicArguments != null)
-            {
-                if (argument != null)
-                    variadicArguments.Values.Add(argument);
                 continue;
             }
 
-            functionScope.UpdateVariable(parameter!.Identifier.Value, argument!);
+            functionScope.UpdateVariable(
+                parameter!.Identifier.Value,
+                allArguments.Last()
+            );
         }
 
         function.Block.IsRoot = isRoot;
@@ -723,7 +641,6 @@ partial class Interpreter
         ClosureExpr? closureExpr = null)
     {
         var allArguments = new List<object?>(arguments.Count + 2);
-
         if (stdFunction.VariadicStart.HasValue)
         {
             var variadicArguments = arguments.GetRange(
@@ -819,6 +736,7 @@ partial class Interpreter
     private RuntimeObject EvaluateProgramCall(
         string fileName,
         List<RuntimeObject> arguments,
+        RuntimeObject? pipedValue,
         bool globbingEnabled,
         bool isRoot)
     {
@@ -846,8 +764,6 @@ partial class Interpreter
             newArguments.Add(value);
         }
 
-        bool stealOutput = _redirector.Status == RedirectorStatus.ExpectingInput || !isRoot;
-
         // Read potential shebang
         bool hasShebang = false;
         if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
@@ -874,9 +790,9 @@ partial class Interpreter
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                RedirectStandardOutput = stealOutput,
-                RedirectStandardError = stealOutput,
-                RedirectStandardInput = _redirector.Status == RedirectorStatus.HasData,
+                RedirectStandardOutput = !isRoot,
+                RedirectStandardError = !isRoot,
+                RedirectStandardInput = pipedValue != null,
                 WorkingDirectory = ShellEnvironment.WorkingDirectory,
             },
         };
@@ -893,12 +809,12 @@ partial class Interpreter
             throw new RuntimeNotFoundException(fileName);
         }
 
-        if (_redirector.Status == RedirectorStatus.HasData)
+        if (pipedValue != null)
         {
             try
             {
                 using var streamWriter = process.StandardInput;
-                streamWriter.Write(_redirector.Receive());
+                streamWriter.Write(pipedValue);
             }
             catch (IOException e)
             {
@@ -908,7 +824,7 @@ partial class Interpreter
 
         process.WaitForExit();
 
-        if (stealOutput)
+        if (!isRoot)
         {
             return process.ExitCode == 0
                 ? new RuntimeString(process.StandardOutput.ReadToEnd())
@@ -922,25 +838,19 @@ partial class Interpreter
         => expr.RuntimeValue!;
 
     private RuntimeObject Visit(FunctionReferenceExpr functionReferenceExpr)
-    {
-        return functionReferenceExpr.RuntimeFunction!;
-    }
+        => functionReferenceExpr.RuntimeFunction!;
 
     private RuntimeObject Visit(StringInterpolationExpr expr)
     {
         var result = new StringBuilder();
         foreach (var part in expr.Parts)
-        {
             result.Append(Next(part).As<RuntimeString>().Value);
-        }
 
         return new RuntimeString(result.ToString());
     }
 
     private RuntimeObject Visit(ClosureExpr closureExpr)
-    {
-        return closureExpr.Function is CallExpr callExpr
+        => closureExpr.Function is CallExpr callExpr
             ? NextCallWithClosure(callExpr, closureExpr)
             : new RuntimeClosureFunction(closureExpr);
-    }
 }

@@ -101,29 +101,44 @@ class Analyser
         };
     }
 
-    private Expr NextCallOrClosure(Expr expr, bool calledFromPipe, bool hasClosure)
+    private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure)
     {
         _lastExpr = expr;
 
         return expr switch
         {
-            ClosureExpr closureExpr => Visit(closureExpr, calledFromPipe),
-            CallExpr callExpr => Visit(callExpr, calledFromPipe, hasClosure),
+            ClosureExpr closureExpr => Visit(closureExpr, pipedValue),
+            CallExpr callExpr => Visit(callExpr, pipedValue, hasClosure),
             _ => throw new RuntimeException("Expected a function call to the right of pipe."),
         };
     }
 
     private ModuleExpr Visit(ModuleExpr expr)
     {
-        return new ModuleExpr(expr.Identifier, (BlockExpr)Next(expr.Body));
+        var block = (BlockExpr)Next(expr.Body);
+        block.IsRoot = true;
+
+        return new ModuleExpr(expr.Identifier, block);
     }
 
     private FunctionExpr Visit(FunctionExpr expr)
     {
-        foreach (var parameter in expr.Parameters)
+        bool encounteredDefaultParameter = false;
+        foreach (var (parameter, i) in expr.Parameters.WithIndex())
         {
-            if (parameter.DefaultValue != null)
+            if (parameter.DefaultValue == null)
+            {
+                if (encounteredDefaultParameter)
+                    throw new RuntimeException("Optional parameters may only occur at the end of parameter lists");
+            }
+            else
+            {
                 Next(parameter.DefaultValue!);
+                encounteredDefaultParameter = true;
+            }
+
+            if (parameter.IsVariadic && i != expr.Parameters.Count - 1)
+                throw new RuntimeException("Variadic parameters may only occur at the end of parameter lists");
 
             expr.Block.Scope.AddVariable(parameter.Identifier.Value, RuntimeNil.Value);
         }
@@ -149,25 +164,18 @@ class Analyser
         return new LetExpr(expr.IdentifierList, Next(expr.Value));
     }
 
-    private KeywordExpr Visit(KeywordExpr expr)
-    {
-        Expr? keywordValue = null;
-        if (expr.Value != null)
-            keywordValue = Next(expr.Value);
-
-        return new KeywordExpr(expr.Kind, keywordValue, expr.Position)
-        {
-            IsRoot = expr.IsRoot,
-        };
-    }
-
     private IfExpr Visit(IfExpr expr)
     {
         var ifCondition = Next(expr.Condition);
         var thenBranch = Next(expr.ThenBranch);
+        thenBranch.IsRoot = expr.IsRoot;
+
         Expr? elseBranch = null;
         if (expr.ElseBranch != null)
+        {
             elseBranch = Next(expr.ElseBranch);
+            elseBranch.IsRoot = expr.IsRoot;
+        }
 
         return new IfExpr(ifCondition, thenBranch, elseBranch)
         {
@@ -182,6 +190,7 @@ class Analyser
             expr.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
 
         var branch = (BlockExpr)Next(expr.Branch);
+        branch.IsRoot = true;
 
         return new ForExpr(expr.IdentifierList, forValue, branch)
         {
@@ -193,6 +202,7 @@ class Analyser
     {
         var whileCondition = Next(expr.Condition);
         var whileBranch = (BlockExpr)Next(expr.Branch);
+        whileBranch.IsRoot = true;
 
         return new WhileExpr(whileCondition, whileBranch)
         {
@@ -237,7 +247,15 @@ class Analyser
     private BlockExpr Visit(BlockExpr expr)
     {
         _scope = expr.Scope;
-        var blockExpressions = expr.Expressions.Select(Next).ToList();
+        var blockExpressions = new List<Expr>();
+        foreach (var analysed in expr.Expressions.Select(Next))
+        {
+            // The "IsRoot" value of the last expression
+            // is decided on the fly, in the interpreter.
+            analysed.IsRoot = true;
+            blockExpressions.Add(analysed);
+        }
+
         var newExpr = new BlockExpr(
             blockExpressions,
             expr.ParentStructureKind,
@@ -250,6 +268,38 @@ class Analyser
         _scope = _scope.Parent!;
 
         return newExpr;
+    }
+
+    private KeywordExpr Visit(KeywordExpr expr)
+    {
+        Expr? keywordValue = null;
+        if (expr.Value != null)
+            keywordValue = Next(expr.Value);
+
+        return new KeywordExpr(expr.Kind, keywordValue, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private Expr Visit(BinaryExpr expr)
+    {
+        var left = Next(expr.Left);
+        if (expr.Operator == OperationKind.Pipe)
+            return NextCallOrClosure(expr.Right, left, hasClosure: false);
+
+        return new BinaryExpr(left, expr.Operator, Next(expr.Right))
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private UnaryExpr Visit(UnaryExpr expr)
+    {
+        return new UnaryExpr(expr.Operator, Next(expr.Value))
+        {
+            IsRoot = expr.IsRoot,
+        };
     }
 
     private RangeExpr Visit(RangeExpr expr)
@@ -267,79 +317,9 @@ class Analyser
         };
     }
 
-    private VariableExpr Visit(VariableExpr expr)
-    {
-        var variableExpr = new VariableExpr(expr.Identifier)
-        {
-            IsRoot = expr.IsRoot,
-        };
-
-        if (!expr.Identifier.Value.StartsWith("$"))
-        {
-            variableExpr.VariableSymbol = _scope.FindVariable(expr.Identifier.Value);
-            if (variableExpr.VariableSymbol == null)
-                throw new RuntimeNotFoundException(expr.Identifier.Value);
-        }
-
-        return variableExpr;
-    }
-
     private IndexerExpr Visit(IndexerExpr expr)
     {
         return new IndexerExpr(Next(expr.Value), Next(expr.Index))
-        {
-            IsRoot = expr.IsRoot,
-        };
-    }
-
-    private LiteralExpr Visit(LiteralExpr expr)
-    {
-        RuntimeObject value = expr.Value.Kind switch
-        {
-            TokenKind.IntegerLiteral => new RuntimeInteger(int.Parse(expr.Value.Value)),
-            TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
-            TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
-            TokenKind.True => RuntimeBoolean.True,
-            TokenKind.False => RuntimeBoolean.False,
-            TokenKind.Nil => RuntimeNil.Value,
-            TokenKind.RegexLiteral => new RuntimeRegex(new Regex(expr.Value.Value[1..^1])),
-            _ => throw new ArgumentOutOfRangeException(),
-        };
-
-        var newExpr = new LiteralExpr(expr.Value)
-        {
-            RuntimeValue = value,
-            IsRoot = expr.IsRoot,
-        };
-
-        return newExpr;
-    }
-
-    private StringInterpolationExpr Visit(StringInterpolationExpr expr)
-    {
-        var parts = expr.Parts.Select(Next).ToList();
-
-        return new StringInterpolationExpr(parts, expr.Position)
-        {
-            IsRoot = expr.IsRoot,
-        };
-    }
-
-    private BinaryExpr Visit(BinaryExpr expr)
-    {
-        var rightBinary = expr.Operator == OperationKind.Pipe
-            ? NextCallOrClosure(expr.Right, calledFromPipe: true, hasClosure: false)
-            : Next(expr.Right);
-
-        return new BinaryExpr(Next(expr.Left), expr.Operator, rightBinary)
-        {
-            IsRoot = expr.IsRoot,
-        };
-    }
-
-    private UnaryExpr Visit(UnaryExpr expr)
-    {
-        return new UnaryExpr(expr.Operator, Next(expr.Value))
         {
             IsRoot = expr.IsRoot,
         };
@@ -360,7 +340,24 @@ class Analyser
         return newExpr;
     }
 
-    private CallExpr Visit(CallExpr expr, bool calledFromPipe = false, bool hasClosure = false)
+    private VariableExpr Visit(VariableExpr expr)
+    {
+        var variableExpr = new VariableExpr(expr.Identifier)
+        {
+            IsRoot = expr.IsRoot,
+        };
+
+        if (!expr.Identifier.Value.StartsWith("$"))
+        {
+            variableExpr.VariableSymbol = _scope.FindVariable(expr.Identifier.Value);
+            if (variableExpr.VariableSymbol == null)
+                throw new RuntimeNotFoundException(expr.Identifier.Value);
+        }
+
+        return variableExpr;
+    }
+
+    private CallExpr Visit(CallExpr expr, Expr? pipedValue = null, bool hasClosure = false)
     {
         string name = expr.Identifier.Value;
         CallType? builtIn = name switch
@@ -391,10 +388,13 @@ class Analyser
             },
         };
 
-        int argumentCount = expr.Arguments.Count;
-        if (calledFromPipe)
-            argumentCount++;
+        if (pipedValue != null && callType != CallType.Program)
+            expr.Arguments.Insert(0, pipedValue);
 
+        if (callType != CallType.StdFunction && callType != CallType.Function && hasClosure)
+            throw new RuntimeException("Unexpected closure");
+
+        int argumentCount = expr.Arguments.Count;
         if (stdFunction != null)
         {
             if (argumentCount < stdFunction.MinArgumentCount ||
@@ -411,6 +411,36 @@ class Analyser
                 throw new RuntimeException("Expected closure.");
         }
 
+        if (functionSymbol != null)
+        {
+            if (hasClosure && !functionSymbol.Expr.HasClosure)
+                throw new RuntimeException("Expected closure.");
+
+            var parameters = functionSymbol.Expr.Parameters;
+            bool isVariadic = functionSymbol.Expr.Parameters.LastOrDefault()?.IsVariadic is true;
+            bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
+            bool tooFewArguments = parameters.Count > argumentCount &&
+               parameters[argumentCount].DefaultValue == null && !isVariadic;
+
+            if (tooManyArguments || tooFewArguments)
+                throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
+
+            if (parameters.LastOrDefault()?.IsVariadic is true)
+            {
+                int variadicStart = parameters.Count - 1;
+                var variadicArguments = new Expr[expr.Arguments.Count - variadicStart];
+                for (int i = 0; i < variadicArguments.Length; i++)
+                {
+                    variadicArguments[^(i + 1)] = expr.Arguments.Last();
+                    expr.Arguments.RemoveAt(expr.Arguments.Count - 1);
+                }
+
+                expr.Arguments.Add(
+                    new ListExpr(variadicArguments, variadicArguments.FirstOrDefault()?.Position ?? TextPos.Default)
+                );
+            }
+        }
+
         var newExpr = new CallExpr(
             expr.Identifier,
             expr.ModulePath,
@@ -423,6 +453,32 @@ class Analyser
             IsRoot = expr.IsRoot,
             StdFunction = stdFunction,
             FunctionSymbol = functionSymbol,
+            PipedToProgram = callType == CallType.Program
+                ? pipedValue
+                : null,
+        };
+
+        return newExpr;
+    }
+
+    private LiteralExpr Visit(LiteralExpr expr)
+    {
+        RuntimeObject value = expr.Value.Kind switch
+        {
+            TokenKind.IntegerLiteral => new RuntimeInteger(int.Parse(expr.Value.Value)),
+            TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
+            TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
+            TokenKind.True => RuntimeBoolean.True,
+            TokenKind.False => RuntimeBoolean.False,
+            TokenKind.Nil => RuntimeNil.Value,
+            TokenKind.RegexLiteral => new RuntimeRegex(new Regex(expr.Value.Value[1..^1])),
+            _ => throw new ArgumentOutOfRangeException(),
+        };
+
+        var newExpr = new LiteralExpr(expr.Value)
+        {
+            RuntimeValue = value,
+            IsRoot = expr.IsRoot,
         };
 
         return newExpr;
@@ -456,10 +512,20 @@ class Analyser
         };
     }
 
-    private Expr Visit(ClosureExpr expr, bool calledFromPipe = false)
+    private StringInterpolationExpr Visit(StringInterpolationExpr expr)
+    {
+        var parts = expr.Parts.Select(Next).ToList();
+
+        return new StringInterpolationExpr(parts, expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private Expr Visit(ClosureExpr expr, Expr? pipedValue = null)
     {
         var function = expr.Function is CallExpr callExpr
-            ? NextCallOrClosure(callExpr, calledFromPipe, hasClosure: true)
+            ? NextCallOrClosure(callExpr, pipedValue, hasClosure: true)
             : Next(expr.Function);
 
         return new ClosureExpr(
