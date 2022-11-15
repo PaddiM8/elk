@@ -889,16 +889,22 @@ internal class Parser
         var identifier = modulePath.Last();
         modulePath.RemoveAt(modulePath.Count - 1);
 
-        EatExpected(TokenKind.OpenParenthesis);
         var arguments = new List<Expr>();
-        do
+        if (AdvanceIf(TokenKind.OpenParenthesis))
         {
-            if (!Match(TokenKind.ClosedParenthesis))
-                arguments.Add(ParseExpr());
-        }
-        while (AdvanceIf(TokenKind.Comma));
+            do
+            {
+                if (!Match(TokenKind.ClosedParenthesis))
+                    arguments.Add(ParseExpr());
+            }
+            while (AdvanceIf(TokenKind.Comma));
 
-        EatExpected(TokenKind.ClosedParenthesis);
+            EatExpected(TokenKind.ClosedParenthesis);
+        }
+        else
+        {
+            arguments = ParseTextArguments();
+        }
 
         return new NewExpr(identifier, modulePath, arguments);
     }
