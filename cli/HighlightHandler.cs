@@ -1,5 +1,6 @@
 #region
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using BetterReadLine;
@@ -28,7 +29,7 @@ class HighlightHandler : IHighlightHandler
             @"(?<comment>#.*(\n|\0))",
             @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
-            @$"(?<identifier>\b\w+ {textArgument})",
+            @$"(?<identifier>\b\w+(\(| {textArgument}))",
         };
         _pattern = new Regex(string.Join("|", rules), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
     }
@@ -73,9 +74,12 @@ class HighlightHandler : IHighlightHandler
                 if (_shell.VariableExists(identifier))
                     return m.Groups["identifier"].Value;
 
-                return argument.Any()
-                    ? $"\x1b[32m{identifier}\x1b[94m{argument}\x1b[0m"
-                    : $"\x1b[32m{identifier}\x1b[0m{argument}";
+                if (argument.Any())
+                    return $"\x1b[32m{identifier}\x1b[94m{argument}\x1b[0m";
+
+                return identifier.EndsWith("(")
+                    ? $"\x1b[32m{identifier[..^1]}\x1b[0m("
+                    : $"\x1b[32m{identifier}\x1b[0m";
             }
 
             return colorCode == null
