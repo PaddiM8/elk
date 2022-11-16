@@ -106,11 +106,14 @@ partial class Interpreter
     private RuntimeError Error(string message)
         => new(message, Position);
 
+    public bool StructExists(string name)
+        => _scope.ModuleScope.HasStruct(name);
+
     public bool FunctionExists(string name)
         => _scope.ModuleScope.HasFunction(name);
 
     public bool VariableExists(string name)
-        => _scope.ModuleScope.ContainsVariable(name);
+        => _scope.ModuleScope.HasVariable(name);
 
     public void AddGlobalVariable(string name, RuntimeObject value)
         => _scope.ModuleScope.AddVariable(name, value);

@@ -1102,7 +1102,7 @@ internal class Parser
         }
         
         if (modulePath.Count == 0 &&
-            (identifier.Value.StartsWith('$') || _scope.ContainsVariable(identifier.Value)))
+            (identifier.Value.StartsWith('$') || _scope.HasVariable(identifier.Value)))
         {
             return new VariableExpr(identifier);
         }

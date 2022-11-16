@@ -62,6 +62,9 @@ public class ShellSession
         Environment.SetEnvironmentVariable("PATH", pathValue);
     }
 
+    public bool StructExists(string name)
+        => _interpreter.StructExists(name);
+
     public bool VariableExists(string name)
         => _interpreter.VariableExists(name);
 

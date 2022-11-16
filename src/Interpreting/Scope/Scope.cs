@@ -40,8 +40,8 @@ abstract class Scope
             symbol.Value = RuntimeNil.Value;
     }
 
-    public bool ContainsVariable(string name)
-        => _variables.ContainsKey(name) || (Parent?.ContainsVariable(name) ?? false);
+    public bool HasVariable(string name)
+        => _variables.ContainsKey(name) || (Parent?.HasVariable(name) ?? false);
 
     public VariableSymbol? FindVariable(string name)
     {

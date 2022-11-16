@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -22,14 +23,14 @@ class HighlightHandler : IHighlightHandler
         var rules = new[]
         {
             @"(?<keywords>\b(module|struct|fn|if|else|return|with|using|from|let|new|true|false|for|while|in|nil|break|continue|and|or)\b)",
-            @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\b)",
+            @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|Regex|String|Tuple|Type|Iterable|Indexable)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
             "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)",
             @"(?<comment>#.*(\n|\0))",
             @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
-            @$"(?<identifier>\b\w+(\(| {textArgument}))",
+            @$"(?<identifier>\b\w+( {textArgument})?)",
         };
         _pattern = new Regex(string.Join("|", rules), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
     }
@@ -71,14 +72,14 @@ class HighlightHandler : IHighlightHandler
                 string identifier = m.Groups["identifier"].Value;
                 identifier = identifier[..^argument.Length];
 
+                if (_shell.StructExists(identifier))
+                    return $"\x1b[96m{m.Groups["identifier"].Value}\x1b[0m";
+
                 if (_shell.VariableExists(identifier))
                     return m.Groups["identifier"].Value;
 
-                if (argument.Any())
-                    return $"\x1b[32m{identifier}\x1b[94m{argument}\x1b[0m";
-
-                return identifier.EndsWith("(")
-                    ? $"\x1b[32m{identifier[..^1]}\x1b[0m("
+                return argument.Any()
+                    ? $"\x1b[32m{identifier}\x1b[94m{argument}\x1b[0m"
                     : $"\x1b[32m{identifier}\x1b[0m";
             }
 
