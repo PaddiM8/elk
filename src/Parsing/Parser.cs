@@ -1047,7 +1047,10 @@ internal class Parser
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
         if (modulePath.Count == 0 && importedStdModule != null)
         {
-            modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
+            modulePath = new List<Token>
+            {
+                new(TokenKind.Identifier, importedStdModule, TextPos.Default),
+            };
         }
 
         if (AdvanceIf(TokenKind.OpenParenthesis))
