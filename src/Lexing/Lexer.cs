@@ -153,6 +153,11 @@ internal class Lexer
             return NextString();
         }
 
+        if (Current == '\'' && Previous != '\\')
+        {
+            return NextSingleQuoteString();
+        }
+
         if (IsValidIdentifierStart(Current))
         {
             return NextIdentifier();
@@ -335,6 +340,36 @@ internal class Lexer
         }
 
         if (Current != '"')
+            Error("Unterminated string literal");
+
+        Eat(); // Final quote
+
+        return Build(
+            TokenKind.StringLiteral,
+            value.ToString(),
+            new(_pos.line, _pos.column - value.Length, _filePath)
+        );
+    }
+
+    private Token NextSingleQuoteString()
+    {
+        Eat(); // Quote
+
+        var value = new StringBuilder();
+        while (!ReachedEnd && Current != '\'')
+        {
+            if (Current == '\\' && Peek == '\'')
+            {
+                value.Append('\'');
+                Eat();
+                Eat();
+                continue;
+            }
+
+            value.Append(Eat());
+        }
+
+        if (Current != '\'')
             Error("Unterminated string literal");
 
         Eat(); // Final quote

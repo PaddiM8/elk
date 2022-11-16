@@ -24,6 +24,7 @@ class HighlightHandler : IHighlightHandler
             @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|String|Tuple|Type)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
             "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
+            "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)",
             @"(?<comment>#.*(\n|\0))",
             @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
             @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
@@ -46,6 +47,8 @@ class HighlightHandler : IHighlightHandler
             else if (m.Groups["numbers"].Value.Any())
                 colorCode = 33;
             else if (m.Groups["string"].Value.Any())
+                colorCode = 93;
+            else if (m.Groups["singleQuoteString"].Value.Any())
                 colorCode = 93;
             else if (m.Groups["comment"].Value.Any())
                 colorCode = 90;
