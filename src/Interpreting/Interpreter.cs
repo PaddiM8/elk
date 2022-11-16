@@ -192,7 +192,7 @@ partial class Interpreter
         foreach (var (key, value) in parameters.Zip(arguments))
             dict[key] = value;
 
-        return new RuntimeStruct(dict);
+        return new RuntimeStruct(expr.StructSymbol, dict);
     }
 
     private void SetVariables(IReadOnlyCollection<Token> identifiers, RuntimeObject value, Scope.Scope? scope = null)

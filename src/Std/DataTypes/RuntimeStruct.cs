@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.Std.Attributes;
 
@@ -14,10 +15,13 @@ namespace Elk.Std.DataTypes;
 [ElkType("Struct")]
 public class RuntimeStruct : RuntimeObject
 {
+    internal StructSymbol Symbol { get; }
+
     public Dictionary<string, RuntimeObject> Values { get; }
 
-    internal RuntimeStruct(Dictionary<string, RuntimeObject> values)
+    internal RuntimeStruct(StructSymbol symbol, Dictionary<string, RuntimeObject> values)
     {
+        Symbol = symbol;
         Values = values;
     }
 

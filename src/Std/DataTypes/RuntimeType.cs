@@ -3,6 +3,7 @@
 using System;
 using System.Reflection;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.Std.Attributes;
 
@@ -14,14 +15,26 @@ namespace Elk.Std.DataTypes;
 public class RuntimeType : RuntimeObject
 {
     public string Name
-        => Type.GetCustomAttribute<ElkTypeAttribute>()!.Name;
+        => Type?.GetCustomAttribute<ElkTypeAttribute>()!.Name ??
+               StructSymbol!.Expr.Identifier.Value;
 
-    public Type Type { get; }
+    internal Type? Type { get; }
 
-    public RuntimeType(Type type)
+   internal StructSymbol? StructSymbol { get; }
+
+    internal RuntimeType(Type type)
     {
         Type = type;
     }
+
+    internal RuntimeType(StructSymbol structSymbol)
+    {
+        StructSymbol = structSymbol;
+    }
+
+    public bool IsAssignableTo(RuntimeObject value)
+        => Type?.IsInstanceOfType(value) is true ||
+               value is RuntimeStruct valueStruct && valueStruct.Symbol == StructSymbol;
 
     public override RuntimeObject As(Type toType)
         => toType switch
@@ -43,7 +56,7 @@ public class RuntimeType : RuntimeObject
         => throw new RuntimeInvalidOperationException(kind.ToString(), "Type");
 
     public override int GetHashCode()
-        => Type.GetHashCode();
+        => Type?.GetHashCode() ?? StructSymbol!.GetHashCode();
 
     public override string ToString()
         => Name;

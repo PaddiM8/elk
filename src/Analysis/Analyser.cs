@@ -393,13 +393,16 @@ class Analyser
 
     private TypeExpr Visit(TypeExpr expr)
     {
-        var type = StdBindings.GetRuntimeType(expr.Identifier.Value);
-        if (type == null)
+        var stdType = StdBindings.GetRuntimeType(expr.Identifier.Value);
+        var userType = _scope.ModuleScope.FindStruct(expr.Identifier.Value, lookInImports: true);
+        if (stdType == null && userType == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
         var newExpr = new TypeExpr(expr.Identifier)
         {
-            RuntimeValue = new RuntimeType(type),
+            RuntimeValue = stdType != null
+                ? new RuntimeType(stdType)
+                : new RuntimeType(userType!),
             IsRoot = expr.IsRoot,
         };
 

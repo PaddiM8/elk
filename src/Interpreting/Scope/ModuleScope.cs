@@ -101,6 +101,9 @@ class ModuleScope : Scope
             _functions[function.Identifier.Value].Expr = function;
     }
 
+    public bool HasStruct(string name)
+        => _structs.ContainsKey(name);
+
     public bool HasFunction(string name)
         => _functions.ContainsKey(name);
 
