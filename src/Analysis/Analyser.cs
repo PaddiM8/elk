@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Elk.Std.Bindings;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -545,7 +544,6 @@ class Analyser
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
             TokenKind.Nil => RuntimeNil.Value,
-            TokenKind.RegexLiteral => new RuntimeRegex(new Regex(expr.Value.Value[1..^1])),
             _ => throw new ArgumentOutOfRangeException(),
         };
 

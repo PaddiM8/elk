@@ -680,14 +680,12 @@ internal class Parser
             TokenKind.StringLiteral,
             TokenKind.Nil,
             TokenKind.True,
-            TokenKind.False,
-            TokenKind.Slash))
+            TokenKind.False))
         {
             return Current!.Kind switch
             {
                 TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
                 TokenKind.StringLiteral => ParseStringLiteral(),
-                TokenKind.Slash => ParseRegexLiteral(),
                 _ => new LiteralExpr(Eat()),
             };
         }
@@ -827,23 +825,6 @@ internal class Parser
         }
 
         return new StringInterpolationExpr(parsedParts, stringLiteral.Position);
-    }
-
-    private Expr ParseRegexLiteral()
-    {
-        var startPos = EatExpected(TokenKind.Slash).Position;
-        var regexBuilder = new StringBuilder("/");
-        while (!(Match(TokenKind.Slash) && Previous?.Kind != TokenKind.Backslash))
-            regexBuilder.Append(Eat().Value);
-
-        regexBuilder.Append(Eat().Value); // Final slash
-        var regexToken = new Token(
-            TokenKind.RegexLiteral,
-            regexBuilder.ToString(),
-            new TextPos(startPos.Line, startPos.Column, startPos.FilePath)
-        );
-
-        return new LiteralExpr(regexToken);
     }
 
     private Expr ParseParenthesis()

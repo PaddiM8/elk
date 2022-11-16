@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -59,6 +60,8 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
                 => new RuntimeInteger(number),
             _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out double number)
                 => new RuntimeFloat(number),
+            _ when toType == typeof(RuntimeRegex)
+                => new RuntimeRegex(new System.Text.RegularExpressions.Regex(Value)),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value.Length != 0),
             _

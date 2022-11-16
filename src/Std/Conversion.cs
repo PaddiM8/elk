@@ -39,6 +39,11 @@ static class Conversion
         => value.As<RuntimeList>();
 
     /// <param name="value">Value that should be cast</param>
+    [ElkFunction("regex", Reachability.Everywhere)]
+    public static RuntimeRegex ToRegex(RuntimeObject value)
+        => value.As<RuntimeRegex>();
+
+    /// <param name="value">Value that should be cast</param>
     [ElkFunction("str", Reachability.Everywhere)]
     public static RuntimeString ToString(RuntimeObject value)
         => value.As<RuntimeString>();
