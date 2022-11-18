@@ -73,7 +73,14 @@ class AutoCompleteHandler : IAutoCompleteHandler
             );
         }
 
-        return directories.Concat(files).ToArray();
+        var completions = directories.Concat(files).ToList();
+        if (completions.Count > 1 && completionTarget.Length > 0 &&
+            !"./~".Contains(completionTarget.Last()))
+        {
+            completions.Insert(0, new Completion(completionTarget));
+        }
+
+        return completions;
     }
 
     private static string FormatSuggestion(string completion)
