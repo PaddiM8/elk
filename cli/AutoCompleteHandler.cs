@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -34,9 +35,9 @@ class AutoCompleteHandler : IAutoCompleteHandler
         return 0;
     }
 
-    public string[] GetSuggestions(string text, int startPos, int endPos)
+    public IList<Completion> GetSuggestions(string text, int startPos, int endPos)
     {
-        string suggestionTarget = text[startPos..endPos];
+        string completionTarget = text[startPos..endPos];
         int pathStart = text[..endPos].LastIndexOf(' ');
         string path = text[(pathStart + 1)..startPos];
         if (path.StartsWith("~"))
@@ -45,21 +46,36 @@ class AutoCompleteHandler : IAutoCompleteHandler
         string fullPath = Path.Combine(_shell.WorkingDirectory, path);
 
         if (!Directory.Exists(fullPath))
-            return Array.Empty<string>();
+            return Array.Empty<Completion>();
 
-        return Directory.GetFileSystemEntries(fullPath)
+        var directories = Directory.GetDirectories(fullPath)
             .Select(Path.GetFileName)
-            .Where(x => x!.StartsWith(suggestionTarget))
-            .Select(x => FormatSuggestion(x!, fullPath))
-            .ToArray();
+            .Where(x => x!.StartsWith(completionTarget))
+            .Order()
+            .Select(x => FormatSuggestion(x!))
+            .Select(x => new Completion(x, $"{x}/"))
+            .ToList();
+        var files = Directory.GetFiles(fullPath)
+            .Select(Path.GetFileName)
+            .Where(x => x!.StartsWith(completionTarget))
+            .Order()
+            .Select(x => FormatSuggestion(x!))
+            .Select(x => new Completion(x));
+
+        // Add a trailing slash if it's the only one, since
+        // there are no tab completions to scroll through
+        // anyway and the user can continue tabbing directly.
+        if (directories.Count == 1 && !files.Any())
+        {
+            directories[0] = new Completion(
+                $"{directories[0].CompletionText}/",
+                directories[0].DisplayText
+            );
+        }
+
+        return directories.Concat(files).ToArray();
     }
 
-    private static string FormatSuggestion(string suggestion, string preceding)
-    {
-        string escaped = new Regex("[{}()|$ ]").Replace(suggestion, m => $"\\{m.Value}");
-
-        return Directory.Exists(Path.Combine(preceding, suggestion))
-            ? escaped + "/"
-            : escaped;
-    }
+    private static string FormatSuggestion(string completion)
+        => new Regex("[{}()|$ ]").Replace(completion, m => $"\\{m.Value}");
 }
