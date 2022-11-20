@@ -62,6 +62,25 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Select(x => FormatSuggestion(x!))
             .Select(x => new Completion(x));
 
+        if (!directories.Any() && !files.Any())
+        {
+            var comparison = StringComparison.CurrentCultureIgnoreCase;
+            directories = Directory.GetDirectories(fullPath)
+                .Select(Path.GetFileName)
+                .Where(x => x!.Contains(completionTarget, comparison))
+                .Order()
+                .Select(x => FormatSuggestion(x!))
+                .Select(x => new Completion(x, $"{x}/"))
+                .ToList();
+
+            files = Directory.GetFiles(fullPath)
+                .Select(Path.GetFileName)
+                .Where(x => x!.Contains(completionTarget, comparison))
+                .Order()
+                .Select(x => FormatSuggestion(x!))
+                .Select(x => new Completion(x));
+        }
+
         // Add a trailing slash if it's the only one, since
         // there are no tab completions to scroll through
         // anyway and the user can continue tabbing directly.
