@@ -15,23 +15,28 @@ class HighlightHandler : IHighlightHandler
     private readonly ShellSession _shell;
     private readonly Regex _pattern;
     private readonly Regex _textArgumentPattern;
+    private readonly Regex _stringLiteralPattern;
 
     public HighlightHandler(ShellSession shell)
     {
         _shell = shell;
 
-        const string textArgument = "(?<textArgument>((&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|[^{})|&\\->;\\n])+)?)";
+        const string textArgumentPattern = "(?<textArgument>((&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|\\$\\{[^}]+\\}|[^{})|&\\->;\\n])+)?)";
+        
+        const string singleQuoteStringPattern = "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)";
+        const string stringPattern = "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)";
+        const string interpolationPattern = @"(?<interpolation>\$\{[^}]+\})";
         var rules = new[]
         {
             @"(?<keywords>\b(module|struct|fn|if|else|return|with|using|from|let|new|true|false|for|while|in|nil|break|continue|and|or)\b)",
             @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|Regex|String|Tuple|Type|Iterable|Indexable)\b)",
             @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
-            "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)",
-            "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
             @"(?<comment>#.*(\n|\0))",
+            singleQuoteStringPattern,
+            stringPattern,
             @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
-            @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgument + ")",
-            @$"(?<identifier>\b\w+( {textArgument})?)",
+            @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgumentPattern + ")",
+            @$"(?<identifier>\b\w+( {textArgumentPattern})?)",
         };
         _pattern = new Regex(
             string.Join("|", rules),
@@ -40,11 +45,21 @@ class HighlightHandler : IHighlightHandler
 
         var textArgumentRules = new[]
         {
-            "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)",
-            "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)",
+            singleQuoteStringPattern,
+            stringPattern,
+            interpolationPattern,
         };
         _textArgumentPattern = new Regex(
             string.Join("|", textArgumentRules),
+            RegexOptions.Compiled | RegexOptions.ExplicitCapture
+        );
+
+        var stringLiteralRules = new[]
+        {
+            interpolationPattern,
+        };
+        _stringLiteralPattern = new Regex(
+            string.Join("|", stringLiteralRules),
             RegexOptions.Compiled | RegexOptions.ExplicitCapture
         );
     }
@@ -63,9 +78,9 @@ class HighlightHandler : IHighlightHandler
             else if (m.Groups["numbers"].Value.Any())
                 colorCode = 33;
             else if (m.Groups["string"].Value.Any())
-                colorCode = 93;
+                return HighlightStringLiteral(m.Value);
             else if (m.Groups["singleQuoteString"].Value.Any())
-                colorCode = 93;
+                return HighlightStringLiteral(m.Value);
             else if (m.Groups["comment"].Value.Any())
                 colorCode = 90;
             else if (m.Groups["namedDeclaration"].Value.Any())
@@ -116,12 +131,35 @@ class HighlightHandler : IHighlightHandler
             if (m.Groups["string"].Value.Any() ||
                 m.Groups["singleQuoteString"].Value.Any())
             {
-                return $"\x1b[93m{m.Value}\x1b[94m";
+                return $"{HighlightStringLiteral(m.Value)}\x1b[94m";
+            }
+
+            if (m.Groups["interpolation"].Value.Any())
+            {
+                string interpolation = Highlight(m.Value[2..^1]);
+                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[94m";
             }
 
             return m.Value;
         });
 
         return $"\x1b[94m{result}\x1b[0m";
+    }
+
+    private string HighlightStringLiteral(string text)
+    {
+        string result = _stringLiteralPattern.Replace(text, m =>
+        {
+            if (m.Groups["interpolation"].Value.Any())
+            {
+                string interpolation = Highlight(m.Value[2..^1]);
+
+                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[93m";
+            }
+
+            return m.Value;
+        });
+
+        return $"\x1b[93m{result}\x1b[0m";
     }
 }
