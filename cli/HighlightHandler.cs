@@ -92,8 +92,8 @@ class HighlightHandler : IHighlightHandler
                 path = path[..^argument.Length];
 
                 return argument.Any()
-                    ? $"\x1b[32m{path}\x1b[94m{argument}\x1b[0m"
-                    : $"\x1b[32m{path}\x1b[0m{argument}";
+                    ? $"\x1b[95m{path}{HighlightTextArguments(argument)}\x1b[0m"
+                    : $"\x1b[95m{path}\x1b[0m{argument}";
             }
             else if (m.Groups["identifier"].Value.Any())
             {
@@ -114,8 +114,8 @@ class HighlightHandler : IHighlightHandler
                 }
 
                 return argument.Any()
-                    ? $"\x1b[32m{identifier}{HighlightTextArguments(argument)}\x1b[0m"
-                    : $"\x1b[32m{identifier}\x1b[0m";
+                    ? $"\x1b[95m{identifier}{HighlightTextArguments(argument)}\x1b[0m"
+                    : $"\x1b[95m{identifier}\x1b[0m";
             }
 
             return colorCode == null
@@ -131,19 +131,19 @@ class HighlightHandler : IHighlightHandler
             if (m.Groups["string"].Value.Any() ||
                 m.Groups["singleQuoteString"].Value.Any())
             {
-                return $"{HighlightStringLiteral(m.Value)}\x1b[94m";
+                return $"{HighlightStringLiteral(m.Value)}\x1b[36m";
             }
 
             if (m.Groups["interpolation"].Value.Any())
             {
                 string interpolation = Highlight(m.Value[2..^1]);
-                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[94m";
+                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[36m";
             }
 
             return m.Value;
         });
 
-        return $"\x1b[94m{result}\x1b[0m";
+        return $"\x1b[36m{result}\x1b[0m";
     }
 
     private string HighlightStringLiteral(string text)
