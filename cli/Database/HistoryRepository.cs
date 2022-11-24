@@ -32,12 +32,11 @@ class HistoryRepository
             .ToList();
     }
 
-    public List<HistoryEntry> GetWithPath(string path)
+    public HistoryEntry? GetSingleWithPathAndStart(string path, string start)
     {
         return _db.Table<HistoryEntry>()
-            .Where(x => x.Path == path)
-            .Take(50)
-            .ToList();
+            .OrderByDescending(x => x.Time)
+            .FirstOrDefault(x => x.Path == path && x.Content.StartsWith(start));
     }
     
     public List<HistoryEntry> GetWithStart(string start)

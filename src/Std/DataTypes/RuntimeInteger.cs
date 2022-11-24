@@ -48,6 +48,7 @@ public class RuntimeInteger : RuntimeObject
             return As<RuntimeFloat>().Operation(kind, other);
 
         var otherNumber = other.As<RuntimeInteger>();
+        
         return kind switch
         {
             OperationKind.Addition => new RuntimeInteger(Value + otherNumber.Value),

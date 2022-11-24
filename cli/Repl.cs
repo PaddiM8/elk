@@ -24,16 +24,14 @@ class Repl
 
         var shell = new ShellSession();
         const int maxEntries = 50000;
-        var historyHandler = HistoryHandler.Init(
-            maxEntries,
-            new HistoryRepository(maxEntries),
-            shell
-        );
+        var historyRepository = new HistoryRepository(maxEntries);
+        var historyHandler = HistoryHandler.Init(maxEntries, historyRepository);
         var readLine = new ReadLine
         {
             HistoryHandler = historyHandler,
             AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }),
             HighlightHandler = new HighlightHandler(shell),
+            HintHandler = new HintHandler(historyRepository, shell),
             WordSeparators = new[] { ' ', '/' },
         };
         
@@ -41,6 +39,20 @@ class Repl
             new KeyPress(ConsoleModifiers.Control, ConsoleKey.D),
             _ => Environment.Exit(0)
         );
+
+        /*var random = new Random();
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        for (int i = 0; i < 40000; i++)
+        {
+            var randomString = new string(Enumerable.Repeat(chars, 50)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+            historyHandler.Add(new HistoryEntry
+            {
+                Path = random.Next(1, 4) == 1 ? "/" : shell.WorkingDirectory,
+                Content = randomString,
+                Time = DateTime.Now,
+            });
+        }*/
 
         while (true)
         {

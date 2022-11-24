@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BetterReadLine;
@@ -18,7 +17,6 @@ class HistoryHandler : IHistoryHandler
 {
     private readonly int _maxEntries;
     private readonly HistoryRepository _historyRepository;
-    private readonly ShellSession _shell;
     private readonly Deque<HistoryEntry> _allEntries;
     private Deque<HistoryEntry> _activeEntries;
     private int _currentIndex;
@@ -28,22 +26,20 @@ class HistoryHandler : IHistoryHandler
     private HistoryHandler(
         int maxEntries,
         HistoryRepository historyRepository,
-        ShellSession shell,
         List<HistoryEntry> entries)
     {
         _maxEntries = maxEntries;
         _historyRepository = historyRepository;
-        _shell = shell;
         _allEntries = new Deque<HistoryEntry>(entries);
         _activeEntries = _allEntries;
         _currentIndex = entries.Count;
     }
     
-    public static HistoryHandler Init(int maxEntries, HistoryRepository historyRepository, ShellSession shell)
+    public static HistoryHandler Init(int maxEntries, HistoryRepository historyRepository)
     {
         var entries = historyRepository.GetAll();
         
-        return new HistoryHandler(maxEntries, historyRepository, shell, entries);
+        return new HistoryHandler(maxEntries, historyRepository, entries);
     }
 
     public void Add(HistoryEntry entry)
