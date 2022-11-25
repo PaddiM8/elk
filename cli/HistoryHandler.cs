@@ -61,7 +61,7 @@ class HistoryHandler : IHistoryHandler
             _historyMode = HistoryMode.WithStart;
             _promptText = promptText;
             
-            return _activeEntries.FirstOrDefault()?.Content;
+            return _activeEntries.LastOrDefault()?.Content;
         }
 
         if (_historyMode != HistoryMode.All && caret == 0)

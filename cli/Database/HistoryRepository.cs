@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SQLite;
 
 namespace Elk.Cli.Database;
@@ -27,8 +28,9 @@ class HistoryRepository
     public List<HistoryEntry> GetAll()
     {
         return _db.Table<HistoryEntry>()
-            .OrderBy(x => x.Time)
+            .OrderByDescending(x => x.Time)
             .Take(250)
+            .Reverse()
             .ToList();
     }
 
@@ -42,8 +44,10 @@ class HistoryRepository
     public List<HistoryEntry> GetWithStart(string start)
     {
         return _db.Table<HistoryEntry>()
+            .OrderByDescending(x => x.Time)
             .Where(x => x.Content.StartsWith(start))
             .Take(50)
+            .Reverse()
             .ToList();
     }
 
