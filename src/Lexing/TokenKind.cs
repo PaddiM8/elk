@@ -7,7 +7,7 @@ using Elk.Parsing;
 
 namespace Elk.Lexing;
 
-enum TokenKind
+public enum TokenKind
 {
     Unknown,
 

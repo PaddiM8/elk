@@ -206,9 +206,12 @@ internal class Parser
             );
 
             Parse(
-                Lexer.Lex(File.ReadAllText(absolutePath), absolutePath),
+                Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
                 importScope
             );
+            if (lexError != null)
+                throw new ParseException(lexError.Position, lexError.Message);
+            
             _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
         }
 
@@ -813,7 +816,10 @@ internal class Parser
             }
             else
             {
-                var tokens = Lexer.Lex(part.Value, textPos);
+                var tokens = Lexer.Lex(part.Value, textPos, out var lexError);
+                if (lexError != null)
+                    throw new ParseException(lexError.Position, lexError.Message);
+                
                 var ast = Parse(tokens, _scope);
                 if (ast.Count != 1)
                     throw new ParseException(textPos, "Expected exactly one expression in the string interpolation block");
@@ -1262,8 +1268,6 @@ internal class Parser
             TokenKind.OpenBrace,
             TokenKind.ClosedBrace,
             TokenKind.Pipe,
-            TokenKind.And,
-            TokenKind.Or,
             TokenKind.Semicolon,
             TokenKind.NewLine
         ) && Previous?.Kind != TokenKind.Backslash;

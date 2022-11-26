@@ -4,13 +4,21 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Elk.Parsing;
+using Elk.Resources;
 
 #endregion
 
 namespace Elk.Lexing;
 
-internal class Lexer
+public record LexError(TextPos Position, string Message);
+
+public enum LexerMode
+{
+    Default,
+    Preserve,
+}
+
+public class Lexer
 {
     private char Current => _index < _source.Length
         ? _source[_index]
@@ -30,28 +38,46 @@ internal class Lexer
     private int _index;
     private (int line, int column) _pos;
     private readonly string? _filePath;
+    private LexError? _error;
+    private readonly LexerMode _mode;
 
-    private Lexer(string input, TextPos startPos)
+    private Lexer(string input, TextPos startPos, LexerMode mode)
     {
         _source = input;
         _pos = (startPos.Line, startPos.Column);
         _filePath = startPos.FilePath;
+        _mode = mode;
     }
 
-    public static List<Token> Lex(string input, TextPos startPos)
+    public static List<Token> Lex(
+        string input,
+        TextPos startPos,
+        out LexError? error,
+        LexerMode mode = LexerMode.Default)
     {
-        var lexer = new Lexer(input, startPos);
+        var lexer = new Lexer(input, startPos, mode);
         var tokens = new List<Token>();
 
         Token token;
         while ((token = lexer.Next()).Kind != TokenKind.EndOfFile)
             tokens.Add(token);
 
+        error = lexer._error;
+
         return tokens;
     }
 
-    public static List<Token> Lex(string input, string? filePath)
-        => Lex(input, new TextPos(1, 1, filePath));
+    public static List<Token> Lex(
+        string input,
+        string? filePath,
+        out LexError? error,
+        LexerMode mode = LexerMode.Default)
+    {
+        var result = Lex(input, new TextPos(1, 1, filePath), out var innerError, mode);
+        error = innerError;
+
+        return result;
+    }
 
     private Token Next()
     {
@@ -122,7 +148,7 @@ internal class Lexer
     {
         if (Current == '\\')
         {
-            if (Peek == '\n')
+            if (Peek == '\n' && _mode != LexerMode.Preserve)
             {
                 Eat(2);
 
@@ -273,8 +299,11 @@ internal class Lexer
     private Token NextString()
     {
         Eat(); // Initial quote
-
+        
         var value = new StringBuilder();
+        if (_mode == LexerMode.Preserve)
+            value.Append('"');
+
         while (!ReachedEnd && Current != '"')
         {
             if (AdvanceIf('\\'))
@@ -322,6 +351,8 @@ internal class Lexer
                 value.Append(Eat());
                 int openBraces = 1;
                 bool inString = false;
+                
+                // This is necessary to handle string literals inside interpolation environments
                 while (!ReachedEnd && (Current != '"' || openBraces > 0))
                 {
                     if (Current == '"' && Previous != '\\')
@@ -340,9 +371,15 @@ internal class Lexer
         }
 
         if (Current != '"')
+        {
             Error("Unterminated string literal");
-
-        Eat(); // Final quote
+        }
+        else
+        {
+            Eat(); // Final quote
+            if (_mode == LexerMode.Preserve)
+                value.Append('"');
+        }
 
         return Build(
             TokenKind.StringLiteral,
@@ -354,8 +391,11 @@ internal class Lexer
     private Token NextSingleQuoteString()
     {
         Eat(); // Quote
-
+        
         var value = new StringBuilder();
+        if (_mode == LexerMode.Preserve)
+            value.Append('\'');
+
         while (!ReachedEnd && Current != '\'')
         {
             if (Current == '\\' && Peek == '\'')
@@ -370,9 +410,15 @@ internal class Lexer
         }
 
         if (Current != '\'')
+        {
             Error("Unterminated string literal");
-
-        Eat(); // Final quote
+        }
+        else
+        {
+            Eat(); // Final quote
+            if (_mode == LexerMode.Preserve)
+                value.Append('\'');
+        }
 
         return Build(
             TokenKind.StringLiteral,
@@ -445,6 +491,6 @@ internal class Lexer
 
     private void Error(string message)
     {
-        throw new ParseException(new(_pos.line, _pos.column, _filePath), message);
+        _error = new LexError(new(_pos.line, _pos.column, _filePath), message);
     }
 }

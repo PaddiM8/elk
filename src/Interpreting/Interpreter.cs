@@ -86,9 +86,11 @@ partial class Interpreter
         try
         {
             var ast = Parser.Parse(
-                Lexer.Lex(input, _rootModule.FilePath),
+                Lexer.Lex(input, _rootModule.FilePath, out var lexError),
                 _scope
             );
+            if (lexError != null)
+                throw new ParseException(lexError.Position, lexError.Message);
 
             return Interpret(ast);
         }

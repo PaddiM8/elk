@@ -1,10 +1,11 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text;
 using BetterReadLine;
+using Elk.Lexing;
+using Elk.Std.Bindings;
 
 #endregion
 
@@ -12,154 +13,257 @@ namespace Elk.Cli;
 
 class HighlightHandler : IHighlightHandler
 {
+    private Token? Peek
+        => _tokens.ElementAtOrDefault(_index + 1);
+    
+    private Token? Current
+        => _tokens.ElementAtOrDefault(_index);
+    
+    private Token? Previous
+        => _tokens.ElementAtOrDefault(_index - 1);
+
+    private bool ReachedEnd
+        => _index >= _tokens.Count;
+    
     private readonly ShellSession _shell;
-    private readonly Regex _pattern;
-    private readonly Regex _textArgumentPattern;
-    private readonly Regex _stringLiteralPattern;
+    private List<Token> _tokens = null!;
+    private int _index;
+    private HighlightHandler? _innerHighlighter;
 
     public HighlightHandler(ShellSession shell)
     {
         _shell = shell;
-
-        const string textArgumentPattern = "(?<textArgument>((&(?!&)|\\-(?!\\>)|\\>|\\\\[{})|&\\->;\\n]|\\$\\{[^}]+\\}|[^{})|&\\->;\\n])+)?)";
-        
-        const string singleQuoteStringPattern = "(?<singleQuoteString>\'((?<=\\\\)\'|[^\'])*\'?)";
-        const string stringPattern = "(?<string>\"((?<=\\\\)\"|[^\"])*\"?)";
-        const string interpolationPattern = @"(?<interpolation>\$\{[^}]+\})";
-        var rules = new[]
-        {
-            @"(?<keywords>\b(module|struct|fn|if|else|return|with|using|from|let|new|true|false|for|while|in|nil|break|continue|and|or)\b)",
-            @"(?<types>\b(Boolean|Dictionary|Error|Float|Integer|List|Nil|Range|Regex|String|Tuple|Type|Iterable|Indexable)\b)",
-            @"(?<numbers>(?<!\w)\d+(\.\d+)?)",
-            @"(?<comment>#.*(\n|\0))",
-            singleQuoteStringPattern,
-            stringPattern,
-            @"(?<namedDeclaration>(?<=let |for |with |module |struct )(\w+|\((\w+[ ]*,?[ ]*)*))",
-            @"(?<path>([.~]?\/|\.\.\/|(\\[^{})|\s]|[^{})|\s])+\/)(\\.|[^{})|\s])+ " + textArgumentPattern + ")",
-            @$"(?<identifier>\b\w+( {textArgumentPattern})?)",
-        };
-        _pattern = new Regex(
-            string.Join("|", rules),
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture
-        );
-
-        var textArgumentRules = new[]
-        {
-            singleQuoteStringPattern,
-            stringPattern,
-            interpolationPattern,
-        };
-        _textArgumentPattern = new Regex(
-            string.Join("|", textArgumentRules),
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture
-        );
-
-        var stringLiteralRules = new[]
-        {
-            interpolationPattern,
-        };
-        _stringLiteralPattern = new Regex(
-            string.Join("|", stringLiteralRules),
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture
-        );
     }
 
     public string Highlight(string text)
     {
-        return _pattern.Replace(text, m =>
+        _tokens = Lexer.Lex(text, "", out _, LexerMode.Preserve);
+        _index = 0;
+        
+        var builder = new StringBuilder();
+        while (!ReachedEnd)
+            builder.Append(Next());
+        
+        return builder.ToString();
+    }
+
+    private string Next()
+    {
+        return Current?.Kind switch
         {
-            int? colorCode = null;
-            if (m.Groups["keywords"].Value.Any())
-                colorCode = 31;
-            if (m.Groups["from"].Value.Any())
-                colorCode = 31;
-            if (m.Groups["types"].Value.Any())
-                colorCode = 96;
-            else if (m.Groups["numbers"].Value.Any())
-                colorCode = 33;
-            else if (m.Groups["string"].Value.Any())
-                return HighlightStringLiteral(m.Value);
-            else if (m.Groups["singleQuoteString"].Value.Any())
-                return HighlightStringLiteral(m.Value);
-            else if (m.Groups["comment"].Value.Any())
-                colorCode = 90;
-            else if (m.Groups["namedDeclaration"].Value.Any())
-                return m.Value;
-            else if (m.Groups["path"].Value.Any())
-            {
-                string argument = m.Groups["textArgument"].Value;
-                string path = m.Groups["path"].Value;
-                path = path[..^argument.Length];
+            >= TokenKind.Not and <= TokenKind.New => NextKeyword(),
+            TokenKind.IntegerLiteral or TokenKind.FloatLiteral => NextNumberLiteral(),
+            TokenKind.Comment => NextComment(),
+            TokenKind.StringLiteral => NextStringLiteral(),
+            TokenKind.Identifier => NextIdentifier(),
+            _ => Eat()!.Value,
+        };
+    }
 
-                return argument.Any()
-                    ? $"\x1b[95m{path}{HighlightTextArguments(argument)}\x1b[0m"
-                    : $"\x1b[95m{path}\x1b[0m{argument}";
+    private string NextKeyword()
+    {
+        var keyword = Eat()!;
+        var builder = new StringBuilder();
+        builder.Append(Color(keyword.Value, 31));
+        
+        if (keyword.Kind == TokenKind.Fn)
+        {
+            while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
+                builder.Append(Eat()!.Value);
+        }
+        else if (keyword.Kind is TokenKind.Let or TokenKind.Alias)
+        {
+            while (!ReachedEnd && Current?.Kind is not TokenKind.Equals)
+                builder.Append(Eat()!.Value);
+        }
+        else if (keyword.Kind == TokenKind.For)
+        {
+            while (!ReachedEnd && Current?.Kind is not TokenKind.In)
+                builder.Append(Eat()!.Value);
+        }
+        else if (keyword.Kind == TokenKind.With)
+        {
+            while (!ReachedEnd && Current?.Kind != TokenKind.NewLine && Current?.Value != "from")
+                builder.Append(Eat()!.Value);
+
+            if (Current?.Value == "from")
+            {
+                builder.Append(Color(Eat()!.Value, 31));
+                if (Current?.Kind == TokenKind.WhiteSpace)
+                    builder.Append(Eat()!.Value);
+                if (Current?.Kind == TokenKind.Identifier)
+                    builder.Append(Eat()!.Value);
             }
-            else if (m.Groups["identifier"].Value.Any())
+        }
+        else if (keyword.Kind is TokenKind.Using or TokenKind.Unalias or TokenKind.Module)
+        {
+            if (Current?.Kind == TokenKind.WhiteSpace)
+                builder.Append(Eat()!.Value);
+            if (Current?.Kind == TokenKind.Identifier)
+                builder.Append(Eat()!.Value);
+        }
+        else if (keyword.Kind == TokenKind.Struct)
+        {
+            while (!ReachedEnd && Current?.Kind != TokenKind.ClosedParenthesis)
+                builder.Append(Eat()!.Value);
+        }
+
+        return builder.ToString();
+    }
+
+    private string NextNumberLiteral()
+        => Color(Eat()!.Value, 33);
+
+    private string NextComment()
+        => Color(Eat()!.Value, 90);
+
+    private string NextStringLiteral(int endColor = 0)
+    {
+        string value = Eat()!.Value;
+        var builder = new StringBuilder();
+        for (int i = 0; i < value.Length; i++)
+        {
+            char? c = value[i];
+            if (c == '$' && value.ElementAtOrDefault(i + 1) == '{')
             {
-                string argument = m.Groups["textArgument"].Value;
-                string identifier = m.Groups["identifier"].Value;
-                identifier = identifier[..^argument.Length];
+                i += 2;
+                c = value.ElementAtOrDefault(i);
+                builder.Append(Color("${", 37));
 
-                if (_shell.StructExists(identifier))
-                    return $"\x1b[96m{m.Groups["identifier"].Value}\x1b[0m";
-
-                if (_shell.VariableExists(identifier.Trim()))
+                int interpolationContentStart = i;
+                int openBraces = 1;
+                bool inString = false;
+                while (i < value.Length && openBraces != 0)
                 {
-                    var highlightedArgument = argument.Any()
-                        ? Highlight(argument)
-                        : "";
-
-                    return identifier + highlightedArgument;
+                    if (c == '"' && value[i - 1] != '\\')
+                        inString = !inString;
+                    else if (!inString && c == '{')
+                        openBraces++;
+                    else if (!inString && c == '}')
+                        openBraces--;
+                    
+                    i++;
+                    c = value.ElementAtOrDefault(i);
                 }
 
-                return argument.Any()
-                    ? $"\x1b[95m{identifier}{HighlightTextArguments(argument)}\x1b[0m"
-                    : $"\x1b[95m{identifier}\x1b[0m";
+                _innerHighlighter ??= new HighlightHandler(_shell);
+                
+                if (value[i - 1] == '}')
+                {
+                    int interpolationContentEnd = i - 1;
+                    builder.Append(
+                        _innerHighlighter.Highlight(value[interpolationContentStart..interpolationContentEnd])
+                    );
+                    builder.Append(Color("}", 37, endColor: 93));
+                }
+                else if (i <= value.Length && i != interpolationContentStart)
+                {
+                    builder.Append(_innerHighlighter.Highlight(value[interpolationContentStart..i]));
+                }
             }
 
-            return colorCode == null
-                ? m.Value
-                : $"\x1b[{colorCode}m{m.Value}\x1b[0m";
-        });
+            if (c.HasValue)
+                builder.Append(c);
+        }
+
+        return Color(builder.ToString(), 93, endColor);
     }
 
-    private string HighlightTextArguments(string textArguments)
+    private string NextIdentifier()
     {
-        string result = _textArgumentPattern.Replace(textArguments, m =>
+        string identifier = Eat()!.Value;
+        
+        if (_shell.StructExists(identifier.Trim()) || StdBindings.HasRuntimeType(identifier.Trim()))
+            return Color(identifier, 96);
+
+        if (_shell.VariableExists(identifier.Trim()))
+            return identifier;
+
+        var textArgumentBuilder = new StringBuilder();
+        if (Current?.Kind == TokenKind.WhiteSpace)
         {
-            if (m.Groups["string"].Value.Any() ||
-                m.Groups["singleQuoteString"].Value.Any())
+            while (!ReachedTextEnd())
             {
-                return $"{HighlightStringLiteral(m.Value)}\x1b[36m";
+                if (Current!.Kind == TokenKind.StringLiteral)
+                {
+                    textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
+                }
+                else if (Current!.Value == "$" && Peek?.Kind == TokenKind.OpenBrace)
+                {
+                    textArgumentBuilder.Append(NextInterpolation(endColor: 36));
+                }
+                else if (Current?.Kind == TokenKind.Backslash)
+                {
+                    textArgumentBuilder.Append(Color(Eat()!.Value, 0, endColor: 36));
+                }
+                else
+                {
+                    textArgumentBuilder.Append(Eat()!.Value);
+                }
             }
+        }
 
-            if (m.Groups["interpolation"].Value.Any())
-            {
-                string interpolation = Highlight(m.Value[2..^1]);
-                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[36m";
-            }
+        if (textArgumentBuilder.Length > 0)
+        {
+            return Color(identifier, 95, null) + Color(textArgumentBuilder.ToString(), 36);
+        }
 
-            return m.Value;
-        });
-
-        return $"\x1b[36m{result}\x1b[0m";
+        return Color(identifier, 95);
     }
 
-    private string HighlightStringLiteral(string text)
+    private string NextInterpolation(int endColor = 0)
     {
-        string result = _stringLiteralPattern.Replace(text, m =>
-        {
-            if (m.Groups["interpolation"].Value.Any())
-            {
-                string interpolation = Highlight(m.Value[2..^1]);
+        var builder = new StringBuilder();
+        Eat(); // $
+        Eat(); // {
+        builder.Append(Color("${", 37));
 
-                return $"\x1b[37m${{\x1b[0m{interpolation}\x1b[37m}}\x1b[93m";
+        int openBraces = 1;
+        while (!ReachedEnd && openBraces > 0)
+        {
+            if (Current?.Kind == TokenKind.OpenBrace)
+                openBraces++;
+            else if (Current?.Kind == TokenKind.ClosedBrace)
+                openBraces--;
+
+            if (openBraces == 0)
+            {
+                Eat(); // }
+                builder.Append(Color("}", 37, endColor));
+                break;
             }
 
-            return m.Value;
-        });
+            builder.Append(Next());
+        }
 
-        return $"\x1b[93m{result}\x1b[0m";
+        return builder.ToString();
+    }
+
+    private bool ReachedTextEnd()
+    {
+        return ReachedEnd || Current?.Kind is 
+            TokenKind.AmpersandAmpersand or
+            TokenKind.PipePipe or
+            TokenKind.EqualsGreater or
+            TokenKind.ClosedParenthesis or
+            TokenKind.OpenBrace or
+            TokenKind.ClosedBrace or
+            TokenKind.Pipe or
+            TokenKind.Semicolon or
+            TokenKind.NewLine
+            && Previous?.Kind != TokenKind.Backslash;
+    }
+
+    private static string Color(string text, int color, int? endColor = 0)
+        => endColor == null
+            ? $"\x1b[{color}m{text}"
+            : $"\x1b[{color}m{text}\x1b[{endColor}m";
+
+    private Token? Eat()
+    {
+        var token = Current;
+        _index++;
+
+        return token;
     }
 }
