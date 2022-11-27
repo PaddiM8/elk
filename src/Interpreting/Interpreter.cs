@@ -188,11 +188,24 @@ partial class Interpreter
     private RuntimeObject Visit(NewExpr expr)
     {
         var dict = new Dictionary<string, RuntimeObject>();
-        var parameters = expr
-            .StructSymbol!
-            .Expr
-            .Parameters
-            .Select(x => x.Identifier.Value);
+        IEnumerable<string> parameters;
+        if (expr.StructSymbol!.Expr != null)
+        {
+            parameters = expr
+                .StructSymbol
+                .Expr!
+                .Parameters
+                .Select(x => x.Identifier.Value);
+        }
+        else
+        {
+            parameters = expr
+                .StructSymbol
+                .StdStruct!
+                .Parameters
+                .Select(x => x.Name);
+        }
+
         var arguments = expr.Arguments.Select(Next);
         foreach (var (key, value) in parameters.Zip(arguments))
             dict[key] = value;

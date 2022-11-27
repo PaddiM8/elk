@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using Elk.Lexing;
 using Elk.Parsing;
@@ -46,6 +45,7 @@ class ModuleScope : Scope
     private readonly Dictionary<string, FunctionSymbol> _functions = new();
     private readonly Dictionary<string, FunctionSymbol> _importedFunctions = new();
     private readonly Dictionary<string, Alias> _aliases = new();
+    private readonly Dictionary<string, string> _importedStdStructs = new();
     private readonly Dictionary<string, string> _importedStdFunctions = new();
 
     public ModuleScope(string? name, Scope? parent, string? filePath)
@@ -146,6 +146,13 @@ class ModuleScope : Scope
             : null;
     }
 
+    public string? FindImportedStdStructModule(string structName)
+    {
+        _importedStdStructs.TryGetValue(structName, out var result);
+
+        return result;
+    }
+
     public string? FindImportedStdFunctionModule(string functionName)
     {
         _importedStdFunctions.TryGetValue(functionName, out var result);
@@ -183,9 +190,8 @@ class ModuleScope : Scope
 
     public void ImportStruct(StructSymbol symbol)
     {
-        var structExpr = symbol.Expr;
-        if (!_importedStructs.TryAdd(structExpr.Identifier.Value, symbol))
-            _importedStructs[structExpr.Identifier.Value] = symbol;
+        if (!_importedStructs.TryAdd(symbol.Name, symbol))
+            _importedStructs[symbol.Name] = symbol;
     }
 
     public void ImportFunction(FunctionSymbol symbol)
@@ -193,6 +199,12 @@ class ModuleScope : Scope
         var function = symbol.Expr;
         if (!_importedFunctions.TryAdd(function.Identifier.Value, symbol))
             _importedFunctions[function.Identifier.Value] = symbol;
+    }
+
+    public void ImportStdStruct(string name, string module)
+    {
+        if (!_importedStdStructs.TryAdd(name, module))
+            _importedStdStructs[name] = module;
     }
 
     public void ImportStdFunction(string name, string module)

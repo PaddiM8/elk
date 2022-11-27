@@ -88,7 +88,7 @@ internal class Parser
         SkipWhiteSpace();
         int prevIndex = _index;
         bool hasFrom = Eat().Kind == TokenKind.Identifier &&
-            (Match(TokenKind.Comma) || MatchIdentifier("from"));
+                       (Match(TokenKind.Comma) || MatchIdentifier("from"));
         _index = prevIndex;
 
         // Avoid reserving the keyword
@@ -98,8 +98,7 @@ internal class Parser
             do
             {
                 symbolImportTokens.Add(EatExpected(TokenKind.Identifier));
-            }
-            while (AdvanceIf(TokenKind.Comma));
+            } while (AdvanceIf(TokenKind.Comma));
 
             if (!MatchIdentifier("from"))
                 throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'from'");
@@ -165,9 +164,16 @@ internal class Parser
         string relativePath = ParsePath();
         string moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        var stdFunctionNames = StdBindings.GetModuleFunctionNames(moduleName);
-        if (stdFunctionNames != null)
+        bool isStdModule = StdBindings.GetModuleSymbolNames(
+            moduleName,
+            out var stdStructNames,
+            out var stdFunctionNames
+        );
+        if (isStdModule)
         {
+            foreach (string stdStructName in stdStructNames)
+                _scope.ModuleScope.ImportStdStruct(stdStructName, moduleName);
+
             foreach (string stdFunctionName in stdFunctionNames)
                 _scope.ModuleScope.ImportStdFunction(stdFunctionName, moduleName);
 
@@ -211,7 +217,7 @@ internal class Parser
             );
             if (lexError != null)
                 throw new ParseException(lexError.Position, lexError.Message);
-            
+
             _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
         }
 
@@ -348,10 +354,10 @@ internal class Parser
             var identifier = EatExpected(TokenKind.Identifier);
             Expr? defaultValue = null;
             bool variadic = false;
-            
+
             if (AdvanceIf(TokenKind.Equals))
                 defaultValue = ParseExpr();
-            
+
             if (AdvanceIf(TokenKind.DotDot))
             {
                 EatExpected(TokenKind.Dot);
@@ -359,8 +365,7 @@ internal class Parser
             }
 
             parameters.Add(new Parameter(identifier, defaultValue, variadic));
-        }
-        while(AdvanceIf(TokenKind.Comma));
+        } while (AdvanceIf(TokenKind.Comma));
 
         EatExpected(TokenKind.ClosedParenthesis);
 
@@ -385,11 +390,13 @@ internal class Parser
     private Expr ParseAssignment()
     {
         var left = ParsePipe();
-        if (Match(TokenKind.Equals,
-            TokenKind.PlusEquals,
-            TokenKind.MinusEquals,
-            TokenKind.StarEquals,
-            TokenKind.SlashEquals))
+        if (Match(
+                TokenKind.Equals,
+                TokenKind.PlusEquals,
+                TokenKind.MinusEquals,
+                TokenKind.StarEquals,
+                TokenKind.SlashEquals
+            ))
         {
             var op = Eat();
             var right = ParsePipe();
@@ -444,7 +451,9 @@ internal class Parser
         if (AdvanceIf(TokenKind.EqualsGreater))
         {
             if (left is not CallExpr and not FunctionReferenceExpr)
-                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure");
+                throw new ParseException(
+                    Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure"
+                );
 
             if (AdvanceIf(TokenKind.Ampersand))
             {
@@ -474,8 +483,7 @@ internal class Parser
                     var parameter = EatExpected(TokenKind.Identifier);
                     parameters.Add(parameter);
                     scope.AddVariable(parameter.Value, RuntimeNil.Value);
-                }
-                while (AdvanceIf(TokenKind.Comma));
+                } while (AdvanceIf(TokenKind.Comma));
             }
 
             BlockExpr right;
@@ -536,13 +544,14 @@ internal class Parser
     {
         var left = ParseRange();
         while (Match(
-            TokenKind.Greater, 
-            TokenKind.GreaterEquals,
-            TokenKind.Less, 
-            TokenKind.LessEquals,
-            TokenKind.EqualsEquals,
-            TokenKind.NotEquals,
-            TokenKind.In))
+                   TokenKind.Greater,
+                   TokenKind.GreaterEquals,
+                   TokenKind.Less,
+                   TokenKind.LessEquals,
+                   TokenKind.EqualsEquals,
+                   TokenKind.NotEquals,
+                   TokenKind.In
+               ))
         {
             var op = Eat().Kind;
             var right = ParseRange();
@@ -678,12 +687,13 @@ internal class Parser
     private Expr ParsePrimary()
     {
         if (Match(
-            TokenKind.IntegerLiteral,
-            TokenKind.FloatLiteral,
-            TokenKind.StringLiteral,
-            TokenKind.Nil,
-            TokenKind.True,
-            TokenKind.False))
+                TokenKind.IntegerLiteral,
+                TokenKind.FloatLiteral,
+                TokenKind.StringLiteral,
+                TokenKind.Nil,
+                TokenKind.True,
+                TokenKind.False
+            ))
         {
             return Current!.Kind switch
             {
@@ -692,12 +702,12 @@ internal class Parser
                 _ => new LiteralExpr(Eat()),
             };
         }
-        
+
         if (Match(TokenKind.OpenParenthesis))
         {
             return ParseParenthesis();
         }
-        
+
         if (Match(TokenKind.Let))
         {
             return ParseLet();
@@ -707,12 +717,12 @@ internal class Parser
         {
             return ParseNew();
         }
-        
+
         if (Match(TokenKind.If))
         {
             return ParseIf();
         }
-        
+
         if (Match(TokenKind.For))
         {
             return ParseFor();
@@ -727,7 +737,7 @@ internal class Parser
         {
             return ParseList();
         }
-        
+
         if (Match(TokenKind.OpenBrace))
         {
             // Go forward a bit in order to be able to look ahead,
@@ -780,7 +790,7 @@ internal class Parser
 
             return new FunctionReferenceExpr(identifier, modulePath);
         }
-        
+
         if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
         {
             return ParseIdentifier();
@@ -819,11 +829,13 @@ internal class Parser
                 var tokens = Lexer.Lex(part.Value, textPos, out var lexError);
                 if (lexError != null)
                     throw new ParseException(lexError.Position, lexError.Message);
-                
+
                 var ast = Parse(tokens, _scope);
                 if (ast.Count != 1)
-                    throw new ParseException(textPos, "Expected exactly one expression in the string interpolation block");
-                
+                    throw new ParseException(
+                        textPos, "Expected exactly one expression in the string interpolation block"
+                    );
+
                 parsedParts.Add(ast.First());
             }
 
@@ -840,8 +852,7 @@ internal class Parser
         do
         {
             expressions.Add(ParseExpr());
-        }
-        while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedParenthesis));
+        } while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedParenthesis));
 
         EatExpected(TokenKind.ClosedParenthesis);
 
@@ -870,8 +881,7 @@ internal class Parser
         do
         {
             modulePath.Add(EatExpected(TokenKind.Identifier));
-        }
-        while (AdvanceIf(TokenKind.ColonColon));
+        } while (AdvanceIf(TokenKind.ColonColon));
 
         var identifier = modulePath.Last();
         modulePath.RemoveAt(modulePath.Count - 1);
@@ -883,8 +893,7 @@ internal class Parser
             {
                 if (!Match(TokenKind.ClosedParenthesis))
                     arguments.Add(ParseExpr());
-            }
-            while (AdvanceIf(TokenKind.Comma));
+            } while (AdvanceIf(TokenKind.Comma));
 
             EatExpected(TokenKind.ClosedParenthesis);
         }
@@ -905,7 +914,7 @@ internal class Parser
         var elseBranch = AdvanceIf(TokenKind.Else)
             ? ParseExpr()
             : null;
-        
+
         return new IfExpr(condition, thenBranch, elseBranch);
     }
 
@@ -919,7 +928,7 @@ internal class Parser
         var scope = new LocalScope(_scope);
         foreach (var identifier in identifierList)
             _scope.AddVariable(identifier.Value, RuntimeNil.Value);
-        
+
         var branch = ParseBlockOrSingle(StructureKind.Loop, scope);
 
         return new ForExpr(identifierList, value, branch);
@@ -945,9 +954,8 @@ internal class Parser
         do
         {
             identifiers.Add(EatExpected(TokenKind.Identifier));
-        }
-        while (AdvanceIf(TokenKind.Comma));
-        
+        } while (AdvanceIf(TokenKind.Comma));
+
         EatExpected(TokenKind.ClosedParenthesis);
 
         return identifiers;
@@ -964,8 +972,7 @@ internal class Parser
                 break;
 
             expressions.Add(ParseExpr());
-        }
-        while (AdvanceIf(TokenKind.Comma));
+        } while (AdvanceIf(TokenKind.Comma));
 
         EatExpected(TokenKind.ClosedSquareBracket);
 
@@ -1050,7 +1057,8 @@ internal class Parser
         if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.HasStruct(identifier.Value))
             return new TypeExpr(identifier);
 
-        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
+        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)
+                                    ?? _scope.ModuleScope.FindImportedStdStructModule(identifier.Value);
         if (modulePath.Count == 0 && importedStdModule != null)
         {
             modulePath = new List<Token>
@@ -1075,8 +1083,7 @@ internal class Parser
             {
                 if (!Match(TokenKind.ClosedParenthesis))
                     arguments.Add(ParseExpr());
-            }
-            while (AdvanceIf(TokenKind.Comma));
+            } while (AdvanceIf(TokenKind.Comma));
 
             EatExpected(TokenKind.ClosedParenthesis);
             var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
@@ -1090,7 +1097,7 @@ internal class Parser
                 CallType.Unknown
             );
         }
-        
+
         if (modulePath.Count == 0 &&
             (identifier.Value.StartsWith('$') || _scope.HasVariable(identifier.Value)))
         {
@@ -1161,7 +1168,7 @@ internal class Parser
                     interpolationParts.Add(new LiteralExpr(token));
                     currentText.Clear();
                 }
-                
+
                 textArguments.Add(new StringInterpolationExpr(interpolationParts, pos));
                 interpolationParts = new();
                 continue;

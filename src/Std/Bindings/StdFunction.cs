@@ -5,7 +5,12 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std.Bindings;
 
-public record StdFunctionParameter(Type Type, bool IsNullable = false, bool IsClosure = false);
+public record StdFunctionParameter(
+    Type Type,
+    string Name,
+    bool IsNullable = false,
+    bool IsClosure = false
+);
 
 public record StdFunction(
     string? ModuleName,

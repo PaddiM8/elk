@@ -16,7 +16,7 @@ public class RuntimeType : RuntimeObject
 {
     public string Name
         => Type?.GetCustomAttribute<ElkTypeAttribute>()!.Name ??
-               StructSymbol!.Expr.Identifier.Value;
+           StructSymbol!.Name;
 
     internal Type? Type { get; }
 

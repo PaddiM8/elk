@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,6 +9,15 @@ namespace Elk.Generators;
 
 record StdModuleInfo(string Name, ClassDeclarationSyntax Syntax);
 
+record StdStructInfo(
+    string? ModuleName,
+    string StructName,
+    int MinArgumentCount,
+    int MaxArgumentCount,
+    int? VariadicStart,
+    List<(string type, string name)> Parameters,
+    MethodDeclarationSyntax Syntax);
+
 record StdFunctionInfo(
     string? ModuleName,
     string FunctionName,
@@ -20,8 +26,10 @@ record StdFunctionInfo(
     int MaxArgumentCount,
     bool HasClosure,
     int? VariadicStart,
-    List<string> Parameters,
+    List<(string type, string name)> Parameters,
     MethodDeclarationSyntax Syntax);
+
+record ModuleEntry(List<string> StructNames, List<string> FunctionNames);
 
 [Generator]
 public class StdBindingsGenerator : ISourceGenerator
@@ -83,7 +91,7 @@ public class StdBindingsGenerator : ISourceGenerator
         sourceBuilder.AppendLine("\n\t};\n");
 
         // Functions
-        var modules = new Dictionary<string, List<string>>();
+        var modules = new Dictionary<string, ModuleEntry>();
         sourceBuilder.Append(
             """
             private static Dictionary<string, StdFunction> _functions = new()
@@ -93,10 +101,20 @@ public class StdBindingsGenerator : ISourceGenerator
         GenerateFunctionEntries(context.Compilation, sourceBuilder, modules);
         sourceBuilder.AppendLine("\n\t};\n");
 
+        // Structs
+        sourceBuilder.Append(
+            """
+            private static Dictionary<string, StdStruct> _structs = new()
+            {
+        """
+        );
+        GenerateStructEntries(context.Compilation, sourceBuilder, modules);
+        sourceBuilder.AppendLine("\n\t};\n");
+
         // Modules
         sourceBuilder.Append(
             """
-            private static Dictionary<string, ImmutableArray<string>> _modules = new()
+            private static Dictionary<string, (ImmutableArray<string> structNames, ImmutableArray<string> functionNames)> _modules = new()
             {
         """
         );
@@ -104,7 +122,7 @@ public class StdBindingsGenerator : ISourceGenerator
         sourceBuilder.AppendLine("\n\t};");
 
         // End
-        sourceBuilder.Append("}");
+        sourceBuilder.Append('}');
         context.AddSource("StdBindings", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
     }
 
@@ -137,7 +155,7 @@ public class StdBindingsGenerator : ISourceGenerator
     private void GenerateFunctionEntries(
         Compilation compilation,
         StringBuilder sourceBuilder,
-        IDictionary<string, List<string>> modules)
+        IDictionary<string, ModuleEntry> modules)
     {
         foreach (var function in FindMethods(compilation))
         {
@@ -155,10 +173,10 @@ public class StdBindingsGenerator : ISourceGenerator
             else
             {
                 moduleName = $"\"{function.ModuleName}\"";
-                if (!modules.TryGetValue(moduleName, out var moduleFunctions))
-                    modules.Add(moduleName, new List<string> { function.FunctionName });
+                if (!modules.TryGetValue(moduleName, out var moduleEntries))
+                    modules.Add(moduleName, new(new List<string>(), new List<string> { function.FunctionName }));
                 else
-                    moduleFunctions.Add(function.FunctionName);
+                    moduleEntries.FunctionNames.Add(function.FunctionName);
             }
 
             sourceBuilder.Append("\", new(");
@@ -177,26 +195,8 @@ public class StdBindingsGenerator : ISourceGenerator
             sourceBuilder.Append($"{variadicStart}, ");
 
             // Parameter list
-            sourceBuilder.Append("ImmutableArray.Create(new StdFunctionParameter[] { ");
-            foreach (var (parameter, i) in function.Parameters.WithIndex())
-            {
-                if (i != 0)
-                    sourceBuilder.Append(", ");
-
-                string additional = "";
-
-                // Nullable
-                if (parameter.EndsWith("?"))
-                    additional = ", true";
-
-                // Closure
-                if (parameter.StartsWith("Func<") || parameter.StartsWith("Action<"))
-                    additional = ", false, true";
-
-                sourceBuilder.Append($"new(typeof({parameter.TrimEnd('?')}){additional})");
-            }
-
-            sourceBuilder.Append(" }), ");
+            GenerateParameterList(sourceBuilder, function.Parameters);
+            sourceBuilder.Append(", ");
 
             // Invocation object
             sourceBuilder.Append("args => ");
@@ -248,12 +248,78 @@ public class StdBindingsGenerator : ISourceGenerator
         }
     }
 
-    private void GenerateModuleEntries(StringBuilder sourceBuilder, Dictionary<string, List<string>> modules)
+    private void GenerateParameterList(StringBuilder sourceBuilder, IEnumerable<(string type, string name)> parameters)
+    {
+        sourceBuilder.Append("ImmutableArray.Create(new StdFunctionParameter[] { ");
+        foreach (var (parameter, i) in parameters.WithIndex())
+        {
+            if (i != 0)
+                sourceBuilder.Append(", ");
+
+            string additional = "";
+
+            // Nullable
+            if (parameter.type.EndsWith("?"))
+                additional = ", true";
+
+            // Closure
+            if (parameter.type.StartsWith("Func<") || parameter.type.StartsWith("Action<"))
+                additional = ", false, true";
+
+            sourceBuilder.Append($"new(typeof({parameter.type.TrimEnd('?')}), \"{parameter.name}\"{additional})");
+        }
+
+        sourceBuilder.Append(" })");
+    }
+
+    private void GenerateStructEntries(
+        Compilation compilation,
+        StringBuilder sourceBuilder,
+        Dictionary<string, ModuleEntry> modules)
+    {
+        foreach (var structInfo in FindStructs(compilation))
+        {
+            string fullName = $"{structInfo.ModuleName}::{structInfo.StructName}";
+            sourceBuilder.Append($"\n\t\t{{ \"{fullName}\", ");
+
+            string moduleName = $"\"{structInfo.ModuleName}\"";
+            if (!modules.TryGetValue(moduleName, out var moduleEntries))
+                modules.Add(moduleName, new(new List<string> { structInfo.StructName }, new List<string>()));
+            else
+                moduleEntries.StructNames.Add(structInfo.StructName);
+
+            sourceBuilder.Append("new(");
+            sourceBuilder.Append($"{moduleName}, ");
+            sourceBuilder.Append($"\"{structInfo.StructName}\", ");
+            sourceBuilder.Append($"{structInfo.MinArgumentCount}, ");
+            sourceBuilder.Append($"{structInfo.MaxArgumentCount}, ");
+
+            string variadicStart = structInfo.VariadicStart.HasValue
+                ? structInfo.VariadicStart.Value.ToString()
+                : "null";
+            sourceBuilder.Append($"{variadicStart}, ");
+
+            GenerateParameterList(sourceBuilder, structInfo.Parameters);
+            sourceBuilder.Append(") },");
+        }
+    }
+
+    private void GenerateModuleEntries(StringBuilder sourceBuilder, Dictionary<string, ModuleEntry> modules)
     {
         foreach (var module in modules)
         {
-            var functionNames = string.Join(", ", module.Value.Select(x => $"\"{x}\""));
-            sourceBuilder.Append($"\n\t\t{{ {module.Key}, ImmutableArray.Create(new[] {{ {functionNames} }}) }},");
+            var structNames = string.Join(", ", module.Value.StructNames.Select(x => $"\"{x}\""));
+            var functionNames = string.Join(", ", module.Value.FunctionNames.Select(x => $"\"{x}\""));
+            string structArrayType = module.Value.StructNames.Any()
+                ? ""
+                : " string";
+            string functionArrayType = module.Value.FunctionNames.Any()
+                ? ""
+                : " string";
+            sourceBuilder.Append($"\n\t\t{{ {module.Key}, (");
+            sourceBuilder.Append($"ImmutableArray.Create(new{structArrayType}[] {{ {structNames} }}), ");
+            sourceBuilder.Append($"ImmutableArray.Create(new{functionArrayType}[] {{ {functionNames} }})");
+            sourceBuilder.Append(") },");
         }
     }
 
@@ -294,6 +360,20 @@ public class StdBindingsGenerator : ISourceGenerator
             select new StdModuleInfo(nameExpr.Token.ValueText, declaredClass);
     }
 
+    private IEnumerable<StdStructInfo> FindStructs(Compilation compilation)
+    {
+        return from module in FindModules(compilation)
+            let declaredMethods = module
+                .Syntax
+                .Members
+                .Where(x => x.IsKind(SyntaxKind.MethodDeclaration))
+                .OfType<MethodDeclarationSyntax>()
+            from declaredMethod in declaredMethods
+            let attribute = FindAttribute(declaredMethod, "ElkStruct")
+            where attribute != null
+            select AnalyseStruct(declaredMethod, attribute, module);
+    }
+
     private IEnumerable<StdFunctionInfo> FindMethods(Compilation compilation)
     {
         return from module in FindModules(compilation)
@@ -306,6 +386,32 @@ public class StdBindingsGenerator : ISourceGenerator
             let attribute = FindAttribute(declaredMethod, "ElkFunction")
             where attribute != null
             select AnalyseMethod(declaredMethod, attribute, module);
+    }
+
+    private StdStructInfo AnalyseStruct(
+        MethodDeclarationSyntax methodSyntax,
+        AttributeSyntax attribute,
+        StdModuleInfo module)
+    {
+        var attributeArguments = attribute.ArgumentList!.Arguments;
+        var name = ((LiteralExpressionSyntax)attributeArguments[0].Expression).Token.ValueText;
+        var parameters = AnalyseParameters(
+            methodSyntax.ParameterList.Parameters,
+            out int minArgumentCount,
+            out int maxArgumentCount,
+            out int? variadicStart,
+            out _
+        );
+
+        return new StdStructInfo(
+            module.Name,
+            name,
+            minArgumentCount,
+            maxArgumentCount,
+            variadicStart,
+            parameters,
+            methodSyntax
+        );
     }
 
     private StdFunctionInfo AnalyseMethod(
@@ -324,14 +430,40 @@ public class StdBindingsGenerator : ISourceGenerator
         }
 
         var name = ((LiteralExpressionSyntax)attributeArguments[0].Expression).Token.ValueText;
+        var parameters = AnalyseParameters(
+            methodSyntax.ParameterList.Parameters,
+            out int minArgumentCount,
+            out int maxArgumentCount,
+            out int? variadicStart,
+            out bool hasClosure
+        );
 
-        // Parameters
-        var parameters = new List<string>();
-        int minArgumentCount = 0;
-        int maxArgumentCount = 0;
-        int? variadicStart = null;
-        bool hasClosure = false;
-        foreach (var (parameter, i) in methodSyntax.ParameterList.Parameters.WithIndex())
+        return new StdFunctionInfo(
+            reachableEverywhere ? null : module.Name,
+            name,
+            $"{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
+            minArgumentCount,
+            maxArgumentCount,
+            hasClosure,
+            variadicStart,
+            parameters,
+            methodSyntax
+        );
+    }
+
+    private List<(string, string)> AnalyseParameters(
+        SeparatedSyntaxList<ParameterSyntax> parameterSyntaxes,
+        out int minArgumentCount,
+        out int maxArgumentCount,
+        out int? variadicStart,
+        out bool hasClosure)
+    {
+        var parameters = new List<(string, string)>();
+        minArgumentCount = 0;
+        maxArgumentCount = 0;
+        variadicStart = null;
+        hasClosure = false;
+        foreach (var (parameter, i) in parameterSyntaxes.WithIndex())
         {
             var type = parameter.Type!;
             string typeName = type.ToString().TrimEnd('?');
@@ -350,22 +482,12 @@ public class StdBindingsGenerator : ISourceGenerator
             if (typeName.StartsWith("Func<"))
                 hasClosure = true;
 
-            parameters.Add(type.ToString());
+            parameters.Add((type.ToString(), parameter.Identifier.Text));
         }
 
         if (variadicStart.HasValue)
             maxArgumentCount = int.MaxValue;
 
-        return new StdFunctionInfo(
-            reachableEverywhere ? null : module.Name,
-            name,
-            $"{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
-            minArgumentCount,
-            maxArgumentCount,
-            hasClosure,
-            variadicStart,
-            parameters,
-            methodSyntax
-        );
+        return parameters;
     }
 }

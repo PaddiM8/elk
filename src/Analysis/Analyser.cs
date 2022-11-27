@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Elk.Std.Bindings;
 using Elk.Interpreting.Exceptions;
@@ -207,10 +206,38 @@ class Analyser
     {
         var module = _scope.ModuleScope.FindModule(expr.ModulePath, lookInImports: true);
         if (module == null)
-            throw new RuntimeModuleNotFoundException(expr.ModulePath);
+        {
+            string? firstModule = expr.ModulePath.FirstOrDefault()?.Value;
+            if (firstModule == null || !StdBindings.HasModule(firstModule))
+                throw new RuntimeModuleNotFoundException(expr.ModulePath);
+
+            var stdStruct = StdBindings.GetStruct(expr.Identifier.Value, firstModule);
+            if (stdStruct == null)
+                throw new RuntimeNotFoundException(expr.Identifier.Value);
+
+            int argumentCount = expr.Arguments.Count;
+            if (argumentCount < stdStruct.MinArgumentCount ||
+                argumentCount > stdStruct.MaxArgumentCount)
+            {
+                throw new RuntimeWrongNumberOfArgumentsException(
+                    stdStruct.MinArgumentCount,
+                    argumentCount,
+                    stdStruct.VariadicStart.HasValue
+                );
+            }
+
+            return new NewExpr(
+                expr.Identifier,
+                expr.ModulePath,
+                expr.Arguments.Select(Next).ToList()
+            )
+            {
+                StructSymbol = new StructSymbol(stdStruct),
+            };
+        }
 
         var symbol = module.FindStruct(expr.Identifier.Value, lookInImports: true);
-        if (symbol == null)
+        if (symbol?.Expr == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
         ValidateArguments(expr.Arguments, symbol.Expr.Parameters);

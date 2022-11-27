@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Elk.Std.Bindings;
@@ -14,6 +13,13 @@ public static partial class StdBindings
     public static bool HasModule(string moduleName)
         => _modules.ContainsKey(moduleName);
 
+    public static StdStruct? GetStruct(string structName, string moduleName)
+    {
+        _structs.TryGetValue($"{moduleName}::{structName}", out var result);
+
+        return result;
+    }
+
     public static StdFunction? GetFunction(string functionName, string? moduleName)
     {
         string fullName = moduleName == null
@@ -24,20 +30,28 @@ public static partial class StdBindings
         return result;
     }
 
+    public static bool HasStruct(string structName, string moduleName)
+        => _structs.ContainsKey($"{moduleName}::{structName}");
+
     public static bool HasFunction(string functionName, string? moduleName)
     {
         string fullName = moduleName == null
             ? functionName
             : $"{moduleName}::{functionName}";
 
-        return _functions.TryGetValue(fullName, out var _);
+        return _functions.ContainsKey(fullName);
     }
 
-    public static ImmutableArray<string>? GetModuleFunctionNames(string moduleName)
+    public static bool GetModuleSymbolNames(
+        string moduleName,
+        out ImmutableArray<string> structNames,
+        out ImmutableArray<string> functionNames)
     {
-        _modules.TryGetValue(moduleName, out var functionNames);
+        bool success = _modules.TryGetValue(moduleName, out var names);
+        structNames = names.structNames;
+        functionNames = names.functionNames;
 
-        return functionNames;
+        return success;
     }
 
     public static Type? GetRuntimeType(string name)
