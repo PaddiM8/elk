@@ -69,7 +69,7 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         var stringBuilder = new StringBuilder("{\n");
         foreach (var entry in Entries)
         {
-            stringBuilder.Append('\t');
+            stringBuilder.Append("    ");
             string key = entry.Value.Item1.ToDisplayString();
             string value = entry.Value.Item2.ToDisplayString();
             stringBuilder.AppendLine($"{key}: {value},");

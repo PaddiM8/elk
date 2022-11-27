@@ -56,9 +56,9 @@ public class RuntimeStruct : RuntimeObject
     {
         var stringBuilder = new StringBuilder("{\n");
         foreach (var (key, value) in Values)
-            stringBuilder.AppendLine($"\t{key}: {value.ToDisplayString()},");
+            stringBuilder.AppendLine($"    {key}: {value.ToDisplayString()},");
 
-        stringBuilder.Append("}");
+        stringBuilder.Append('}');
 
         return stringBuilder.ToString();
     }
