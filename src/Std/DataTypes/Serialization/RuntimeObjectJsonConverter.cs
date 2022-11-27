@@ -21,12 +21,16 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
         => value switch
         {
             RuntimeList list => BuildList(list),
+            RuntimeTuple tuple => BuildTuple(tuple),
             RuntimeDictionary dictionary => BuildDictionary(dictionary),
             RuntimeStruct @struct => BuildStruct(@struct),
             _ => BuildValue(value),
         };
 
     private JArray BuildList(RuntimeList list)
+        => new(list.Values.Select(Build));
+
+    private JArray BuildTuple(RuntimeTuple list)
         => new(list.Values.Select(Build));
 
     private JObject BuildDictionary(RuntimeDictionary dictionary)
@@ -51,7 +55,14 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
     }
 
     private JValue BuildValue(RuntimeObject value)
-        => new(value.ToString() ?? "");
+    {
+        return value switch
+        {
+            RuntimeBoolean boolean => new(boolean.IsTrue),
+            RuntimeNil => JValue.CreateNull(),
+            _ => new(value.ToString() ?? ""),
+        };
+    }
 
     public override RuntimeObject ReadJson(
         JsonReader reader,
@@ -60,7 +71,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
         bool hasExistingValue,
         JsonSerializer serializer)
     {
-        return Get(JObject.Load(reader));
+        return Get(JToken.Load(reader));
     }
 
     private RuntimeObject Get(JToken data)
