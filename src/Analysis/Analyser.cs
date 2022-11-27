@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Elk.Std.Bindings;
 using Elk.Interpreting.Exceptions;
@@ -513,7 +514,7 @@ class Analyser
         bool isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
         bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
         bool tooFewArguments = parameters.Count > argumentCount &&
-           parameters[argumentCount].DefaultValue == null && !isVariadic;
+                               parameters[argumentCount].DefaultValue == null && !isVariadic;
 
         if (tooManyArguments || tooFewArguments)
             throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
@@ -538,7 +539,7 @@ class Analyser
     {
         RuntimeObject value = expr.Value.Kind switch
         {
-            TokenKind.IntegerLiteral => new RuntimeInteger(int.Parse(expr.Value.Value)),
+            TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
             TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.True => RuntimeBoolean.True,
@@ -554,6 +555,25 @@ class Analyser
         };
 
         return newExpr;
+    }
+
+    private int ParseInt(string numberLiteral)
+    {
+        try
+        {
+            if (numberLiteral.StartsWith("0x"))
+                return Convert.ToInt32(numberLiteral[2..], 16);
+            if (numberLiteral.StartsWith("0o"))
+                return Convert.ToInt32(numberLiteral[2..], 8);
+            if (numberLiteral.StartsWith("0b"))
+                return Convert.ToInt32(numberLiteral[2..], 2);
+        }
+        catch
+        {
+            throw new RuntimeException("Invalid number literal");
+        }
+
+        return int.Parse(numberLiteral);
     }
 
     private Expr Visit(FunctionReferenceExpr expr)

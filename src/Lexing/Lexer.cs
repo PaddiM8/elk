@@ -278,13 +278,24 @@ public class Lexer
     {
         var value = new StringBuilder();
         bool isFloat = false;
-        while (char.IsDigit(Current) || Current == '_' || (Current == '.' && Peek != '.'))
+        char? baseIdentifier = Current == '0' && Peek is 'x' or 'o' or 'b'
+            ? Peek
+            : null;
+        if (baseIdentifier.HasValue)
+            value.Append(Eat(2));
+
+        while (IsDigit(Current, baseIdentifier) || Current == '_' || (Current == '.' && Peek != '.'))
         {
             if (AdvanceIf('_'))
                 continue;
 
             if (Current == '.')
+            {
+                if (baseIdentifier.HasValue)
+                    break;
+
                 isFloat = true;
+            }
 
             value.Append(Eat());
         }
@@ -295,6 +306,11 @@ public class Lexer
             new(_pos.line, _pos.column - value.Length, _filePath)
         );
     }
+
+    private bool IsDigit(char c, char? baseIdentifier)
+        => baseIdentifier == 'x'
+            ? char.IsAsciiHexDigit(c)
+            : char.IsDigit(c);
 
     private Token NextString()
     {
@@ -432,9 +448,9 @@ public class Lexer
 
     private static bool IsValidIdentifierMiddle(char c, char next)
         => c != '$' && (IsValidIdentifierStart(c) ||
-           c == '-' && next != '>' ||
-           "%.".Contains(c) ||
-           char.IsDigit(c));
+                        c == '-' && next != '>' ||
+                        "%.".Contains(c) ||
+                        char.IsDigit(c));
 
     private Token Build(TokenKind kind, char value)
     {
