@@ -56,6 +56,7 @@ class HighlightHandler : IHighlightHandler
             TokenKind.Comment => NextComment(),
             TokenKind.StringLiteral => NextStringLiteral(),
             TokenKind.Identifier => NextIdentifier(),
+            TokenKind.Arrow => NextFieldAccess(),
             _ => Eat()!.Value,
         };
     }
@@ -239,18 +240,28 @@ class HighlightHandler : IHighlightHandler
         return builder.ToString();
     }
 
+    private string NextFieldAccess()
+    {
+        var builder = new StringBuilder();
+        builder.Append(Eat()!.Value); // ->
+        if (Current?.Kind == TokenKind.Identifier)
+            builder.Append(Eat()!.Value);
+
+        return builder.ToString();
+    }
+
     private bool ReachedTextEnd()
     {
         return ReachedEnd || Current?.Kind is 
-            TokenKind.AmpersandAmpersand or
-            TokenKind.PipePipe or
-            TokenKind.EqualsGreater or
-            TokenKind.ClosedParenthesis or
-            TokenKind.OpenBrace or
-            TokenKind.ClosedBrace or
-            TokenKind.Pipe or
-            TokenKind.Semicolon or
-            TokenKind.NewLine
+                TokenKind.AmpersandAmpersand or
+                TokenKind.PipePipe or
+                TokenKind.EqualsGreater or
+                TokenKind.ClosedParenthesis or
+                TokenKind.OpenBrace or
+                TokenKind.ClosedBrace or
+                TokenKind.Pipe or
+                TokenKind.Semicolon or
+                TokenKind.NewLine
             && Previous?.Kind != TokenKind.Backslash;
     }
 
