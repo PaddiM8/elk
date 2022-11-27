@@ -77,7 +77,7 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         return kind switch
         {
             OperationKind.Addition => new RuntimeList(Values.Concat(otherList.Values)),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "List"),
+            _ => throw InvalidOperation(kind),
         };
     }
 

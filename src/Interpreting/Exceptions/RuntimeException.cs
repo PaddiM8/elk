@@ -7,7 +7,7 @@ using Elk.Lexing;
 
 namespace Elk.Interpreting.Exceptions;
 
-class RuntimeException : Exception
+public class RuntimeException : Exception
 {
     public TextPos? Position { get; }
 

@@ -39,7 +39,7 @@ public class RuntimeFloat : RuntimeObject
         {
             OperationKind.Subtraction => new RuntimeFloat(-Value),
             OperationKind.Not => RuntimeBoolean.From(Value == 0),
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+            _ => throw InvalidOperation(kind),
         };
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
@@ -58,7 +58,7 @@ public class RuntimeFloat : RuntimeObject
             OperationKind.LessEquals => RuntimeBoolean.From(Value <= otherNumber.Value),
             OperationKind.EqualsEquals => RuntimeBoolean.From(Value == otherNumber.Value),
             OperationKind.NotEquals => RuntimeBoolean.From(Value != otherNumber.Value),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Float"),
+            _ => throw InvalidOperation(kind),
         };
     }
 

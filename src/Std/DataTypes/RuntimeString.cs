@@ -3,7 +3,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -73,7 +72,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         {
             OperationKind.Subtraction => As<RuntimeFloat>().Operation(kind),
             OperationKind.Not => RuntimeBoolean.From(Value.Length == 0),
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+            _ => throw InvalidOperation(kind),
         };
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
@@ -93,7 +92,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
             OperationKind.LessEquals => RuntimeBoolean.From(string.CompareOrdinal(Value, otherString.Value) <= 0),
             OperationKind.EqualsEquals => RuntimeBoolean.From(Value == otherString.Value),
             OperationKind.NotEquals => RuntimeBoolean.From(Value != otherString.Value),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "String"),
+            _ => throw InvalidOperation(kind),
         };
     }
 

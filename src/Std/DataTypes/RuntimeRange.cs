@@ -56,7 +56,7 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
         {
             OperationKind.EqualsEquals => RuntimeBoolean.From(From == otherRange.From && To == otherRange.To),
             OperationKind.NotEquals => RuntimeBoolean.From(From != otherRange.From || To != otherRange.To),
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Range"),
+            _ => throw InvalidOperation(kind),
         };
     }
 

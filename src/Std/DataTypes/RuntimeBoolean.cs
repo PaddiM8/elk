@@ -48,7 +48,7 @@ public class RuntimeBoolean : RuntimeObject
             OperationKind.NotEquals => IsTrue != otherBoolean.IsTrue,
             OperationKind.And => IsTrue && otherBoolean.IsTrue,
             OperationKind.Or => IsTrue || otherBoolean.IsTrue,
-            _ => throw new RuntimeInvalidOperationException(kind.ToString(), "Boolean"),
+            _ => throw InvalidOperation(kind),
         };
 
         return new RuntimeBoolean(newValue);

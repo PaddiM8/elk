@@ -19,10 +19,10 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
     }
 
     public virtual RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), GetType().Name[7..]);
+        => throw InvalidOperation(kind);
 
     public virtual RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), GetType().Name[7..]);
+        => throw InvalidOperation(kind);
 
     public virtual string ToDisplayString()
         => ToString()!;
@@ -40,4 +40,7 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
 
         return 1;
     }
+
+    protected RuntimeInvalidOperationException InvalidOperation(OperationKind kind)
+        => new(kind.ToString(), GetType().Name[7..]);
 }
