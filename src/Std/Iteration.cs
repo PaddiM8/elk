@@ -18,15 +18,19 @@ static class Iteration
 {
     /// <returns>Whether or not all the values in the list evaluate to true.</returns>
     [ElkFunction("all")]
-    public static RuntimeBoolean All(RuntimeList list)
-        => RuntimeBoolean.From(list.Values.All(x => x.As<RuntimeBoolean>().IsTrue));
+    public static RuntimeBoolean All(IEnumerable<RuntimeObject> items)
+        => RuntimeBoolean.From(items.All(x => x.As<RuntimeBoolean>().IsTrue));
 
     /// <returns>Whether or not one of the values in the list evaluates to true.</returns>
     [ElkFunction("any")]
-    public static RuntimeBoolean Any(RuntimeList list)
-        => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().IsTrue));
+    public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
+        => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
-    /// <returns></returns>
+    /// <summary>
+    /// Invokes the given closure on each item in the given container.
+    /// </summary>
+    /// <param name="items">Container to iterate over.</param>
+    /// <param name="closure">Closure to invoke on every individual item.</param>
     [ElkFunction("each", Reachability.Everywhere)]
     public static void Each(IEnumerable<RuntimeObject> items, Action<RuntimeObject> closure)
     {
@@ -34,12 +38,12 @@ static class Iteration
             closure(item);
     }
 
-    /// <param name="list">A list of values that will be stringified</param>
-    /// <param name="separator">Character sequence that should be put between each value</param>
+    /// <param name="items">A list of values that will be stringified.</param>
+    /// <param name="separator">Character sequence that should be put between each value.</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>
     [ElkFunction("join", Reachability.Everywhere)]
-    public static RuntimeString Join(RuntimeList list, RuntimeString? separator = null)
-        => new(string.Join(separator?.Value ?? "", list.Values.Select(x => x.As<RuntimeString>())));
+    public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
+        => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
 
     /// <summary>Changes the step size of the given range. The step size determines how much the range value should increase by after each iteration.</summary>
     /// <param name="range">Range to modify</param>
