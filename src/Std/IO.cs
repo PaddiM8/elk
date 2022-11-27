@@ -39,7 +39,19 @@ static class IO
     /// <returns>nil</returns>
     [ElkFunction("append", Reachability.Everywhere)]
     public static void AppendToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
-        => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
+    {
+        string absolutePath = env.GetAbsolutePath(path.Value);
+        if (File.Exists(absolutePath))
+        {
+            using var writer = new StreamWriter(absolutePath, append: true);
+            writer.Write(System.Environment.NewLine);
+            writer.Write(content.Value);
+        }
+        else
+        {
+            File.AppendAllText(absolutePath, content.Value);
+        }
+    }
 
     /// <summary>Reads the next line from the standard input stream. This is used to get input from the user in a terminal.</summary>
     /// <param name="prompt">Text that should be printed before the input prompt</param>
