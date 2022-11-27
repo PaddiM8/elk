@@ -103,7 +103,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         => Value;
 
     public override string ToDisplayString()
-        => $"\"{Value}\"";
+        => $"\"{Value.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
 }
 
 class RuntimeStringEnumerator : IEnumerator<RuntimeObject>

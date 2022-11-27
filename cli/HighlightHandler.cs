@@ -125,7 +125,9 @@ class HighlightHandler : IHighlightHandler
         for (int i = 0; i < value.Length; i++)
         {
             char? c = value[i];
-            if (c == '$' && value.ElementAtOrDefault(i + 1) == '{')
+            if (value.ElementAtOrDefault(i - 1) != '\\' &&
+                c == '$' &&
+                value.ElementAtOrDefault(i + 1) == '{')
             {
                 i += 2;
                 c = value.ElementAtOrDefault(i);
@@ -189,7 +191,9 @@ class HighlightHandler : IHighlightHandler
                 {
                     textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
                 }
-                else if (Current!.Value == "$" && Peek?.Kind == TokenKind.OpenBrace)
+                else if (Previous?.Kind != TokenKind.Backslash &&
+                         Current!.Value == "$" &&
+                         Peek?.Kind == TokenKind.OpenBrace)
                 {
                     textArgumentBuilder.Append(NextInterpolation(endColor: 36));
                 }

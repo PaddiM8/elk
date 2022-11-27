@@ -322,7 +322,13 @@ public class Lexer
 
         while (!ReachedEnd && Current != '"')
         {
-            if (AdvanceIf('\\'))
+            if (_mode == LexerMode.Preserve && Current == '\\' && Peek == '"')
+            {
+                value.Append(Eat(2));
+                continue;
+            }
+
+            if (_mode != LexerMode.Preserve && AdvanceIf('\\'))
             {
                 char c = Current switch
                 {
@@ -416,6 +422,9 @@ public class Lexer
         {
             if (Current == '\\' && Peek == '\'')
             {
+                if (_mode == LexerMode.Preserve)
+                    value.Append('\\');
+
                 value.Append('\'');
                 Eat();
                 Eat();
