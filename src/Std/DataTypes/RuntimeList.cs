@@ -71,9 +71,6 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "List");
-
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherList = other.As<RuntimeList>();

@@ -32,12 +32,6 @@ public class RuntimeRegex : RuntimeObject
                 => throw new RuntimeCastException<RuntimeRegex>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Regex");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Regex");
-
     public override int GetHashCode()
         => Value.GetHashCode();
 

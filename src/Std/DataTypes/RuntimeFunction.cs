@@ -26,12 +26,6 @@ public abstract class RuntimeFunction : RuntimeObject
             _
                 => throw new RuntimeCastException<RuntimeBoolean>(toType),
         };
-
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Function");
 }
 
 internal class RuntimeStdFunction : RuntimeFunction

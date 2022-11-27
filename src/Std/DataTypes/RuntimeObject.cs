@@ -1,6 +1,7 @@
 #region
 
 using System;
+using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 
 #endregion
@@ -17,9 +18,11 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
         return (T)As(typeof(T));
     }
 
-    public abstract RuntimeObject Operation(OperationKind kind);
+    public virtual RuntimeObject Operation(OperationKind kind)
+        => throw new RuntimeInvalidOperationException(kind.ToString(), GetType().Name[7..]);
 
-    public abstract RuntimeObject Operation(OperationKind kind, RuntimeObject other);
+    public virtual RuntimeObject Operation(OperationKind kind, RuntimeObject other)
+        => throw new RuntimeInvalidOperationException(kind.ToString(), GetType().Name[7..]);
 
     public virtual string ToDisplayString()
         => ToString()!;

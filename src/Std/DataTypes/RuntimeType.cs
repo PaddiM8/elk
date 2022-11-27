@@ -49,12 +49,6 @@ public class RuntimeType : RuntimeObject
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Type");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Type");
-
     public override int GetHashCode()
         => Type?.GetHashCode() ?? StructSymbol!.GetHashCode();
 

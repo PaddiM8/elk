@@ -61,12 +61,6 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Dictionary");
-
     public override int GetHashCode()
         => Entries.GetHashCode();
 

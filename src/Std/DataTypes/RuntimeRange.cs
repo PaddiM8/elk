@@ -49,9 +49,6 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
                 => throw new RuntimeCastException<RuntimeInteger>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Range");
-
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
     {
         var otherRange = other.As<RuntimeRange>();

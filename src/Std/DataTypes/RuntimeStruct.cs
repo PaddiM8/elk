@@ -52,12 +52,6 @@ public class RuntimeStruct : RuntimeObject
         return new(dict);
     }
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Struct");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Struct");
-
     public override string ToString()
     {
         var stringBuilder = new StringBuilder("{\n");

@@ -66,12 +66,6 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
 
-    public override RuntimeObject Operation(OperationKind kind)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-        => throw new RuntimeInvalidOperationException(kind.ToString(), "Tuple");
-
     public override int GetHashCode()
         => Values.GetHashCode();
 
