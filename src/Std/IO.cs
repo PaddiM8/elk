@@ -33,7 +33,7 @@ static class IO
     public static void WriteToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
         => File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
 
-    /// <summary>Appends the provided text to a file.</summary>
+    /// <summary>Appends the provided text on its own line to a file.</summary>
     /// <param name="content">Text that should be written to the file</param>
     /// <param name="path">A file path</param>
     /// <returns>nil</returns>
@@ -52,6 +52,14 @@ static class IO
             File.AppendAllText(absolutePath, content.Value);
         }
     }
+
+    /// <summary>Appends the provided text to a file *without* putting it on it's own line.</summary>
+    /// <param name="content">Text that should be written to the file</param>
+    /// <param name="path">A file path</param>
+    /// <returns>nil</returns>
+    [ElkFunction("appendEnd", Reachability.Everywhere)]
+    public static void AppendEnd(RuntimeString content, RuntimeString path, ShellEnvironment env)
+        => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
 
     /// <summary>Reads the next line from the standard input stream. This is used to get input from the user in a terminal.</summary>
     /// <param name="prompt">Text that should be printed before the input prompt</param>
