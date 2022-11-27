@@ -1,8 +1,8 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -25,6 +25,14 @@ static class Iteration
     [ElkFunction("any")]
     public static RuntimeBoolean Any(RuntimeList list)
         => RuntimeBoolean.From(list.Values.Any(x => x.As<RuntimeBoolean>().IsTrue));
+
+    /// <returns></returns>
+    [ElkFunction("each", Reachability.Everywhere)]
+    public static void Each(IEnumerable<RuntimeObject> items, Action<RuntimeObject> closure)
+    {
+        foreach (var item in items)
+            closure(item);
+    }
 
     /// <param name="list">A list of values that will be stringified</param>
     /// <param name="separator">Character sequence that should be put between each value</param>

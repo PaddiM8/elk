@@ -429,7 +429,7 @@ partial class Interpreter
         if (expr.Operator == OperationKind.And)
         {
             bool result = left.As<RuntimeBoolean>().IsTrue &&
-                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
+                          Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }
@@ -437,7 +437,7 @@ partial class Interpreter
         if (expr.Operator == OperationKind.Or)
         {
             bool result = left.As<RuntimeBoolean>().IsTrue ||
-                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
+                          Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }
@@ -733,40 +733,71 @@ partial class Interpreter
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
         {
             return new Func<RuntimeObject, RuntimeObject>(
-            a =>
-            {
-                var scope = closureExpr.Body.Scope;
-                scope.Clear();
-                scope.AddVariable(parameters[0].Value, a);
+                a =>
+                {
+                    var scope = closureExpr.Body.Scope;
+                    scope.Clear();
+                    scope.AddVariable(parameters[0].Value, a);
 
-                return NextBlock(closureExpr.Body, clearScope: false);
-            });
+                    return NextBlock(closureExpr.Body, clearScope: false);
+                });
         }
 
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject, RuntimeObject>))
         {
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
-            (a, b) =>
+                (a, b) =>
+                {
+                    var scope = closureExpr.Body.Scope;
+                    scope.Clear();
+                    scope.AddVariable(parameters[0].Value, a);
+                    scope.AddVariable(parameters[1].Value, b);
+
+                    return NextBlock(closureExpr.Body, clearScope: false);
+                });
+        }
+
+        // Action
+        if (closureFuncType == typeof(Action<RuntimeObject>))
+        {
+            return new Action<RuntimeObject>(
+                a =>
+                {
+                    closureExpr.Body.IsRoot = true;
+                    var scope = closureExpr.Body.Scope;
+                    scope.Clear();
+                    scope.AddVariable(parameters[0].Value, a);
+
+                    NextBlock(closureExpr.Body, clearScope: false);
+                });
+        }
+
+        if (closureFuncType == typeof(Action<RuntimeObject, RuntimeObject>))
+        {
+            return new Action<RuntimeObject, RuntimeObject>(
+                (a, b) =>
+                {
+                    closureExpr.Body.IsRoot = true;
+                    var scope = closureExpr.Body.Scope;
+                    scope.Clear();
+                    scope.AddVariable(parameters[0].Value, a);
+                    scope.AddVariable(parameters[1].Value, b);
+
+                    NextBlock(closureExpr.Body, clearScope: false);
+                });
+        }
+
+        // Fallback, variadic
+        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
+            args =>
             {
                 var scope = closureExpr.Body.Scope;
                 scope.Clear();
-                scope.AddVariable(parameters[0].Value, a);
-                scope.AddVariable(parameters[1].Value, b);
+                foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
+                    scope.AddVariable(parameter.Value, argument);
 
                 return NextBlock(closureExpr.Body, clearScope: false);
             });
-        }
-
-        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
-        args =>
-        {
-            var scope = closureExpr.Body.Scope;
-            scope.Clear();
-            foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
-                scope.AddVariable(parameter.Value, argument);
-
-            return NextBlock(closureExpr.Body, clearScope: false);
-        });
     }
 
     private RuntimeObject EvaluateProgramCall(

@@ -190,7 +190,7 @@ public class StdBindingsGenerator : ISourceGenerator
                     additional = ", true";
 
                 // Closure
-                if (parameter.StartsWith("Func<"))
+                if (parameter.StartsWith("Func<") || parameter.StartsWith("Action<"))
                     additional = ", false, true";
 
                 sourceBuilder.Append($"new(typeof({parameter.TrimEnd('?')}){additional})");

@@ -19,8 +19,9 @@ public class ElkFunctionAttribute : Attribute
 
     public Reachability Reachability { get; }
 
-    public ElkFunctionAttribute(string name,
-                                Reachability reachability = Reachability.Module)
+    public ElkFunctionAttribute(
+        string name,
+        Reachability reachability = Reachability.Module)
     {
         Name = name;
         Reachability = reachability;
