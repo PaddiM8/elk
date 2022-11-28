@@ -48,8 +48,10 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
 
+        bool includeHidden = completionTarget.StartsWith(".");
         var directories = Directory.GetDirectories(fullPath)
             .Select(Path.GetFileName)
+            .Where(x => includeHidden || !x!.StartsWith("."))
             .Where(x => x!.StartsWith(completionTarget))
             .Order()
             .Select(x => FormatSuggestion(x!))
@@ -57,6 +59,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .ToList();
         var files = Directory.GetFiles(fullPath)
             .Select(Path.GetFileName)
+            .Where(x => includeHidden || !x!.StartsWith("."))
             .Where(x => x!.StartsWith(completionTarget))
             .Order()
             .Select(x => FormatSuggestion(x!))
@@ -64,7 +67,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
         if (!directories.Any() && !files.Any())
         {
-            var comparison = StringComparison.CurrentCultureIgnoreCase;
+            const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
             directories = Directory.GetDirectories(fullPath)
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
