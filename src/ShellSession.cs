@@ -70,6 +70,9 @@ public class ShellSession
 
     public void PrintPrompt()
     {
+        if (Console.CursorLeft != 0)
+            Console.WriteLine();
+        
         if (_interpreter.FunctionExists("elkPrompt"))
         {
             var call = new CallExpr(
