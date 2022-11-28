@@ -31,6 +31,7 @@ partial class Interpreter
 
         if (Directory.Exists(path))
         {
+            Environment.SetEnvironmentVariable("OLDPWD", ShellEnvironment.WorkingDirectory);
             ShellEnvironment.WorkingDirectory = path;
         }
         else
