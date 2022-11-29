@@ -1267,7 +1267,10 @@ internal class Parser
 
     private bool ReachedTextEnd()
     {
-        return ReachedEnd || MatchInclWhiteSpace(
+        var reachedComment = Previous?.Kind == TokenKind.WhiteSpace &&
+             MatchInclWhiteSpace(TokenKind.Comment);
+
+        return ReachedEnd || reachedComment || MatchInclWhiteSpace(
             TokenKind.AmpersandAmpersand,
             TokenKind.PipePipe,
             TokenKind.EqualsGreater,

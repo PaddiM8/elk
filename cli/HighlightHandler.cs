@@ -256,7 +256,9 @@ class HighlightHandler : IHighlightHandler
 
     private bool ReachedTextEnd()
     {
-        return ReachedEnd || Current?.Kind is 
+        var reachedComment = Previous?.Kind == TokenKind.WhiteSpace && Current?.Kind == TokenKind.Comment;
+
+        return ReachedEnd || reachedComment || Current?.Kind is
                 TokenKind.AmpersandAmpersand or
                 TokenKind.PipePipe or
                 TokenKind.EqualsGreater or
