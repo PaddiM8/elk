@@ -72,7 +72,7 @@ public class ShellSession
     {
         if (Console.CursorLeft != 0)
             Console.WriteLine();
-        
+
         if (_interpreter.FunctionExists("elkPrompt"))
         {
             var call = new CallExpr(
@@ -142,7 +142,9 @@ public class ShellSession
         var result = interpreter.Interpret(File.ReadAllText(filePath));
         if (result is RuntimeError err)
         {
-            Console.Error.WriteLine(err.Value);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine(err.ToString());
+            Console.ResetColor();
         }
     }
 }
