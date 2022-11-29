@@ -372,11 +372,31 @@ class Analyser
 
     private Expr Visit(BinaryExpr expr)
     {
+        if (expr.Operator == OperationKind.Equals)
+            return AnalyseAssignment(expr);
+
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Pipe)
             return NextCallOrClosure(expr.Right, left, hasClosure: false);
 
         return new BinaryExpr(left, expr.Operator, Next(expr.Right))
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
+    private Expr AnalyseAssignment(BinaryExpr expr)
+    {
+        if (expr.Left is VariableExpr variableExpr)
+        {
+            if (!_scope.HasVariable(variableExpr.Identifier.Value))
+                throw new RuntimeNotFoundException(variableExpr.Identifier.Value);
+        } else if (expr.Left is not IndexerExpr)
+        {
+            throw new RuntimeException("Invalid assignment");
+        }
+
+        return new BinaryExpr(Next(expr.Left), expr.Operator, Next(expr.Right))
         {
             IsRoot = expr.IsRoot,
         };

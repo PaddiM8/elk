@@ -498,26 +498,18 @@ partial class Interpreter
 
     private RuntimeObject EvaluateAssignment(Expr assignee, RuntimeObject value)
     {
-        if (assignee is VariableExpr variable)
-        {
-            if (!_scope.UpdateVariable(variable.Identifier.Value, value))
-            {
-                throw new RuntimeNotFoundException(variable.Identifier.Value);
-            }
-        }
-        else if (assignee is IndexerExpr indexer)
+        if (assignee is VariableExpr)
+            return value;
+
+        if (assignee is IndexerExpr indexer)
         {
             if (Next(indexer.Value) is not IIndexable<RuntimeObject> indexable)
                 throw new RuntimeUnableToIndexException(value.GetType());
 
             indexable[Next(indexer.Index)] = value;
         }
-        else
-        {
-            throw new RuntimeException("Invalid assignment");
-        }
 
-        return value;
+        throw new RuntimeException("Invalid assignment");
     }
 
     private RuntimeObject Visit(UnaryExpr expr)
