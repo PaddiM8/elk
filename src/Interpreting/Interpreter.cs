@@ -498,8 +498,12 @@ partial class Interpreter
 
     private RuntimeObject EvaluateAssignment(Expr assignee, RuntimeObject value)
     {
-        if (assignee is VariableExpr)
+        if (assignee is VariableExpr variableExpr)
+        {
+            _scope.UpdateVariable(variableExpr.Identifier.Value, value);
+
             return value;
+        }
 
         if (assignee is IndexerExpr indexer)
         {
