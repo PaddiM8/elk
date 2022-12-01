@@ -234,7 +234,7 @@ public class StdBindingsGenerator : ISourceGenerator
                     // It is not possible to convert a value to RuntimeObject
                     // with As<T>(). Therefore, this method should only be
                     // added if it is not expecting just a RuntimeObject.
-                    if (typeName != BaseObjectName)
+                    if (typeName.TrimEnd('?') != BaseObjectName)
                         sourceBuilder.Append($"{nullable}.As<{typeName.TrimEnd('?')}>()");
                 }
             }
