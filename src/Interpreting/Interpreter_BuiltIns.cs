@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
@@ -70,21 +71,19 @@ partial class Interpreter
         return new RuntimeString(path);
     }
 
-    private RuntimeObject EvaluateBuiltInClosure(List<RuntimeObject> arguments)
+    private RuntimeObject EvaluateBuiltInClosure(FunctionExpr enclosingFunction, List<RuntimeObject> arguments)
     {
-        if (_currentClosureExpr == null)
-            throw new RuntimeException("Can only call 'closure' function inside function declarations that have '=> closure' in the signature.");
-
-        var scope = _currentClosureExpr.Body.Scope;
-        scope.Clear();
+        var givenClosure = enclosingFunction.GivenClosure!;
+        var scope = givenClosure.Environment;
+        var parameters = givenClosure.Expr.Parameters;
         foreach (var (argument, i) in arguments.WithIndex())
         {
-            var parameter = _currentClosureExpr.Parameters.ElementAtOrDefault(i)?.Value ??
-                throw new RuntimeException($"Expected exactly {_currentClosureExpr.Parameters.Count} closure parameter(s)");
-            scope.AddVariable(parameter, argument);
+            var parameter = parameters.ElementAtOrDefault(i)?.Value ??
+                            throw new RuntimeException($"Expected exactly {parameters.Count} closure parameter(s)");
+            scope[parameter] = new VariableSymbol(argument);
         }
 
-        return NextBlock(_currentClosureExpr.Body, clearScope: false);
+        return NextBlock(givenClosure.Expr.Body, clearScope: false);
     }
 
     private RuntimeObject EvaluateBuiltInCall(List<RuntimeObject> arguments, bool isRoot)
@@ -116,27 +115,30 @@ partial class Interpreter
         RuntimeClosureFunction runtimeClosure,
         bool isRoot)
     {
-        var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Closure.Function;
-        var innerFunction = functionReferenceExpr.RuntimeFunction!;
+        var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Expr.Function;
 
+        var innerFunction = functionReferenceExpr.RuntimeFunction!;
         if (innerFunction is RuntimeStdFunction runtimeStdFunction)
         {
-            return EvaluateStdCall(
+            var stdResult = EvaluateStdCall(
                 arguments,
                 runtimeStdFunction.StdFunction,
-                runtimeClosure.Closure
+                runtimeClosure
             );
+
+            return stdResult;
         }
 
         if (innerFunction is not RuntimeSymbolFunction runtimeSymbolFunction)
             throw new RuntimeException("Closures are not supported for built-in non-std functions");
 
-        return EvaluateFunctionCall(
+        var result = EvaluateFunctionCall(
             arguments,
             runtimeSymbolFunction.FunctionSymbol.Expr,
-            isRoot,
-            runtimeClosure.Closure
+            isRoot
         );
+
+        return result;
     }
 
     private RuntimeError EvaluateBuiltInError(List<RuntimeObject> arguments)

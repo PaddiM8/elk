@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elk.Interpreting.Scope;
 
 class LocalScope : Scope

@@ -53,6 +53,13 @@ abstract class Expr
 
     public bool IsRoot { get; set; }
 
+    public Expr? EnclosingFunction { get; set; }
+
+    public RuntimeClosureFunction? EnclosingClosureValue
+        => EnclosingFunction is ClosureExpr closureExpr
+            ? closureExpr.RuntimeValue
+            : null;
+
     protected Expr(TextPos pos)
     {
         Position = pos;
@@ -109,11 +116,13 @@ class FunctionExpr : Expr
 
     public List<Parameter> Parameters { get; }
 
-    public BlockExpr Block { get; }
+    public BlockExpr Block { get; set; }
 
     public ModuleScope Module { get; }
 
     public bool HasClosure { get; }
+
+    public RuntimeClosureFunction? GivenClosure { get; set; }
 
     public FunctionExpr(
         Token identifier,
@@ -251,7 +260,7 @@ class BlockExpr : Expr
 
     public StructureKind ParentStructureKind { get; }
 
-    public Scope Scope { get; }
+    public Scope Scope { get; set;  }
 
     public BlockExpr(
         List<Expr> expressions,
@@ -388,8 +397,6 @@ class VariableExpr : Expr
 {
     public Token Identifier { get; }
 
-    public VariableSymbol? VariableSymbol { get; set; }
-
     public VariableExpr(Token identifier)
         : base(identifier.Position)
     {
@@ -507,7 +514,11 @@ class ClosureExpr : Expr
 
     public List<Token> Parameters { get; }
 
-    public BlockExpr Body { get; }
+    public BlockExpr Body { get; set; }
+
+    public HashSet<string> CapturedVariables { get; init; } = new();
+
+    public RuntimeClosureFunction? RuntimeValue { get; set; }
 
     public ClosureExpr(Expr function, List<Token> parameters, BlockExpr body)
         : base(body.Position)

@@ -14,6 +14,7 @@ class Analyser
 {
     private Scope _scope;
     private Expr? _lastExpr;
+    private Expr? _enclosingFunction;
 
     private Analyser(RootModuleScope rootModule)
     {
@@ -71,8 +72,9 @@ class Analyser
     private Expr Next(Expr expr)
     {
         _lastExpr = expr;
+        expr.EnclosingFunction = _enclosingFunction;
 
-        return expr switch
+        var analysedExpr = expr switch
         {
             ModuleExpr e => Visit(e),
             StructExpr e => Visit(e),
@@ -101,18 +103,27 @@ class Analyser
             ClosureExpr e => Visit(e),
             _ => throw new NotSupportedException(),
         };
+
+        analysedExpr.EnclosingFunction = expr.EnclosingFunction;
+
+        return analysedExpr;
     }
 
     private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure)
     {
         _lastExpr = expr;
+        expr.EnclosingFunction = _enclosingFunction;
 
-        return expr switch
+        var analysedExpr = expr switch
         {
             ClosureExpr closureExpr => Visit(closureExpr, pipedValue),
             CallExpr callExpr => Visit(callExpr, pipedValue, hasClosure),
             _ => throw new RuntimeException("Expected a function call to the right of pipe."),
         };
+
+        analysedExpr.EnclosingFunction = expr.EnclosingFunction;
+
+        return analysedExpr;
     }
 
     private ModuleExpr Visit(ModuleExpr expr)
@@ -142,6 +153,7 @@ class Analyser
 
     private FunctionExpr Visit(FunctionExpr expr)
     {
+        expr.EnclosingFunction = expr;
         var parameters = AnalyseParameters(expr.Parameters);
         foreach (var parameter in parameters)
         {
@@ -151,13 +163,19 @@ class Analyser
         var newFunction = new FunctionExpr(
             expr.Identifier,
             parameters,
-            (BlockExpr)Next(expr.Block),
+            expr.Block,
             expr.Module,
             expr.HasClosure
         )
         {
             IsRoot = expr.IsRoot,
         };
+
+        // Need to set _enclosingFunction *before* analysing the block
+        // since it's used inside the block.
+        _enclosingFunction = newFunction;
+        newFunction.Block = (BlockExpr)Next(expr.Block);
+        _enclosingFunction = null;
 
         expr.Module.AddFunction(newFunction);
 
@@ -465,10 +483,12 @@ class Analyser
 
         if (!expr.Identifier.Value.StartsWith("$"))
         {
-            variableExpr.VariableSymbol = _scope.FindVariable(expr.Identifier.Value);
-            if (variableExpr.VariableSymbol == null)
+            if (!_scope.HasVariable(expr.Identifier.Value))
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
         }
+
+        if (expr.EnclosingFunction is ClosureExpr closure)
+            closure.CapturedVariables.Add(expr.Identifier.Value);
 
         return variableExpr;
     }
@@ -486,6 +506,14 @@ class Analyser
             "error" => CallType.BuiltInError,
             _ => null,
         };
+
+        if (builtIn == CallType.BuiltInClosure && expr.EnclosingFunction is not FunctionExpr { HasClosure: true })
+        {
+            throw new RuntimeException(
+                "Unexpected call to 'closure'. This function can only be called within functions with a closure signature."
+            );
+        }
+
         var stdFunction = !builtIn.HasValue
             ? ResolveStdFunction(name, expr.ModulePath)
             : null;
@@ -508,7 +536,7 @@ class Analyser
             expr.Arguments.Insert(0, pipedValue);
 
         if (callType != CallType.StdFunction && callType != CallType.Function && hasClosure)
-            throw new RuntimeException("Unexpected closure");
+            throw new RuntimeException("Unexpected closure.");
 
         int argumentCount = expr.Arguments.Count;
         if (stdFunction != null)
@@ -663,18 +691,24 @@ class Analyser
 
     private Expr Visit(ClosureExpr expr, Expr? pipedValue = null)
     {
+        expr.EnclosingFunction = expr;
+
         var function = expr.Function is CallExpr callExpr
             ? NextCallOrClosure(callExpr, pipedValue, hasClosure: true)
             : Next(expr.Function);
 
-        return new ClosureExpr(
-            function,
-            expr.Parameters,
-            (BlockExpr)Next(expr.Body)
-        )
+        var closure = new ClosureExpr(function, expr.Parameters, expr.Body)
         {
             IsRoot = expr.IsRoot,
+            CapturedVariables = expr.CapturedVariables,
         };
+
+        var previousEnclosingFunction = _enclosingFunction;
+        _enclosingFunction = closure;
+        closure.Body = (BlockExpr)Next(expr.Body);
+        _enclosingFunction = previousEnclosingFunction;
+
+        return closure;
     }
 
     private StdFunction? ResolveStdFunction(string name, IList<Token> modulePath)

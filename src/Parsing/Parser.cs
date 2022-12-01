@@ -17,11 +17,6 @@ namespace Elk.Parsing;
 
 internal class Parser
 {
-    private bool _allowEndOfExpression;
-    private int _index;
-    private Scope _scope;
-    private readonly List<Token> _tokens;
-
     private Token? Current
         => _index < _tokens.Count
             ? _tokens[_index]
@@ -37,6 +32,11 @@ internal class Parser
 
     private bool UseAliases
         => Current?.Position.FilePath == null;
+
+    private bool _allowEndOfExpression;
+    private int _index;
+    private Scope _scope;
+    private readonly List<Token> _tokens;
 
     private Parser(
         List<Token> tokens,
@@ -1268,7 +1268,7 @@ internal class Parser
     private bool ReachedTextEnd()
     {
         var reachedComment = Previous?.Kind == TokenKind.WhiteSpace &&
-             MatchInclWhiteSpace(TokenKind.Comment);
+                             MatchInclWhiteSpace(TokenKind.Comment);
 
         return ReachedEnd || reachedComment || MatchInclWhiteSpace(
             TokenKind.AmpersandAmpersand,

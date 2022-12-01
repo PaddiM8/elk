@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Scope;
 
 abstract class Scope
 {
-    public ModuleScope ModuleScope { get; init; }
+    public ModuleScope ModuleScope { get; protected init; }
 
     public Scope? Parent { get; }
 
@@ -34,7 +34,7 @@ abstract class Scope
         }
     }
 
-    public void Clear()
+    public void ClearVariables()
     {
         foreach (var symbol in _variables.Values)
             symbol.Value = RuntimeNil.Value;

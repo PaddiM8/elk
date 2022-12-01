@@ -34,7 +34,6 @@ partial class Interpreter
     private readonly RootModuleScope _rootModule;
     private readonly ReturnHandler _returnHandler = new();
     private Expr? _lastExpr;
-    private ClosureExpr? _currentClosureExpr;
 
     public Interpreter(string? filePath)
     {
@@ -168,14 +167,14 @@ partial class Interpreter
         return Visit(blockExpr, clearScope);
     }
 
-    private RuntimeObject NextCallWithClosure(CallExpr callExpr, ClosureExpr closureExpr)
+    private RuntimeObject NextCallWithClosure(CallExpr callExpr, RuntimeClosureFunction runtimeClosure)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
 
         _lastExpr = callExpr;
 
-        return Visit(callExpr, closureExpr);
+        return Visit(callExpr, runtimeClosure);
     }
 
     private RuntimeObject Visit(LetExpr expr)
@@ -269,7 +268,7 @@ partial class Interpreter
 
         foreach (var current in enumerableValue)
         {
-            expr.Branch.Scope.Clear();
+            expr.Branch.Scope.ClearVariables();
             SetVariables(expr.IdentifierList, current, expr.Branch.Scope);
             NextBlock(expr.Branch, clearScope: false);
 
@@ -331,7 +330,7 @@ partial class Interpreter
         var prevScope = _scope;
         _scope = expr.Scope;
         if (clearScope)
-            expr.Scope.Clear();
+            expr.Scope.ClearVariables();
 
         RuntimeObject lastValue = RuntimeNil.Value;
         foreach (var (child, i) in expr.Expressions.WithIndex())
@@ -500,6 +499,14 @@ partial class Interpreter
     {
         if (assignee is VariableExpr variableExpr)
         {
+            var enclosingClosure = variableExpr.EnclosingClosureValue;
+            if (enclosingClosure != null)
+            {
+                enclosingClosure.Environment[variableExpr.Identifier.Value].Value = value;
+
+                return value;
+            }
+
             _scope.UpdateVariable(variableExpr.Identifier.Value, value);
 
             return value;
@@ -576,9 +583,9 @@ partial class Interpreter
 
     private RuntimeObject Visit(VariableExpr expr)
     {
-        if (expr.VariableSymbol == null)
+        string name = expr.Identifier.Value;
+        if (name.StartsWith('$'))
         {
-            string name = expr.Identifier.Value;
             string? value = Environment.GetEnvironmentVariable(name[1..]);
 
             return value == null
@@ -586,10 +593,14 @@ partial class Interpreter
                 : new RuntimeString(value);
         }
 
-        return expr.VariableSymbol.Value;
+        if (expr.EnclosingClosureValue?.Environment.TryGetValue(expr.Identifier.Value, out var captured) is true)
+            return captured.Value;
+
+        return _scope.FindVariable(expr.Identifier.Value)?.Value
+               ?? RuntimeNil.Value;
     }
 
-    private RuntimeObject Visit(CallExpr expr, ClosureExpr? closureExpr = null)
+    private RuntimeObject Visit(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
     {
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         RuntimeObject Evaluate(List<RuntimeObject> arguments)
@@ -605,8 +616,8 @@ partial class Interpreter
                     globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                     isRoot: expr.IsRoot
                 ),
-                CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, closureExpr),
-                CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, closureExpr),
+                CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
+                CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, runtimeClosure),
                 // Interpreter_BuiltIns.cs
                 CallType.BuiltInCd => EvaluateBuiltInCd(arguments),
                 CallType.BuiltInExec => EvaluateBuiltInExec(
@@ -615,7 +626,7 @@ partial class Interpreter
                     isRoot: expr.IsRoot
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
-                CallType.BuiltInClosure => EvaluateBuiltInClosure(arguments),
+                CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 CallType.BuiltInError => EvaluateBuiltInError(arguments),
                 _ => throw new NotSupportedException(expr.CallType.ToString()),
@@ -642,13 +653,13 @@ partial class Interpreter
         IReadOnlyCollection<RuntimeObject> arguments,
         FunctionExpr function,
         bool isRoot,
-        ClosureExpr? closureExpr = null)
+        RuntimeClosureFunction? givenClosure = null)
     {
         var allArguments = new List<RuntimeObject>(
             Math.Max(arguments.Count, function.Parameters.Count)
         );
         var functionScope = (LocalScope)function.Block.Scope;
-        functionScope.Clear();
+        functionScope.ClearVariables();
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (argument == null && parameter?.DefaultValue != null)
@@ -670,20 +681,16 @@ partial class Interpreter
             );
         }
 
+        function.GivenClosure = givenClosure;
         function.Block.IsRoot = isRoot;
 
-        var previousClosureExpr = _currentClosureExpr;
-        _currentClosureExpr = closureExpr;
-        var result = NextBlock(function.Block, clearScope: false);
-        _currentClosureExpr = previousClosureExpr;
-
-        return result;
+        return NextBlock(function.Block, clearScope: false);
     }
 
     private RuntimeObject EvaluateStdCall(
         List<RuntimeObject> arguments,
         StdFunction stdFunction,
-        ClosureExpr? closureExpr = null)
+        RuntimeClosureFunction? runtimeClosure = null)
     {
         var allArguments = new List<object?>(arguments.Count + 2);
         if (stdFunction.VariadicStart.HasValue)
@@ -708,7 +715,7 @@ partial class Interpreter
             else if (parameter.Type == typeof(ShellEnvironment))
                 allArguments.Insert(additionalsIndex, ShellEnvironment);
             else if (parameter.IsClosure)
-                allArguments.Insert(additionalsIndex, ConstructClosureFunc(parameter.Type, closureExpr!));
+                allArguments.Insert(additionalsIndex, ConstructClosureFunc(parameter.Type, runtimeClosure!));
         }
 
         try
@@ -729,14 +736,14 @@ partial class Interpreter
         }
     }
 
-    private object ConstructClosureFunc(Type closureFuncType, ClosureExpr closureExpr)
+    private object ConstructClosureFunc(Type closureFuncType, RuntimeClosureFunction runtimeClosure)
     {
-        var parameters = closureExpr.Parameters;
+        var parameters = runtimeClosure.Expr.Parameters;
 
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
         {
-            return new Func<RuntimeObject>(() => NextBlock(closureExpr.Body));
+            return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body));
         }
 
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
@@ -744,11 +751,12 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject>(
                 a =>
                 {
-                    var scope = closureExpr.Body.Scope;
-                    scope.Clear();
-                    scope.AddVariable(parameters[0].Value, a);
+                    //var scope = runtimeClosure.Body.Scope;
+                    //scope.ClearVariables();
+                    //scope.AddVariable(parameters[0].Value, a);
+                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
 
-                    return NextBlock(closureExpr.Body, clearScope: false);
+                    return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
                 });
         }
 
@@ -757,12 +765,14 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
-                    var scope = closureExpr.Body.Scope;
-                    scope.Clear();
-                    scope.AddVariable(parameters[0].Value, a);
-                    scope.AddVariable(parameters[1].Value, b);
+                    //var scope = runtimeClosure.Body.Scope;
+                    //scope.ClearVariables();
+                    //scope.AddVariable(parameters[0].Value, a);
+                    //scope.AddVariable(parameters[1].Value, b);
+                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
+                    runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
 
-                    return NextBlock(closureExpr.Body, clearScope: false);
+                    return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
                 });
         }
 
@@ -772,12 +782,13 @@ partial class Interpreter
             return new Action<RuntimeObject>(
                 a =>
                 {
-                    closureExpr.Body.IsRoot = true;
-                    var scope = closureExpr.Body.Scope;
-                    scope.Clear();
-                    scope.AddVariable(parameters[0].Value, a);
+                    runtimeClosure.Expr.Body.IsRoot = true;
+                    //var scope = runtimeClosure.Body.Scope;
+                    //scope.ClearVariables();
+                    //scope.AddVariable(parameters[0].Value, a);
+                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
 
-                    NextBlock(closureExpr.Body, clearScope: false);
+                    NextBlock(runtimeClosure.Expr.Body, clearScope: false);
                 });
         }
 
@@ -786,13 +797,15 @@ partial class Interpreter
             return new Action<RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
-                    closureExpr.Body.IsRoot = true;
-                    var scope = closureExpr.Body.Scope;
-                    scope.Clear();
-                    scope.AddVariable(parameters[0].Value, a);
-                    scope.AddVariable(parameters[1].Value, b);
+                    runtimeClosure.Expr.Body.IsRoot = true;
+                    //var scope = runtimeClosure.Body.Scope;
+                    //scope.ClearVariables();
+                    //scope.AddVariable(parameters[0].Value, a);
+                    //scope.AddVariable(parameters[1].Value, b);
+                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
+                    runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
 
-                    NextBlock(closureExpr.Body, clearScope: false);
+                    NextBlock(runtimeClosure.Expr.Body, clearScope: false);
                 });
         }
 
@@ -800,12 +813,14 @@ partial class Interpreter
         return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
             args =>
             {
-                var scope = closureExpr.Body.Scope;
-                scope.Clear();
-                foreach (var (parameter, argument) in closureExpr.Parameters.Zip(args))
-                    scope.AddVariable(parameter.Value, argument);
+                //var scope = runtimeClosure.Body.Scope;
+                //scope.ClearVariables();
+                //foreach (var (parameter, argument) in runtimeClosure.Parameters.Zip(args))
+                //    scope.AddVariable(parameter.Value, argument);
+                foreach (var (parameter, argument) in runtimeClosure.Expr.Parameters.Zip(args))
+                    runtimeClosure.Environment[parameter.Value] = new VariableSymbol(argument);
 
-                return NextBlock(closureExpr.Body, clearScope: false);
+                return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
             });
     }
 
@@ -926,7 +941,20 @@ partial class Interpreter
     }
 
     private RuntimeObject Visit(ClosureExpr closureExpr)
-        => closureExpr.Function is CallExpr callExpr
-            ? NextCallWithClosure(callExpr, closureExpr)
-            : new RuntimeClosureFunction(closureExpr);
+    {
+        var scope = new Dictionary<string, VariableSymbol>(closureExpr.CapturedVariables.Count);
+        foreach (var capture in closureExpr.CapturedVariables)
+        {
+            var value = closureExpr.Body.Scope.FindVariable(capture)?.Value
+                        ?? RuntimeNil.Value;
+            scope[capture] = new VariableSymbol(value);
+        }
+
+        var runtimeClosure = new RuntimeClosureFunction(closureExpr, scope);
+        closureExpr.RuntimeValue = runtimeClosure;
+
+        return closureExpr.Function is CallExpr callExpr
+            ? NextCallWithClosure(callExpr, runtimeClosure)
+            : runtimeClosure;
+    }
 }
