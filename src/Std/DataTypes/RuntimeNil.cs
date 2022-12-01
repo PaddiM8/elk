@@ -14,6 +14,10 @@ public class RuntimeNil : RuntimeObject
 {
     public static readonly RuntimeNil Value = new();
 
+    private RuntimeNil()
+    {
+    }
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

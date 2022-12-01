@@ -1,6 +1,8 @@
 #region
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -43,6 +45,19 @@ static class Maths
         => x is RuntimeInteger integer
             ? new(Math.Sqrt(integer.Value))
             : new(Math.Sqrt(x.As<RuntimeFloat>().Value));
+
+    /// <param name="items">Items to sum</param>
+    /// <returns>An Integer of Float of the sum of the given values.</returns>
+    [ElkFunction("sum")]
+    public static RuntimeObject Sum(IEnumerable<RuntimeObject> items)
+    {
+        // TODO: Better handling for Integers
+        double result = items.Sum(x => x.As<RuntimeFloat>().Value);
+
+        return Math.Floor(result) == result
+            ? new RuntimeInteger((int)result)
+            : new RuntimeFloat(result);
+    }
 
     /// <param name="x" types="Integer, Float"></param>
     /// <param name="y" types="Integer, Float"></param>

@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Parsing;
@@ -78,15 +79,20 @@ internal class RuntimeProgramFunction : RuntimeFunction
 
 internal class RuntimeClosureFunction : RuntimeFunction
 {
-    public ClosureExpr Closure { get; }
+    public ClosureExpr Expr { get; }
 
-    public RuntimeClosureFunction(ClosureExpr closure)
+    public Dictionary<string, VariableSymbol> Environment { get; }
+
+    public RuntimeClosureFunction(
+        ClosureExpr expr,
+        Dictionary<string, VariableSymbol> environment)
     {
-        Closure = closure;
+        Expr = expr;
+        Environment = environment;
     }
 
     public override int GetHashCode()
-        => Closure.GetHashCode();
+        => Expr.GetHashCode();
 
     public override string ToString()
         => "<closure>";
