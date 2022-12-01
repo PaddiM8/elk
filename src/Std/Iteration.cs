@@ -45,6 +45,13 @@ static class Iteration
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
 
+    /// <param name="items">All items</param>
+    /// <param name="count">The amount of items to skip from the left</param>
+    /// <returns>A new list without the first n items.</returns>
+    [ElkFunction("skip")]
+    public static RuntimeList Skip(IEnumerable<RuntimeObject> items, RuntimeInteger count)
+        => new(items.Skip((int)count.Value).ToList());
+
     /// <summary>Changes the step size of the given range. The step size determines how much the range value should increase by after each iteration.</summary>
     /// <param name="range">Range to modify</param>
     /// <param name="step">Step size</param>
@@ -60,6 +67,13 @@ static class Iteration
 
         return range;
     }
+
+    /// <param name="items">All items</param>
+    /// <param name="count">The amount of items to take from the left</param>
+    /// <returns>A new list with the specified amount of items.</returns>
+    [ElkFunction("take")]
+    public static RuntimeList Take(IEnumerable<RuntimeObject> items, RuntimeInteger count)
+        => new(items.Take((int)count.Value).ToList());
 
     /// <param name="values" types="Iterable"></param>
     /// <returns>A list containing a tuple for each item in the original container.

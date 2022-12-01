@@ -32,6 +32,7 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
         if (other == null)
             return 1;
 
+        // TODO: Optimise this by avoiding the allocation for the boolean result
         if (((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
             return -1;
 
