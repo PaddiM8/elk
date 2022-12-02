@@ -14,7 +14,7 @@ public class Collections
     /// Pushes the given value to the container.
     /// </summary>
     /// <param name="container" types="List, Dictionary"></param>
-    /// <param name="value1">List: Value to push<br />Dictionary: Key</param>
+    /// <param name="value1">List: Value to push<br />Set: Element<br />Dictionary: Key</param>
     /// <param name="value2">Dictionary: Value to push</param>
     /// <returns>The same container.</returns>
     /// <example>
@@ -30,6 +30,10 @@ public class Collections
         if (container is RuntimeList list)
         {
             list.Values.Add(value1);
+        }
+        if (container is RuntimeSet set)
+        {
+            set.Entries.Add(value1.GetHashCode(), value1);
         }
         else if (container is RuntimeDictionary dict)
         {
@@ -107,6 +111,10 @@ public class Collections
         if (container is RuntimeList list)
         {
             list.Values.RemoveAt((int)index.As<RuntimeInteger>().Value);
+        }
+        else if (container is RuntimeSet set)
+        {
+            set.Entries.Remove(index.GetHashCode());
         }
         else if (container is RuntimeDictionary dict)
         {

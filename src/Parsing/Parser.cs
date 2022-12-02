@@ -1026,8 +1026,8 @@ internal class Parser
 
     private Expr ContinueParseAsDictionary(Expr firstExpression)
     {
-        if (Previous == null || !IsLiteral(Previous.Kind))
-            throw Error("Expected literal as dictionary key");
+        if (Previous == null || !(IsLiteral(Previous.Kind) || Previous.Kind == TokenKind.Identifier))
+            throw Error("Expected literal or identifier as dictionary key");
 
         EatExpected(TokenKind.Colon);
         var expressions = new List<(Expr, Expr)>
