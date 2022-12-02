@@ -532,7 +532,10 @@ partial class Interpreter
                 throw new RuntimeUnableToIndexException(value.GetType());
 
             indexable[Next(indexer.Index)] = value;
+            
+            return value;
         }
+
 
         throw new RuntimeException("Invalid assignment");
     }
