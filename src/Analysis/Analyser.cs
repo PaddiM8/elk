@@ -86,6 +86,7 @@ class Analyser
             WhileExpr e => Visit(e),
             TupleExpr e => Visit(e),
             ListExpr e => Visit(e),
+            SetExpr e => Visit(e),
             DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
             KeywordExpr e => Visit(e),
@@ -336,12 +337,21 @@ class Analyser
         };
     }
 
+    private SetExpr Visit(SetExpr expr)
+    {
+        foreach (var value in expr.Entries)
+            Next(value);
+
+        return new SetExpr(expr.Entries.Select(Next).ToList(), expr.Position)
+        {
+            IsRoot = expr.IsRoot,
+        };
+    }
+
     private DictionaryExpr Visit(DictionaryExpr expr)
     {
-        foreach (var (_, value) in expr.Entries)
-            Next(value);
         var dictEntries = expr.Entries
-            .Select(x => (x.Item1, Next(x.Item2)))
+            .Select(x => (Next(x.Item1), Next(x.Item2)))
             .ToList();
 
         return new DictionaryExpr(dictEntries, expr.Position)
@@ -430,7 +440,10 @@ class Analyser
 
     private FieldAccessExpr Visit(FieldAccessExpr expr)
     {
-        return new FieldAccessExpr(Next(expr.Object), expr.Identifier);
+        return new FieldAccessExpr(Next(expr.Object), expr.Identifier)
+        {
+            IsRoot = expr.IsRoot,
+        };
     }
 
     private RangeExpr Visit(RangeExpr expr)

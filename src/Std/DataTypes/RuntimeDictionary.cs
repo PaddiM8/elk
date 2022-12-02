@@ -57,7 +57,7 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
-                => throw new RuntimeCastException<RuntimeString>(toType),
+                => throw new RuntimeCastException<RuntimeDictionary>(toType),
         };
 
     public override int GetHashCode()

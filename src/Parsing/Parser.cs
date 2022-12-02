@@ -740,25 +740,6 @@ internal class Parser
 
         if (Match(TokenKind.OpenBrace))
         {
-            // Go forward a bit in order to be able to look ahead,
-            // but make sure to make it possible to go back again afterwards.
-            int prevIndex = _index;
-            Eat();
-            SkipWhiteSpace();
-
-            if (AdvanceIf(TokenKind.ClosedBrace))
-                return new DictionaryExpr(new(), Previous!.Position);
-
-            if (Match(TokenKind.Identifier, TokenKind.StringLiteral) &&
-                Peek()?.Kind == TokenKind.Colon)
-            {
-                _index = prevIndex;
-
-                return ParseDictionary();
-            }
-
-            _index = prevIndex;
-
             return ParseBlock(StructureKind.Other);
         }
 
@@ -979,27 +960,6 @@ internal class Parser
         return new ListExpr(expressions, pos);
     }
 
-    private Expr ParseDictionary()
-    {
-        var pos = EatExpected(TokenKind.OpenBrace).Position;
-        var entries = new List<(string, Expr)>();
-        while (Match(TokenKind.Identifier, TokenKind.StringLiteral))
-        {
-            var identifier = Eat().Value;
-            EatExpected(TokenKind.Colon);
-            var value = ParseExpr();
-            entries.Add((identifier, value));
-
-            if (!Match(TokenKind.ClosedBrace))
-                EatExpected(TokenKind.Comma);
-        }
-
-        AdvanceIf(TokenKind.Comma);
-        EatExpected(TokenKind.ClosedBrace);
-
-        return new DictionaryExpr(entries, pos);
-    }
-
     private BlockExpr ParseBlockOrSingle(StructureKind parentStructureKind, LocalScope? scope = null)
     {
         if (AdvanceIf(TokenKind.Colon))
@@ -1020,7 +980,16 @@ internal class Parser
         return ParseBlock(parentStructureKind, scope);
     }
 
-    private BlockExpr ParseBlock(StructureKind parentStructureKind, Scope? scope = null)
+    private Expr ParseBlock(StructureKind parentStructureKind, bool orAsOtherStructure = true)
+        => ParseBlock(parentStructureKind, orAsOtherStructure, null);
+
+    private BlockExpr ParseBlock(StructureKind parentStructureKind, Scope? scope)
+        => (BlockExpr)ParseBlock(parentStructureKind, orAsOtherStructure: false, scope);
+
+    private Expr ParseBlock(
+        StructureKind parentStructureKind,
+        bool orAsOtherStructure,
+        Scope? scope)
     {
         EatExpected(TokenKind.OpenBrace);
 
@@ -1030,11 +999,53 @@ internal class Parser
 
         var expressions = new List<Expr>();
         while (!AdvanceIf(TokenKind.ClosedBrace))
+        {
             expressions.Add(ParseExpr());
+
+            if (orAsOtherStructure && Match(TokenKind.Comma) && expressions.Count == 1)
+                return ContinueParseAsSet(expressions.First());
+            if (orAsOtherStructure && Match(TokenKind.Colon) && expressions.Count == 1)
+                return ContinueParseAsDictionary(expressions.First());
+        }
 
         _scope = _scope.Parent!;
 
         return new BlockExpr(expressions, parentStructureKind, pos, blockScope);
+    }
+
+    private Expr ContinueParseAsSet(Expr firstExpression)
+    {
+        var expressions = new List<Expr>
+        {
+            firstExpression,
+        };
+
+        while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedBrace))
+            expressions.Add(ParseExpr());
+
+        EatExpected(TokenKind.ClosedBrace);
+
+        return new SetExpr(expressions, firstExpression.Position);
+    }
+
+    private Expr ContinueParseAsDictionary(Expr firstExpression)
+    {
+        EatExpected(TokenKind.Colon);
+        var expressions = new List<(Expr, Expr)>
+        {
+            (firstExpression, ParseExpr()),
+        };
+
+        while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedBrace))
+        {
+            var key = ParseExpr();
+            EatExpected(TokenKind.Colon);
+            expressions.Add((key, ParseExpr()));
+        }
+
+        EatExpected(TokenKind.ClosedBrace);
+
+        return new DictionaryExpr(expressions, firstExpression.Position);
     }
 
     private Expr ParseIdentifier()

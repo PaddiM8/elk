@@ -243,11 +243,22 @@ class ListExpr : Expr
     }
 }
 
+class SetExpr : Expr
+{
+    public List<Expr> Entries { get; }
+
+    public SetExpr(List<Expr> entries, TextPos position)
+        : base(position)
+    {
+        Entries = entries;
+    }
+}
+
 class DictionaryExpr : Expr
 {
-    public List<(string, Expr)> Entries { get; }
+    public List<(Expr, Expr)> Entries { get; }
 
-    public DictionaryExpr(List<(string, Expr)> entries, TextPos position)
+    public DictionaryExpr(List<(Expr, Expr)> entries, TextPos position)
         : base(position)
     {
         Entries = entries;

@@ -138,6 +138,7 @@ partial class Interpreter
             WhileExpr e => Visit(e),
             TupleExpr e => Visit(e),
             ListExpr e => Visit(e),
+            SetExpr e => Visit(e),
             DictionaryExpr e => Visit(e),
             BlockExpr e => Visit(e),
             KeywordExpr e => Visit(e),
@@ -312,13 +313,25 @@ partial class Interpreter
         return new RuntimeList(expr.Values.Select(Next).ToList());
     }
 
+    private RuntimeObject Visit(SetExpr expr)
+    {
+        var dict = new Dictionary<int, RuntimeObject>(expr.Entries.Count);
+        foreach (var value in expr.Entries)
+        {
+            var evaluatedValue = Next(value);
+            dict.TryAdd(evaluatedValue.GetHashCode(), evaluatedValue);
+        }
+
+        return new RuntimeSet(dict);
+    }
+
     private RuntimeObject Visit(DictionaryExpr expr)
     {
-        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
-        foreach (var entry in expr.Entries)
+        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>(expr.Entries.Count);
+        foreach (var (key, value) in expr.Entries)
         {
-            var key = new RuntimeString(entry.Item1);
-            if (!dict.TryAdd(key.GetHashCode(), (key, Next(entry.Item2))))
+            var evaluatedKey = Next(key);
+            if (!dict.TryAdd(evaluatedKey.GetHashCode(), (evaluatedKey, Next(value))))
                 throw new RuntimeException("Duplicate value in dictionary");
         }
 
@@ -461,6 +474,7 @@ partial class Interpreter
             {
                 RuntimeList list => list.Values
                     .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
+                RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
                 _ => throw new RuntimeInvalidOperationException("in", right.GetType().ToString()[7..]),
