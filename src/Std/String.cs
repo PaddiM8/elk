@@ -1,5 +1,3 @@
-
-
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
@@ -98,6 +96,30 @@ static class String
     [ElkFunction("startsWith")]
     public static RuntimeBoolean StartsWith(RuntimeString input, RuntimeString start)
         => RuntimeBoolean.From(input.Value.StartsWith(start.Value));
+
+    /// <summary>
+    /// Gets a list of columns from a multi-line string.
+    /// </summary>
+    /// <param name="input">A string consisting of several columns and lines.</param>
+    /// <param name="divider">The character sequence that divides the columns. Default: "\t"</param>
+    /// <returns>A list of lists of columns.</returns>
+    [ElkFunction("table", Reachability.Everywhere)]
+    public static RuntimeList Table(RuntimeString input, RuntimeString? divider = null)
+    {
+        var table = input
+            .Value
+            .ToLines()
+            .Select(
+                x =>
+                    x
+                        .Split(divider?.Value ?? "\t")
+                        .Select(y => new RuntimeString(y))
+            )
+            .Select(x => new RuntimeList(x))
+            .Where(x => x.Values.Count > 1 || !string.IsNullOrEmpty(x.Values.First().ToString()));
+
+        return new(table.ToList());
+    }
 
     /// <returns>A copy of the given string without the leading and trailing white-space characters.</returns>
     [ElkFunction("trim")]
