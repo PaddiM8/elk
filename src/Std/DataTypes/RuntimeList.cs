@@ -31,26 +31,27 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     {
         get
         {
-            try
+            if (index is RuntimeRange range)
             {
-                if (index is RuntimeRange range)
-                {
-                    int length = (range.To ?? Values.Count) - (range.From ?? 0);
+                int length = (range.To ?? Values.Count) - (range.From ?? 0);
 
-                    return new RuntimeList(Values.GetRange(range.From ?? 0, length));
-                }
+                return new RuntimeList(Values.GetRange(range.From ?? 0, length));
+            }
 
-                return Values[(int)index.As<RuntimeInteger>().Value];
-            }
-            catch (Exception)
-            {
-                throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
-            }
+            return Values.ElementAtOrDefault((int)index.As<RuntimeInteger>().Value) ??
+                   throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
         }
 
         set
         {
-            Values[(int)index.As<RuntimeInteger>().Value] = value;
+            try
+            {
+                Values[(int)index.As<RuntimeInteger>().Value] = value;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            }
         }
     }
 
