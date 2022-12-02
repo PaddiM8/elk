@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
-using Elk.Parsing;
 using Elk.Std.Attributes;
 
 #endregion
@@ -70,16 +69,6 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
-
-    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
-    {
-        var otherList = other.As<RuntimeList>();
-        return kind switch
-        {
-            OperationKind.Addition => new RuntimeList(Values.Concat(otherList.Values)),
-            _ => throw InvalidOperation(kind),
-        };
-    }
 
     public override int GetHashCode()
         => Values.GetHashCode();

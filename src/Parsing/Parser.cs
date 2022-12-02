@@ -686,21 +686,9 @@ internal class Parser
 
     private Expr ParsePrimary()
     {
-        if (Match(
-                TokenKind.IntegerLiteral,
-                TokenKind.FloatLiteral,
-                TokenKind.StringLiteral,
-                TokenKind.Nil,
-                TokenKind.True,
-                TokenKind.False
-            ))
+        if (Current != null && IsLiteral(Current.Kind))
         {
-            return Current!.Kind switch
-            {
-                TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
-                TokenKind.StringLiteral => ParseStringLiteral(),
-                _ => new LiteralExpr(Eat()),
-            };
+            return ParseLiteral();
         }
 
         if (Match(TokenKind.OpenParenthesis))
@@ -786,6 +774,14 @@ internal class Parser
             ? Error("Unexpected end of expression")
             : Error($"Unexpected token: '{Current?.Kind}'");
     }
+
+    private Expr ParseLiteral()
+        => Current!.Kind switch
+        {
+            TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
+            TokenKind.StringLiteral => ParseStringLiteral(),
+            _ => new LiteralExpr(Eat()),
+        };
 
     private Expr ParseStringLiteral()
     {
@@ -1030,6 +1026,9 @@ internal class Parser
 
     private Expr ContinueParseAsDictionary(Expr firstExpression)
     {
+        if (Previous == null || !IsLiteral(Previous.Kind))
+            throw Error("Expected literal as dictionary key");
+
         EatExpected(TokenKind.Colon);
         var expressions = new List<(Expr, Expr)>
         {
@@ -1038,7 +1037,7 @@ internal class Parser
 
         while (AdvanceIf(TokenKind.Comma) && !Match(TokenKind.ClosedBrace))
         {
-            var key = ParseExpr();
+            var key = ParseLiteral();
             EatExpected(TokenKind.Colon);
             expressions.Add((key, ParseExpr()));
         }
@@ -1339,6 +1338,15 @@ internal class Parser
 
     private bool MatchIdentifier(string value)
         => Match(TokenKind.Identifier) && Current?.Value == value;
+
+    private bool IsLiteral(TokenKind kind)
+        => kind is
+            TokenKind.IntegerLiteral or
+            TokenKind.FloatLiteral or
+            TokenKind.StringLiteral or
+            TokenKind.Nil or
+            TokenKind.True or
+            TokenKind.False;
 
     private Token? Peek(int length = 1)
         => _tokens.Count > _index + length

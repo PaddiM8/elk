@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Parsing;
 using Elk.Std.Attributes;
 
 #endregion
