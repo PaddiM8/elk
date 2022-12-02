@@ -1,5 +1,6 @@
 #region
 
+using System.Collections.Generic;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -20,8 +21,8 @@ static class Conversion
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("dict", Reachability.Everywhere)]
-    public static RuntimeDictionary ToDictionary(RuntimeObject value)
-        => value.As<RuntimeDictionary>();
+    public static RuntimeDictionary ToDictionary(RuntimeObject? value = null)
+        => value?.As<RuntimeDictionary>() ?? new RuntimeDictionary(new());
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("float", Reachability.Everywhere)]
@@ -35,13 +36,18 @@ static class Conversion
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("list", Reachability.Everywhere)]
-    public static RuntimeList ToList(RuntimeObject value)
-        => value.As<RuntimeList>();
+    public static RuntimeList ToList(RuntimeObject? value = null)
+        => value?.As<RuntimeList>() ?? new RuntimeList(new List<RuntimeObject>());
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("regex", Reachability.Everywhere)]
     public static RuntimeRegex ToRegex(RuntimeObject value)
         => value.As<RuntimeRegex>();
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("set", Reachability.Everywhere)]
+    public static RuntimeSet ToSet(RuntimeObject? value = null)
+        => value?.As<RuntimeSet>() ?? new RuntimeSet(new());
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("str", Reachability.Everywhere)]
