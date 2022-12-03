@@ -3,7 +3,9 @@
 
 #region
 
+using System;
 using System.Linq;
+using System.Text;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -36,6 +38,12 @@ static class String
 
         return new RuntimeString(column);
     }
+
+    /// <param name="codepoint">The unicode codepoint to turn into a character</param>
+    /// <returns>A string consisting of a single unicode character.</returns>
+    [ElkFunction("char")]
+    public static RuntimeString Char(RuntimeInteger codepoint)
+        => new (char.ConvertFromUtf32((int)codepoint.Value));
 
     /// <summary>
     /// Gets a column from a multi-line string.
@@ -89,6 +97,12 @@ static class String
     [ElkFunction("lower")]
     public static RuntimeString Lower(RuntimeString input)
         => new(input.Value.ToLower());
+
+    /// <param name="str">A string consisting of one unicode character</param>
+    /// <returns>The character code.</returns>
+    [ElkFunction("ord")]
+    public static RuntimeInteger Ord(RuntimeString str)
+        => new(char.ConvertToUtf32(str.Value, 0));
 
     /// <param name="input">Entire string</param>
     /// <param name="start">Substring</param>
