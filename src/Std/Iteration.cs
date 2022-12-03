@@ -26,6 +26,35 @@ static class Iteration
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
+    /// <param name="items">The items to split into chunks</param>
+    /// <param name="size">The maximum size of each chunk</param>
+    /// <returns>A list of chunks where each chunk is a list of items of the given size.</returns>
+    [ElkFunction("chunks")]
+    public static RuntimeList Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
+    {
+        if (size.Value == 0)
+            return new RuntimeList(new List<RuntimeObject>());
+
+        var chunks = new List<RuntimeList>
+        {
+            new(new List<RuntimeObject>()),
+        };
+
+        foreach (var item in items)
+        {
+            if (chunks.Last().Values.Count < size.Value)
+            {
+                chunks.Last().Values.Add(item);
+            }
+            else
+            {
+                chunks.Add(new(new List<RuntimeObject> { item }));
+            }
+        }
+
+        return new RuntimeList(chunks);
+    }
+
     /// <summary>
     /// Invokes the given closure on each item in the given container.
     /// </summary>
