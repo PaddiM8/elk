@@ -65,16 +65,11 @@ public class Collections
         return list;
     }
 
-    /// <param name="input"></param>
-    /// <returns>The first element of the given indexable object.</returns>
+    /// <param name="items"></param>
+    /// <returns>The first element of the given iterable object.</returns>
     [ElkFunction("first", Reachability.Everywhere)]
-    public static RuntimeObject First(RuntimeObject input)
-    {
-        if (input is not IIndexable<RuntimeObject> indexable)
-            throw new RuntimeCastException(input.GetType(), "indexable");
-
-        return indexable[new RuntimeInteger(0)];
-    }
+    public static RuntimeObject First(IEnumerable<RuntimeObject> items)
+        => items.FirstOrDefault() ?? RuntimeNil.Value;
 
     /// <param name="input"></param>
     /// <returns>The last element of the given indexable object.</returns>
