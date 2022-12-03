@@ -47,7 +47,18 @@ static class Conversion
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("set", Reachability.Everywhere)]
     public static RuntimeSet ToSet(RuntimeObject? value = null)
-        => value?.As<RuntimeSet>() ?? new RuntimeSet(new());
+    {
+        if (value is IEnumerable<RuntimeObject> enumerable)
+        {
+            var dict = new Dictionary<int, RuntimeObject>();
+            foreach (var item in enumerable)
+                dict.TryAdd(item.GetHashCode(), item);
+
+            return new RuntimeSet(dict);
+        }
+
+        return  value?.As<RuntimeSet>() ?? new RuntimeSet(new());
+    }
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("str", Reachability.Everywhere)]
