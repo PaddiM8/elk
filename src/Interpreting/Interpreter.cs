@@ -474,6 +474,7 @@ partial class Interpreter
             {
                 RuntimeList list => list.Values
                     .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
+                RuntimeRange range => range.Contains((int)left.As<RuntimeInteger>().Value),
                 RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
@@ -532,7 +533,7 @@ partial class Interpreter
                 throw new RuntimeUnableToIndexException(value.GetType());
 
             indexable[Next(indexer.Index)] = value;
-            
+
             return value;
         }
 
@@ -573,7 +574,7 @@ partial class Interpreter
 
         if (expr.Inclusive)
         {
-            if (to > from)
+            if (to >= from)
             {
                 to++;
             }

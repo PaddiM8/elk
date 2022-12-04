@@ -66,6 +66,9 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
     public override string ToString()
         => $"{From}..{To}";
 
+    public bool Contains(int value)
+        => value >= From && value < To;
+
     private IEnumerable<RuntimeInteger> AsEnumerable()
     {
         int from = From ?? 0;
