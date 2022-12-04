@@ -55,6 +55,13 @@ static class Iteration
         return new RuntimeList(chunks);
     }
 
+    /// <param name="items">The items to count</param>
+    /// <param name="closure">A condition for which items should be counted</param>
+    /// <returns>The amount of items that meet the condition.</returns>
+    [ElkFunction("count")]
+    public static RuntimeInteger Count(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.Count(x => closure(x).As<RuntimeBoolean>().IsTrue));
+
     /// <summary>
     /// Invokes the given closure on each item in the given container.
     /// </summary>
