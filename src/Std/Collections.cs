@@ -90,6 +90,7 @@ public class Collections
         {
             RuntimeTuple tuple => new(tuple.Values.Count),
             RuntimeList list => new(list.Values.Count),
+            RuntimeSet set => new(set.Entries.Count),
             RuntimeDictionary dict => new(dict.Entries.Count),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
