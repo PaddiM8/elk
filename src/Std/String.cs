@@ -4,6 +4,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Elk.Std.Attributes;
@@ -44,6 +45,37 @@ static class String
     [ElkFunction("char")]
     public static RuntimeString Char(RuntimeInteger codepoint)
         => new (char.ConvertFromUtf32((int)codepoint.Value));
+
+    /// <param name="str">The string to turn into chunks</param>
+    /// <param name="size">The length of each chunk</param>
+    /// <returns>A list of string chunks.</returns>
+    [ElkFunction("chunks")]
+    public static RuntimeList Chunks(RuntimeString str, RuntimeInteger size)
+    {
+        if (size.Value == 0)
+            return new RuntimeList(new List<RuntimeObject>());
+
+        var chunks = new List<RuntimeString>();
+        var builder = new StringBuilder();
+        foreach (var c in str)
+        {
+            if (builder.Length < size.Value)
+            {
+                builder.Append(c);
+            }
+            else
+            {
+                chunks.Add(new RuntimeString(builder.ToString()));
+                builder.Clear();
+                builder.Append(c);
+            }
+        }
+
+        if (builder.Length > 0)
+            chunks.Add(new RuntimeString(builder.ToString()));
+
+        return new RuntimeList(chunks);
+    }
 
     /// <summary>
     /// Gets a column from a multi-line string.
