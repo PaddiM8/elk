@@ -95,6 +95,17 @@ public class Collections
             _ => new(container.As<RuntimeString>().Value.Length),
         };
 
+    [ElkFunction("pop", Reachability.Everywhere)]
+    public static RuntimeObject Pop(RuntimeList list, RuntimeInteger? index = null)
+    {
+        int i = (int?)index?.Value ?? list.Count - 1;
+        var value = list.Values.ElementAtOrDefault(i);
+        if (value != null)
+            list.Values.RemoveAt(i);
+
+        return value ?? throw new RuntimeStdException("Item not found.");
+    }
+
     /// <summary>
     /// Removes the item at the given index.
     /// </summary>
