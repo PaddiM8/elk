@@ -79,7 +79,7 @@ public class Collections
         if (input is not IIndexable<RuntimeObject> indexable)
             throw new RuntimeCastException(input.GetType(), "indexable");
 
-        return indexable[new RuntimeInteger(indexable.Count)];
+        return indexable[new RuntimeInteger(indexable.Count - 1)];
     }
 
     /// <param name="container" types="Tuple, List, Dictionary"></param>
@@ -103,7 +103,7 @@ public class Collections
         if (value != null)
             list.Values.RemoveAt(i);
 
-        return value ?? throw new RuntimeStdException("Item not found.");
+        return value ?? RuntimeNil.Value;
     }
 
     /// <summary>
@@ -133,6 +133,22 @@ public class Collections
         }
 
         return container;
+    }
+
+    /// <summary>
+    /// Removes the items within the given range.
+    /// </summary>
+    /// <param name="list"></param>
+    /// <param name="range"></param>
+    /// <returns>The same container.</returns>
+    [ElkFunction("removeRange", Reachability.Everywhere)]
+    public static RuntimeObject RemoveRange(RuntimeList list, RuntimeRange range)
+    {
+        int from = range.From ?? 0;
+        int to = range.To ?? list.Count;
+        list.Values.RemoveRange(from, to - from);
+
+        return list;
     }
 
     /// <summary>
