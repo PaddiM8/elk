@@ -11,6 +11,19 @@ namespace Elk.Std;
 public class Collections
 {
     /// <summary>
+    /// Appends all the items in one list to another list.
+    /// </summary>
+    /// <param name="a">The list to extend</param>
+    /// <param name="b">The list to take items from</param>
+    /// <returns>A reference to list `a`.</returns>
+    public static RuntimeList Extend(RuntimeList a, RuntimeList b)
+    {
+        a.Values.AddRange(b.Values);
+        
+        return a;
+    }
+
+    /// <summary>
     /// Pushes the given value to the container.
     /// </summary>
     /// <param name="container" types="List, Dictionary"></param>
