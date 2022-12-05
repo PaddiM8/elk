@@ -235,7 +235,6 @@ internal class Parser
             TokenKind.Module => ParseModule(),
             TokenKind.Struct => ParseStruct(),
             TokenKind.Fn => ParseFn(),
-            TokenKind.Return or TokenKind.Break or TokenKind.Continue => ParseKeywordExpr(),
             TokenKind.Alias => ParseAlias(),
             TokenKind.Unalias => ParseUnalias(),
             _ => ParseBinaryIf(),
@@ -306,20 +305,6 @@ internal class Parser
         return function;
     }
 
-    private Expr ParseKeywordExpr()
-    {
-        var keyword = Eat();
-        _allowEndOfExpression = true;
-        var value = ParseExpr();
-        _allowEndOfExpression = false;
-
-        return new KeywordExpr(
-            keyword.Kind,
-            value is EmptyExpr ? null : value,
-            keyword.Position
-        );
-    }
-
     private Expr ParseAlias()
     {
         var pos = EatExpected(TokenKind.Alias).Position;
@@ -375,16 +360,35 @@ internal class Parser
     private Expr ParseBinaryIf()
     {
         int leftLine = Current?.Position.Line ?? 0;
-        var left = ParseAssignment();
+        var left = ParseKeyword();
         if (leftLine == Current?.Position.Line && Match(TokenKind.If))
         {
             var op = Eat();
-            var right = ParseAssignment();
+            _allowEndOfExpression = true;
+            var right = ParseKeyword();
+            _allowEndOfExpression = false;
 
             return new BinaryExpr(left, op.Kind, right);
         }
 
         return left;
+    }
+
+    private Expr ParseKeyword()
+    {
+        if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
+        {
+            var keyword = Eat();
+            var value = ParseAssignment();
+
+            return new KeywordExpr(
+                keyword.Kind,
+                value is EmptyExpr ? null : value,
+                keyword.Position
+            );
+        }
+
+        return ParseAssignment();
     }
 
     private Expr ParseAssignment()
@@ -791,7 +795,7 @@ internal class Parser
         int column = stringLiteral.Position.Column;
         foreach (var part in parts)
         {
-            var textPos = new TextPos(stringLiteral.Position.Line, column, _scope.ModuleScope.FilePath);
+            var textPos = stringLiteral.Position with { Column = column, FilePath = _scope.ModuleScope.FilePath };
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(
