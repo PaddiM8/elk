@@ -31,7 +31,7 @@ public class Collections
         {
             list.Values.Add(value1);
         }
-        if (container is RuntimeSet set)
+        else if (container is RuntimeSet set)
         {
             set.Entries.Add(value1.GetHashCode(), value1);
         }
@@ -44,7 +44,7 @@ public class Collections
         }
         else
         {
-            throw new RuntimeException("Can only use function 'add' on lists and dictionaries");
+            throw new RuntimeException("Can only use function 'push' on lists and dictionaries");
         }
 
         return container;
