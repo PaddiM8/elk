@@ -50,23 +50,6 @@ public class Collections
         return container;
     }
 
-    /// <param name="items"></param>
-    /// <returns>The first element of the given iterable object.</returns>
-    [ElkFunction("first", Reachability.Everywhere)]
-    public static RuntimeObject First(IEnumerable<RuntimeObject> items)
-        => items.FirstOrDefault() ?? RuntimeNil.Value;
-
-    /// <param name="input"></param>
-    /// <returns>The last element of the given indexable object.</returns>
-    [ElkFunction("last", Reachability.Everywhere)]
-    public static RuntimeObject Last(RuntimeObject input)
-    {
-        if (input is not IIndexable<RuntimeObject> indexable)
-            throw new RuntimeCastException(input.GetType(), "indexable");
-
-        return indexable[new RuntimeInteger(indexable.Count - 1)];
-    }
-
     /// <param name="container" types="Tuple, List, Dictionary"></param>
     /// <returns>The amount of items in the container.</returns>
     [ElkFunction("len", Reachability.Everywhere)]
@@ -161,20 +144,4 @@ public class Collections
 
         return input[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
     }
-
-    /// <param name="items"></param>
-    /// <param name="closure"></param>
-    /// <returns>A list of values where the closure has been called on each value.</returns>
-    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
-    [ElkFunction("select", Reachability.Everywhere)]
-    public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => new(items.Select(closure));
-
-    /// <param name="items"></param>
-    /// <param name="closure"></param>
-    /// <returns>A list of values containing only those who evaluated to true in the closure.</returns>
-    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
-    [ElkFunction("where", Reachability.Everywhere)]
-    public static RuntimeList Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => new(items.Where(x => closure(x).As<RuntimeBoolean>().IsTrue));
 }

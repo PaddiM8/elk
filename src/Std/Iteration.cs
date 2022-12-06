@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -74,6 +75,30 @@ static class Iteration
             closure(item);
     }
 
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>The first item for which the closure evaluates to true.</returns>
+    [ElkFunction("find")]
+    public static RuntimeObject Find(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue) ?? RuntimeNil.Value;
+
+    /// <param name="items"></param>
+    /// <returns>The first element of the given iterable object.</returns>
+    [ElkFunction("first", Reachability.Everywhere)]
+    public static RuntimeObject First(IEnumerable<RuntimeObject> items)
+        => items.FirstOrDefault() ?? RuntimeNil.Value;
+
+    /// <param name="input"></param>
+    /// <returns>The last element of the given indexable object.</returns>
+    [ElkFunction("last", Reachability.Everywhere)]
+    public static RuntimeObject Last(RuntimeObject input)
+    {
+        if (input is not IIndexable<RuntimeObject> indexable)
+            throw new RuntimeCastException(input.GetType(), "Indexable");
+
+        return indexable[new RuntimeInteger(indexable.Count - 1)];
+    }
+
     /// <param name="items">A list of values that will be stringified.</param>
     /// <param name="separator">Character sequence that should be put between each value.</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>
@@ -104,6 +129,14 @@ static class Iteration
         return range;
     }
 
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of values where the closure has been called on each value.</returns>
+    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
+    [ElkFunction("select", Reachability.Everywhere)]
+    public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.Select(closure));
+
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to take from the left</param>
     /// <returns>A new list with the specified amount of items.</returns>
@@ -122,6 +155,14 @@ static class Iteration
 
         return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
     }
+
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of values containing only those who evaluated to true in the closure.</returns>
+    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
+    [ElkFunction("where", Reachability.Everywhere)]
+    public static RuntimeList Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.Where(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
     /// <param name="a"></param>
     /// <param name="b"></param>
