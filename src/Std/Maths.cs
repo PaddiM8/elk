@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Parsing;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -27,38 +28,31 @@ static class Maths
             _ => new RuntimeFloat(Math.Abs(x.As<RuntimeFloat>().Value)),
         };
 
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns>The result of adding the two given numbers.</returns>
+    [ElkFunction("add")]
+    public static RuntimeObject Add(RuntimeObject x, RuntimeObject y)
+        => x.Operation(OperationKind.Addition, y);
+
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded up.</returns>
     [ElkFunction("ceil", Reachability.Everywhere)]
     public static RuntimeFloat Ceil(RuntimeObject x)
         => new(Math.Ceiling(x.As<RuntimeFloat>().Value));
 
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns>The result of dividing the two given numbers.</returns>
+    [ElkFunction("div")]
+    public static RuntimeObject Div(RuntimeObject x, RuntimeObject y)
+        => x.Operation(OperationKind.Division, y);
+
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded down.</returns>
     [ElkFunction("floor", Reachability.Everywhere)]
     public static RuntimeFloat Floor(RuntimeObject x)
         => new(Math.Floor(x.As<RuntimeFloat>().Value));
-
-    /// <param name="x" types="Integer, Float"></param>
-    /// <returns>The square root of the input number</returns>
-    [ElkFunction("sqrt", Reachability.Everywhere)]
-    public static RuntimeFloat Sqrt(RuntimeObject x)
-        => x is RuntimeInteger integer
-            ? new(Math.Sqrt(integer.Value))
-            : new(Math.Sqrt(x.As<RuntimeFloat>().Value));
-
-    /// <param name="items">Items to sum</param>
-    /// <returns>An Integer of Float of the sum of the given values.</returns>
-    [ElkFunction("sum")]
-    public static RuntimeObject Sum(IEnumerable<RuntimeObject> items)
-    {
-        // TODO: Better handling for Integers
-        double result = items.Sum(x => x.As<RuntimeFloat>().Value);
-
-        return Math.Floor(result) == result
-            ? new RuntimeInteger((int)result)
-            : new RuntimeFloat(result);
-    }
 
     /// <param name="x" types="Integer, Float"></param>
     /// <param name="y" types="Integer, Float"></param>
@@ -97,4 +91,39 @@ static class Maths
             ? x
             : y;
     }
+
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns>The result of multiplying the two given numbers.</returns>
+    [ElkFunction("mul")]
+    public static RuntimeObject Mul(RuntimeObject x, RuntimeObject y)
+        => x.Operation(OperationKind.Multiplication, y);
+
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <returns>The result of subtracting the two given numbers.</returns>
+    [ElkFunction("sub")]
+    public static RuntimeObject Sub(RuntimeObject x, RuntimeObject y)
+        => x.Operation(OperationKind.Subtraction, y);
+
+    /// <param name="items">Items to sum</param>
+    /// <returns>An Integer of Float of the sum of the given values.</returns>
+    [ElkFunction("sum")]
+    public static RuntimeObject Sum(IEnumerable<RuntimeObject> items)
+    {
+        // TODO: Better handling for Integers
+        double result = items.Sum(x => x.As<RuntimeFloat>().Value);
+
+        return Math.Floor(result) == result
+            ? new RuntimeInteger((int)result)
+            : new RuntimeFloat(result);
+    }
+
+    /// <param name="x" types="Integer, Float"></param>
+    /// <returns>The square root of the input number</returns>
+    [ElkFunction("sqrt", Reachability.Everywhere)]
+    public static RuntimeFloat Sqrt(RuntimeObject x)
+        => x is RuntimeInteger integer
+            ? new(Math.Sqrt(integer.Value))
+            : new(Math.Sqrt(x.As<RuntimeFloat>().Value));
 }
