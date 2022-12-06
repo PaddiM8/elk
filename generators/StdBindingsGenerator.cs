@@ -169,6 +169,10 @@ public class StdBindingsGenerator : ISourceGenerator
             if (string.IsNullOrEmpty(function.ModuleName))
             {
                 moduleName = "null";
+                if (!modules.TryGetValue("\"*\"", out var moduleEntries))
+                    modules.Add("\"*\"", new(new List<string>(), new List<string> { function.FunctionName }));
+                else
+                    moduleEntries.FunctionNames.Add(function.FunctionName);
             }
             else
             {

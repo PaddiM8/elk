@@ -73,7 +73,7 @@ public class Lexer
         out LexError? error,
         LexerMode mode = LexerMode.Default)
     {
-        var result = Lex(input, new TextPos(1, 1, filePath), out var innerError, mode);
+        var result = Lex(input, new TextPos(1, 1, 0, filePath), out var innerError, mode);
         error = innerError;
 
         return result;
@@ -199,21 +199,21 @@ public class Lexer
             return Build(TokenKind.NewLine, Environment.NewLine);
         }
 
+        int startIndex = _index;
         var value = new StringBuilder();
         while (char.IsWhiteSpace(Current))
-        {
             value.Append(Eat());
-        }
 
         return Build(
             TokenKind.WhiteSpace,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
 
     private Token NextComment()
     {
+        int startIndex = _index;
         var value = new StringBuilder();
         while (!ReachedEnd && Current != '\n')
         {
@@ -223,12 +223,13 @@ public class Lexer
         return Build(
             TokenKind.Comment,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
 
     private Token NextIdentifier()
     {
+        int startIndex = _index;
         var value = new StringBuilder();
         value.Append(Eat());
         while (IsValidIdentifierMiddle(Current, Peek))
@@ -270,12 +271,13 @@ public class Lexer
         return Build(
             kind,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
 
     private Token NextNumber()
     {
+        int startIndex = _index;
         var value = new StringBuilder();
         bool isFloat = false;
         char? baseIdentifier = Current == '0' && Peek is 'x' or 'o' or 'b'
@@ -303,7 +305,7 @@ public class Lexer
         return Build(
             isFloat ? TokenKind.FloatLiteral : TokenKind.IntegerLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
 
@@ -314,6 +316,7 @@ public class Lexer
 
     private Token NextString()
     {
+        int startIndex = _index;
         Eat(); // Initial quote
         
         var value = new StringBuilder();
@@ -406,12 +409,13 @@ public class Lexer
         return Build(
             TokenKind.StringLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
 
     private Token NextSingleQuoteString()
     {
+        int startIndex = _index;
         Eat(); // Quote
         
         var value = new StringBuilder();
@@ -448,7 +452,7 @@ public class Lexer
         return Build(
             TokenKind.StringLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, _filePath)
+            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
     
@@ -471,7 +475,7 @@ public class Lexer
         return new Token(
             kind,
             value,
-            pos ?? new TextPos(_pos.line, _pos.column, _filePath)
+            pos ?? new TextPos(_pos.line, _pos.column, _index, _filePath)
         );
     }
 
@@ -490,9 +494,7 @@ public class Lexer
     {
         var result = "";
         for (int i = 0; i < count; i++)
-        {
             result += Eat();
-        }
 
         return result;
     }
@@ -516,6 +518,6 @@ public class Lexer
 
     private void Error(string message)
     {
-        _error = new LexError(new(_pos.line, _pos.column, _filePath), message);
+        _error = new LexError(new(_pos.line, _pos.column, _index, _filePath), message);
     }
 }

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using BetterReadLine;
+using Elk.Std.Bindings;
 
 #endregion
 
@@ -16,35 +17,48 @@ class AutoCompleteHandler : IAutoCompleteHandler
     public char[] Separators { get; set; }
 
     private readonly ShellSession _shell;
+    private readonly Regex _formattingRegex = new("[{}()|$ ]");
+    private readonly HighlightHandler _highlightHandler;
+    private ShellStyleInvocationInfo? _currentInvocationInfo;
 
-    public AutoCompleteHandler(ShellSession shell, char[] separators)
+    public AutoCompleteHandler(ShellSession shell, char[] separators, HighlightHandler highlightHandler)
     {
         Separators = separators;
         _shell = shell;
+        _highlightHandler = highlightHandler;
     }
 
     public int GetCompletionStart(string text, int cursorPos)
     {
-        for (int i = cursorPos - 1; i >= 0; i--)
-        {
-            bool precedingIsBackslash = i > 0 && text[i - 1] == '\\';
-            if (Separators.Contains(text[i]) && !precedingIsBackslash)
-                return i + 1;
-        }
+        _currentInvocationInfo = _highlightHandler.LastShellStyleInvocations
+            .FirstOrDefault(x => x.StartIndex <= cursorPos && x.EndIndex >= cursorPos);
 
-        return 0;
+        if (_currentInvocationInfo == null)
+            return 0;
+
+        string path = FindPathBefore(text, cursorPos);
+        string completionTarget = Path.GetFileName(path);
+
+        return cursorPos - completionTarget.Length;
     }
 
     public IList<Completion> GetSuggestions(string text, int startPos, int endPos)
     {
-        string completionTarget = text[startPos..endPos];
-        int pathStart = text[..endPos].LastIndexOf(' ');
-        string path = text[(pathStart + 1)..startPos];
+        if (_currentInvocationInfo == null)
+            return Array.Empty<Completion>();
+
+        string path = FindPathBefore(text, endPos);
         if (path.StartsWith("~"))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
-        string fullPath = Path.Combine(_shell.WorkingDirectory, path);
+        if (endPos < _currentInvocationInfo.TextArgumentStartIndex)
+            return GetIdentifierSuggestions(_currentInvocationInfo.Name);
 
+        string completionTarget = text[startPos..endPos];
+        string fullPath = Path.Combine(
+            _shell.WorkingDirectory,
+            path[..^completionTarget.Length]
+        );
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
 
@@ -57,6 +71,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Select(x => FormatSuggestion(x!))
             .Select(x => new Completion(x, $"{x}/"))
             .ToList();
+
         var files = Directory.GetFiles(fullPath)
             .Select(Path.GetFileName)
             .Where(x => includeHidden || !x!.StartsWith("."))
@@ -105,6 +120,36 @@ class AutoCompleteHandler : IAutoCompleteHandler
         return completions;
     }
 
-    private static string FormatSuggestion(string completion)
-        => new Regex("[{}()|$ ]").Replace(completion, m => $"\\{m.Value}");
+    private IList<Completion> GetIdentifierSuggestions(string name)
+    {
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (path == null)
+            return new List<Completion>();
+
+        return path
+            .Split(":")
+            .Where(Directory.Exists)
+            .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
+            .Select(Path.GetFileName)
+            .Concat(StdBindings.GlobalFunctionNames)
+            .Where(x => x != null && x.StartsWith(name))
+            .Distinct()
+            .OrderBy(x => x)
+            .Select(x => new Completion(x!))
+            .ToList();
+    }
+
+    private string FindPathBefore(string text, int startPos)
+    {
+        for (int i = startPos - 1; i > 0; i--)
+        {
+            if (text[i] == ' ' && text.ElementAtOrDefault(i - 1) != '\\')
+                return text[(i + 1)..startPos];
+        }
+
+        return text;
+    }
+
+    private string FormatSuggestion(string completion)
+        => _formattingRegex.Replace(completion, m => $"\\{m.Value}");
 }

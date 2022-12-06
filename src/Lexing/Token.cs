@@ -7,10 +7,10 @@ using Newtonsoft.Json;
 
 namespace Elk.Lexing;
 
-public record TextPos(int Line, int Column, string? FilePath)
+public record TextPos(int Line, int Column, int Index, string? FilePath)
 {
     public static TextPos Default
-        => new(1, 1, null);
+        => new(1, 1, 0, null);
 
     public override string ToString()
         => FilePath == null

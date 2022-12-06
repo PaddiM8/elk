@@ -26,11 +26,12 @@ class Repl
         const int maxEntries = 50000;
         var historyRepository = new HistoryRepository(maxEntries);
         var historyHandler = HistoryHandler.Init(maxEntries, historyRepository);
+        var highlightHandler = new HighlightHandler(shell);
         var readLine = new ReadLine
         {
             HistoryHandler = historyHandler,
-            AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }),
-            HighlightHandler = new HighlightHandler(shell),
+            AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }, highlightHandler),
+            HighlightHandler = highlightHandler,
             HintHandler = new HintHandler(historyRepository, shell),
             EnterHandler = new EnterHandler(),
             WordSeparators = new[] { ' ', '/' },

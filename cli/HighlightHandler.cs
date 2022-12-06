@@ -11,8 +11,21 @@ using Elk.Std.Bindings;
 
 namespace Elk.Cli;
 
+record ShellStyleInvocationInfo(
+    string Name,
+    string TextArguments,
+    int StartIndex,
+    int EndIndex)
+{
+    public int TextArgumentStartIndex
+        => StartIndex + Name.Length + 1;
+}
+
 class HighlightHandler : IHighlightHandler
 {
+    public IEnumerable<ShellStyleInvocationInfo> LastShellStyleInvocations
+        => _lastShellStyleInvocations;
+
     private Token? Peek
         => _tokens.ElementAtOrDefault(_index + 1);
     
@@ -28,7 +41,9 @@ class HighlightHandler : IHighlightHandler
     private readonly ShellSession _shell;
     private List<Token> _tokens = null!;
     private int _index;
+    private int _length;
     private HighlightHandler? _innerHighlighter;
+    private readonly List<ShellStyleInvocationInfo> _lastShellStyleInvocations = new();
 
     public HighlightHandler(ShellSession shell)
     {
@@ -38,7 +53,9 @@ class HighlightHandler : IHighlightHandler
     public string Highlight(string text)
     {
         _tokens = Lexer.Lex(text, "", out _, LexerMode.Preserve);
+        _length = text.Length;
         _index = 0;
+        _lastShellStyleInvocations.Clear();
         
         var builder = new StringBuilder();
         while (!ReachedEnd)
@@ -174,6 +191,7 @@ class HighlightHandler : IHighlightHandler
 
     private string NextIdentifier()
     {
+        int startIndex = Current!.Position.Index;
         string identifier = Eat()!.Value;
         
         if (_shell.StructExists(identifier.Trim()) || StdBindings.HasRuntimeType(identifier.Trim()))
@@ -206,6 +224,17 @@ class HighlightHandler : IHighlightHandler
                     textArgumentBuilder.Append(Eat()!.Value);
                 }
             }
+        }
+
+        if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentBuilder.Length > 0)
+        {
+            _lastShellStyleInvocations.Add(
+                new(
+                    identifier,
+                    textArgumentBuilder.ToString(),
+                    startIndex, Current?.Position.Index ?? _length
+                )
+            );
         }
 
         if (textArgumentBuilder.Length > 0)
