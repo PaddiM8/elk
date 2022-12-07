@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
@@ -357,16 +358,15 @@ internal class Parser
         return parameters;
     }
 
-    private Expr ParseBinaryIf()
+    private Expr ParseBinaryIf(Expr? existingLeft = null)
     {
         int leftLine = Current?.Position.Line ?? 0;
-        var left = ParseKeyword();
-        if (leftLine == Current?.Position.Line && Match(TokenKind.If))
+        var left = existingLeft ?? ParseKeyword();
+        if (existingLeft != null || leftLine == Current?.Position.Line && Match(TokenKind.If))
         {
             var op = Eat();
             _allowEndOfExpression = true;
             var right = ParseKeyword();
-            _allowEndOfExpression = false;
 
             return new BinaryExpr(left, op.Kind, right);
         }
@@ -379,6 +379,14 @@ internal class Parser
         if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
         {
             var keyword = Eat();
+            if (Match(TokenKind.If))
+            {
+                return ParseBinaryIf(
+                    new KeywordExpr(keyword.Kind, null, keyword.Position)
+                );
+            }
+
+            _allowEndOfExpression = true;
             var value = ParseAssignment();
 
             return new KeywordExpr(
@@ -580,10 +588,8 @@ internal class Parser
         {
             bool inclusive = AdvanceIf(TokenKind.Equals);
 
-            bool allowedEnd = _allowEndOfExpression;
             _allowEndOfExpression = true;
             var right = ParseCoalescing();
-            _allowEndOfExpression = allowedEnd;
 
             return right is EmptyExpr
                 ? new RangeExpr(left, null, false)
@@ -771,6 +777,8 @@ internal class Parser
 
         if (_allowEndOfExpression)
         {
+            AdvanceIf(TokenKind.Unknown);
+
             return new EmptyExpr();
         }
 
@@ -1324,6 +1332,14 @@ internal class Parser
 
     private Token Eat()
     {
+        if (_allowEndOfExpression && Current?.Kind == TokenKind.NewLine)
+        {
+            _tokens[_index] = new Token(TokenKind.Unknown, "", TextPos.Default);
+
+            return _tokens[_index];
+        }
+
+        _allowEndOfExpression = false;
         var toReturn = _tokens[_index];
         _index++;
 
