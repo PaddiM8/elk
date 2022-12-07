@@ -184,10 +184,13 @@ static class String
 
     /// <param name="input">String to split up into parts</param>
     /// <param name="delimiter">Where to split (default: " ")</param>
+    /// <param name="count">The amount of substrings to produce</param>
     /// <returns>A list of all the different parts as a result of splitting the string.</returns>
     [ElkFunction("split", Reachability.Everywhere)]
-    public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null)
-        => new(input.Value.Split(delimiter?.Value ?? " ").Select(x => new RuntimeString(x)));
+    public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null, RuntimeInteger? count = null)
+        => count == null
+            ? new(input.Value.Split(delimiter?.Value ?? " ").Select(x => new RuntimeString(x)))
+            : new(input.Value.Split(delimiter?.Value ?? " ", (int)count.Value).Select(x => new RuntimeString(x)));
 
     /// <returns>A copy of the input string with all the letters made uppercase.</returns>
     [ElkFunction("upper")]
