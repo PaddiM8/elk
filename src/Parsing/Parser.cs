@@ -1089,8 +1089,9 @@ internal class Parser
             };
         }
 
-        if (AdvanceIf(TokenKind.OpenParenthesis))
+        if (Current?.Kind == TokenKind.OpenParenthesis)
         {
+            Eat();
             var arguments = new List<Expr>();
 
             // Load alias if there is one
