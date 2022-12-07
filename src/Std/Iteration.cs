@@ -137,6 +137,25 @@ static class Iteration
     public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
 
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of flattenedflattened  values where the closure has been called on each value.</returns>
+    /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
+    [ElkFunction("selectFlat", Reachability.Everywhere)]
+    public static RuntimeList SelectFlat(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    {
+        var result = new List<RuntimeObject>();
+        foreach (var item in items)
+        {
+            if (item is not IEnumerable<RuntimeObject> enumerable)
+                throw new RuntimeCastException(item.GetType(), "Iterable");
+
+            result.AddRange(enumerable.Select(closure));
+        }
+
+        return new(result);
+    }
+
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to take from the left</param>
     /// <returns>A new list with the specified amount of items.</returns>
