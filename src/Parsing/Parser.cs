@@ -311,7 +311,7 @@ internal class Parser
         var pos = EatExpected(TokenKind.Alias).Position;
         string name = EatExpected(TokenKind.Identifier).Value;
         EatExpected(TokenKind.Equals);
-        var value = EatExpected(TokenKind.StringLiteral);
+        var value = EatExpected(TokenKind.DoubleQuoteStringLiteral, TokenKind.SingleQuoteStringLiteral);
 
         _scope.ModuleScope.AddAlias(name, new LiteralExpr(value));
 
@@ -788,16 +788,18 @@ internal class Parser
     }
 
     private Expr ParseLiteral()
-        => Current!.Kind switch
+    {
+        return Current!.Kind switch
         {
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
-            TokenKind.StringLiteral => ParseStringLiteral(),
+            TokenKind.DoubleQuoteStringLiteral => ParseStringLiteral(),
             _ => new LiteralExpr(Eat()),
         };
+    }
 
     private Expr ParseStringLiteral()
     {
-        var stringLiteral = EatExpected(TokenKind.StringLiteral);
+        var stringLiteral = EatExpected(TokenKind.DoubleQuoteStringLiteral);
         var parts = StringInterpolationParser.Parse(stringLiteral);
         var parsedParts = new List<Expr>();
         int column = stringLiteral.Position.Column;
@@ -807,7 +809,7 @@ internal class Parser
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(
-                    TokenKind.StringLiteral,
+                    TokenKind.DoubleQuoteStringLiteral,
                     part.Value,
                     textPos
                 );
@@ -1182,7 +1184,7 @@ internal class Parser
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
-                    TokenKind.StringLiteral,
+                    TokenKind.DoubleQuoteStringLiteral,
                     currentText.ToString(),
                     pos
                 );
@@ -1198,7 +1200,7 @@ internal class Parser
             }
 
             var next = Peek();
-            bool isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
+            bool isStringLiteral = MatchInclWhiteSpace(TokenKind.DoubleQuoteStringLiteral, TokenKind.SingleQuoteStringLiteral);
             bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
                             Current!.Value.StartsWith('$') &&
                             Previous?.Value != "\\";
@@ -1211,7 +1213,7 @@ internal class Parser
             else if (isStringLiteral || isDollar)
             {
                 var stringToken = new Token(
-                    TokenKind.StringLiteral,
+                    TokenKind.DoubleQuoteStringLiteral,
                     currentText.ToString(),
                     pos
                 );
@@ -1245,7 +1247,7 @@ internal class Parser
         if (currentText.Length > 0)
         {
             var finalToken = new Token(
-                TokenKind.StringLiteral,
+                TokenKind.DoubleQuoteStringLiteral,
                 currentText.ToString(),
                 pos
             );
@@ -1321,14 +1323,14 @@ internal class Parser
         return false;
     }
 
-    private Token EatExpected(TokenKind kind)
+    private Token EatExpected(params TokenKind[] kinds)
     {
-        if (Match(kind))
+        if (Match(kinds))
         {
             return Eat();
         }
 
-        throw Error($"Expected '{kind}' but got '{Current?.Kind}'");
+        throw Error($"Expected '{kinds.First()}' but got '{Current?.Kind}'");
     }
 
     private Token Eat()
@@ -1364,7 +1366,8 @@ internal class Parser
         => kind is
             TokenKind.IntegerLiteral or
             TokenKind.FloatLiteral or
-            TokenKind.StringLiteral or
+            TokenKind.DoubleQuoteStringLiteral or
+            TokenKind.SingleQuoteStringLiteral or
             TokenKind.Nil or
             TokenKind.True or
             TokenKind.False;

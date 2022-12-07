@@ -80,7 +80,7 @@ class HighlightHandler : IHighlightHandler
             >= TokenKind.Not and <= TokenKind.New => NextKeyword(),
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => NextNumberLiteral(),
             TokenKind.Comment => NextComment(),
-            TokenKind.StringLiteral => NextStringLiteral(),
+            TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => NextStringLiteral(),
             TokenKind.Identifier => NextIdentifier(),
             TokenKind.Arrow => NextFieldAccess(),
             _ => Eat()!.Value,
@@ -271,7 +271,7 @@ class HighlightHandler : IHighlightHandler
         var textArgumentBuilder = new StringBuilder();
         while (!ReachedTextEnd())
         {
-            if (Current!.Kind == TokenKind.StringLiteral)
+            if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
             {
                 textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
             }
