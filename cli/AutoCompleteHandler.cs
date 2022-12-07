@@ -74,6 +74,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .ToList();
 
         var files = Directory.GetFiles(fullPath)
+            .Where(x => !isRelativeIdentifier || IsExecutable(x))
             .Select(Path.GetFileName)
             .Where(x => includeHidden || !x!.StartsWith("."))
             .Where(x => x!.StartsWith(completionTarget))
@@ -93,6 +94,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
                 .ToList();
 
             files = Directory.GetFiles(fullPath)
+                .Where(x => !isRelativeIdentifier || IsExecutable(x))
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
@@ -119,6 +121,19 @@ class AutoCompleteHandler : IAutoCompleteHandler
         }
 
         return completions;
+    }
+
+    private bool IsExecutable(string filePath)
+    {
+        if (OperatingSystem.IsWindows())
+            return true;
+
+        var handle = File.OpenHandle(filePath);
+
+        return File.GetUnixFileMode(handle)
+            is UnixFileMode.OtherExecute
+            or UnixFileMode.GroupExecute
+            or UnixFileMode.UserExecute;
     }
 
     private IList<Completion> GetIdentifierSuggestions(string name)
