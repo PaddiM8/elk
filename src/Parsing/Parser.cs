@@ -653,30 +653,17 @@ internal class Parser
         if (Match(TokenKind.Minus, TokenKind.Not))
         {
             var op = Eat().Kind;
-            var value = ParseFieldAccess();
+            var value = ParseIndexer();
 
             return new UnaryExpr(op, value);
         }
 
-        return ParseFieldAccess();
-    }
-
-    private Expr ParseFieldAccess()
-    {
-        var left = ParseIndexer();
-        while (AdvanceIf(TokenKind.Arrow))
-        {
-            var identifier = EatExpected(TokenKind.Identifier);
-
-            left = new FieldAccessExpr(left, identifier);
-        }
-
-        return left;
+        return ParseIndexer();
     }
 
     private Expr ParseIndexer()
     {
-        var expr = ParsePrimary();
+        var expr = ParseFieldAccess();
         while (AdvanceIf(TokenKind.OpenSquareBracket))
         {
             var index = ParseExpr();
@@ -686,6 +673,19 @@ internal class Parser
         }
 
         return expr;
+    }
+
+    private Expr ParseFieldAccess()
+    {
+        var left = ParsePrimary();
+        while (AdvanceIf(TokenKind.Arrow))
+        {
+            var identifier = EatExpected(TokenKind.Identifier);
+
+            left = new FieldAccessExpr(left, identifier);
+        }
+
+        return left;
     }
 
     private Expr ParsePrimary()
