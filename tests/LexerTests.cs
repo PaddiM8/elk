@@ -87,9 +87,9 @@ internal class LexerTests
         Assert.IsNull(error);
         var expectedValues = new[]
         {
-            (StringLiteral: TokenKind.DoubleQuoteStringLiteral, "hello world"),
+            (TokenKind.DoubleQuoteStringLiteral, "hello world"),
             (TokenKind.WhiteSpace, " "),
-            (StringLiteral: TokenKind.DoubleQuoteStringLiteral, "this is\n a test"),
+            (TokenKind.DoubleQuoteStringLiteral, "this is\n a test"),
         };
 
         foreach (var (got, (expectedKind, expectedValue)) in gotTokens.Zip(expectedValues))

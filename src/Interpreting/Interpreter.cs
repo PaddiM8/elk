@@ -158,14 +158,14 @@ partial class Interpreter
         };
     }
 
-    private RuntimeObject NextBlock(BlockExpr blockExpr, bool clearScope = true)
+    private RuntimeObject NextBlock(BlockExpr blockExpr, LocalScope? scope = null)
     {
         if (_returnHandler.Active)
             return RuntimeNil.Value;
 
         _lastExpr = blockExpr;
 
-        return Visit(blockExpr, clearScope);
+        return Visit(blockExpr, scope);
     }
 
     private RuntimeObject NextCallWithClosure(CallExpr callExpr, RuntimeClosureFunction runtimeClosure)
@@ -267,11 +267,11 @@ partial class Interpreter
         if (value is not IEnumerable<RuntimeObject> enumerableValue)
             throw new RuntimeIterationException(value.GetType());
 
+        var scope = new LocalScope(_scope);
         foreach (var current in enumerableValue)
         {
-            expr.Branch.Scope.ClearVariables();
-            SetVariables(expr.IdentifierList, current, expr.Branch.Scope);
-            NextBlock(expr.Branch, clearScope: false);
+            SetVariables(expr.IdentifierList, current, scope);
+            NextBlock(expr.Branch, scope);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
                 return _returnHandler.Collect();
@@ -338,12 +338,10 @@ partial class Interpreter
         return new RuntimeDictionary(dict);
     }
 
-    private RuntimeObject Visit(BlockExpr expr, bool clearScope = true)
+    private RuntimeObject Visit(BlockExpr expr, LocalScope? scope = null)
     {
         var prevScope = _scope;
-        _scope = expr.Scope;
-        if (clearScope)
-            expr.Scope.ClearVariables();
+        _scope = scope ?? new LocalScope(_scope);
 
         RuntimeObject lastValue = RuntimeNil.Value;
         foreach (var (child, i) in expr.Expressions.WithIndex())
@@ -683,8 +681,9 @@ partial class Interpreter
         var allArguments = new List<RuntimeObject>(
             Math.Max(arguments.Count, function.Parameters.Count)
         );
-        var functionScope = (LocalScope)function.Block.Scope;
-        functionScope.ClearVariables();
+        //var functionScope = (LocalScope)function.Block.Scope;
+        //functionScope.ClearVariables();
+        var functionScope = new LocalScope(function.Block.Scope.Parent);
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
             if (argument == null && parameter?.DefaultValue != null)
@@ -700,7 +699,7 @@ partial class Interpreter
                 continue;
             }
 
-            functionScope.UpdateVariable(
+            functionScope.AddVariable(
                 parameter!.Identifier.Value,
                 allArguments.Last()
             );
@@ -709,7 +708,7 @@ partial class Interpreter
         function.GivenClosure = givenClosure;
         function.Block.IsRoot = isRoot;
 
-        return NextBlock(function.Block, clearScope: false);
+        return NextBlock(function.Block, functionScope);
     }
 
     private RuntimeObject EvaluateStdCall(
@@ -776,12 +775,9 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject>(
                 a =>
                 {
-                    //var scope = runtimeClosure.Body.Scope;
-                    //scope.ClearVariables();
-                    //scope.AddVariable(parameters[0].Value, a);
                     runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
 
-                    return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
+                    return NextBlock(runtimeClosure.Expr.Body);
                 });
         }
 
@@ -790,14 +786,10 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
-                    //var scope = runtimeClosure.Body.Scope;
-                    //scope.ClearVariables();
-                    //scope.AddVariable(parameters[0].Value, a);
-                    //scope.AddVariable(parameters[1].Value, b);
                     runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
                     runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
 
-                    return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
+                    return NextBlock(runtimeClosure.Expr.Body);
                 });
         }
 
@@ -808,12 +800,9 @@ partial class Interpreter
                 a =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    //var scope = runtimeClosure.Body.Scope;
-                    //scope.ClearVariables();
-                    //scope.AddVariable(parameters[0].Value, a);
                     runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
 
-                    NextBlock(runtimeClosure.Expr.Body, clearScope: false);
+                    NextBlock(runtimeClosure.Expr.Body);
                 });
         }
 
@@ -823,14 +812,10 @@ partial class Interpreter
                 (a, b) =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    //var scope = runtimeClosure.Body.Scope;
-                    //scope.ClearVariables();
-                    //scope.AddVariable(parameters[0].Value, a);
-                    //scope.AddVariable(parameters[1].Value, b);
                     runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
                     runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
 
-                    NextBlock(runtimeClosure.Expr.Body, clearScope: false);
+                    NextBlock(runtimeClosure.Expr.Body);
                 });
         }
 
@@ -838,14 +823,10 @@ partial class Interpreter
         return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
             args =>
             {
-                //var scope = runtimeClosure.Body.Scope;
-                //scope.ClearVariables();
-                //foreach (var (parameter, argument) in runtimeClosure.Parameters.Zip(args))
-                //    scope.AddVariable(parameter.Value, argument);
                 foreach (var (parameter, argument) in runtimeClosure.Expr.Parameters.Zip(args))
                     runtimeClosure.Environment[parameter.Value] = new VariableSymbol(argument);
 
-                return NextBlock(runtimeClosure.Expr.Body, clearScope: false);
+                return NextBlock(runtimeClosure.Expr.Body);
             });
     }
 

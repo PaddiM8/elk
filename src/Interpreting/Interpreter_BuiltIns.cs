@@ -83,7 +83,7 @@ partial class Interpreter
             scope[parameter] = new VariableSymbol(argument);
         }
 
-        return NextBlock(givenClosure.Expr.Body, clearScope: false);
+        return NextBlock(givenClosure.Expr.Body);
     }
 
     private RuntimeObject EvaluateBuiltInCall(List<RuntimeObject> arguments, bool isRoot)
