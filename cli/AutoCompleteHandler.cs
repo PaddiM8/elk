@@ -51,7 +51,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (path.StartsWith("~"))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
-        if (endPos < _currentInvocationInfo.TextArgumentStartIndex)
+        bool isRelativeIdentifier = _currentInvocationInfo.Name.First() is '.' or '/' or '~';
+        if (!isRelativeIdentifier && endPos < _currentInvocationInfo.TextArgumentStartIndex)
             return GetIdentifierSuggestions(_currentInvocationInfo.Name);
 
         string completionTarget = text[startPos..endPos];

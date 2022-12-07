@@ -66,6 +66,15 @@ class HighlightHandler : IHighlightHandler
 
     private string Next()
     {
+        if (Current?.Kind is TokenKind.Dot or TokenKind.DotDot or TokenKind.Tilde &&
+            Peek?.Kind == TokenKind.Slash)
+        {
+            return NextPath();
+        }
+
+        if (Current?.Kind == TokenKind.Slash && Peek?.Kind == TokenKind.Identifier)
+            return NextIdentifier();
+
         return Current?.Kind switch
         {
             >= TokenKind.Not and <= TokenKind.New => NextKeyword(),
@@ -200,49 +209,89 @@ class HighlightHandler : IHighlightHandler
         if (_shell.VariableExists(identifier.Trim()))
             return identifier;
 
-        var textArgumentBuilder = new StringBuilder();
-        if (Current?.Kind == TokenKind.WhiteSpace)
-        {
-            while (!ReachedTextEnd())
-            {
-                if (Current!.Kind == TokenKind.StringLiteral)
-                {
-                    textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
-                }
-                else if (Previous?.Kind != TokenKind.Backslash &&
-                         Current!.Value == "$" &&
-                         Peek?.Kind == TokenKind.OpenBrace)
-                {
-                    textArgumentBuilder.Append(NextInterpolation(endColor: 36));
-                }
-                else if (Current?.Kind == TokenKind.Backslash)
-                {
-                    textArgumentBuilder.Append(Color(Eat()!.Value, 0, endColor: 36));
-                }
-                else
-                {
-                    textArgumentBuilder.Append(Eat()!.Value);
-                }
-            }
-        }
-
-        if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentBuilder.Length > 0)
+        string textArguments = NextTextArguments();
+        if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
         {
             _lastShellStyleInvocations.Add(
                 new(
                     identifier,
-                    textArgumentBuilder.ToString(),
+                    textArguments,
                     startIndex, Current?.Position.Index ?? _length
                 )
             );
         }
 
-        if (textArgumentBuilder.Length > 0)
+        return textArguments.Length > 0
+            ? Color(identifier, 95, null) + textArguments
+            : Color(identifier, 95);
+    }
+
+    private string NextPath()
+    {
+        int startIndex = Current!.Position.Index;
+        var builder = new StringBuilder();
+        while (!ReachedTextEnd() &&
+               Current?.Kind is not (TokenKind.WhiteSpace or TokenKind.OpenParenthesis or TokenKind.OpenSquareBracket))
         {
-            return Color(identifier, 95, null) + Color(textArgumentBuilder.ToString(), 36);
+            // If ".." is not before/after a slash, it is not a part of a path
+            // and the loop should be stopped.
+            if (Current?.Kind == TokenKind.DotDot &&
+                Previous?.Kind != TokenKind.Slash &&
+                Peek?.Kind != TokenKind.Slash)
+            {
+                break;
+            }
+
+            builder.Append(Eat()!.Value);
         }
 
-        return Color(identifier, 95);
+        string identifier = builder.ToString();
+        string textArguments = NextTextArguments();
+        if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
+        {
+            _lastShellStyleInvocations.Add(
+                new(
+                    identifier,
+                    textArguments,
+                    startIndex, Current?.Position.Index ?? _length
+                )
+            );
+        }
+
+        return textArguments.Length > 0
+            ? Color(identifier, 95, null) + textArguments
+            : Color(identifier, 95);
+    }
+
+    private string NextTextArguments()
+    {
+        if (Current?.Kind != TokenKind.WhiteSpace)
+            return "";
+
+        var textArgumentBuilder = new StringBuilder();
+        while (!ReachedTextEnd())
+        {
+            if (Current!.Kind == TokenKind.StringLiteral)
+            {
+                textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
+            }
+            else if (Previous?.Kind != TokenKind.Backslash &&
+                     Current!.Value == "$" &&
+                     Peek?.Kind == TokenKind.OpenBrace)
+            {
+                textArgumentBuilder.Append(NextInterpolation(endColor: 36));
+            }
+            else if (Current?.Kind == TokenKind.Backslash)
+            {
+                textArgumentBuilder.Append(Color(Eat()!.Value, 0, endColor: 36));
+            }
+            else
+            {
+                textArgumentBuilder.Append(Eat()!.Value);
+            }
+        }
+
+        return Color(textArgumentBuilder.ToString(), 36);
     }
 
     private string NextInterpolation(int endColor = 0)
