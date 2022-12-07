@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -7,6 +8,24 @@ namespace Elk.Std;
 [ElkModule("regex")]
 public class Regex
 {
+    /// <param name="pattern"></param>
+    /// <param name="value"></param>
+    /// <returns>The values of the groups of the first match.</returns>
+    [ElkFunction("groups")]
+    public static RuntimeList Groups(RuntimeRegex pattern, RuntimeString value)
+    {
+        var result = pattern.Value
+            .Matches(value.Value)
+            .FirstOrDefault()?
+            .Groups
+            .Values
+            .Select(x => new RuntimeString(x.Value));
+
+        return result == null
+            ? new RuntimeList(new List<RuntimeObject>())
+            : new RuntimeList(result);
+    }
+
     /// <param name="pattern"></param>
     /// <param name="value"></param>
     /// <returns>Whether a match of the pattern is found anywhere in the given value.</returns>
