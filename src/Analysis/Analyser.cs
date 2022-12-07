@@ -419,7 +419,7 @@ class Analyser
         {
             if (!_scope.HasVariable(variableExpr.Identifier.Value))
                 throw new RuntimeNotFoundException(variableExpr.Identifier.Value);
-        } else if (expr.Left is not IndexerExpr)
+        } else if (expr.Left is not (IndexerExpr or FieldAccessExpr))
         {
             throw new RuntimeException("Invalid assignment");
         }

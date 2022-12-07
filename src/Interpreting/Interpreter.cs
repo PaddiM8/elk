@@ -537,6 +537,13 @@ partial class Interpreter
             return value;
         }
 
+        if (assignee is FieldAccessExpr fieldAccess)
+        {
+            var objectValue = Next(fieldAccess.Object);
+            objectValue.As<RuntimeStruct>().Values[fieldAccess.Identifier.Value] = value;
+
+            return value;
+        }
 
         throw new RuntimeException("Invalid assignment");
     }
