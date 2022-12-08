@@ -500,8 +500,11 @@ class Analyser
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
         }
 
-        if (expr.EnclosingFunction is ClosureExpr closure)
+        if (expr.EnclosingFunction is ClosureExpr closure &&
+            closure.Body.Scope.Parent?.HasVariable(expr.Identifier.Value) is true)
+        {
             closure.CapturedVariables.Add(expr.Identifier.Value);
+        }
 
         return variableExpr;
     }
