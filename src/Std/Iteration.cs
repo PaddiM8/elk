@@ -22,7 +22,12 @@ static class Iteration
     public static RuntimeBoolean All(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.All(x => x.As<RuntimeBoolean>().IsTrue));
 
-    /// <returns>Whether or not one of the values in the list evaluates to true.</returns>
+    /// <returns>Whether or not all the values in the list evaluate to true and the list is non-empty.</returns>
+    [ElkFunction("allAndAny")]
+    public static RuntimeBoolean AllANdAny(IEnumerable<RuntimeObject> items)
+        => RuntimeBoolean.From(items.Any() && items.All(x => x.As<RuntimeBoolean>().IsTrue));
+
+    /// <returns>Whether or not one of the values evaluates to true.</returns>
     [ElkFunction("any")]
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
@@ -106,12 +111,23 @@ static class Iteration
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
 
+    [ElkFunction("reduce")]
+    public static RuntimeObject Reduce(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject, RuntimeObject> closure)
+        => items.Aggregate(closure);
+
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>
     /// <returns>A new list without the first n items.</returns>
     [ElkFunction("skip")]
     public static RuntimeList Skip(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Skip((int)count.Value).ToList());
+
+    /// <param name="items">All items</param>
+    /// <param name="closure"></param>
+    /// <returns></returns>
+    [ElkFunction("skipWhile")]
+    public static RuntimeList SkipWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.SkipWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
     /// <summary>Changes the step size of the given range. The step size determines how much the range value should increase by after each iteration.</summary>
     /// <param name="range">Range to modify</param>
@@ -162,6 +178,13 @@ static class Iteration
     [ElkFunction("take")]
     public static RuntimeList Take(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Take((int)count.Value).ToList());
+
+    /// <param name="items">All items</param>
+    /// <param name="closure"></param>
+    /// <returns></returns>
+    [ElkFunction("takeWhile")]
+    public static RuntimeList TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.TakeWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
     /// <param name="values" types="Iterable"></param>
     /// <returns>A list containing a tuple for each item in the original container.
