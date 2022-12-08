@@ -115,6 +115,10 @@ static class Iteration
     public static RuntimeObject Reduce(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject, RuntimeObject> closure)
         => items.Aggregate(closure);
 
+    [ElkFunction("reverse")]
+    public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
+        => new(items.Reverse().ToList());
+
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>
     /// <returns>A new list without the first n items.</returns>
