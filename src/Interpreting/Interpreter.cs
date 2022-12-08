@@ -951,7 +951,7 @@ partial class Interpreter
         var scope = new Dictionary<string, VariableSymbol>(closureExpr.CapturedVariables.Count);
         foreach (var capture in closureExpr.CapturedVariables)
         {
-            var value = closureExpr.Body.Scope.FindVariable(capture)?.Value
+            var value = _scope.FindVariable(capture)?.Value
                         ?? RuntimeNil.Value;
             scope[capture] = new VariableSymbol(value);
         }
