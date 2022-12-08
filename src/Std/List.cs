@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -7,6 +9,24 @@ namespace Elk.Std;
 [ElkModule("list")]
 public class List
 {
+    /// <param name="list">A list of indexables</param>
+    /// <param name="index">The column index</param>
+    /// <returns>A list containing all the items at the given index in each of the sub-lists in the given list.</returns>
+    [ElkFunction("column")]
+    public static RuntimeList Column(RuntimeList list, RuntimeInteger index)
+    {
+        var column = new List<RuntimeObject>(list.Count);
+        foreach (var row in list.Values)
+        {
+            if (row is not IIndexable<RuntimeObject> indexable)
+                throw new RuntimeCastException(row.GetType(), "Indexable");
+
+            column.Add(indexable[index]);
+        }
+
+        return new RuntimeList(column);
+    }
+
     /// <summary>
     /// Appends all the items in one list to another list.
     /// </summary>
