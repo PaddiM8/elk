@@ -81,11 +81,11 @@ internal class RuntimeClosureFunction : RuntimeFunction
 {
     public ClosureExpr Expr { get; }
 
-    public Dictionary<string, VariableSymbol> Environment { get; }
+    public LocalScope Environment { get; }
 
     public RuntimeClosureFunction(
         ClosureExpr expr,
-        Dictionary<string, VariableSymbol> environment)
+        LocalScope environment)
     {
         Expr = expr;
         Environment = environment;

@@ -26,3 +26,14 @@ thing =>: assert(true)
 let f = &Fn => x: x + "!"
 let result = f | call hi
 assert(result == "hi!")
+
+# nested closures
+fn level1() => closure: closure("1")
+fn level2() => closure: closure("2")
+fn level3() => closure: closure("3")
+
+level1 => a: {
+    level2 => b: {
+        level3 => c: assert(a + b + c == "123")
+    }
+}

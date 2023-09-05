@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
@@ -79,8 +78,8 @@ partial class Interpreter
         foreach (var (argument, i) in arguments.WithIndex())
         {
             var parameter = parameters.ElementAtOrDefault(i)?.Value ??
-                            throw new RuntimeException($"Expected exactly {parameters.Count} closure parameter(s)");
-            scope[parameter] = new VariableSymbol(argument);
+                throw new RuntimeException($"Expected exactly {parameters.Count} closure parameter(s)");
+            scope.AddVariable(parameter, argument);
         }
 
         return NextBlock(givenClosure.Expr.Body);

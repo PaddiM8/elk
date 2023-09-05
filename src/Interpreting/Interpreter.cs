@@ -515,7 +515,7 @@ partial class Interpreter
             var enclosingClosure = variableExpr.EnclosingClosureValue;
             if (enclosingClosure != null)
             {
-                enclosingClosure.Environment[variableExpr.Identifier.Value].Value = value;
+                enclosingClosure.Environment.UpdateVariable(variableExpr.Identifier.Value, value);
 
                 return value;
             }
@@ -616,10 +616,8 @@ partial class Interpreter
                 : new RuntimeString(value);
         }
 
-        if (expr.EnclosingClosureValue?.Environment.TryGetValue(expr.Identifier.Value, out var captured) is true)
-            return captured.Value;
-
         return _scope.FindVariable(expr.Identifier.Value)?.Value
+               ?? expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
                ?? RuntimeNil.Value;
     }
 
@@ -681,8 +679,6 @@ partial class Interpreter
         var allArguments = new List<RuntimeObject>(
             Math.Max(arguments.Count, function.Parameters.Count)
         );
-        //var functionScope = (LocalScope)function.Block.Scope;
-        //functionScope.ClearVariables();
         var functionScope = new LocalScope(function.Block.Scope.Parent);
         foreach (var (parameter, argument) in function.Parameters.ZipLongest(arguments))
         {
@@ -775,7 +771,7 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject>(
                 a =>
                 {
-                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
+                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
 
                     return NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -786,8 +782,8 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
-                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
-                    runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
+                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
+                    runtimeClosure.Environment.AddVariable(parameters[1].Value, b);
 
                     return NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -800,7 +796,7 @@ partial class Interpreter
                 a =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
+                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
 
                     NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -812,8 +808,8 @@ partial class Interpreter
                 (a, b) =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    runtimeClosure.Environment[parameters[0].Value] = new VariableSymbol(a);
-                    runtimeClosure.Environment[parameters[1].Value] = new VariableSymbol(b);
+                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
+                    runtimeClosure.Environment.AddVariable(parameters[1].Value, b);
 
                     NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -824,7 +820,7 @@ partial class Interpreter
             args =>
             {
                 foreach (var (parameter, argument) in runtimeClosure.Expr.Parameters.Zip(args))
-                    runtimeClosure.Environment[parameter.Value] = new VariableSymbol(argument);
+                    runtimeClosure.Environment.AddVariable(parameter.Value, argument);
 
                 return NextBlock(runtimeClosure.Expr.Body);
             });
@@ -957,12 +953,16 @@ partial class Interpreter
 
     private RuntimeObject Visit(ClosureExpr closureExpr)
     {
-        var scope = new Dictionary<string, VariableSymbol>(closureExpr.CapturedVariables.Count);
+        var scope = new LocalScope(
+            closureExpr.Function.EnclosingClosureValue?.Environment as Scope.Scope
+                ?? (Scope.Scope)_scope.ModuleScope
+        );
         foreach (var capture in closureExpr.CapturedVariables)
         {
             var value = _scope.FindVariable(capture)?.Value
-                        ?? RuntimeNil.Value;
-            scope[capture] = new VariableSymbol(value);
+                ?? closureExpr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
+                ?? RuntimeNil.Value;
+            scope.AddVariable(capture, value);
         }
 
         var runtimeClosure = new RuntimeClosureFunction(closureExpr, scope);
