@@ -843,19 +843,28 @@ partial class Interpreter
             string value = argument is RuntimeNil
                 ? string.Empty
                 : argument.As<RuntimeString>().Value;
-            if (globbingEnabled)
+            if (!globbingEnabled)
             {
-                var matcher = new Matcher();
-                matcher.AddInclude(value);
-                var result = matcher.Execute(
-                    new DirectoryInfoWrapper(new DirectoryInfo(ShellEnvironment.WorkingDirectory))
-                );
+                newArguments.Add(value);
+                continue;
+            }
 
-                if (result.HasMatches)
-                {
-                    newArguments.AddRange(result.Files.Select(x => x.Path));
-                    continue;
-                }
+            // Don't include trailing slashes in the value given to the Matcher,
+            // since the Matcher interprets dir/ as dir/**/*.
+            // We still want to keep it though, so it's added again afterwards.
+            string suffix = value.EndsWith('/') ? "/" : "";
+            var matcher = new Matcher();
+            matcher.AddInclude(value.TrimCharEnd('/'));
+            var result = matcher.Execute(
+                new DirectoryInfoWrapper(
+                    new DirectoryInfo(ShellEnvironment.WorkingDirectory)
+                )
+            );
+
+            if (result.HasMatches)
+            {
+                newArguments.AddRange(result.Files.Select(x => x.Path + suffix));
+                continue;
             }
 
             newArguments.Add(value);
