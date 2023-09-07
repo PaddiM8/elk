@@ -14,8 +14,6 @@ using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
-using Microsoft.Extensions.FileSystemGlobbing;
-using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 
 #endregion
 
@@ -845,21 +843,10 @@ partial class Interpreter
                 continue;
             }
 
-            // Don't include trailing slashes in the value given to the Matcher,
-            // since the Matcher interprets dir/ as dir/**/*.
-            // We still want to keep it though, so it's added again afterwards.
-            string suffix = value.EndsWith('/') ? "/" : "";
-            var matcher = new Matcher();
-            matcher.AddInclude(value.TrimCharEnd('/'));
-            var result = matcher.Execute(
-                new DirectoryInfoWrapper(
-                    new DirectoryInfo(ShellEnvironment.WorkingDirectory)
-                )
-            );
-
-            if (result.HasMatches)
+            var matches = Globbing.Glob(ShellEnvironment.WorkingDirectory, value);
+            if (matches.Any())
             {
-                newArguments.AddRange(result.Files.Select(x => x.Path + suffix));
+                newArguments.AddRange(matches);
                 continue;
             }
 
