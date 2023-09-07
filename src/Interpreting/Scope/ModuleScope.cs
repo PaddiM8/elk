@@ -1,6 +1,7 @@
 #region
 
 using System.Collections.Generic;
+using System.Linq;
 using Elk.Lexing;
 using Elk.Parsing;
 
@@ -101,11 +102,8 @@ class ModuleScope : Scope
             _functions[function.Identifier.Value].Expr = function;
     }
 
-    public bool HasStruct(string name)
+    public bool ContainsStruct(string name)
         => _structs.ContainsKey(name);
-
-    public bool HasFunction(string name)
-        => _functions.ContainsKey(name);
 
     public Alias? FindAlias(string name)
     {
@@ -114,14 +112,14 @@ class ModuleScope : Scope
         return value;
     }
 
-    public ModuleScope? FindModule(IEnumerable<Token> modulePath, bool lookInImports)
+    public ModuleScope? FindModule(IEnumerable<string> modulePath, bool lookInImports)
     {
-        var queue = new Queue<Token>(modulePath);
+        var queue = new Queue<string>(modulePath);
         var current = this;
         while (queue.Count > 0 && current != null)
         {
             current = current.FindModule(
-                queue.Dequeue().Value,
+                queue.Dequeue(),
                 lookInImports,
                 lookInParents: current == this
             );
@@ -129,6 +127,9 @@ class ModuleScope : Scope
 
         return current;
     }
+
+    public ModuleScope? FindModule(IEnumerable<Token> modulePath, bool lookInImports)
+        => FindModule(modulePath.Select(x => x.Value), lookInImports);
 
     private ModuleScope? FindModule(
         string moduleName,

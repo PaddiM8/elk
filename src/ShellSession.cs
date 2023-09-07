@@ -8,6 +8,7 @@ using Elk.Interpreting;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Resources;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 #endregion
@@ -62,11 +63,45 @@ public class ShellSession
         Environment.SetEnvironmentVariable("PATH", pathValue);
     }
 
+    public bool ModuleExists(IEnumerable<string> path)
+    {
+        if (_interpreter.ModuleExists(path))
+            return true;
+
+        var single = path.SingleOrDefault();
+
+        return single != null && StdBindings.HasModule(single);
+    }
+
     public bool StructExists(string name)
-        => _interpreter.StructExists(name);
+        => _interpreter.StructExists(name) || StdBindings.HasRuntimeType(name);
+
+    public bool FunctionExists(string name, IEnumerable<string>? modulePath)
+        => _interpreter.FunctionExists(name) || StdBindings.HasFunction(name, modulePath?.SingleOrDefault());
 
     public bool VariableExists(string name)
         => _interpreter.VariableExists(name);
+
+    public bool ProgramExists(string name)
+    {
+        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (name.StartsWith('~'))
+            name = name[1..] + homePath;
+
+        if (name.StartsWith('.'))
+        {
+            string absolutePath = Path.Combine(WorkingDirectory, name);
+
+            return Extensions.FileIsExecutable(absolutePath);
+        }
+
+        if (name.StartsWith('/'))
+            return Extensions.FileIsExecutable(name);
+
+        return Environment.GetEnvironmentVariable("PATH")?
+            .Split(":")
+            .Any(x => Directory.Exists(x) && Extensions.FileIsExecutable(Path.Combine(x, name))) is true;
+    }
 
     public void PrintPrompt()
     {

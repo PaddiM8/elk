@@ -1,11 +1,11 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BetterReadLine;
 using Elk.Lexing;
-using Elk.Std.Bindings;
 
 #endregion
 
@@ -198,15 +198,18 @@ class HighlightHandler : IHighlightHandler
         return Color(builder.ToString(), 93, endColor);
     }
 
-    private string NextIdentifier()
+    private string NextIdentifier(ICollection<string>? modulePath = null)
     {
         int startIndex = Current!.Position.Index;
-        string identifier = Eat()!.Value;
-        
-        if (_shell.StructExists(identifier.Trim()) || StdBindings.HasRuntimeType(identifier.Trim()))
+        string identifier = Eat()!.Value.Trim();
+
+        if (_shell.ModuleExists(new[] { identifier }))
+            return NextModule(modulePath ?? new List<string>());
+
+        if (_shell.StructExists(identifier))
             return Color(identifier, 96);
 
-        if (_shell.VariableExists(identifier.Trim()))
+        if (_shell.VariableExists(identifier))
             return identifier;
 
         string textArguments = NextTextArguments();
@@ -221,9 +224,36 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
+        var isCallable = _shell.FunctionExists(identifier, modulePath) || _shell.ProgramExists(identifier);
+        int colorCode = isCallable ? 95 : 91;
+
         return textArguments.Length > 0
-            ? Color(identifier, 95, null) + textArguments
-            : Color(identifier, 95);
+            ? Color(identifier, colorCode, null) + textArguments
+            : Color(identifier, colorCode);
+    }
+
+    private string NextModule(ICollection<string> modulePath)
+    {
+        var builder = new StringBuilder();
+        string name = Previous!.Value;
+        modulePath.Add(name);
+        if (_shell.ModuleExists(modulePath))
+        {
+            builder.Append(Color(name, 34));
+            if (Current is not { Kind: TokenKind.ColonColon })
+                return builder.ToString();
+
+            builder.Append(Eat()!.Value);
+
+            if (Current != null)
+                builder.Append(NextIdentifier(modulePath));
+
+            return builder.ToString();
+        }
+
+        builder.Append(Color(name, 91));
+
+        return builder.ToString();
     }
 
     private string NextPath()

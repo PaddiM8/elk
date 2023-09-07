@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Glob" Version="1.1.9" />
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 

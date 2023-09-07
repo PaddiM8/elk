@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
@@ -1078,7 +1077,7 @@ internal class Parser
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
 
-        if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.HasStruct(identifier.Value))
+        if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.ContainsStruct(identifier.Value))
             return new TypeExpr(identifier);
 
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)
