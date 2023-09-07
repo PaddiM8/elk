@@ -444,80 +444,13 @@ internal class Parser
 
     private Expr ParsePipe()
     {
-        var left = ParseClosure();
+        var left = ParseOr();
         while (Match(TokenKind.Pipe))
         {
             var op = Eat().Kind;
-            var right = ParseClosure();
+            var right = ParseOr();
 
             left = new BinaryExpr(left, op, right);
-        }
-
-        return left;
-    }
-
-    private Expr ParseClosure()
-    {
-        var left = ParseOr();
-        if (AdvanceIf(TokenKind.EqualsGreater))
-        {
-            if (left is not CallExpr and not FunctionReferenceExpr)
-                throw new ParseException(
-                    Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure"
-                );
-
-            if (AdvanceIf(TokenKind.Ampersand))
-            {
-                var variableToken = Previous! with { Value = "x" };
-                var call = (CallExpr)ParseIdentifier();
-                call.Arguments.Add(new VariableExpr(variableToken));
-                var implicitScope = new LocalScope(_scope);
-                var implicitParameters = new List<Token> { variableToken };
-
-                implicitScope.AddVariable("x", RuntimeNil.Value);
-                var block = new BlockExpr(
-                    new List<Expr> { call },
-                    StructureKind.Other,
-                    variableToken.Position,
-                    implicitScope
-                );
-
-                return new ClosureExpr(left, implicitParameters, block);
-            }
-
-            var scope = new LocalScope(_scope);
-            var parameters = new List<Token>();
-            if (Match(TokenKind.Identifier))
-            {
-                do
-                {
-                    var parameter = EatExpected(TokenKind.Identifier);
-                    parameters.Add(parameter);
-                    scope.AddVariable(parameter.Value, RuntimeNil.Value);
-                } while (AdvanceIf(TokenKind.Comma));
-            }
-
-            BlockExpr right;
-            if (AdvanceIf(TokenKind.Colon))
-            {
-                _scope = scope;
-
-                var bodyExpr = ParseOr();
-                right = new BlockExpr(
-                    new List<Expr> { bodyExpr },
-                    StructureKind.Other,
-                    Previous!.Position,
-                    scope
-                );
-
-                _scope = _scope.Parent!;
-            }
-            else
-            {
-                right = ParseBlock(StructureKind.Other, scope);
-            }
-
-            return new ClosureExpr(left, parameters, right);
         }
 
         return left;
@@ -766,7 +699,10 @@ internal class Parser
                 modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
             }
 
-            return new FunctionReferenceExpr(identifier, modulePath);
+            var functionReference = new FunctionReferenceExpr(identifier, modulePath);
+            return Match(TokenKind.EqualsGreater)
+                ? ParseClosure(functionReference)
+                : functionReference;
         }
 
         if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
@@ -785,6 +721,71 @@ internal class Parser
             ? Error("Unexpected end of expression")
             : Error($"Unexpected token: '{Current?.Kind}'");
     }
+
+    private Expr ParseClosure(Expr function)
+    {
+        EatExpected(TokenKind.EqualsGreater);
+        if (function is not CallExpr and not FunctionReferenceExpr)
+        {
+            throw new ParseException(
+                Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure"
+            );
+        }
+
+        if (AdvanceIf(TokenKind.Ampersand))
+        {
+            var variableToken = Previous! with { Value = "x" };
+            var call = (CallExpr)ParseIdentifier();
+            call.Arguments.Add(new VariableExpr(variableToken));
+            var implicitScope = new LocalScope(_scope);
+            var implicitParameters = new List<Token> { variableToken };
+
+            implicitScope.AddVariable("x", RuntimeNil.Value);
+            var block = new BlockExpr(
+                new List<Expr> { call },
+                StructureKind.Other,
+                variableToken.Position,
+                implicitScope
+            );
+
+            return new ClosureExpr(function, implicitParameters, block);
+        }
+
+        var scope = new LocalScope(_scope);
+        var parameters = new List<Token>();
+        if (Match(TokenKind.Identifier))
+        {
+            do
+            {
+                var parameter = EatExpected(TokenKind.Identifier);
+                parameters.Add(parameter);
+                scope.AddVariable(parameter.Value, RuntimeNil.Value);
+            } while (AdvanceIf(TokenKind.Comma));
+        }
+
+        BlockExpr right;
+        if (AdvanceIf(TokenKind.Colon))
+        {
+            _scope = scope;
+
+            var bodyExpr = ParseOr();
+            right = new BlockExpr(
+                new List<Expr> { bodyExpr },
+                StructureKind.Other,
+                Previous!.Position,
+                scope
+            );
+
+            _scope = _scope.Parent!;
+        }
+        else
+        {
+            right = ParseBlock(StructureKind.Other, scope);
+        }
+
+        return new ClosureExpr(function, parameters, right);
+    }
+
 
     private Expr ParseLiteral()
     {
@@ -1112,7 +1113,7 @@ internal class Parser
             EatExpected(TokenKind.ClosedParenthesis);
             var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
 
-            return new CallExpr(
+            var call = new CallExpr(
                 modifiedIdentifier,
                 modulePath,
                 arguments,
@@ -1120,6 +1121,10 @@ internal class Parser
                 functionPlurality,
                 CallType.Unknown
             );
+
+            return Match(TokenKind.EqualsGreater)
+                ? ParseClosure(call)
+                : call;
         }
 
         if (modulePath.Count == 0 &&
@@ -1140,7 +1145,7 @@ internal class Parser
 
         var plurality = ParsePlurality(identifier, out var newIdentifier);
 
-        return new CallExpr(
+        var textCall = new CallExpr(
             newIdentifier,
             modulePath,
             textArguments,
@@ -1148,6 +1153,10 @@ internal class Parser
             plurality,
             CallType.Unknown
         );
+
+        return Match(TokenKind.EqualsGreater)
+            ? ParseClosure(textCall)
+            : textCall;
     }
 
     private Plurality ParsePlurality(Token identifier, out Token newToken)
