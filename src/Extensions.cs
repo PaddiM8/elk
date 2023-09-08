@@ -68,7 +68,7 @@ public static class Extensions
     public static bool FileIsExecutable(string filePath)
     {
         var fileInfo = new UnixFileInfo(filePath);
-        if (!fileInfo.Exists)
+        if (!fileInfo.Exists || fileInfo.IsDirectory)
             return false;
 
         var permissions = fileInfo.FileAccessPermissions;

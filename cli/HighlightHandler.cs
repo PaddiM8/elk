@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -73,7 +72,7 @@ class HighlightHandler : IHighlightHandler
         }
 
         if (Current?.Kind == TokenKind.Slash && Peek?.Kind == TokenKind.Identifier)
-            return NextIdentifier();
+            return NextPath();
 
         return Current?.Kind switch
         {
@@ -288,9 +287,11 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
+        int colorCode = _shell.ProgramExists(identifier) ? 95 : 91;
+
         return textArguments.Length > 0
-            ? Color(identifier, 95, null) + textArguments
-            : Color(identifier, 95);
+            ? Color(identifier, colorCode, null) + textArguments
+            : Color(identifier, colorCode);
     }
 
     private string NextTextArguments()
