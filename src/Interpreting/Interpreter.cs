@@ -617,8 +617,8 @@ partial class Interpreter
                 : new RuntimeString(value);
         }
 
-        return _scope.FindVariable(expr.Identifier.Value)?.Value
-               ?? expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
+        return expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
+               ?? _scope.FindVariable(expr.Identifier.Value)?.Value
                ?? RuntimeNil.Value;
     }
 
@@ -949,8 +949,8 @@ partial class Interpreter
         );
         foreach (var capture in closureExpr.CapturedVariables)
         {
-            var value = _scope.FindVariable(capture)?.Value
-                ?? closureExpr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
+            var value = closureExpr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
+                ?? _scope.FindVariable(capture)?.Value
                 ?? RuntimeNil.Value;
             scope.AddVariable(capture, value);
         }
