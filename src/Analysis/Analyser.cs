@@ -632,7 +632,7 @@ class Analyser
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
             TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
-            TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => new RuntimeString(expr.Value.Value),
+            TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
             TokenKind.Nil => RuntimeNil.Value,

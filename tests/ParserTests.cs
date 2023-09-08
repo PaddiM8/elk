@@ -106,9 +106,9 @@ internal class ParserTests
         {
             Token(TokenKind.Identifier, "echo"),
             Token(TokenKind.OpenParenthesis, "("),
-            Token(TokenKind.DoubleQuoteStringLiteral, "hello"),
+            Token(TokenKind.StringLiteral, "hello"),
             Token(TokenKind.Comma, ","),
-            Token(TokenKind.DoubleQuoteStringLiteral, "world"),
+            Token(TokenKind.StringLiteral, "world"),
             Token(TokenKind.ClosedParenthesis, ")"),
         };
         dynamic ast = Parse(tokens);

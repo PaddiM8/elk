@@ -50,5 +50,5 @@ internal class StringInterpolationParserTests
     }
 
     private static Token StringToken(string value)
-        => new(TokenKind.DoubleQuoteStringLiteral, value, TextPos.Default);
+        => new(TokenKind.StringLiteral, value, TextPos.Default);
 }
