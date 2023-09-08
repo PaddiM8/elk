@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
-using Elk.Resources;
 
 #endregion
 
@@ -168,12 +168,7 @@ public class Lexer
             var c = NextComment();
             return c;
         }
-        
-        if (char.IsDigit(Current))
-        {
-            return NextNumber();
-        }
-        
+
         if (Current == '"' && Previous != '\\')
         {
             return NextString();
@@ -268,9 +263,26 @@ public class Lexer
             _ => TokenKind.Identifier,
         };
 
+        string valueString = value.ToString();
+        bool foundDot = false;
+        bool IsValidNumberChar(char c, int i)
+        {
+            bool isBaseSpecifier = i == 1 && valueString.StartsWith('0') && c is 'b' or 'o' or 'x';
+            bool isDecimalComma = i != 0 && c == '.' && !foundDot;
+            if (isDecimalComma) foundDot = true;
+
+            return isBaseSpecifier || isDecimalComma || char.IsDigit(c);
+        }
+
+        bool isNumber = valueString
+            .WithIndex()
+            .All(x => IsValidNumberChar(x.item, x.index));
+        if (isNumber)
+            kind = foundDot ? TokenKind.FloatLiteral : TokenKind.IntegerLiteral;
+
         return Build(
             kind,
-            value.ToString(),
+            valueString,
             new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
@@ -457,7 +469,7 @@ public class Lexer
     }
     
     private static bool IsValidIdentifierStart(char c)
-        => !(char.IsDigit(c) || "+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c));
+        => !"+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c);
 
     private static bool IsValidIdentifierMiddle(char c, char next)
         => c != '$' && (IsValidIdentifierStart(c) ||
