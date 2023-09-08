@@ -734,17 +734,45 @@ internal class Parser
 
         if (AdvanceIf(TokenKind.Ampersand))
         {
-            var variableToken = Previous! with { Value = "x" };
-            var call = (CallExpr)ParseIdentifier();
-            call.Arguments.Add(new VariableExpr(variableToken));
-            var implicitScope = new LocalScope(_scope);
-            var implicitParameters = new List<Token> { variableToken };
+            var identifier = ParseIdentifier();
+            var implicitParameters = new List<Token>();
+            var blockExpressions = new List<Expr>();
+            if (identifier is CallExpr call)
+            {
+                var variableToken = call.Identifier with { Value = "x" };
+                call.Arguments.Add(new VariableExpr(variableToken));
+                implicitParameters.Add(variableToken);
+                blockExpressions.Add(call);
+            }
+            else if (identifier is VariableExpr variable)
+            {
+                var variableToken = variable.Identifier with { Value = variable.Identifier.Value + "_x" };
+                implicitParameters.Add(variableToken);
 
-            implicitScope.AddVariable("x", RuntimeNil.Value);
+                var callToCall = new CallExpr(
+                    variable.Identifier with { Value = "call" },
+                    Array.Empty<Token>(),
+                    new List<Expr> { variable, new VariableExpr(variableToken) },
+                    CallStyle.Parenthesized,
+                    Plurality.Singular,
+                    CallType.BuiltInCall
+                );
+                blockExpressions.Add(callToCall);
+            }
+            else
+            {
+                throw new ParseException(
+                    Current?.Position ?? TextPos.Default,
+                    "Expected function reference after ampersand closure"
+                );
+            }
+
+            var implicitScope = new LocalScope(_scope);
+            implicitScope.AddVariable(implicitParameters.First().Value, RuntimeNil.Value);
             var block = new BlockExpr(
-                new List<Expr> { call },
+                blockExpressions,
                 StructureKind.Other,
-                variableToken.Position,
+                implicitParameters.First().Position,
                 implicitScope
             );
 

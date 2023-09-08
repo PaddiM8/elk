@@ -37,3 +37,8 @@ level1 => a: {
         level3 => c: assert(a + b + c == "123")
     }
 }
+
+# variable of function reference
+let a = &Fn => x: x + 1
+print([1, 2, 3] | select => &a | join)
+assert(([1, 2, 3] | select => &a | join) == "234")
