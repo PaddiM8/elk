@@ -101,6 +101,13 @@ static class Maths
 
     /// <param name="x"></param>
     /// <param name="y"></param>
+    /// <returns>The result of raising x to the power of y.</returns>
+    [ElkFunction("pow")]
+    public static RuntimeObject Pow(RuntimeObject x, RuntimeObject y)
+        => x.Operation(OperationKind.Power, y);
+
+    /// <param name="x"></param>
+    /// <param name="y"></param>
     /// <returns>The result of subtracting the two given numbers.</returns>
     [ElkFunction("sub")]
     public static RuntimeObject Sub(RuntimeObject x, RuntimeObject y)
