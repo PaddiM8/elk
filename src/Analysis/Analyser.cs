@@ -551,8 +551,12 @@ class Analyser
         if (pipedValue != null && callType != CallType.Program)
             expr.Arguments.Insert(0, pipedValue);
 
-        if (callType != CallType.StdFunction && callType != CallType.Function && hasClosure)
+        bool definitionHasClosure = functionSymbol?.Expr.HasClosure is true || stdFunction?.HasClosure is true;
+        if (!definitionHasClosure && hasClosure)
             throw new RuntimeException("Unexpected closure.");
+
+        if (definitionHasClosure && !hasClosure)
+            throw new RuntimeException("Expected closure.");
 
         int argumentCount = expr.Arguments.Count;
         if (stdFunction != null)
