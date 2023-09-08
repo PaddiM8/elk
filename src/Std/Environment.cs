@@ -13,6 +13,16 @@ namespace Elk.Std;
 [ElkModule("env")]
 public class Environment
 {
+    /// <summary>
+    /// Exits the program.
+    /// <param name="exitCode">The exit code (default: 0)</param>
+    /// </summary>
+    [ElkFunction("exit", Reachability.Everywhere)]
+    public static void Exit(RuntimeInteger? exitCode = null)
+    {
+        System.Environment.Exit((int?)exitCode?.Value ?? 0);
+    }
+
     /// <returns>A string containing a modified version of the path to the current directory (the value of $PWD). The names of all the directories in the path except for the last one are replaced with their first letter, and '/home/user' is replaced with a tilde.</returns>
     /// <example>assert(prettyPwd() == "~/P/e/src")</example>
     [ElkFunction("prettyPwd")]

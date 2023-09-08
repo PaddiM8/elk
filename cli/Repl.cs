@@ -57,9 +57,6 @@ class Repl
                 });
             }
             
-            if (input == "exit")
-                break;
-
             shell.RunCommand(input);
         }
     }
