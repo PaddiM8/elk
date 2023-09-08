@@ -9,7 +9,7 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
-record Alias(string Name, LiteralExpr Value);
+record Alias(string Name, LiteralExpr? Value);
 
 class ModuleScope : Scope
 {
@@ -76,8 +76,10 @@ class ModuleScope : Scope
     public void AddAlias(string name, LiteralExpr expansion)
     {
         var parts = expansion.Value.Value.Split(' ', 2);
-        var argument = expansion.Value with { Value = parts[1] };
-        var alias = new Alias(parts[0], new LiteralExpr(argument));
+        var argument = parts.Length >= 2
+            ? new LiteralExpr(expansion.Value with { Value = parts[1] })
+            : null;
+        var alias = new Alias(parts[0], argument);
 
         if (!_aliases.TryAdd(name, alias))
             _aliases[name] = alias;

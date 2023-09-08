@@ -1101,7 +1101,8 @@ internal class Parser
             if (alias != null)
             {
                 identifier = identifier with { Value = alias.Name };
-                arguments.Add(alias.Value);
+                if (alias.Value != null)
+                    arguments.Add(alias.Value);
             }
 
             do
@@ -1140,7 +1141,8 @@ internal class Parser
         if (aliasResult != null)
         {
             identifier = identifier with { Value = aliasResult.Name };
-            textArguments.Insert(0, aliasResult.Value);
+            if (aliasResult.Value != null)
+                textArguments.Insert(0, aliasResult.Value);
         }
 
         var plurality = ParsePlurality(identifier, out var newIdentifier);
