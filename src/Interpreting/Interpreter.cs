@@ -659,7 +659,7 @@ partial class Interpreter
             return Evaluate(evaluatedArguments);
 
         if (evaluatedArguments[0] is not IEnumerable<RuntimeObject> firstArguments)
-            throw new RuntimeCastException(evaluatedArguments.GetType(), "iterable");
+            throw new RuntimeCastException(evaluatedArguments.GetType(), "Iterable");
 
         var results = new List<RuntimeObject>(evaluatedArguments.Count);
         foreach (var firstArgument in firstArguments.ToArray())

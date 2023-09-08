@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Exceptions;
 class RuntimeCastException<T> : RuntimeException
 {
     public RuntimeCastException(MemberInfo toType)
-        : base($"Cannot cast from {typeof(T).Name[7..]} to {toType.Name[7..]}")
+        : base($"Cannot cast from {TypeFormatting.Format(typeof(T))} to {TypeFormatting.Format(toType)}")
     {
     }
 }
@@ -17,7 +17,7 @@ class RuntimeCastException<T> : RuntimeException
 class RuntimeCastException : RuntimeException
 {
     public RuntimeCastException(MemberInfo fromType, string toType)
-        : base($"Cannot cast from {fromType.Name[7..]} to {toType}")
+        : base($"Cannot cast from {TypeFormatting.Format(fromType)} to {toType}")
     {
     }
 }
