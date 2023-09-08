@@ -4,25 +4,27 @@ namespace Elk.Cli;
 
 public class EnterHandler : IEnterHandler
 {
-    public bool Handle(string promptText, out string? newPromptText)
+    public EnterHandlerResponse Handle(string promptText, int caret)
     {
         if (promptText.TrimEnd().EndsWith('|'))
         {
-            newPromptText = $"{promptText.TrimEnd()[..^1]}\n  | ";
-
-            return true;
+            return new EnterHandlerResponse(
+                true,
+                $"{promptText.TrimEnd()[..^1]}\n  | ",
+                caret + 4
+            );
         }
         
         if (HasUnterminated(promptText))
         {
-            newPromptText = promptText + "\n";
-            
-            return true;
+            return new EnterHandlerResponse(
+                true,
+                promptText.Insert(caret, "\n"),
+                caret + 1
+            );
         }
 
-        newPromptText = null;
-
-        return false;
+        return new EnterHandlerResponse(false, null, null);
     }
 
     private static bool HasUnterminated(string promptText)
