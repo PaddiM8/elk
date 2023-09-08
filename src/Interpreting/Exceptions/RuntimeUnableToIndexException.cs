@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Exceptions;
 class RuntimeUnableToIndexException : RuntimeException
 {
     public RuntimeUnableToIndexException(MemberInfo type)
-        : base($"Cannot index values of type {TypeFormatting.Format(type)}")
+        : base($"Cannot index values of type {ExceptionFormatting.Type(type)}")
     {
     }
 }

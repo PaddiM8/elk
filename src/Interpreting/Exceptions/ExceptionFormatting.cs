@@ -3,12 +3,15 @@ using System.Reflection;
 
 namespace Elk.Interpreting.Exceptions;
 
-public static class TypeFormatting
+public static class ExceptionFormatting
 {
-    public static string Format(MemberInfo type)
+    public static string Message(string? message)
+        => message == null ? "" : $". {message}";
+
+    public static string Type(MemberInfo type)
         => FromTypeString(type.Name);
 
-    public static string Format(Type type)
+    public static string Type(Type type)
         => FromTypeString(type.Name);
 
     private static string FromTypeString(string typeString)

@@ -658,8 +658,17 @@ partial class Interpreter
         if (expr.Plurality == Plurality.Singular || evaluatedArguments.Count == 0)
             return Evaluate(evaluatedArguments);
 
-        if (evaluatedArguments[0] is not IEnumerable<RuntimeObject> firstArguments)
-            throw new RuntimeCastException(evaluatedArguments.GetType(), "Iterable");
+        if (evaluatedArguments.First() is not IEnumerable<RuntimeObject> firstArguments)
+        {
+            string message = expr.CallType == CallType.Program
+                ? "Note: The call with plurality was evaluated as a program call, since a function with that name could not be found."
+                : "";
+            throw new RuntimeCastException(
+                evaluatedArguments.First().GetType(),
+                "Iterable",
+                message
+            );
+        }
 
         var results = new List<RuntimeObject>(evaluatedArguments.Count);
         foreach (var firstArgument in firstArguments.ToArray())
