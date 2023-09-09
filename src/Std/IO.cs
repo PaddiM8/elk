@@ -64,7 +64,7 @@ static class IO
     /// <summary>Reads the next line from the standard input stream. This is used to get input from the user in a terminal.</summary>
     /// <param name="prompt">Text that should be printed before the input prompt</param>
     /// <returns>The value given by the user.</returns>
-    [ElkFunction("input", Reachability.Everywhere)]
+    [ElkFunction("input")]
     public static RuntimeString Input(RuntimeString? prompt = null)
     {
         if (prompt != null)

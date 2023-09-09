@@ -89,13 +89,13 @@ static class Iteration
 
     /// <param name="items"></param>
     /// <returns>The first element of the given iterable object.</returns>
-    [ElkFunction("first", Reachability.Everywhere)]
+    [ElkFunction("first")]
     public static RuntimeObject First(IEnumerable<RuntimeObject> items)
         => items.FirstOrDefault() ?? RuntimeNil.Value;
 
     /// <param name="input"></param>
     /// <returns>The last element of the given indexable object.</returns>
-    [ElkFunction("last", Reachability.Everywhere)]
+    [ElkFunction("last")]
     public static RuntimeObject Last(RuntimeObject input)
     {
         if (input is not IIndexable<RuntimeObject> indexable)
@@ -104,6 +104,19 @@ static class Iteration
         return indexable[new RuntimeInteger(indexable.Count - 1)];
     }
 
+    /// <param name="container" types="Tuple, List, Dictionary"></param>
+    /// <returns>The amount of items in the container.</returns>
+    [ElkFunction("len", Reachability.Everywhere)]
+    public static RuntimeInteger Length(RuntimeObject container)
+        => container switch
+        {
+            RuntimeTuple tuple => new(tuple.Values.Count),
+            RuntimeList list => new(list.Values.Count),
+            RuntimeSet set => new(set.Entries.Count),
+            RuntimeDictionary dict => new(dict.Entries.Count),
+            _ => new(container.As<RuntimeString>().Value.Length),
+        };
+
     /// <param name="items">A list of values that will be stringified.</param>
     /// <param name="separator">Character sequence that should be put between each value.</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>
@@ -111,13 +124,135 @@ static class Iteration
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
 
+    /// <summary>
+    /// Pushes the given value to the container.
+    /// </summary>
+    /// <param name="container" types="List, Dictionary"></param>
+    /// <param name="value1">List: Value to push<br />Set: Element<br />Dictionary: Key</param>
+    /// <param name="value2">Dictionary: Value to push</param>
+    /// <returns>The same container.</returns>
+    /// <example>
+    /// list | push(x)
+    /// dict | push("name", "John")
+    /// </example>
+    [ElkFunction("push", Reachability.Everywhere)]
+    public static RuntimeObject Push(
+        RuntimeObject container,
+        RuntimeObject value1,
+        RuntimeObject? value2 = null)
+    {
+        if (container is RuntimeList list)
+        {
+            list.Values.Add(value1);
+        }
+        else if (container is RuntimeSet set)
+        {
+            set.Entries.Add(value1.GetHashCode(), value1);
+        }
+        else if (container is RuntimeDictionary dict)
+        {
+            if (value2 == null)
+                throw new RuntimeWrongNumberOfArgumentsException(3, 2);
+
+            dict.Entries.Add(value1.GetHashCode(), (value1, value2));
+        }
+        else
+        {
+            throw new RuntimeException("Can only use function 'push' on lists and dictionaries");
+        }
+
+        return container;
+    }
+
     [ElkFunction("reduce")]
     public static RuntimeObject Reduce(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject, RuntimeObject> closure)
         => items.Aggregate(closure);
 
+    /// <summary>
+    /// Removes the item at the given index.
+    /// </summary>
+    /// <param name="container" types="List, Dictionary"></param>
+    /// <param name="index">Index of the item to remove</param>
+    /// <returns>The same container.</returns>
+    [ElkFunction("remove", Reachability.Everywhere)]
+    public static RuntimeObject Remove(RuntimeObject container, RuntimeObject index)
+    {
+        if (container is RuntimeList list)
+        {
+            list.Values.RemoveAt((int)index.As<RuntimeInteger>().Value);
+        }
+        else if (container is RuntimeSet set)
+        {
+            set.Entries.Remove(index.GetHashCode());
+        }
+        else if (container is RuntimeDictionary dict)
+        {
+            dict.Entries.Remove(index.GetHashCode());
+        }
+        else
+        {
+            throw new RuntimeException("Can only use function 'remove' on lists and dictionaries");
+        }
+
+        return container;
+    }
+
     [ElkFunction("reverse")]
     public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
         => new(items.Reverse().ToList());
+
+    /// <summary>
+    /// Gets the item at the specified index or
+    /// the line at the specified index.
+    /// </summary>
+    /// <param name="input">An indexable object.</param>
+    /// <param name="index"></param>
+    /// <returns>
+    /// Given a string: The line at the specified index.<br />
+    /// Given any other indexable object: the element at the specified index.
+    /// </returns>
+    [ElkFunction("row")]
+    public static RuntimeObject Row(IIndexable<RuntimeObject> input, RuntimeInteger index)
+    {
+        if (input is RuntimeString str)
+        {
+            var line = str.Value.ToLines().ElementAtOrDefault((int)index.Value);
+
+            return line == null
+                ? RuntimeNil.Value
+                : new RuntimeString(line);
+        }
+
+        return input[index];
+    }
+
+    /// <summary>
+    /// Gets the item at the specified index or
+    /// the line at the specified index.
+    /// </summary>
+    /// <param name="input">An indexable object.</param>
+    /// <param name="startIndex"></param>
+    /// <param name="endIndex"></param>
+    /// <returns>
+    /// Given a string: The lines between the specified indices.<br />
+    /// Given any other indexable object: the elements between the specified indices.
+    /// </returns>
+    [ElkFunction("rows")]
+    public static RuntimeObject Rows(IIndexable<RuntimeObject> input, RuntimeInteger startIndex, RuntimeInteger endIndex)
+    {
+        if (input is RuntimeString str)
+        {
+            var lines = str.Value.ToLines();
+            if (lines.Length == 0 || startIndex.Value < 0 || endIndex.Value >= lines.Length)
+                return RuntimeNil.Value;
+
+            var range = lines[(int)startIndex.Value..(int)endIndex.Value];
+
+            return new RuntimeList(range.Select(x => new RuntimeString(x)));
+        }
+
+        return input[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
+    }
 
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>

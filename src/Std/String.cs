@@ -25,7 +25,7 @@ static class String
     /// <param name="columnIndex">The index of the column.</param>
     /// <param name="divider">The character sequence that divides the column. Default: "\t"</param>
     /// <returns>A string if the cell was found, otherwise null.</returns>
-    [ElkFunction("cell", Reachability.Everywhere)]
+    [ElkFunction("cell")]
     public static RuntimeObject Cell(
         RuntimeString input,
         RuntimeInteger rowIndex,
@@ -78,7 +78,7 @@ static class String
     /// <param name="index">The index of the column.</param>
     /// <param name="divider">The character sequence that divides the column. Default: "\t"</param>
     /// <returns>A list of lines within the specific column.</returns>
-    [ElkFunction("column", Reachability.Everywhere)]
+    [ElkFunction("column")]
     public static RuntimeList Column(
         RuntimeString input,
         RuntimeInteger index,
@@ -109,7 +109,7 @@ static class String
         => RuntimeBoolean.From(str.Value.Length == 1 && char.IsDigit(str.Value[0]));
 
     /// <returns>A list of all the lines in the given string.</returns>
-    [ElkFunction("lines", Reachability.Everywhere)]
+    [ElkFunction("lines")]
     public static RuntimeList Lines(RuntimeString input)
     {
         var lines = input.Value.ToLines().ToList();
@@ -143,7 +143,7 @@ static class String
     /// <param name="input">A string consisting of several columns and lines.</param>
     /// <param name="divider">The character sequence that divides the columns. Default: "\t"</param>
     /// <returns>A list of lists of columns.</returns>
-    [ElkFunction("table", Reachability.Everywhere)]
+    [ElkFunction("table")]
     public static RuntimeList Table(RuntimeString input, RuntimeString? divider = null)
     {
         var table = input

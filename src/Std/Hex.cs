@@ -1,7 +1,8 @@
 using System.Globalization;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes;
 
-namespace Elk.Std.DataTypes;
+namespace Elk.Std;
 
 [ElkModule("hex")]
 public class Hex
