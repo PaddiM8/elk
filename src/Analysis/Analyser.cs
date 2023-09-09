@@ -639,8 +639,7 @@ class Analyser
             TokenKind.StringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
-            TokenKind.Nil => RuntimeNil.Value,
-            _ => throw new ArgumentOutOfRangeException(),
+            _ => RuntimeNil.Value,
         };
 
         var newExpr = new LiteralExpr(expr.Value)

@@ -942,7 +942,27 @@ partial class Interpreter
     }
 
     private RuntimeObject Visit(LiteralExpr expr)
-        => expr.RuntimeValue!;
+    {
+        if (expr.Value.Kind == TokenKind.BashLiteral)
+        {
+            var arguments = new List<RuntimeObject>
+            {
+                new RuntimeString("-c"),
+                new RuntimeString(expr.Value.Value[2..])
+            };
+            EvaluateProgramCall(
+                "bash",
+                arguments,
+                null,
+                globbingEnabled: false,
+                isRoot: true
+            );
+
+            return RuntimeNil.Value;
+        }
+
+        return expr.RuntimeValue!;
+    }
 
     private RuntimeObject Visit(FunctionReferenceExpr functionReferenceExpr)
         => functionReferenceExpr.RuntimeFunction!;

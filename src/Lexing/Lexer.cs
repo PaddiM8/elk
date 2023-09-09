@@ -146,6 +146,9 @@ public class Lexer
 
     private Token NextComplex()
     {
+        if (Current == '$' && Peek == ':')
+            return NextBashLiteral();
+
         if (Current == '\\')
         {
             if (Peek == '\n' && _mode != LexerMode.Preserve)
@@ -185,6 +188,15 @@ public class Lexer
         }
 
         return Build(TokenKind.Unknown, Eat().ToString());
+    }
+
+    private Token NextBashLiteral()
+    {
+        var builder = new StringBuilder();
+        while (Current is not ('\n' or '\0'))
+            builder.Append(Eat());
+
+        return Build(TokenKind.BashLiteral, builder.ToString());
     }
 
     private Token NextWhiteSpace()

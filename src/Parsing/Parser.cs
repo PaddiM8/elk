@@ -1405,6 +1405,7 @@ internal class Parser
             TokenKind.IntegerLiteral or
             TokenKind.FloatLiteral or
             TokenKind.StringLiteral or
+            TokenKind.BashLiteral or
             TokenKind.Nil or
             TokenKind.True or
             TokenKind.False;
