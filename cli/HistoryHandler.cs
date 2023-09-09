@@ -44,6 +44,10 @@ class HistoryHandler : IHistoryHandler
 
     public void Add(HistoryEntry entry)
     {
+        // If the last entry was the same, don't add it again.
+        if (_allEntries.LastOrDefault()?.Content == entry.Content)
+            return;
+
         _allEntries.AddToBack(entry);
         if (_allEntries.Count > _maxEntries)
             _allEntries.RemoveFromFront();
