@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -197,15 +198,20 @@ class HighlightHandler : IHighlightHandler
         return Color(builder.ToString(), 93, endColor);
     }
 
-    private string NextIdentifier(ICollection<string>? modulePath = null)
+    private string NextIdentifier(List<string>? modulePath = null)
     {
         int startIndex = Current!.Position.Index;
         string identifier = Eat()!.Value.Trim();
         string plurality = identifier.EndsWith("!") ? "!" : "";
         identifier = identifier.TrimCharEnd('!');
 
-        if (_shell.ModuleExists(new[] { identifier }))
-            return NextModule(modulePath ?? new List<string>());
+        modulePath ??= new List<string>();
+        modulePath.Add(identifier);
+
+        if (_shell.ModuleExists(modulePath))
+            return NextModule(modulePath);
+
+        modulePath.RemoveAt(modulePath.Count - 1);
 
         if (_shell.StructExists(identifier))
             return Color(identifier + plurality, 96);
@@ -233,26 +239,25 @@ class HighlightHandler : IHighlightHandler
             : Color(identifier, colorCode) + plurality;
     }
 
-    private string NextModule(ICollection<string> modulePath)
+    private string NextModule(List<string> modulePath)
     {
         var builder = new StringBuilder();
         string name = Previous!.Value;
-        modulePath.Add(name);
-        if (_shell.ModuleExists(modulePath))
+        if (!_shell.ModuleExists(modulePath))
         {
-            builder.Append(Color(name, 34));
-            if (Current is not { Kind: TokenKind.ColonColon })
-                return builder.ToString();
-
-            builder.Append(Eat()!.Value);
-
-            if (Current != null)
-                builder.Append(NextIdentifier(modulePath));
+            builder.Append(Color(name, 91));
 
             return builder.ToString();
         }
 
-        builder.Append(Color(name, 91));
+        builder.Append(Color(name, 34));
+        if (Current is not { Kind: TokenKind.ColonColon })
+            return builder.ToString();
+
+        builder.Append(Eat()!.Value);
+
+        if (Current != null)
+            builder.Append(NextIdentifier(modulePath));
 
         return builder.ToString();
     }

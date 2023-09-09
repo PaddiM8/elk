@@ -105,14 +105,20 @@ partial class Interpreter
     private RuntimeError Error(string message)
         => new(message, Position);
 
-    public bool ModuleExists(IEnumerable<string> path)
-        => _scope.ModuleScope.FindModule(path, true) != null;
+    public bool ModuleExists(IEnumerable<string> modulePath)
+        => _scope.ModuleScope.FindModule(modulePath, true) != null;
 
     public bool StructExists(string name)
         => _scope.ModuleScope.FindStruct(name, true) != null;
 
-    public bool FunctionExists(string name)
-        => _scope.ModuleScope.FindFunction(name, true) != null;
+    public bool FunctionExists(string name, IEnumerable<string>? modulePath = null)
+    {
+        var module = modulePath == null
+            ? _scope.ModuleScope
+            : _scope.ModuleScope.FindModule(modulePath, true);
+
+        return module?.FindFunction(name, true) != null;
+    }
 
     public bool VariableExists(string name)
         => _scope.ModuleScope.FindVariable(name) != null;

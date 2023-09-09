@@ -63,21 +63,24 @@ public class ShellSession
         Environment.SetEnvironmentVariable("PATH", pathValue);
     }
 
-    public bool ModuleExists(IEnumerable<string> path)
+    public bool ModuleExists(ICollection<string> modulePath)
     {
-        if (_interpreter.ModuleExists(path))
+        if (_interpreter.ModuleExists(modulePath))
             return true;
 
-        var single = path.SingleOrDefault();
-
-        return single != null && StdBindings.HasModule(single);
+        return modulePath.Count == 1 && StdBindings.HasModule(modulePath.Single());
     }
 
     public bool StructExists(string name)
         => _interpreter.StructExists(name) || StdBindings.HasRuntimeType(name);
 
-    public bool FunctionExists(string name, IEnumerable<string>? modulePath)
-        => _interpreter.FunctionExists(name) || StdBindings.HasFunction(name, modulePath?.SingleOrDefault());
+    public bool FunctionExists(string name, ICollection<string>? modulePath = null)
+    {
+        if (_interpreter.FunctionExists(name, modulePath))
+            return true;
+
+        return modulePath?.Count <= 1 && StdBindings.HasFunction(name, modulePath.SingleOrDefault());
+    }
 
     public bool VariableExists(string name)
         => _interpreter.VariableExists(name);
