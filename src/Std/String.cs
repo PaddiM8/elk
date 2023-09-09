@@ -40,12 +40,6 @@ static class String
         return new RuntimeString(column);
     }
 
-    /// <param name="codepoint">The unicode codepoint to turn into a character</param>
-    /// <returns>A string consisting of a single unicode character.</returns>
-    [ElkFunction("char")]
-    public static RuntimeString Char(RuntimeInteger codepoint)
-        => new (char.ConvertFromUtf32((int)codepoint.Value));
-
     /// <param name="str">The string to turn into chunks</param>
     /// <param name="size">The length of each chunk</param>
     /// <returns>A list of string chunks.</returns>
