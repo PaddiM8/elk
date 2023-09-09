@@ -201,15 +201,17 @@ class HighlightHandler : IHighlightHandler
     {
         int startIndex = Current!.Position.Index;
         string identifier = Eat()!.Value.Trim();
+        string plurality = identifier.EndsWith("!") ? "!" : "";
+        identifier = identifier.TrimCharEnd('!');
 
         if (_shell.ModuleExists(new[] { identifier }))
             return NextModule(modulePath ?? new List<string>());
 
         if (_shell.StructExists(identifier))
-            return Color(identifier, 96);
+            return Color(identifier + plurality, 96);
 
         if (_shell.VariableExists(identifier))
-            return identifier;
+            return identifier + plurality;
 
         string textArguments = NextTextArguments();
         if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
@@ -227,8 +229,8 @@ class HighlightHandler : IHighlightHandler
         int colorCode = isCallable ? 95 : 91;
 
         return textArguments.Length > 0
-            ? Color(identifier, colorCode, null) + textArguments
-            : Color(identifier, colorCode);
+            ? Color(identifier, colorCode, null) + plurality + textArguments
+            : Color(identifier, colorCode) + plurality;
     }
 
     private string NextModule(ICollection<string> modulePath)
