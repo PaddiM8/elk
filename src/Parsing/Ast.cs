@@ -439,6 +439,7 @@ enum CallType
     BuiltInClosure,
     BuiltInCall,
     BuiltInError,
+    BuiltInTime,
 }
 
 class CallExpr : Expr

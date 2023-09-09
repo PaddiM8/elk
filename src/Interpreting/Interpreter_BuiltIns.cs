@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
@@ -143,11 +144,28 @@ partial class Interpreter
     private RuntimeError EvaluateBuiltInError(List<RuntimeObject> arguments)
     {
         if (arguments.Count != 1)
-            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count, true);
+            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
 
         return new RuntimeError(
             arguments[0].As<RuntimeString>().Value,
             _lastExpr?.Position ?? TextPos.Default
         );
+    }
+
+    private RuntimeObject EvaluateBuiltInTime(IList<Expr> arguments)
+    {
+        if (arguments.Count != 1)
+            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
+
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+        var result = Next(arguments.Single());
+        stopWatch.Stop();
+
+        long milliseconds = Math.Max(0, stopWatch.ElapsedMilliseconds - 1);
+        string paddedMilliseconds = milliseconds.ToString().PadLeft(3, '0');
+        Console.WriteLine($"time: {stopWatch.Elapsed.Minutes}m{stopWatch.Elapsed.Seconds}.{paddedMilliseconds}\n");
+
+        return result;
     }
 }

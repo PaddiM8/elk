@@ -630,6 +630,9 @@ partial class Interpreter
 
     private RuntimeObject Visit(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
     {
+        if (expr.CallType == CallType.BuiltInTime)
+            return EvaluateBuiltInTime(expr.Arguments);
+
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         RuntimeObject Evaluate(List<RuntimeObject> arguments)
         {

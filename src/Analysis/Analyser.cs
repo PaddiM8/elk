@@ -520,6 +520,7 @@ class Analyser
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
             "error" => CallType.BuiltInError,
+            "time" => CallType.BuiltInTime,
             _ => null,
         };
 
