@@ -18,7 +18,7 @@
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Nito.Collections.Deque" Version="1.1.1" />
     <PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
-    <ProjectReference Include="../readline/src/BetterReadLine/BetterReadLine.csproj" />
+    <ProjectReference Include="../readline/Elk.ReadLine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

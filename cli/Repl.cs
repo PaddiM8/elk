@@ -3,7 +3,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using BetterReadLine;
+using Elk.ReadLine;
 using Elk.Cli.Database;
 
 #endregion
@@ -27,7 +27,7 @@ class Repl
         var historyRepository = new HistoryRepository(maxEntries);
         var historyHandler = HistoryHandler.Init(maxEntries, historyRepository);
         var highlightHandler = new HighlightHandler(shell);
-        var readLine = new ReadLine
+        var readLine = new ReadLinePrompt
         {
             HistoryHandler = historyHandler,
             AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }, highlightHandler),

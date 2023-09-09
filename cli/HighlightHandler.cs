@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BetterReadLine;
+using Elk.ReadLine;
 using Elk.Lexing;
 
 #endregion

@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Elk.ReadLine</AssemblyTitle>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <DebugType>portable</DebugType>
+    <PackageId>Elk.ReadLine</PackageId>
+    <PackageVersion>$(AssemblyVersion)</PackageVersion>
+    <PackageTags>readline;console;shell;tui</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/PaddiM8/elk</RepositoryUrl>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Wcwidth" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

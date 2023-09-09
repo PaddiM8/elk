@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BetterReadLine;
+using Elk.ReadLine;
 using Elk.Cli.Database;
 using Nito.Collections;
 

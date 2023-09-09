@@ -1,4 +1,4 @@
-using BetterReadLine;
+using Elk.ReadLine;
 
 namespace Elk.Cli;
 
