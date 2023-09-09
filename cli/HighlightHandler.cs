@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -44,6 +43,7 @@ class HighlightHandler : IHighlightHandler
     private int _length;
     private HighlightHandler? _innerHighlighter;
     private readonly List<ShellStyleInvocationInfo> _lastShellStyleInvocations = new();
+    private readonly HashSet<string> _unevaluatedVariables = new();
 
     public HighlightHandler(ShellSession shell)
     {
@@ -216,7 +216,7 @@ class HighlightHandler : IHighlightHandler
         if (_shell.StructExists(identifier))
             return Color(identifier + plurality, 96);
 
-        if (_shell.VariableExists(identifier))
+        if (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier))
             return identifier + plurality;
 
         string textArguments = NextTextArguments();
@@ -231,12 +231,40 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
-        var isCallable = _shell.FunctionExists(identifier, modulePath) || _shell.ProgramExists(identifier);
+        bool isFunctionCall = _shell.FunctionExists(identifier, modulePath);
+        bool isCallable = isFunctionCall || _shell.ProgramExists(identifier);
         int colorCode = isCallable ? 95 : 91;
 
+        var nextBuilder = new StringBuilder();
+        if (Current?.Kind == TokenKind.WhiteSpace)
+            nextBuilder.Append(Eat()!.Value);
+
+        // Keep track of closure parameters
+        if (isFunctionCall && Current?.Kind == TokenKind.EqualsGreater)
+            nextBuilder.Append(NextClosure());
+
         return textArguments.Length > 0
-            ? Color(identifier, colorCode, null) + plurality + textArguments
-            : Color(identifier, colorCode) + plurality;
+            ? Color(identifier, colorCode, null) + plurality + textArguments + nextBuilder
+            : Color(identifier, colorCode) + plurality + nextBuilder;
+    }
+
+    private string NextClosure()
+    {
+        var builder = new StringBuilder();
+        builder.Append(Eat()!.Value);
+
+        // Gather all identifiers (parameters) after the `=>` and add them to
+        // the _unevaluatedVariables hashset in order to keep track of closure
+        // parameters that haven't been interpreted yet but should be highlighted.
+        while (Current?.Kind is not (TokenKind.Colon or TokenKind.OpenBrace or TokenKind.EndOfFile or null))
+        {
+            var token = Eat()!;
+            builder.Append(token.Value);
+            if (token.Kind == TokenKind.Identifier)
+                _unevaluatedVariables.Add(token.Value);
+        }
+
+        return builder.ToString();
     }
 
     private string NextModule(List<string> modulePath)
