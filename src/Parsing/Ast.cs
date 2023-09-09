@@ -307,7 +307,7 @@ class BinaryExpr : Expr
     public OperationKind Operator { get; }
 
     public Expr Right { get; }
-    
+
     public BinaryExpr(Expr left, TokenKind op, Expr right)
         : base(left.Position)
     {
@@ -330,7 +330,7 @@ class UnaryExpr : Expr
     public OperationKind Operator { get; }
 
     public Expr Value { get; }
-    
+
     public UnaryExpr(TokenKind op, Expr value)
         : base(value.Position)
     {

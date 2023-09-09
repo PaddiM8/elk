@@ -19,7 +19,7 @@ public static class Extensions
     public static bool IsHex(this char c)
         => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
 
-    public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> self)       
+    public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> self)
         => self.Select((item, index) => (item, index));
 
     public static IEnumerable<(T1?, T2?)> ZipLongest<T1, T2>(this IEnumerable<T1> a, IEnumerable<T2> b)

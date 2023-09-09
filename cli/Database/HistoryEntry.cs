@@ -7,7 +7,7 @@ class HistoryEntry
 {
     [PrimaryKey, AutoIncrement]
     public long Id { get; init; }
-    
+
     [Indexed]
     public string Path { get; init; } = null!;
 

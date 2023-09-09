@@ -17,7 +17,7 @@ internal class StringInterpolationParserTests
         var parts = StringInterpolationParser.Parse(StringToken(""));
         Assert.IsEmpty(parts);
     }
-    
+
     [Test]
     public void TestParsePureString()
     {
@@ -26,7 +26,7 @@ internal class StringInterpolationParserTests
         Assert.AreEqual("hello world", parts.First().Value);
         Assert.AreEqual(InterpolationPartKind.Text, parts.First().Kind);
     }
-    
+
     [Test]
     public void TestParseOnlyInterpolated()
     {
@@ -35,16 +35,16 @@ internal class StringInterpolationParserTests
         Assert.AreEqual("hello", parts.First().Value);
         Assert.AreEqual(InterpolationPartKind.Expression, parts.First().Kind);
     }
-    
+
     [Test]
     public void TestParseInterpolated()
     {
         var parts = StringInterpolationParser.Parse(StringToken("abc ${hello {world}}")).ToList();
         Assert.AreEqual(2, parts.Count);
-        
+
         Assert.AreEqual("abc ", parts[0].Value);
         Assert.AreEqual(InterpolationPartKind.Text, parts[0].Kind);
-        
+
         Assert.AreEqual("hello {world}", parts[1].Value);
         Assert.AreEqual(InterpolationPartKind.Expression, parts[1].Kind);
     }

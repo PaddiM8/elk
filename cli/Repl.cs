@@ -18,7 +18,7 @@ class Repl
         {
             args.Cancel = true;
         };
-        
+
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
@@ -36,7 +36,7 @@ class Repl
             EnterHandler = new EnterHandler(),
             WordSeparators = new[] { ' ', '/' },
         };
-        
+
         readLine.RegisterShortcut(
             new KeyPress(ConsoleModifiers.Control, ConsoleKey.D),
             _ => Environment.Exit(0)
@@ -45,7 +45,7 @@ class Repl
         while (true)
         {
             shell.PrintPrompt();
-            
+
             string input = readLine.Read();
             if (input.Trim().Any())
             {
@@ -56,7 +56,7 @@ class Repl
                     Time = DateTime.Now,
                 });
             }
-            
+
             shell.RunCommand(input);
         }
     }

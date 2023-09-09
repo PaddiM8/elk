@@ -43,17 +43,17 @@ class StringInterpolationParser
                     yield return new(textString.ToString(), InterpolationPartKind.Text);
                     textString.Clear();
                 }
-                
+
                 string expressionPart = NextExpressionPart(token, i + 1);
                 yield return new(expressionPart, InterpolationPartKind.Expression);
                 i += expressionPart.Length + 1; // One additional for the closing brace
-                
+
                 continue;
             }
 
             textString.Append(literal[i]);
         }
-        
+
         if (textString.Length > 0)
             yield return new(textString.ToString(), InterpolationPartKind.Text);
     }

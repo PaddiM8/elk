@@ -116,7 +116,7 @@ class RuntimeStringEnumerator : IEnumerator<RuntimeObject>
 {
     public RuntimeObject Current
         => new RuntimeString(_currentChar.ToString());
-    
+
     object IEnumerator.Current
         => Current;
 

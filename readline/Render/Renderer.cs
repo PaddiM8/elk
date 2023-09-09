@@ -20,7 +20,7 @@ internal class Renderer : IRenderer
     public int Caret
     {
         get => _caret;
-        
+
         set
         {
             WriteRaw(IndexToMovement(value, out int newTop, out int newLeft));
@@ -94,7 +94,7 @@ internal class Renderer : IRenderer
 
     public void OnHighlight(Func<string, string>? callback)
         => _highlighter = callback;
-    
+
     public void OnHint(Func<string, string?>? callback)
         => _retrieveHint = callback;
 
@@ -119,7 +119,7 @@ internal class Renderer : IRenderer
         int newLineEnd = lineStart - 1;
         Caret = Math.Min(newLineEnd, newLineStart + (Caret - lineStart));
     }
-    
+
     public void CaretDown()
     {
         int lineEnd = LineEndIndex;
@@ -133,7 +133,7 @@ internal class Renderer : IRenderer
         int newLineEnd = Text.IndexOf('\n', lineEnd + 1);
         if (newLineEnd == -1)
             newLineEnd = _text.Length;
-        
+
         Caret = Math.Min(newLineEnd, lineEnd + (Caret - lineStart));
     }
 
@@ -145,11 +145,11 @@ internal class Renderer : IRenderer
     public void ClearLineLeft(int? fromIndex = null)
     {
         int start = LineStartIndex;
-        
+
         // Don't include the new line character
         if (start != 0)
             start++;
-        
+
         _text.Remove(start, Caret - (fromIndex ?? start));
         RenderText();
         Caret = start;
@@ -164,7 +164,7 @@ internal class Renderer : IRenderer
         int pos = Caret;
         _text.Remove(Caret, end - Caret);
         RenderText(includeHint: _text.Length > 0);
-        
+
         // Don't bother putting it at the end since
         // it's already there by default. Moving the
         // caret isn't free and low latency is crucial.
@@ -173,7 +173,7 @@ internal class Renderer : IRenderer
         if (pos != _text.Length)
             Caret = pos;
     }
-    
+
     public void Insert(string input, bool includeHint)
     {
         bool hasHint = includeHint && _text.Length + input.Length > 0;
@@ -185,7 +185,7 @@ internal class Renderer : IRenderer
         else
         {
             _text.Insert(Caret, input);
-                
+
             int newPos = Caret + input.Length;
             RenderText(hasHint);
             Caret = newPos;
@@ -225,14 +225,14 @@ internal class Renderer : IRenderer
             : null;
         if (HintText?.Length == 0)
             HintText = null;
-        
+
         string movementToStart = IndexToMovement(0);
         var (top, left) = IndexToTopLeft(_text.Length);
         string newLine = top > 0 && left == 0 && _text[^1] != '\n'
             ? "\n"
             : "";
         string formattedText = Indent(Highlight(Text));
-        
+
         // Hint
         string formattedHint = "";
         string hintMovement = "";
@@ -247,7 +247,7 @@ internal class Renderer : IRenderer
             hintMovement = $"{upMovement}\x1b[{left + 1}G";
             formattedHint = Indent($"\x1b[37m{HintText}\x1b[0m");
         }
-        
+
         // Write
         WriteRaw($"\x1b[?25l{movementToStart}{formattedText}{newLine}{formattedHint}\x1b[?25h\x1b[K{hintMovement}");
         SetPositionWithoutMoving(_text.Length);
@@ -266,7 +266,7 @@ internal class Renderer : IRenderer
 
         _previousRenderTop = newTop;
     }
-    
+
     private string Indent(string text)
         => text.Replace("\n", $"\x1b[K\n{new string(' ', InputStart)}");
 
@@ -328,7 +328,7 @@ internal class Renderer : IRenderer
 
     private string IndexToMovement(int index)
         => IndexToMovement(index, _top, out int _, out int _);
-    
+
     private string IndexToMovement(int index, out int newTop, out int newLeft)
     {
         string result = IndexToMovement(index, _top, out int a, out int b);

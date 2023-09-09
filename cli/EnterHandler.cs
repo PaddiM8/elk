@@ -14,7 +14,7 @@ public class EnterHandler : IEnterHandler
                 caret + 4
             );
         }
-        
+
         if (HasUnterminated(promptText))
         {
             return new EnterHandlerResponse(
@@ -49,10 +49,10 @@ public class EnterHandler : IEnterHandler
             // count.
             if (singleQuotes % 2 != 0 && c != '\'')
                 continue;
-            
+
             if (doubleQuotes % 2 != 0 && c != '"')
                 continue;
-            
+
             if (c == '{')
             {
                 openBraces++;

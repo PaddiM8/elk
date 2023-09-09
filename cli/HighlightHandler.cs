@@ -27,16 +27,16 @@ class HighlightHandler : IHighlightHandler
 
     private Token? Peek
         => _tokens.ElementAtOrDefault(_index + 1);
-    
+
     private Token? Current
         => _tokens.ElementAtOrDefault(_index);
-    
+
     private Token? Previous
         => _tokens.ElementAtOrDefault(_index - 1);
 
     private bool ReachedEnd
         => _index >= _tokens.Count;
-    
+
     private readonly ShellSession _shell;
     private List<Token> _tokens = null!;
     private int _index;
@@ -56,11 +56,11 @@ class HighlightHandler : IHighlightHandler
         _length = text.Length;
         _index = 0;
         _lastShellStyleInvocations.Clear();
-        
+
         var builder = new StringBuilder();
         while (!ReachedEnd)
             builder.Append(Next());
-        
+
         return builder.ToString();
     }
 
@@ -92,7 +92,7 @@ class HighlightHandler : IHighlightHandler
         var keyword = Eat()!;
         var builder = new StringBuilder();
         builder.Append(Color(keyword.Value, 31));
-        
+
         if (keyword.Kind == TokenKind.Fn)
         {
             while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
@@ -170,13 +170,13 @@ class HighlightHandler : IHighlightHandler
                         openBraces++;
                     else if (!inString && c == '}')
                         openBraces--;
-                    
+
                     i++;
                     c = value.ElementAtOrDefault(i);
                 }
 
                 _innerHighlighter ??= new HighlightHandler(_shell);
-                
+
                 if (value[i - 1] == '}')
                 {
                     int interpolationContentEnd = i - 1;

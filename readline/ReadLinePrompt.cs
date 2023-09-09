@@ -7,17 +7,17 @@ public class ReadLinePrompt
 {
 
     public IHistoryHandler? HistoryHandler { private get; set; }
-    
+
     public IAutoCompleteHandler? AutoCompletionHandler { private get; set; }
 
     public IHighlightHandler? HighlightHandler { private get; set; }
-    
+
     public IHintHandler? HintHandler { private get; set; }
-    
+
     public IEnterHandler? EnterHandler { private get; set; }
 
     public char[]? WordSeparators { get; set; }
-    
+
     private KeyHandler? _keyHandler;
 
     private readonly ShortcutBag _shortcuts = new();

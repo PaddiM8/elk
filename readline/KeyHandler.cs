@@ -8,9 +8,9 @@ namespace Elk.ReadLine;
 public readonly struct KeyPress
 {
     public ConsoleModifiers Modifiers { get; }
-    
+
     public ConsoleKey Key { get; }
-    
+
     public KeyPress(ConsoleKey key)
     {
         Modifiers = 0;
@@ -31,13 +31,13 @@ public class KeyHandler
     public char[] WordSeparators = { ' ' };
 
     internal IHistoryHandler? HistoryHandler { get; set; }
-    
+
     internal IAutoCompleteHandler? AutoCompleteHandler { get; set; }
-    
+
     internal IHintHandler? HintHandler
     {
         get => _hintHandler;
-        
+
         set
         {
             _hintHandler = value;
@@ -54,7 +54,7 @@ public class KeyHandler
     internal IHighlightHandler? HighlightHandler
     {
         get => _highlightHandler;
-        
+
         set
         {
             _highlightHandler = value;
@@ -67,7 +67,7 @@ public class KeyHandler
             _renderer.OnHighlight(value.Highlight);
         }
     }
-    
+
     internal IEnterHandler? EnterHandler { get; set; }
 
     internal Action? OnEnter { get; set; }
@@ -142,7 +142,7 @@ public class KeyHandler
                 _wasEdited = false;
                 OnEnter();
             }
-            
+
             return;
         }
 
@@ -225,7 +225,7 @@ public class KeyHandler
 
         _renderer.Caret = i;
     }
-    
+
     public void MoveCursorWordRight()
     {
         string text = _renderer.Text;
@@ -273,7 +273,7 @@ public class KeyHandler
             _renderer.CaretUp();
             return;
         }
-        
+
         var result = HistoryHandler?.GetNext(_renderer.Text, _renderer.Caret, _wasEdited);
         _wasEdited = false;
         if (result != null)
@@ -287,7 +287,7 @@ public class KeyHandler
             _renderer.CaretDown();
             return;
         }
-        
+
         var result = HistoryHandler?.GetPrevious(_renderer.Text, _renderer.Caret);
         _wasEdited = false;
         if (result != null)
@@ -298,12 +298,12 @@ public class KeyHandler
     {
         _renderer.ClearLineRight();
     }
-    
+
     public void RemoveToHome()
     {
         _renderer.ClearLineLeft();
     }
-    
+
     public void RemoveWordLeft()
     {
         string text = _renderer.Text;
@@ -315,7 +315,7 @@ public class KeyHandler
 
         _renderer.RemoveLeft(_renderer.Caret - i);
     }
-    
+
     public void TransposeChars()
     {
         // TODO: Implement TransposeChars

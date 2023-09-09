@@ -165,7 +165,7 @@ public class Lexer
         {
             return NextWhiteSpace();
         }
-        
+
         if (Current == '#')
         {
             var c = NextComment();
@@ -342,7 +342,7 @@ public class Lexer
     {
         int startIndex = _index;
         Eat(); // Initial quote
-        
+
         var value = new StringBuilder();
         if (_mode == LexerMode.Preserve)
             value.Append('"');
@@ -400,7 +400,7 @@ public class Lexer
                 value.Append(Eat());
                 int openBraces = 1;
                 bool inString = false;
-                
+
                 // This is necessary to handle string literals inside interpolation environments
                 while (!ReachedEnd && (Current != '"' || openBraces > 0))
                 {
@@ -441,7 +441,7 @@ public class Lexer
     {
         int startIndex = _index;
         Eat(); // Quote
-        
+
         var value = new StringBuilder();
         if (_mode == LexerMode.Preserve)
             value.Append('\'');
@@ -479,7 +479,7 @@ public class Lexer
             new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
-    
+
     private static bool IsValidIdentifierStart(char c)
         => !"+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c);
 

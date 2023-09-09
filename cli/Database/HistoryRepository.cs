@@ -10,11 +10,11 @@ class HistoryRepository
 {
     private readonly int _maxEntries;
     private readonly SQLiteConnection _db;
-    
+
     public HistoryRepository(int maxEntries)
     {
         _maxEntries = maxEntries;
-        
+
         var path = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "elk"
@@ -24,7 +24,7 @@ class HistoryRepository
         _db = new SQLiteConnection(Path.Combine(path, "history.db"));
         _db.CreateTable<HistoryEntry>();
     }
-    
+
     public List<HistoryEntry> GetAll()
     {
         return _db.Table<HistoryEntry>()
@@ -40,7 +40,7 @@ class HistoryRepository
             .OrderByDescending(x => x.Time)
             .FirstOrDefault(x => x.Path == path && x.Content.StartsWith(start));
     }
-    
+
     public List<HistoryEntry> GetWithStart(string start)
     {
         return _db.Table<HistoryEntry>()

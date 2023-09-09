@@ -16,7 +16,7 @@ class ShellEnvironment
             return Environment.GetEnvironmentVariable("PWD")
                 ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         }
-        
+
         set
         {
             Environment.SetEnvironmentVariable("PWD", value);

@@ -25,7 +25,7 @@ public class ShellSession
         get
         {
             string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            
+
             return WorkingDirectory.StartsWith(homePath)
                 ? "~" + WorkingDirectory[homePath.Length..]
                 : WorkingDirectory;
@@ -33,7 +33,7 @@ public class ShellSession
     }
 
     private readonly Interpreter _interpreter = new(null);
-    
+
     public ShellSession()
     {
         Init();
