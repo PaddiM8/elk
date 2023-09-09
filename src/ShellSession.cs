@@ -174,6 +174,15 @@ public class ShellSession
             .Select(literal => new RuntimeString(literal));
         interpreter.AddGlobalVariable("argv", new RuntimeList(argumentValues));
 
+        if (!File.Exists(filePath))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"No such file: {filePath}");
+            Console.ResetColor();
+
+            return;
+        }
+
         var result = interpreter.Interpret(File.ReadAllText(filePath));
         if (result is RuntimeError err)
         {
