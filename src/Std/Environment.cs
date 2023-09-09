@@ -40,6 +40,9 @@ public class Environment
             pwd = pwd[homePath.Length..];
         }
 
+        if (pwd == "/")
+            return new("/");
+
         var directoryNames = GetDirectoryNames(pwd);
         if (directoryNames.Count == 0)
             return new(containsHome ? "~" : "");
