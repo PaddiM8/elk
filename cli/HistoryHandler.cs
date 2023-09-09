@@ -45,8 +45,12 @@ class HistoryHandler : IHistoryHandler
     public void Add(HistoryEntry entry)
     {
         // If the last entry was the same, don't add it again.
-        if (_allEntries.LastOrDefault()?.Content == entry.Content)
+        if (_activeEntries.LastOrDefault()?.Content == entry.Content)
+        {
+            _currentIndex = _allEntries.Count;
+
             return;
+        }
 
         _allEntries.AddToBack(entry);
         if (_allEntries.Count > _maxEntries)
