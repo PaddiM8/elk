@@ -199,9 +199,14 @@ public class KeyHandler
 
     public void MoveCursorRight()
     {
-        _renderer.Caret++;
-        if (_renderer.IsEndOfLine && _renderer.HintText != null)
+        if (_renderer is { IsEndOfLine: true, HintText: not null })
+        {
             _renderer.Insert(_renderer.HintText, includeHint: true);
+
+            return;
+        }
+
+        _renderer.Caret++;
     }
 
     public void MoveCursorEnd()
