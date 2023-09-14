@@ -22,6 +22,9 @@ partial class Interpreter
 {
     public ShellEnvironment ShellEnvironment { get; }
 
+    public ModuleScope CurrentModule
+        => _scope.ModuleScope;
+
     public bool PrintErrors { get; init; } = true;
 
     private TextPos Position

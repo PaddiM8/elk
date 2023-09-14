@@ -1110,7 +1110,7 @@ internal class Parser
             return new TypeExpr(identifier);
 
         string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)
-                                    ?? _scope.ModuleScope.FindImportedStdStructModule(identifier.Value);
+            ?? _scope.ModuleScope.FindImportedStdStructModule(identifier.Value);
         if (modulePath.Count == 0 && importedStdModule != null)
         {
             modulePath = new List<Token>

@@ -79,7 +79,11 @@ public class ShellSession
         if (_interpreter.FunctionExists(name, modulePath))
             return true;
 
-        return modulePath?.Count <= 1 && StdBindings.HasFunction(name, modulePath.SingleOrDefault());
+        if (modulePath is { Count: > 1 })
+            return false;
+
+        return StdBindings.HasFunction(name, modulePath?.SingleOrDefault()) ||
+            _interpreter.CurrentModule.FindImportedStdFunctionModule(name) != null;
     }
 
     public bool VariableExists(string name)
