@@ -230,6 +230,9 @@ internal class Parser
     {
         SkipWhiteSpace();
 
+        while (AdvanceIf(TokenKind.Semicolon))
+            SkipWhiteSpace();
+
         return Current?.Kind switch
         {
             TokenKind.Module => ParseModule(),
@@ -400,7 +403,7 @@ internal class Parser
 
     private Expr ParseAssignment()
     {
-        var left = ParsePipe();
+        var left = ParseOr();
         if (Match(
                 TokenKind.Equals,
                 TokenKind.PlusEquals,
@@ -410,7 +413,7 @@ internal class Parser
             ))
         {
             var op = Eat();
-            var right = ParsePipe();
+            var right = ParseOr();
 
             return op.Kind switch
             {
@@ -442,20 +445,6 @@ internal class Parser
         return left;
     }
 
-    private Expr ParsePipe()
-    {
-        var left = ParseOr();
-        while (Match(TokenKind.Pipe, TokenKind.PipeErr, TokenKind.PipeAll))
-        {
-            var op = Eat().Kind;
-            var right = ParseOr();
-
-            left = new BinaryExpr(left, op, right);
-        }
-
-        return left;
-    }
-
     private Expr ParseOr()
     {
         var left = ParseAnd();
@@ -472,8 +461,22 @@ internal class Parser
 
     private Expr ParseAnd()
     {
-        var left = ParseComparison();
+        var left = ParsePipe();
         while (Match(TokenKind.And, TokenKind.AmpersandAmpersand))
+        {
+            var op = Eat().Kind;
+            var right = ParsePipe();
+
+            left = new BinaryExpr(left, op, right);
+        }
+
+        return left;
+    }
+
+    private Expr ParsePipe()
+    {
+        var left = ParseComparison();
+        while (Match(TokenKind.Pipe, TokenKind.PipeErr, TokenKind.PipeAll))
         {
             var op = Eat().Kind;
             var right = ParseComparison();
@@ -796,7 +799,7 @@ internal class Parser
         {
             _scope = scope;
 
-            var bodyExpr = ParseOr();
+            var bodyExpr = ParseComparison();
             right = new BlockExpr(
                 new List<Expr> { bodyExpr },
                 StructureKind.Other,
@@ -1427,7 +1430,7 @@ internal class Parser
 
     private void SkipWhiteSpace()
     {
-        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment or TokenKind.Semicolon)
+        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment)
             Eat();
     }
 }
