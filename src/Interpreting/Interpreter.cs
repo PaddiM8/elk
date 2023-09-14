@@ -100,6 +100,8 @@ partial class Interpreter
         catch (ParseException e)
         {
             var error = new RuntimeError(e.Message, e.Position);
+            _lastExpr = null;
+            _scope = _rootModule;
 
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);
@@ -303,14 +305,10 @@ partial class Interpreter
             Next(expr.Branch);
 
             if (_returnHandler.ReturnKind == ReturnKind.BreakLoop)
-            {
                 return _returnHandler.Collect();
-            }
 
             if (_returnHandler.ReturnKind == ReturnKind.ContinueLoop)
-            {
                 _returnHandler.Collect();
-            }
         }
 
         return RuntimeNil.Value;

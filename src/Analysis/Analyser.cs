@@ -57,6 +57,7 @@ class Analyser
         module.IsAnalysed = true;
 
         foreach (var functionSymbol in module.Functions
+                     .Where(x => !x.Expr.FailedAnalysis)
                      .Concat(module.ImportedFunctions))
         {
             _scope = functionSymbol.Expr.Module;
@@ -66,7 +67,9 @@ class Analyser
         foreach (var submodule in module.Modules
                      .Concat(module.ImportedModules)
                      .Where(x => !x.IsAnalysed))
+        {
             AnalyseModule(submodule);
+        }
     }
 
     private Expr Next(Expr expr)
@@ -175,7 +178,18 @@ class Analyser
         // Need to set _enclosingFunction *before* analysing the block
         // since it's used inside the block.
         _enclosingFunction = newFunction;
-        newFunction.Block = (BlockExpr)Next(expr.Block);
+
+        try
+        {
+            newFunction.Block = (BlockExpr)Next(expr.Block);
+        }
+        catch (RuntimeException)
+        {
+            expr.FailedAnalysis = true;
+
+            throw;
+        }
+
         _enclosingFunction = null;
 
         expr.Module.AddFunction(newFunction);

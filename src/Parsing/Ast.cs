@@ -126,6 +126,8 @@ class FunctionExpr : Expr
 
     public RuntimeClosureFunction? GivenClosure { get; set; }
 
+    public bool FailedAnalysis { get; set; }
+
     public FunctionExpr(
         Token identifier,
         List<Parameter> parameters,
