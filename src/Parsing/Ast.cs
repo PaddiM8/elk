@@ -39,6 +39,8 @@ public enum OperationKind
     Or,
     Not,
     Pipe,
+    PipeErr,
+    PipeAll,
     If,
     Coalescing,
     NonRedirectingAnd,
@@ -442,6 +444,14 @@ enum CallType
     BuiltInTime,
 }
 
+enum RedirectionKind
+{
+    None,
+    Output,
+    Error,
+    All,
+}
+
 class CallExpr : Expr
 {
     public Token Identifier { get; }
@@ -461,6 +471,8 @@ class CallExpr : Expr
     public StdFunction? StdFunction { get; init; }
 
     public Expr? PipedToProgram { get; init; }
+
+    public RedirectionKind RedirectionKind { get; set; }
 
     public CallExpr(
         Token identifier,

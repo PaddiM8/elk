@@ -14,15 +14,30 @@ namespace Elk.Std.DataTypes;
 [ElkType("List")]
 public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<RuntimeObject> Values { get; }
+    public List<RuntimeObject> Values
+    {
+        get
+        {
+            if (_collectedValues == null)
+            {
+                _collectedValues = _uncollectedValues!.ToList();
+                _uncollectedValues = null;
+            }
+
+            return _collectedValues;
+        }
+    }
+
+    private List<RuntimeObject>? _collectedValues;
+    private IEnumerable<RuntimeObject>? _uncollectedValues;
 
     public RuntimeList(IEnumerable<RuntimeObject> values)
     {
-        Values = values.ToList();
+        _uncollectedValues = values;
     }
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => Values.GetEnumerator();
+        => (_uncollectedValues ?? _collectedValues!).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();

@@ -294,7 +294,7 @@ static class Iteration
 
     /// <param name="items"></param>
     /// <param name="closure"></param>
-    /// <returns>A list of flattenedflattened  values where the closure has been called on each value.</returns>
+    /// <returns>A list of flattened values where the closure has been called on each value.</returns>
     /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
     [ElkFunction("selectFlat", Reachability.Everywhere)]
     public static RuntimeList SelectFlat(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)

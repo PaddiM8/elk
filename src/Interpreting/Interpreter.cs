@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -62,7 +61,11 @@ partial class Interpreter
         try
         {
             foreach (var expr in analysedAst)
+            {
                 lastResult = Next(expr);
+                if (lastResult is RuntimeError error)
+                    throw new RuntimeException(error.ToString());
+            }
         }
         catch (RuntimeException e)
         {
@@ -366,10 +369,16 @@ partial class Interpreter
             {
                 child.IsRoot = expr.IsRoot;
                 lastValue = Next(child);
+
+                if (child.IsRoot && lastValue is RuntimeError lastValueError)
+                    throw new RuntimeException(lastValueError.ToString());
+
                 break;
             }
 
-            Next(child);
+            var nextValue = Next(child);
+            if (nextValue is RuntimeError error)
+                throw new RuntimeException(error.ToString());
         }
 
         _scope = prevScope;
@@ -414,7 +423,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(BinaryExpr expr)
     {
-        Debug.Assert(expr.Operator != OperationKind.Pipe);
+        Debug.Assert(expr.Operator is not (OperationKind.Pipe or OperationKind.PipeErr or OperationKind.PipeAll));
 
         if (expr.Operator == OperationKind.Equals)
         {
@@ -496,7 +505,7 @@ partial class Interpreter
                 areEqual = true;
             else if (left is RuntimeNil || right is RuntimeNil)
                 areEqual = false;
-            else if (left is not (RuntimeBoolean or RuntimeInteger or RuntimeFloat or RuntimeString))
+            else if (left is not (RuntimeBoolean or RuntimeInteger or RuntimeFloat or RuntimeString or RuntimePipe))
                 areEqual = left == right;
 
             if (areEqual != null)
@@ -636,16 +645,19 @@ partial class Interpreter
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         RuntimeObject Evaluate(List<RuntimeObject> arguments)
         {
+            if (expr is { RedirectionKind: RedirectionKind.None, IsRoot: false })
+                expr.RedirectionKind = RedirectionKind.Output;
+
             return expr.CallType switch
             {
                 CallType.Program => EvaluateProgramCall(
                     expr.Identifier.Value,
                     arguments,
-                    expr.PipedToProgram != null
-                        ? Next(expr.PipedToProgram)
-                        : null,
-                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
-                    isRoot: expr.IsRoot
+                    expr.PipedToProgram == null
+                        ? null
+                        : Next(expr.PipedToProgram),
+                    expr.RedirectionKind,
+                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments
                 ),
                 CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
                 CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, runtimeClosure),
@@ -653,8 +665,8 @@ partial class Interpreter
                 CallType.BuiltInCd => EvaluateBuiltInCd(arguments),
                 CallType.BuiltInExec => EvaluateBuiltInExec(
                     arguments,
-                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
-                    isRoot: expr.IsRoot
+                    expr.RedirectionKind,
+                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
                 CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
@@ -849,8 +861,8 @@ partial class Interpreter
         string fileName,
         List<RuntimeObject> arguments,
         RuntimeObject? pipedValue,
-        bool globbingEnabled,
-        bool isRoot)
+        RedirectionKind redirectionKind,
+        bool globbingEnabled)
     {
         var newArguments = new List<string>();
         foreach (var argument in arguments)
@@ -895,53 +907,30 @@ partial class Interpreter
             fileName = Path.Combine(ShellEnvironment.WorkingDirectory, fileName[2..]);
         }
 
-        using var process = new Process
+        var process = new Process();
+        process.StartInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                RedirectStandardOutput = !isRoot,
-                RedirectStandardError = !isRoot,
-                RedirectStandardInput = pipedValue != null,
-                WorkingDirectory = ShellEnvironment.WorkingDirectory,
-            },
+            FileName = fileName,
+            RedirectStandardOutput = redirectionKind is RedirectionKind.Output or RedirectionKind.All,
+            RedirectStandardError = redirectionKind is RedirectionKind.Error or RedirectionKind.All,
+            RedirectStandardInput = pipedValue != null,
+            WorkingDirectory = ShellEnvironment.WorkingDirectory,
         };
 
         foreach (var arg in newArguments)
             process.StartInfo.ArgumentList.Add(arg);
 
-        try
+        var processContext = new ProcessContext(process, pipedValue);
+        if (redirectionKind == RedirectionKind.None)
         {
-            process.Start();
-        }
-        catch (Win32Exception)
-        {
-            throw new RuntimeNotFoundException(fileName);
-        }
+            int exitCode = processContext.Start();
 
-        if (pipedValue != null)
-        {
-            try
-            {
-                using var streamWriter = process.StandardInput;
-                streamWriter.Write(pipedValue);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e.Message);
-            }
+            return exitCode == 0
+                ? RuntimeNil.Value
+                : Error("");
         }
 
-        process.WaitForExit();
-
-        if (!isRoot)
-        {
-            return process.ExitCode == 0
-                ? new RuntimeString(process.StandardOutput.ReadToEnd())
-                : Error(process.StandardError.ReadToEnd());
-        }
-
-        return RuntimeNil.Value;
+        return new RuntimePipe(processContext);
     }
 
     private RuntimeObject Visit(LiteralExpr expr)
@@ -957,8 +946,8 @@ partial class Interpreter
                 "bash",
                 arguments,
                 null,
-                globbingEnabled: false,
-                isRoot: true
+                RedirectionKind.None,
+                globbingEnabled: false
             );
 
             return RuntimeNil.Value;

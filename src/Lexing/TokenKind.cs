@@ -20,7 +20,7 @@ public enum TokenKind
     Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
     Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
     AmpersandAmpersand, PipePipe,
-    Pipe,
+    Pipe, PipeErr, PipeAll,
     Ampersand,
     Arrow,
 
@@ -64,6 +64,8 @@ static class TokenKindExtensions
             TokenKind.Or => OperationKind.Or,
             TokenKind.Not => OperationKind.Not,
             TokenKind.Pipe => OperationKind.Pipe,
+            TokenKind.PipeErr => OperationKind.PipeErr,
+            TokenKind.PipeAll => OperationKind.PipeAll,
             TokenKind.If => OperationKind.If,
             TokenKind.QuestionQuestion => OperationKind.Coalescing,
             TokenKind.AmpersandAmpersand => OperationKind.NonRedirectingAnd,

@@ -410,6 +410,8 @@ class HighlightHandler : IHighlightHandler
                 TokenKind.OpenBrace or
                 TokenKind.ClosedBrace or
                 TokenKind.Pipe or
+                TokenKind.PipeErr or
+                TokenKind.PipeAll or
                 TokenKind.Semicolon or
                 TokenKind.NewLine
             && Previous?.Kind != TokenKind.Backslash;

@@ -120,7 +120,7 @@ public class Lexer
                 : Build(TokenKind.Ampersand, Eat()),
             '|' => Peek == '|'
                 ? Build(TokenKind.PipePipe, Eat(2))
-                : Build(TokenKind.Pipe, Eat()),
+                : NextPipe(),
             '?' => Peek == '?'
                 ? Build(TokenKind.QuestionQuestion, Eat(2))
                 : Build(TokenKind.Unknown, Eat()),
@@ -142,6 +142,30 @@ public class Lexer
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
         };
+    }
+
+    private Token NextPipe()
+    {
+        int remainingLength = _source.Length - _index - 1;
+        if (remainingLength < 4)
+            return Build(TokenKind.Pipe, Eat());
+
+        // Get the next 4 or 5 characters. If there is
+        // a 5th one, we want to grab that as well to
+        // make sure it's just white space.
+        string substring = _source.Substring(
+            _index,
+            Math.Min(remainingLength, 5)
+        );
+        string trimmed = substring.Trim();
+
+        if (trimmed == "|err")
+            return Build(TokenKind.PipeErr, Eat(4));
+
+        if (trimmed == "|all")
+            return Build(TokenKind.PipeAll, Eat(4));
+
+        return Build(TokenKind.Pipe, Eat());
     }
 
     private Token NextComplex()
@@ -298,45 +322,6 @@ public class Lexer
             new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
     }
-
-    private Token NextNumber()
-    {
-        int startIndex = _index;
-        var value = new StringBuilder();
-        bool isFloat = false;
-        char? baseIdentifier = Current == '0' && Peek is 'x' or 'o' or 'b'
-            ? Peek
-            : null;
-        if (baseIdentifier.HasValue)
-            value.Append(Eat(2));
-
-        while (IsDigit(Current, baseIdentifier) || Current == '_' || (Current == '.' && Peek != '.'))
-        {
-            if (AdvanceIf('_'))
-                continue;
-
-            if (Current == '.')
-            {
-                if (baseIdentifier.HasValue)
-                    break;
-
-                isFloat = true;
-            }
-
-            value.Append(Eat());
-        }
-
-        return Build(
-            isFloat ? TokenKind.FloatLiteral : TokenKind.IntegerLiteral,
-            value.ToString(),
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
-        );
-    }
-
-    private bool IsDigit(char c, char? baseIdentifier)
-        => baseIdentifier == 'x'
-            ? char.IsAsciiHexDigit(c)
-            : char.IsDigit(c);
 
     private Token NextString()
     {

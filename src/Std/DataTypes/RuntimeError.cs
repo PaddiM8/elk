@@ -15,7 +15,7 @@ public class RuntimeError : RuntimeObject
 {
     public string Value { get; }
 
-    private readonly TextPos? _position;
+    private readonly TextPos _position;
 
     internal RuntimeError(string value, TextPos position)
     {
@@ -44,5 +44,7 @@ public class RuntimeError : RuntimeObject
         => Value.GetHashCode();
 
     public override string ToString()
-        => $"{_position} {Value}";
+        => Value.Length > 0
+            ? $"{_position} {Value}"
+            : "";
 }

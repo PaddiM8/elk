@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using Elk.Interpreting;
 using Elk.Std.Attributes;
@@ -30,26 +31,78 @@ static class IO
     /// <param name="path">A file path</param>
     /// <returns>nil</returns>
     [ElkFunction("write", Reachability.Everywhere)]
-    public static void WriteToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
-        => File.WriteAllText(env.GetAbsolutePath(path.Value), content.Value);
+    public static void WriteToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
+    {
+        string absolutePath = env.GetAbsolutePath(path.Value);
+        if (content is RuntimePipe runtimePipe)
+        {
+            var fileInfo = new FileInfo(absolutePath);
+            using var streamWriter = new StreamWriter(fileInfo.Open(FileMode.Create));
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            while (runtimePipe.StreamEnumerator.MoveNext())
+            {
+                streamWriter.WriteLine(runtimePipe.StreamEnumerator.Current);
+
+                // Flush at least every 500ms
+                if (stopwatch.ElapsedTicks > TimeSpan.TicksPerSecond / 2)
+                {
+                    stopwatch.Reset();
+                    streamWriter.Flush();
+                }
+            }
+
+            stopwatch.Stop();
+
+            return;
+        }
+
+        var runtimeString = content.As<RuntimeString>();
+        File.WriteAllText(absolutePath, runtimeString.Value);
+    }
 
     /// <summary>Appends the provided text on its own line to a file.</summary>
     /// <param name="content">Text that should be written to the file</param>
     /// <param name="path">A file path</param>
     /// <returns>nil</returns>
     [ElkFunction("append", Reachability.Everywhere)]
-    public static void AppendToFile(RuntimeString content, RuntimeString path, ShellEnvironment env)
+    public static void AppendToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
         string absolutePath = env.GetAbsolutePath(path.Value);
-        if (File.Exists(absolutePath))
+        var fileInfo = new FileInfo(absolutePath);
+
+        if (content is RuntimePipe runtimePipe)
         {
-            using var writer = new StreamWriter(absolutePath, append: true);
+            using var streamWriter = new StreamWriter(fileInfo.Open(FileMode.Append));
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            while (runtimePipe.StreamEnumerator.MoveNext())
+            {
+                streamWriter.WriteLine(runtimePipe.StreamEnumerator.Current);
+
+                // Flush at least every 500ms
+                if (stopwatch.ElapsedTicks > TimeSpan.TicksPerSecond / 2)
+                {
+                    stopwatch.Reset();
+                    streamWriter.Flush();
+                }
+            }
+
+            stopwatch.Stop();
+
+            return;
+        }
+
+        var runtimeString = content.As<RuntimeString>();
+        if (fileInfo.Exists)
+        {
+            using var writer = new StreamWriter(fileInfo.Open(FileMode.Append));
             writer.Write(System.Environment.NewLine);
-            writer.Write(content.Value);
+            writer.Write(runtimeString.Value);
         }
         else
         {
-            File.AppendAllText(absolutePath, content.Value);
+            File.AppendAllText(absolutePath, runtimeString.Value);
         }
     }
 

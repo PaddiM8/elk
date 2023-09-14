@@ -445,7 +445,7 @@ internal class Parser
     private Expr ParsePipe()
     {
         var left = ParseOr();
-        while (Match(TokenKind.Pipe))
+        while (Match(TokenKind.Pipe, TokenKind.PipeErr, TokenKind.PipeAll))
         {
             var op = Eat().Kind;
             var right = ParseOr();
@@ -1341,6 +1341,8 @@ internal class Parser
             TokenKind.OpenBrace,
             TokenKind.ClosedBrace,
             TokenKind.Pipe,
+            TokenKind.PipeErr,
+            TokenKind.PipeAll,
             TokenKind.Semicolon,
             TokenKind.NewLine
         ) && Previous?.Kind != TokenKind.Backslash;

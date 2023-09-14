@@ -45,8 +45,8 @@ partial class Interpreter
 
     private RuntimeObject EvaluateBuiltInExec(
         List<RuntimeObject> arguments,
-        bool globbingEnabled,
-        bool isRoot)
+        RedirectionKind redirectionKind,
+        bool globbingEnabled)
     {
         string programName = arguments[0].As<RuntimeString>().Value;
 
@@ -54,8 +54,8 @@ partial class Interpreter
             programName,
             arguments.GetRange(1, arguments.Count - 1),
             pipedValue: null,
-            globbingEnabled,
-            isRoot
+            redirectionKind,
+            globbingEnabled
         );
     }
 
@@ -97,15 +97,17 @@ partial class Interpreter
         {
             RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(actualArguments, runtimeStdFunction.StdFunction),
             RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
-                actualArguments, runtimeSymbolFunction.FunctionSymbol.Expr, isRoot
+                actualArguments,
+                runtimeSymbolFunction.FunctionSymbol.Expr,
+                isRoot
             ),
             RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(actualArguments, runtimeClosure, isRoot),
             _ => EvaluateProgramCall(
                 ((RuntimeProgramFunction)functionReference).ProgramName,
                 actualArguments,
                 pipedValue: null,
-                globbingEnabled: false,
-                isRoot
+                RedirectionKind.None,
+                globbingEnabled: false
             ),
         };
     }

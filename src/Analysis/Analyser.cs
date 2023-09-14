@@ -404,8 +404,31 @@ class Analyser
             return AnalyseAssignment(expr);
 
         var left = Next(expr.Left);
-        if (expr.Operator == OperationKind.Pipe)
+        if (expr.Operator is OperationKind.Pipe or OperationKind.PipeErr or OperationKind.PipeAll)
+        {
+            expr.Right.IsRoot = expr.IsRoot;
+
+            bool isProgramCall = left is CallExpr { CallType: CallType.Program };
+            if (!isProgramCall && expr.Operator is OperationKind.PipeErr or OperationKind.PipeAll)
+            {
+                string pipeString = expr.Operator == OperationKind.PipeErr ? "|err" : "|all";
+
+                throw new RuntimeInvalidOperationException(pipeString, "non-program");
+            }
+
+            if (isProgramCall)
+            {
+                var leftCall = (CallExpr)left;
+                leftCall.RedirectionKind = expr.Operator switch
+                {
+                    OperationKind.PipeErr => RedirectionKind.Error,
+                    OperationKind.PipeAll => RedirectionKind.All,
+                    _ => RedirectionKind.Output,
+                };
+            }
+
             return NextCallOrClosure(expr.Right, left, hasClosure: false);
+        }
 
         return new BinaryExpr(left, expr.Operator, Next(expr.Right))
         {
@@ -599,6 +622,7 @@ class Analyser
             PipedToProgram = callType == CallType.Program
                 ? pipedValue
                 : null,
+            RedirectionKind = expr.RedirectionKind,
         };
 
         return newExpr;
