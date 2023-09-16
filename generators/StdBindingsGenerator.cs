@@ -26,6 +26,7 @@ record StdFunctionInfo(
     int MaxArgumentCount,
     bool HasClosure,
     int? VariadicStart,
+    bool ConsumesPipe,
     List<(string type, string name)> Parameters,
     MethodDeclarationSyntax Syntax);
 
@@ -195,8 +196,12 @@ public class StdBindingsGenerator : ISourceGenerator
             string variadicStart = function.VariadicStart.HasValue
                 ? function.VariadicStart.Value.ToString()
                 : "null";
+            string consumesPipe = function.ConsumesPipe
+                ? "true"
+                : "false";
             sourceBuilder.Append($"{hasClosure}, ");
             sourceBuilder.Append($"{variadicStart}, ");
+            sourceBuilder.Append($"{consumesPipe}, ");
 
             // Parameter list
             GenerateParameterList(sourceBuilder, function.Parameters);
@@ -403,8 +408,8 @@ public class StdBindingsGenerator : ISourceGenerator
             methodSyntax.ParameterList.Parameters,
             out int minArgumentCount,
             out int maxArgumentCount,
-            out int? variadicStart,
-            out _
+            out bool _,
+            out int? variadicStart
         );
 
         return new StdStructInfo(
@@ -426,11 +431,17 @@ public class StdBindingsGenerator : ISourceGenerator
         // Attribute
         var attributeArguments = attribute.ArgumentList!.Arguments;
         bool reachableEverywhere = false;
+        bool consumesPipe = false;
         if (attributeArguments.Count > 1)
         {
             var reachabilityExpr = (MemberAccessExpressionSyntax)attributeArguments[1].Expression;
             string reachability = reachabilityExpr.Name.Identifier.Text;
             reachableEverywhere = reachability == "Everywhere";
+            consumesPipe = attributeArguments
+                .FirstOrDefault(x => x.NameEquals?.Name.Identifier.Text == "ConsumesPipe")?
+                .Expression
+                .GetText()
+                .ToString() == "true";
         }
 
         var name = ((LiteralExpressionSyntax)attributeArguments[0].Expression).Token.ValueText;
@@ -438,8 +449,8 @@ public class StdBindingsGenerator : ISourceGenerator
             methodSyntax.ParameterList.Parameters,
             out int minArgumentCount,
             out int maxArgumentCount,
-            out int? variadicStart,
-            out bool hasClosure
+            out bool hasClosure,
+            out int? variadicStart
         );
 
         return new StdFunctionInfo(
@@ -450,6 +461,7 @@ public class StdBindingsGenerator : ISourceGenerator
             maxArgumentCount,
             hasClosure,
             variadicStart,
+            consumesPipe,
             parameters,
             methodSyntax
         );
@@ -459,8 +471,8 @@ public class StdBindingsGenerator : ISourceGenerator
         SeparatedSyntaxList<ParameterSyntax> parameterSyntaxes,
         out int minArgumentCount,
         out int maxArgumentCount,
-        out int? variadicStart,
-        out bool hasClosure)
+        out bool hasClosure,
+        out int? variadicStart)
     {
         var parameters = new List<(string, string)>();
         minArgumentCount = 0;

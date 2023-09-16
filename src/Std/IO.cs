@@ -30,7 +30,7 @@ static class IO
     /// <param name="content">Text that should be written to the file</param>
     /// <param name="path">A file path</param>
     /// <returns>nil</returns>
-    [ElkFunction("write", Reachability.Everywhere)]
+    [ElkFunction("write", Reachability.Everywhere, ConsumesPipe = true)]
     public static void WriteToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
         string absolutePath = env.GetAbsolutePath(path.Value);

@@ -22,7 +22,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         {
             Collect();
 
-            return _value.ToString();
+            return _value?.ToString() ?? "";
         }
     }
 
@@ -37,10 +37,13 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    private readonly StringBuilder _value = new();
+    private readonly StringBuilder? _value;
 
-    public RuntimePipe(ProcessContext process)
+    public RuntimePipe(ProcessContext process, bool disableRedirectionBuffering)
     {
+        if (!disableRedirectionBuffering)
+            _value = new();
+
         StreamEnumerator = new RuntimePipeStreamEnumerator(process, _value);
     }
 
@@ -48,9 +51,13 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     {
         get
         {
+            if (_value == null)
+                return new RuntimeString("");
+
             if (index is RuntimeRange range)
             {
                 Collect();
+
                 int length = (range.To ?? _value.Length) - (range.From ?? 0);
                 if (range.From < 0 || range.From >= _value.Length || range.To < 0 || range.To > _value.Length)
                     throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");

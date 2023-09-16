@@ -19,5 +19,6 @@ public record StdFunction(
     int MaxArgumentCount,
     bool HasClosure,
     int? VariadicStart,
+    bool ConsumesPipe,
     ImmutableArray<StdFunctionParameter> Parameters,
     Func<List<object?>, RuntimeObject> Invoke);

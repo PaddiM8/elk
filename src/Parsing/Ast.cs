@@ -476,6 +476,8 @@ class CallExpr : Expr
 
     public RedirectionKind RedirectionKind { get; set; }
 
+    public bool DisableRedirectionBuffering { get; set; }
+
     public CallExpr(
         Token identifier,
         IList<Token> modulePath,

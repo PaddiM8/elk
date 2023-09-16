@@ -19,6 +19,8 @@ public class ElkFunctionAttribute : Attribute
 
     public Reachability Reachability { get; }
 
+    public bool ConsumesPipe { get; init; }
+
     public ElkFunctionAttribute(
         string name,
         Reachability reachability = Reachability.Module)

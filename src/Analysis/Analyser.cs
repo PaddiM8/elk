@@ -621,6 +621,16 @@ class Analyser
             ValidateArguments(expr.Arguments, functionSymbol.Expr.Parameters);
         }
 
+        if (pipedValue is CallExpr { CallType: CallType.Program } pipedCall)
+        {
+            // Don't buffer stdout/stderr if it's piped straight to a program's stdin
+            // or piped to an std function that expects a Pipe. Std functions that
+            // explicitly expect Pipes will handle them properly and not pass them
+            // around more.
+            pipedCall.DisableRedirectionBuffering = expr.CallType == CallType.Program ||
+                stdFunction?.ConsumesPipe is true;
+        }
+
         var newExpr = new CallExpr(
             expr.Identifier,
             expr.ModulePath,
@@ -637,6 +647,7 @@ class Analyser
                 ? pipedValue
                 : null,
             RedirectionKind = expr.RedirectionKind,
+            DisableRedirectionBuffering = expr.DisableRedirectionBuffering,
         };
 
         return newExpr;

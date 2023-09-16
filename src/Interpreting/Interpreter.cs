@@ -649,15 +649,18 @@ partial class Interpreter
             if (expr is { RedirectionKind: RedirectionKind.None, IsRoot: false })
                 expr.RedirectionKind = RedirectionKind.Output;
 
+            var piped = expr.PipedToProgram == null
+                ? null
+                : Next(expr.PipedToProgram);
+
             return expr.CallType switch
             {
                 CallType.Program => EvaluateProgramCall(
                     expr.Identifier.Value,
                     arguments,
-                    expr.PipedToProgram == null
-                        ? null
-                        : Next(expr.PipedToProgram),
+                    piped,
                     expr.RedirectionKind,
+                    expr.DisableRedirectionBuffering,
                     globbingEnabled: expr.CallStyle == CallStyle.TextArguments
                 ),
                 CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
@@ -667,6 +670,7 @@ partial class Interpreter
                 CallType.BuiltInExec => EvaluateBuiltInExec(
                     arguments,
                     expr.RedirectionKind,
+                    expr.DisableRedirectionBuffering,
                     globbingEnabled: expr.CallStyle == CallStyle.TextArguments
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
@@ -863,6 +867,7 @@ partial class Interpreter
         List<RuntimeObject> arguments,
         RuntimeObject? pipedValue,
         RedirectionKind redirectionKind,
+        bool disableRedirectionBuffering,
         bool globbingEnabled)
     {
         var newArguments = new List<string>();
@@ -931,7 +936,7 @@ partial class Interpreter
                 : Error("");
         }
 
-        return new RuntimePipe(processContext);
+        return new RuntimePipe(processContext, disableRedirectionBuffering);
     }
 
     private RuntimeObject Visit(LiteralExpr expr)
@@ -948,6 +953,7 @@ partial class Interpreter
                 arguments,
                 null,
                 RedirectionKind.None,
+                disableRedirectionBuffering: false,
                 globbingEnabled: false
             );
 
