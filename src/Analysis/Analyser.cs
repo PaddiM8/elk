@@ -417,6 +417,19 @@ class Analyser
         if (expr.Operator == OperationKind.Equals)
             return AnalyseAssignment(expr);
 
+        if (expr.Operator is OperationKind.NonRedirectingAnd or OperationKind.NonRedirectingOr)
+        {
+            expr.Left.IsRoot = true;
+
+            // Necessary for nested non-redirecting and/or expressions
+            if (expr.Left is BinaryExpr
+                    { Operator: OperationKind.NonRedirectingAnd or OperationKind.NonRedirectingOr } binaryRight)
+            {
+                binaryRight.Right.IsRoot = true;
+            }
+        }
+
+
         var left = Next(expr.Left);
         if (expr.Operator is OperationKind.Pipe or OperationKind.PipeErr or OperationKind.PipeAll)
         {

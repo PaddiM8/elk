@@ -440,8 +440,6 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.NonRedirectingAnd)
         {
-            expr.Left.IsRoot = true;
-
             var leftAsRoot = Next(expr.Left);
             return leftAsRoot is RuntimeError
                 ? leftAsRoot
@@ -450,8 +448,6 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.NonRedirectingOr)
         {
-            expr.Left.IsRoot = true;
-
             var leftAsRoot = Next(expr.Left);
             return leftAsRoot is RuntimeError
                 ? Next(expr.Right)
