@@ -32,21 +32,19 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public int Count
         => Value.Length;
 
+    public IEnumerator<string> StreamEnumerator { get; }
+
     public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimePipeEnumerator(StreamEnumerator);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public IEnumerator<string> StreamEnumerator
-        => _streamEnumerator;
-
     private readonly StringBuilder _value = new();
-    private readonly RuntimePipeStreamEnumerator _streamEnumerator;
 
     public RuntimePipe(ProcessContext process)
     {
-        _streamEnumerator = new RuntimePipeStreamEnumerator(process, _value);
+        StreamEnumerator = new RuntimePipeStreamEnumerator(process, _value);
     }
 
     public RuntimeObject this[RuntimeObject index]
@@ -167,33 +165,40 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
         => Current;
 
     private readonly ProcessContext _process;
-    private readonly StringBuilder _builder;
+    private readonly StringBuilder? _builder;
+    private readonly IEnumerator<string> _processEnumerator;
 
-    public RuntimePipeStreamEnumerator(ProcessContext process, StringBuilder builder)
+    public RuntimePipeStreamEnumerator(ProcessContext process, StringBuilder? builder)
     {
         _process = process;
         _builder = builder;
-        _process.StartWithRedirect();
+        process.StartWithRedirect();
+        _processEnumerator = process.GetEnumerator();
     }
 
     public bool MoveNext()
     {
-        var data = _process.NextLine();
-        if (data == null)
-            return false;
+        bool result = _processEnumerator.MoveNext();
+        if (result)
+        {
+            Current = _processEnumerator.Current;
+            _builder?.AppendLine(Current);
+        }
 
-        Current = data;
-        _builder.AppendLine(data);
+        if (!result && !_process.Success)
+            throw new RuntimeException("");
 
-        return true;
+        return result;
     }
 
     public void Reset()
     {
+        _processEnumerator.Reset();
     }
 
     void IDisposable.Dispose()
     {
+        _processEnumerator.Dispose();
     }
 
 }

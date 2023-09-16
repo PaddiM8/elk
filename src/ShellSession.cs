@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Resources;
@@ -148,10 +149,21 @@ public class ShellSession
         if (result is RuntimeNil)
             return;
 
-        string resultString = result.ToString() ?? "";
         var textWriter = Console.Out;
         if (result is RuntimeError)
         {
+            textWriter = Console.Error;
+            Console.ForegroundColor = ConsoleColor.Red;
+        }
+
+        string resultString;
+        try
+        {
+            resultString = result.ToString() ?? "";
+        }
+        catch (RuntimeException runtimeException)
+        {
+            resultString = runtimeException.Message;
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
         }

@@ -37,7 +37,8 @@ static class IO
         if (content is RuntimePipe runtimePipe)
         {
             var fileInfo = new FileInfo(absolutePath);
-            using var streamWriter = new StreamWriter(fileInfo.Open(FileMode.Create));
+            using var fileStream = fileInfo.Open(FileMode.Create);
+            using var streamWriter = new StreamWriter(fileStream);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             while (runtimePipe.StreamEnumerator.MoveNext())
@@ -73,7 +74,8 @@ static class IO
 
         if (content is RuntimePipe runtimePipe)
         {
-            using var streamWriter = new StreamWriter(fileInfo.Open(FileMode.Append));
+            using var fileStream = fileInfo.Open(FileMode.Append);
+            using var streamWriter = new StreamWriter(fileStream);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
             while (runtimePipe.StreamEnumerator.MoveNext())
