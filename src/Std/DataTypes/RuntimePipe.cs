@@ -20,10 +20,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     {
         get
         {
-            while (StreamEnumerator.MoveNext())
-            {
-                // The stream enumerator appends to _value itself
-            }
+            Collect();
 
             return _value.ToString();
         }
@@ -53,18 +50,19 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         {
             if (index is RuntimeRange range)
             {
-                int length = (range.To ?? Value.Length) - (range.From ?? 0);
-                if (range.From < 0 || range.From >= Value.Length || range.To < 0 || range.To > Value.Length)
+                Collect();
+                int length = (range.To ?? _value.Length) - (range.From ?? 0);
+                if (range.From < 0 || range.From >= _value.Length || range.To < 0 || range.To > _value.Length)
                     throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");
 
-                return new RuntimeString(Value.Substring(range.From ?? 0, length));
+                return new RuntimeString(_value.ToString(range.From ?? 0, length));
             }
 
             int indexValue = (int)index.As<RuntimeInteger>().Value;
-            if (indexValue < 0 || indexValue >= Value.Length)
+            if (indexValue < 0 || indexValue >= _value.Length)
                 throw new RuntimeItemNotFoundException(indexValue.ToString());
 
-            return new RuntimeString(Value[indexValue].ToString());
+            return new RuntimeString(_value[indexValue].ToString());
         }
 
         set
@@ -129,6 +127,14 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
 
     public override string ToDisplayString()
         => $"\"{Value.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
+
+    private void Collect()
+    {
+        while (StreamEnumerator.MoveNext())
+        {
+            // The stream enumerator appends to _value itself
+        }
+    }
 }
 
 class RuntimePipeEnumerator : IEnumerator<RuntimeObject>
