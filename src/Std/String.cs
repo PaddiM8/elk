@@ -123,11 +123,18 @@ static class String
     public static RuntimeString Lower(RuntimeString input)
         => new(input.Value.ToLower());
 
-    /// <param name="str">A string consisting of one unicode character</param>
-    /// <returns>The character code.</returns>
-    [ElkFunction("ord")]
-    public static RuntimeInteger Ord(RuntimeString str)
-        => new(char.ConvertToUtf32(str.Value, 0));
+    /// <param name="str">The string to look in.</param>
+    /// <param name="index">The index of the line to find.</param>
+    /// <returns>The line at the given index or nil.</returns>
+    [ElkFunction("row")]
+    public static RuntimeObject Row(RuntimeString str, RuntimeInteger index)
+    {
+        var line = str.Value.ToLines().ElementAtOrDefault((int)index.Value);
+
+        return line == null
+            ? RuntimeNil.Value
+            : new RuntimeString(line);
+    }
 
     /// <param name="input">Entire string</param>
     /// <param name="start">Substring</param>

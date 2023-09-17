@@ -78,6 +78,11 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         {
             _ when toType == typeof(RuntimeList)
                 => this,
+            _ when toType == typeof(RuntimeTable)
+                => new RuntimeTable(
+                    Values.FirstOrDefault()?.As<RuntimeList>() ?? new RuntimeList(new List<RuntimeObject>()),
+                    Values.Skip(1).Select(x => x.As<RuntimeList>())
+                ),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),
             _ when toType == typeof(RuntimeString)

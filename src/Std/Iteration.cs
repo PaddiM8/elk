@@ -32,6 +32,14 @@ static class Iteration
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
+    /// <summary>
+    /// Equivalent to x[y].
+    /// </summary>
+    /// <returns>The item at the given index.</returns>
+    [ElkFunction("at")]
+    public static RuntimeObject At(IIndexable<RuntimeObject> items, RuntimeObject index)
+        => items[index];
+
     /// <param name="items">The items to split into chunks</param>
     /// <param name="size">The maximum size of each chunk</param>
     /// <returns>A list of chunks where each chunk is a list of items of the given size.</returns>
@@ -200,31 +208,6 @@ static class Iteration
     [ElkFunction("reverse")]
     public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
         => new(items.Reverse().ToList());
-
-    /// <summary>
-    /// Gets the item at the specified index or
-    /// the line at the specified index.
-    /// </summary>
-    /// <param name="input">An indexable object.</param>
-    /// <param name="index"></param>
-    /// <returns>
-    /// Given a string: The line at the specified index.<br />
-    /// Given any other indexable object: the element at the specified index.
-    /// </returns>
-    [ElkFunction("row")]
-    public static RuntimeObject Row(IIndexable<RuntimeObject> input, RuntimeInteger index)
-    {
-        if (input is RuntimeString str)
-        {
-            var line = str.Value.ToLines().ElementAtOrDefault((int)index.Value);
-
-            return line == null
-                ? RuntimeNil.Value
-                : new RuntimeString(line);
-        }
-
-        return input[index];
-    }
 
     /// <summary>
     /// Gets the item at the specified index or

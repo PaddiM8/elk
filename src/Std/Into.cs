@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
@@ -30,5 +31,20 @@ public class Into
             throw new RuntimeStdException("Cannot convert an empty string into a character code.");
 
         return new(char.ConvertToUtf32(charString.Value, 0));
+    }
+
+    [ElkFunction("table")]
+    public static RuntimeTable Table(RuntimeString stringValue)
+    {
+        var lines = stringValue.Value
+            .ToLines()
+            .Select(x =>
+                x.Split('\t').Select(y => new RuntimeString(y))
+            );
+
+        return new RuntimeTable(
+            new RuntimeList(lines.FirstOrDefault() ?? new List<RuntimeString>()),
+            lines.Skip(1)
+        );
     }
 }

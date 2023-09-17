@@ -66,6 +66,11 @@ static class Conversion
         => value.As<RuntimeString>();
 
     /// <param name="value">Value that should be cast</param>
+    [ElkFunction("table", Reachability.Everywhere)]
+    public static RuntimeTable ToTable(RuntimeObject value)
+        => value.As<RuntimeTable>();
+
+    /// <param name="value">Value that should be cast</param>
     [ElkFunction("type", Reachability.Everywhere)]
     public static RuntimeType ToType(RuntimeObject value)
         => new(value.GetType());
