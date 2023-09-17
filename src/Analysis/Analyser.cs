@@ -599,8 +599,9 @@ class Analyser
             },
         };
 
+        var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         if (pipedValue != null && callType != CallType.Program)
-            expr.Arguments.Insert(0, pipedValue);
+            evaluatedArguments.Insert(0, pipedValue);
 
         bool definitionHasClosure = functionSymbol?.Expr.HasClosure is true || stdFunction?.HasClosure is true;
         if (!definitionHasClosure && hasClosure)
@@ -609,7 +610,7 @@ class Analyser
         if (definitionHasClosure && !hasClosure)
             throw new RuntimeException("Expected closure.");
 
-        int argumentCount = expr.Arguments.Count;
+        int argumentCount = evaluatedArguments.Count;
         if (stdFunction != null)
         {
             if (argumentCount < stdFunction.MinArgumentCount ||
@@ -631,7 +632,7 @@ class Analyser
             if (hasClosure && !functionSymbol.Expr.HasClosure)
                 throw new RuntimeException("Expected closure.");
 
-            ValidateArguments(expr.Arguments, functionSymbol.Expr.Parameters);
+            ValidateArguments(evaluatedArguments, functionSymbol.Expr.Parameters);
         }
 
         if (pipedValue is CallExpr { CallType: CallType.Program } pipedCall)
@@ -647,7 +648,7 @@ class Analyser
         var newExpr = new CallExpr(
             expr.Identifier,
             expr.ModulePath,
-            expr.Arguments.Select(Next).ToList(),
+            evaluatedArguments,
             expr.CallStyle,
             expr.Plurality,
             callType

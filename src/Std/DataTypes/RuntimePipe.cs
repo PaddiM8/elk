@@ -135,6 +135,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public override string ToDisplayString()
         => $"\"{Value.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
 
+    public void Stop()
+    {
+        ((RuntimePipeStreamEnumerator)StreamEnumerator).Stop();
+    }
+
     private void Collect()
     {
         while (StreamEnumerator.MoveNext())
@@ -207,6 +212,11 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
     public void Reset()
     {
         _processEnumerator.Reset();
+    }
+
+    public void Stop()
+    {
+        _process.Stop();
     }
 
     void IDisposable.Dispose()

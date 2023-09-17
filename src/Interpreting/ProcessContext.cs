@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -83,6 +82,11 @@ public class ProcessContext : IEnumerable<string>
             Read(_pipedValue);
     }
 
+    public void Stop()
+    {
+        _process?.Kill();
+    }
+
     private void Process_DataReceived(object sender, DataReceivedEventArgs eventArgs)
     {
         if (eventArgs.Data == null)
@@ -110,9 +114,10 @@ public class ProcessContext : IEnumerable<string>
                 streamWriter.Write(value);
             }
         }
-        catch (IOException e)
+        catch (IOException)
         {
-            throw new RuntimeException(e.Message);
+            if (value is RuntimePipe runtimePipe)
+                runtimePipe.Stop();
         }
     }
 
