@@ -749,10 +749,10 @@ partial class Interpreter
         {
             var variadicArguments = arguments.GetRange(
                 stdFunction.VariadicStart.Value,
-                arguments.Count
+                arguments.Count - stdFunction.VariadicStart.Value
             );
-            allArguments.Add(variadicArguments);
             allArguments.AddRange(arguments.GetRange(0, stdFunction.VariadicStart.Value));
+            allArguments.Add(variadicArguments);
         }
         else
         {

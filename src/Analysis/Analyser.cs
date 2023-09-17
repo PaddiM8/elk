@@ -645,7 +645,7 @@ class Analyser
                 stdFunction?.ConsumesPipe is true;
         }
 
-        var newExpr = new CallExpr(
+        return new CallExpr(
             expr.Identifier,
             expr.ModulePath,
             evaluatedArguments,
@@ -663,8 +663,6 @@ class Analyser
             RedirectionKind = expr.RedirectionKind,
             DisableRedirectionBuffering = expr.DisableRedirectionBuffering,
         };
-
-        return newExpr;
     }
 
     private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters)

@@ -33,18 +33,27 @@ public class Into
         return new(char.ConvertToUtf32(charString.Value, 0));
     }
 
+    /// <summary>
+    /// Parses a string into a Table.
+    /// </summary>
+    /// <param name="stringValue">The string to parse.</param>
+    /// <param name="headerColumns">Header columns for the table, if the input does not have a header.</param>
     [ElkFunction("table")]
-    public static RuntimeTable Table(RuntimeString stringValue)
+    public static RuntimeTable Table(RuntimeString stringValue, [ElkVariadic] IEnumerable<RuntimeObject> headerColumns)
     {
         var lines = stringValue.Value
+            .Trim()
             .ToLines()
             .Select(x =>
                 x.Split('\t').Select(y => new RuntimeString(y))
             );
+        var header = headerColumns.Any()
+            ? headerColumns
+            : lines.FirstOrDefault() ?? new List<RuntimeString>();
 
         return new RuntimeTable(
-            new RuntimeList(lines.FirstOrDefault() ?? new List<RuntimeString>()),
-            lines.Skip(1)
+            new RuntimeList(header),
+            headerColumns.Any() ? lines : lines.Skip(1)
         );
     }
 }
