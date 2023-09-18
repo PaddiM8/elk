@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Std.DataTypes.Serialization;
@@ -11,13 +12,24 @@ namespace Elk.Std;
 [ElkModule("parse")]
 public static class Parse
 {
+    [ElkFunction("csv")]
+    public static RuntimeList Csv(RuntimeObject csv, RuntimeString? separator = null)
+    {
+        char separatorChar = separator?.Value.FirstOrDefault() ?? ',';
+        var lines = csv is RuntimePipe pipe
+            ? pipe.Select(x => x.As<RuntimeString>().Value)
+            : csv.As<RuntimeString>().Value.ToLines();
+
+        return new RuntimeList(new CsvParser(lines, separatorChar));
+    }
+
     /// <param name="str">A string representation of a hexadecimal number.</param>
     /// <returns>
     /// The equivalent decimal integer of the given hexadecimal value,
     /// or null if given an invalid value.
     /// </returns>
     [ElkFunction("hex")]
-    public static RuntimeObject hex(RuntimeString str)
+    public static RuntimeObject Hex(RuntimeString str)
     {
         bool success = int.TryParse(
             str.Value.TrimStart('0').TrimStart('x'),

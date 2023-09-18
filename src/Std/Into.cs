@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -20,7 +21,50 @@ public class Into
     /// <returns>A string consisting of a single unicode character.</returns>
     [ElkFunction("char")]
     public static RuntimeString Char(RuntimeInteger codepoint)
-        => new (char.ConvertFromUtf32((int)codepoint.Value));
+        => new(char.ConvertFromUtf32((int)codepoint.Value));
+
+    /// <param name="rows">A collection of rows containing a list of columns.</param>
+    /// <param name="separator">The column separator. Default: ,</param>
+    /// <returns>A CSV string.</returns>
+    [ElkFunction("csv")]
+    public static RuntimeString Csv(IEnumerable<RuntimeObject> rows, RuntimeString? separator = null)
+    {
+        var builder = new StringBuilder();
+        char separatorChar = separator?.Value.FirstOrDefault() ?? ',';
+
+        void BuildRow(IEnumerable<string> cells)
+        {
+            foreach (var cell in cells)
+            {
+                var escaped = cell.Replace("\"", "\"\"");
+                bool needsQuotes = escaped.Any(x => x is '"' or ',' or '\n');
+                builder.Append(
+                    needsQuotes
+                        ? $"\"{escaped}\""
+                        : escaped
+                );
+                builder.Append(separatorChar);
+            }
+
+            if (cells.Any())
+                builder.Remove(builder.Length - 1, 1);
+            builder.AppendLine();
+        }
+
+        if (rows is RuntimeTable table)
+            BuildRow(table.Header);
+
+        foreach (var row in rows)
+        {
+            if (row is not IEnumerable<RuntimeObject> enumerableRow)
+                throw new RuntimeCastException(row.GetType(), "Iterable");
+
+            var cellValues = enumerableRow.Select(x => x.As<RuntimeString>().Value);
+            BuildRow(cellValues);
+        }
+
+        return new(builder.ToString());
+    }
 
     /// <param name="charString">A string containing the character to be converted.</param>
     /// <returns>An integer representing the unicode codepoint of the character.</returns>
