@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 
@@ -105,8 +106,35 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
 
     public override string ToString()
     {
-        var rows = Rows.Select(row => row.ToString());
+        if (Rows.Count == 0)
+            return "";
 
-        return $"{string.Join("\t", Header)}\n{string.Join("\n", rows)}";
+        var rows = new List<IEnumerable<string>>
+        {
+            Header,
+        };
+        rows.AddRange(
+            Rows.Select(x =>
+                x.Select(y => y.As<RuntimeString>().Value)
+            )
+        );
+
+        var widths = new int[rows.First().Count()];
+        foreach (var row in rows)
+        {
+            foreach (var (column, i) in row.WithIndex())
+                widths[i] = Math.Max(column.Length, widths[i]);
+        }
+
+        var builder = new StringBuilder();
+        foreach (var row in rows)
+        {
+            foreach (var (cell, i) in row.WithIndex())
+                builder.Append(cell.PadRight(widths[i] + 2));
+
+            builder.AppendLine();
+        }
+
+        return builder.ToString();
     }
 }
