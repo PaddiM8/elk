@@ -122,6 +122,7 @@ static class Iteration
             RuntimeList list => new(list.Values.Count),
             RuntimeSet set => new(set.Entries.Count),
             RuntimeDictionary dict => new(dict.Entries.Count),
+            RuntimeTable table => new(table.Rows.Count),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
 
@@ -164,9 +165,15 @@ static class Iteration
 
             dict.Entries.Add(value1.GetHashCode(), (value1, value2));
         }
+        else if (container is RuntimeTable table)
+        {
+            var row = value1 as RuntimeTableRow
+                ?? new RuntimeTableRow(table, value1.As<RuntimeList>());
+            table.Rows.Add(row);
+        }
         else
         {
-            throw new RuntimeException("Can only use function 'push' on lists and dictionaries");
+            throw new RuntimeException("Can only use function 'push' on mutable containers");
         }
 
         return container;
@@ -197,9 +204,13 @@ static class Iteration
         {
             dict.Entries.Remove(index.GetHashCode());
         }
+        else if (container is RuntimeTable table)
+        {
+            table.Rows.RemoveAt((int)index.As<RuntimeInteger>().Value);
+        }
         else
         {
-            throw new RuntimeException("Can only use function 'remove' on lists and dictionaries");
+            throw new RuntimeException("Can only use function 'remove' on mutable containers");
         }
 
         return container;
