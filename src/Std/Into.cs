@@ -3,18 +3,18 @@ using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Std.DataTypes.Serialization;
+using Newtonsoft.Json;
 
 namespace Elk.Std;
 
 [ElkModule("into")]
 public class Into
 {
-    /// <param name="input"></param>
-    /// <param name="indentationStyle">One of: "indented", "i", nil</param>
-    /// <returns>A JSON string.</returns>
-    [ElkFunction("json")]
-    public static RuntimeString Json(RuntimeObject input, RuntimeString? indentationStyle = null)
-        => new(Std.Json.Serialize(input, indentationStyle));
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("bool")]
+    public static RuntimeBoolean ToBool(RuntimeObject value)
+        => value.As<RuntimeBoolean>();
 
     /// <param name="codepoint">The unicode codepoint to turn into a character</param>
     /// <returns>A string consisting of a single unicode character.</returns>
@@ -33,27 +33,89 @@ public class Into
         return new(char.ConvertToUtf32(charString.Value, 0));
     }
 
-    /// <summary>
-    /// Parses a string into a Table.
-    /// </summary>
-    /// <param name="stringValue">The string to parse.</param>
-    /// <param name="headerColumns">Header columns for the table, if the input does not have a header.</param>
-    [ElkFunction("table")]
-    public static RuntimeTable Table(RuntimeString stringValue, [ElkVariadic] IEnumerable<RuntimeObject> headerColumns)
-    {
-        var lines = stringValue.Value
-            .Trim()
-            .ToLines()
-            .Select(x =>
-                x.Split('\t').Select(y => new RuntimeString(y))
-            );
-        var header = headerColumns.Any()
-            ? headerColumns
-            : lines.FirstOrDefault() ?? new List<RuntimeString>();
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("dict")]
+    public static RuntimeDictionary ToDictionary(RuntimeObject? value = null)
+        => value?.As<RuntimeDictionary>() ?? new RuntimeDictionary(new());
 
-        return new RuntimeTable(
-            new RuntimeList(header),
-            headerColumns.Any() ? lines : lines.Skip(1)
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("float")]
+    public static RuntimeFloat ToFloat(RuntimeObject value)
+        => value.As<RuntimeFloat>();
+
+    /// <param name="decimalValue"></param>
+    /// <returns>A string of the hexadecimal representation of the given value.</returns>
+    [ElkFunction("hex")]
+    public static RuntimeString Hex(RuntimeInteger decimalValue)
+        => new(decimalValue.Value.ToString("x"));
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("int")]
+    public static RuntimeInteger ToInt(RuntimeObject value)
+        => value.As<RuntimeInteger>();
+
+    /// <param name="input"></param>
+    /// <param name="indentationStyle">One of: "indented", "i", nil</param>
+    /// <returns>A JSON string.</returns>
+    [ElkFunction("json")]
+    public static RuntimeString Json(RuntimeObject input, RuntimeString? indentationStyle = null)
+    {
+        var formatting = indentationStyle?.Value is "indented" or "i"
+            ? Formatting.Indented
+            : Formatting.None;
+
+        return new(
+            JsonConvert.SerializeObject(
+                input,
+                formatting,
+                new RuntimeObjectJsonConverter()
+            )
         );
     }
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("list")]
+    public static RuntimeList ToList(RuntimeObject? value = null)
+        => value?.As<RuntimeList>() ?? new RuntimeList(new List<RuntimeObject>());
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("regex")]
+    public static RuntimeRegex ToRegex(RuntimeObject value)
+        => value.As<RuntimeRegex>();
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("set")]
+    public static RuntimeSet ToSet(RuntimeObject? value = null)
+    {
+        if (value is IEnumerable<RuntimeObject> enumerable)
+        {
+            var dict = new Dictionary<int, RuntimeObject>();
+            foreach (var item in enumerable)
+                dict.TryAdd(item.GetHashCode(), item);
+
+            return new RuntimeSet(dict);
+        }
+
+        return  value?.As<RuntimeSet>() ?? new RuntimeSet(new());
+    }
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("str")]
+    public static RuntimeString ToString(RuntimeObject value)
+        => value.As<RuntimeString>();
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("table")]
+    public static RuntimeTable ToTable(RuntimeObject value)
+        => value.As<RuntimeTable>();
+
+    /// <param name="value">Value that should be cast</param>
+    [ElkFunction("type")]
+    public static RuntimeType ToType(RuntimeObject value)
+        => new(value.GetType());
+
+    /// <returns>The message stored in the given error.</returns>
+    [ElkFunction("message")]
+    public static RuntimeString Message(RuntimeError err)
+        => new(err.Value);
 }
