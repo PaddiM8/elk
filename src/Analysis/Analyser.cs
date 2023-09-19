@@ -469,7 +469,8 @@ class Analyser
         {
             if (!_scope.HasVariable(variableExpr.Identifier.Value))
                 throw new RuntimeNotFoundException(variableExpr.Identifier.Value);
-        } else if (expr.Left is not (IndexerExpr or FieldAccessExpr))
+        }
+        else if (expr.Left is not (IndexerExpr or FieldAccessExpr))
         {
             throw new RuntimeException("Invalid assignment");
         }
@@ -493,6 +494,7 @@ class Analyser
         return new FieldAccessExpr(Next(expr.Object), expr.Identifier)
         {
             IsRoot = expr.IsRoot,
+            RuntimeIdentifier = new RuntimeString(expr.Identifier.Value),
         };
     }
 

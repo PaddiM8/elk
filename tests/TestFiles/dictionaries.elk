@@ -1,0 +1,7 @@
+let dict = {
+    "a": 1,
+    "b": "yes",
+}
+
+assert(dict->a == 1)
+assert(dict["b"] == "yes")

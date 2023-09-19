@@ -551,6 +551,13 @@ partial class Interpreter
         if (assignee is FieldAccessExpr fieldAccess)
         {
             var objectValue = Next(fieldAccess.Object);
+            if (objectValue is RuntimeDictionary dict)
+            {
+                dict.Entries[fieldAccess.RuntimeIdentifier!.GetHashCode()] = (fieldAccess.RuntimeIdentifier, value);
+
+                return value;
+            }
+
             objectValue.As<RuntimeStruct>().Values[fieldAccess.Identifier.Value] = value;
 
             return value;
@@ -572,10 +579,10 @@ partial class Interpreter
     private RuntimeObject Visit(FieldAccessExpr expr)
     {
         var objectValue = Next(expr.Object);
-        if (objectValue is not RuntimeStruct structValue)
-            throw new RuntimeCastException(objectValue.GetType(), "Struct");
+        if (objectValue is RuntimeDictionary dict)
+            return dict.Entries[expr.RuntimeIdentifier!.GetHashCode()].Item2;
 
-        if (structValue.Values.TryGetValue(expr.Identifier.Value, out var result))
+        if (objectValue.As<RuntimeStruct>().Values.TryGetValue(expr.Identifier.Value, out var result))
             return result;
 
         throw new RuntimeNotFoundException(expr.Identifier.Value);

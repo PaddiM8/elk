@@ -356,6 +356,8 @@ class FieldAccessExpr : Expr
 
     public Token Identifier { get; }
 
+    public RuntimeString? RuntimeIdentifier { get; set; }
+
     public FieldAccessExpr(Expr objectExpr, Token identifier)
         : base(identifier.Position)
     {
