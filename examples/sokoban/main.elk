@@ -88,7 +88,7 @@ fn startGame(mapPath) {
         updateScreen(board)
         println("You won!")
         println("Press enter to continue")
-        input()
+        io::input()
         clear()
     }
 }
@@ -107,21 +107,21 @@ while runGame {
     println("Welcome to Sokoban, please choose a level:")
 
     # get levels
-    let maps = read(scriptPath() + "/maps.txt") | lines
+    let maps = scriptPath() + "/maps.txt" | read | str::lines
 
     for (mapPath, i) in maps | withIndex {
         let mapName = (mapPath | split("."))[0]
         println("${i + 1}. ${mapName}")
     }
 
-    let quitId = str(len(maps) + 1)
+    let quitId = into::str(len(maps) + 1)
     println("${quitId}. Quit")
 
-    let mapId = input("Choose: ")
+    let mapId = io::input("Choose: ")
     runGame = mapId != quitId
 
     if runGame and str::isDigit(mapId) {
-        let mapPath = scriptPath() + "/" + maps[int(mapId) - 1]
+        let mapPath = scriptPath() + "/" + maps[into::int(mapId) - 1]
         startGame(mapPath)
     }
 }

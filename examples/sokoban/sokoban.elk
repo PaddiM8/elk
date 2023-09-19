@@ -9,23 +9,23 @@ fn createBoard() {
 }
 
 fn getBoardMaxBounds(board):
-    board["maxBounds"]
+    board->maxBounds
 
 fn setBoardMaxBounds(board, x, y) {
-    board["maxBounds"] = (x, y)
+    board->maxBounds = (x, y)
 }
 
 fn getPlayer(board) {
-    let pos = board["playerPos"]
+    let pos = board->playerPos
 
     getBlock(board, pos[0], pos[1])
 }
 
 fn getBoardBlocks(board):
-    board["blocks"]
+    board->blocks
 
 fn getBoardStorageBlocks(board):
-    board["storageBlocks"]
+    board->storageBlocks
 
 fn getBlock(board, x, y) {
     let key = coordinatesToKey(x, y)
@@ -42,7 +42,7 @@ fn getBlock(board, x, y) {
 }
 
 fn getPoints(board):
-    board["storedCrates"]
+    board->storedCrates
 
 fn coordinatesToKey(x, y):
     "${x}:${y}"
@@ -62,7 +62,7 @@ fn addStorage(board, x, y):
 fn addStoredCrate(board, x, y) {
     addBlock(board, "crate", x, y)
     addBlock(board, "storage", x, y)
-    board["storedCrates"] += 1
+    board->storedCrates += 1
 }
 
 fn removeBlock(board, block):
@@ -73,10 +73,10 @@ fn moveBlock(board, block, toX, toY) {
         let blockAtTarget = getBlock(board, toX, toY)
 
         if blockIsOnStorage(board, block):
-            board["storedCrates"] -= 1
+            board->storedCrates -= 1
 
         if getBlockType(blockAtTarget) == "storage":
-            board["storedCrates"] += 1
+            board->storedCrates += 1
     }
 
     removeBlock(board, block)
@@ -87,10 +87,10 @@ fn setBlockType(block, newType):
     block[1] = newType
 
 fn hasWon(board):
-    board["storedCrates"] == len(board["storageBlocks"])
+    board->storedCrates == len(board->storageBlocks)
 
 fn blockIsOnStorage(board, block):
-    block and blockToKey(block) in board["storageBlocks"]
+    block and blockToKey(block) in board->storageBlocks
 
 fn addBlock(board, type, x, y) {
     let block = ["block", type, x, y]
@@ -118,7 +118,7 @@ fn getBlockPos(block):
 
 fn addPlayer(board, x, y) {
     addBlock(board, "player", x, y)
-    board["playerPos"] = (x, y)
+    board->playerPos = (x, y)
 }
 
 fn getAdjacentBlockPos(byBlock, direction) {
@@ -148,7 +148,7 @@ fn movePlayer(board, direction) {
         }
 
         moveBlock(board, player, playerTargetX, playerTargetY)
-        board["playerPos"] = (playerTargetX, playerTargetY)
+        board->playerPos = (playerTargetX, playerTargetY)
     }
 }
 
