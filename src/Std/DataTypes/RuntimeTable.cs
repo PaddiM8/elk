@@ -92,7 +92,7 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
             _ when toType == typeof(RuntimeTable)
                 => this,
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(Rows),
+                => new RuntimeList(Rows.Select(x => new RuntimeList(x))),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Rows.Any()),
             _ when toType == typeof(RuntimeString)
