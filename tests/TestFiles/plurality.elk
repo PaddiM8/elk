@@ -1,11 +1,11 @@
-let result = ["1", "2", "3"] | int!
+let result = ["1", "2", "3"] | into::int!
 assert(result[0] == 1)
 assert(result[1] == 2)
 assert(result[2] == 3)
 
-let result2 = int!(["1", "2", "3"])
+let result2 = into::int!(["1", "2", "3"])
 assert(result2[0] == 1)
 assert(result2[1] == 2)
 assert(result2[2] == 3)
 
-assert(int("2") == 2)
+assert(into::int("2") == 2)

@@ -12,7 +12,7 @@ let result = ["this", "is", "a", "test"]
 assert(result[0] == "this!!")
 assert(result[3] == "test!!")
 
-let ints = ["1", "2"] | sel => &int
+let ints = ["1", "2"] | sel => &into::int
 assert(ints[0] == 1)
 assert(ints[1] == 2)
 

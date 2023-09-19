@@ -24,6 +24,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
             RuntimeTuple tuple => BuildTuple(tuple),
             RuntimeDictionary dictionary => BuildDictionary(dictionary),
             RuntimeStruct @struct => BuildStruct(@struct),
+            RuntimeTable table => BuildTable(table),
             _ => BuildValue(value),
         };
 
@@ -53,6 +54,13 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
 
         return result;
     }
+
+    private JArray BuildTable(RuntimeTable table)
+        => new(
+            table.Rows
+                .Select(x => new JArray(x.Select(Build)))
+                .Prepend(new JArray(table.Header.Select(x => new JValue(x))))
+        );
 
     private JValue BuildValue(RuntimeObject value)
     {
