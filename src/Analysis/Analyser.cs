@@ -374,8 +374,11 @@ class Analyser
         };
     }
 
-    private BlockExpr Visit(BlockExpr expr)
+    private Expr Visit(BlockExpr expr)
     {
+        if (expr.Expressions.Count == 0)
+            return Next(new DictionaryExpr(new List<(Expr, Expr)>(), expr.Position));
+
         _scope = expr.Scope;
         var blockExpressions = new List<Expr>();
         foreach (var analysed in expr.Expressions.Select(Next))

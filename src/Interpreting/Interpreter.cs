@@ -540,8 +540,9 @@ partial class Interpreter
 
         if (assignee is IndexerExpr indexer)
         {
-            if (Next(indexer.Value) is not IIndexable<RuntimeObject> indexable)
-                throw new RuntimeUnableToIndexException(value.GetType());
+            var evaluatedIndexer = Next(indexer.Value);
+            if (evaluatedIndexer is not IIndexable<RuntimeObject> indexable)
+                throw new RuntimeUnableToIndexException(evaluatedIndexer.GetType());
 
             indexable[Next(indexer.Index)] = value;
 
