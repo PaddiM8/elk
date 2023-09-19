@@ -282,27 +282,28 @@ static class Iteration
     /// <param name="closure"></param>
     /// <returns>A list of values where the closure has been called on each value.</returns>
     /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
-    [ElkFunction("select", Reachability.Everywhere)]
-    public static RuntimeList Select(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    [ElkFunction("map", Reachability.Everywhere)]
+    public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
 
     /// <param name="items"></param>
     /// <param name="closure"></param>
     /// <returns>A list of flattened values where the closure has been called on each value.</returns>
     /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
-    [ElkFunction("selectFlat", Reachability.Everywhere)]
-    public static RuntimeList SelectFlat(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    [ElkFunction("flatMap", Reachability.Everywhere)]
+    public static RuntimeList FlatMap(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
     {
-        var result = new List<RuntimeObject>();
-        foreach (var item in items)
-        {
-            if (item is not IEnumerable<RuntimeObject> enumerable)
-                throw new RuntimeCastException(item.GetType(), "Iterable");
+        return new(
+            items.Select(x =>
+            {
+                if (x is not IEnumerable<RuntimeObject> enumerable)
+                    throw new RuntimeCastException(x.GetType(), "Iterable");
 
-            result.AddRange(enumerable.Select(closure));
-        }
-
-        return new(result);
+                return enumerable;
+            })
+            .SelectMany(x => x)
+            .Select(closure)
+        );
     }
 
     /// <param name="items">All items</param>
