@@ -109,6 +109,11 @@ public class ProcessContext : IEnumerable<string>
                 while (runtimePipe.StreamEnumerator.MoveNext())
                     streamWriter.WriteLine(runtimePipe.StreamEnumerator.Current);
             }
+            else if (value is RuntimeList runtimeList)
+            {
+                foreach (var item in runtimeList)
+                    streamWriter.WriteLine(item);
+            }
             else
             {
                 streamWriter.Write(value);
