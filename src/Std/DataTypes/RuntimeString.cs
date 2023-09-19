@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes.Serialization;
 
 #endregion
 
@@ -109,7 +110,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         => Value;
 
     public override string ToDisplayString()
-        => $"\"{Value.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
+        => StringFormatting.ToDisplayString(Value);
 }
 
 class RuntimeStringEnumerator : IEnumerator<RuntimeObject>

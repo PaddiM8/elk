@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes.Serialization;
 
 #endregion
 
@@ -89,4 +90,7 @@ public class RuntimeTableRow : RuntimeObject, IEnumerable<RuntimeObject>, IIndex
 
     public override string ToString()
         => $"{string.Join("\t", Columns)}";
+
+    public override string ToDisplayString()
+        => StringFormatting.ToDisplayString(ToString());
 }

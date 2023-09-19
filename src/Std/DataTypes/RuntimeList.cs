@@ -99,6 +99,8 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     {
         var builder = new StringBuilder();
         builder.AppendLine("[");
+
+        bool hasNestedList = false;
         foreach (var value in Values)
         {
             builder.Append("    ");
@@ -106,6 +108,7 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             // Print nested lists on one line
             if (value is RuntimeList list)
             {
+                hasNestedList = true;
                 builder.Append('[');
                 builder.Append(
                     string.Join(
@@ -123,6 +126,13 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         }
 
         builder.AppendLine("]");
+
+        // If it ends up being short and doesn't contain a nested list,
+        // redo it all and simply print it on one line instead.
+        const int lineLimit = 100;
+        int totalIndentationLength = 3 * Values.Count;
+        if (!hasNestedList && builder.Length - totalIndentationLength < lineLimit)
+            return $"[{string.Join(", ", Values.Select(x => x.ToDisplayString()))}]";
 
         return builder.ToString();
     }
