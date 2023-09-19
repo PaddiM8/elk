@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 
@@ -95,5 +96,34 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         => Values.GetHashCode();
 
     public override string ToString()
-        => $"[{string.Join(", ", Values.Select(x => x.ToDisplayString()))}]";
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("[");
+        foreach (var value in Values)
+        {
+            builder.Append("    ");
+
+            // Print nested lists on one line
+            if (value is RuntimeList list)
+            {
+                builder.Append('[');
+                builder.Append(
+                    string.Join(
+                        ", ",
+                        list.Select(x => x.ToDisplayString())
+                    )
+                );
+                builder.AppendLine("],");
+
+                continue;
+            }
+
+            builder.Append(value.ToDisplayString());
+            builder.AppendLine(",");
+        }
+
+        builder.AppendLine("]");
+
+        return builder.ToString();
+    }
 }
