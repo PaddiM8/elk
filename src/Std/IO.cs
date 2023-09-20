@@ -1,8 +1,10 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -144,16 +146,26 @@ static class IO
     /// </summary>
     /// <param name="input">Value to print</param>
     [ElkFunction("print", Reachability.Everywhere)]
-    public static void Print(RuntimeObject input)
+    public static void Print([ElkVariadic] IEnumerable<RuntimeObject> input)
     {
-        if (input is RuntimeError err)
+        var builder = new StringBuilder();
+        foreach (var value in input)
         {
-            Console.Error.Write(err.Value);
+            if (value is RuntimeError err)
+            {
+                Console.Error.WriteLine(err.Value);
+
+                return;
+            }
+
+            builder.Append(value.As<RuntimeString>().Value);
+            builder.Append(' ');
         }
-        else
-        {
-            Console.Write(input.As<RuntimeString>().Value);
-        }
+
+        if (builder.Length > 0)
+            builder.Remove(builder.Length - 1, 1);
+
+        Console.Write(builder);
     }
 
     /// <summary>
@@ -162,15 +174,25 @@ static class IO
     /// </summary>
     /// <param name="input">Value to print</param>
     [ElkFunction("println", Reachability.Everywhere)]
-    public static void PrintLine(RuntimeObject input)
+    public static void PrintLine([ElkVariadic] IEnumerable<RuntimeObject> input)
     {
-        if (input is RuntimeError err)
+        var builder = new StringBuilder();
+        foreach (var value in input)
         {
-            Console.Error.WriteLine(err.Value);
+            if (value is RuntimeError err)
+            {
+                Console.Error.WriteLine(err.Value);
+
+                return;
+            }
+
+            builder.Append(value.As<RuntimeString>().Value);
+            builder.Append(' ');
         }
-        else
-        {
-            Console.WriteLine(input.As<RuntimeString>().Value);
-        }
+
+        if (builder.Length > 0)
+            builder.Remove(builder.Length - 1, 1);
+
+        Console.WriteLine(builder);
     }
 }

@@ -1,11 +1,40 @@
-fn createBoard() {
-    {
-        "maxBounds": (0, 0),
-        "playerPos": (0, 0),
-        "storageBlocks": {},
-        "storedCrates": 0,
-        "blocks": {}
+struct Board(maxBounds, playerPos, storageBlocks, storedCrates, blocks)
+struct Block(type, x, y)
+
+module block {
+    fn toKey(block):
+        coordinatesToKey(block->x, block->y)
+
+    fn getPos(block):
+        (block->x, block->y)
+
+    fn getType(block):
+        block->type if block
+
+    fn getAdjacentBlockPos(byBlock, direction) {
+        let (x, y) = byBlock | getPos
+        if direction == "up" {
+            y -= 1
+        } else if direction == "right" {
+            x += 1
+        } else if direction == "down" {
+            y += 1
+        } else if direction == "left" {
+            x -= 1
+        }
+
+        (x, y)
     }
+}
+
+fn createBoard() {
+    new Board(
+        (0, 0),
+        (0, 0),
+        {},
+        0,
+        {}
+    )
 }
 
 fn getBoardMaxBounds(board):
@@ -18,7 +47,7 @@ fn setBoardMaxBounds(board, x, y) {
 fn getPlayer(board) {
     let pos = board->playerPos
 
-    getBlock(board, pos[0], pos[1])
+    board | getBlock(pos[0], pos[1])
 }
 
 fn getBoardBlocks(board):
@@ -29,8 +58,8 @@ fn getBoardStorageBlocks(board):
 
 fn getBlock(board, x, y) {
     let key = coordinatesToKey(x, y)
-    let blocks = getBoardBlocks(board)
-    let storages = getBoardStorageBlocks(board)
+    let blocks = board | getBoardBlocks
+    let storages = board | getBoardStorageBlocks
 
     if key in blocks {
         blocks[key]
@@ -47,124 +76,96 @@ fn getPoints(board):
 fn coordinatesToKey(x, y):
     "${x}:${y}"
 
-fn blockToKey(block):
-    coordinatesToKey(block[2], block[3])
-
 fn addWall(board, x, y):
-    addBlock(board, "wall", x, y)
+    board | addBlock(new Block("wall", x, y))
 
 fn addCrate(board, x, y):
-    addBlock(board, "crate", x, y)
+    board | addBlock(new Block("crate", x, y))
 
 fn addStorage(board, x, y):
-    addBlock(board, "storage", x, y)
+    board | addBlock(new Block("storage", x, y))
 
 fn addStoredCrate(board, x, y) {
-    addBlock(board, "crate", x, y)
-    addBlock(board, "storage", x, y)
+    board | addBlock(new Block("crate", x, y))
+    board | addBlock(new Block("storage", x, y))
     board->storedCrates += 1
 }
 
 fn removeBlock(board, block):
-    getBoardBlocks(board) | remove(blockToKey(block))
+    board | getBoardBlocks | remove(block::toKey(block))
 
 fn moveBlock(board, block, toX, toY) {
-    if getBlockType(block) == "crate" {
-        let blockAtTarget = getBlock(board, toX, toY)
+    if block::getType(block) == "crate" {
+        let blockAtTarget = board | getBlock(toX, toY)
 
-        if blockIsOnStorage(board, block):
+        if board | blockIsOnStorage(block):
             board->storedCrates -= 1
 
-        if getBlockType(blockAtTarget) == "storage":
+        if block::getType(blockAtTarget) == "storage":
             board->storedCrates += 1
     }
 
-    removeBlock(board, block)
-    addBlock(board, getBlockType(block), toX, toY)
+    board | removeBlock(block)
+    board | addBlock(new Block(block::getType(block), toX, toY))
 }
-
-fn setBlockType(block, newType):
-    block[1] = newType
 
 fn hasWon(board):
     board->storedCrates == len(board->storageBlocks)
 
 fn blockIsOnStorage(board, block):
-    block and blockToKey(block) in board->storageBlocks
+    block and block::toKey(block) in board->storageBlocks
 
-fn addBlock(board, type, x, y) {
-    let block = ["block", type, x, y]
-    let blocks = getBoardBlocks(board)
-    let key = blockToKey(block)
-    if type == "storage" {
-        board["storageBlocks"][key] = block
+fn addBlock(board, block) {
+    let blocks = board | getBoardBlocks
+    let key = block | block::toKey
+    if block->type == "storage" {
+        board->storageBlocks[key] = block
     } else {
         blocks[key] = block
     }
 
-    let (maxX, maxY) = getBoardMaxBounds(board)
-    if maxX < x {
-        setBoardMaxBounds(board, x, maxY)
-    } else if maxY < y {
-        setBoardMaxBounds(board, maxX, y)
+    let (maxX, maxY) = board | getBoardMaxBounds
+    if maxX < block->x {
+        board | setBoardMaxBounds(block->x, maxY)
+    } else if maxY < block->y {
+        board | setBoardMaxBounds(maxX, block->y)
     }
 }
 
-fn getBlockType(block):
-    block[1] if block
-
-fn getBlockPos(block):
-    (block[2], block[3])
-
 fn addPlayer(board, x, y) {
-    addBlock(board, "player", x, y)
+    board | addBlock(new Block("player", x, y))
     board->playerPos = (x, y)
 }
 
-fn getAdjacentBlockPos(byBlock, direction) {
-    let (x, y) = getBlockPos(byBlock)
-    if direction == "up" {
-        y -= 1
-    } else if direction == "right" {
-        x += 1
-    } else if direction == "down" {
-        y += 1
-    } else if direction == "left" {
-        x -= 1
-    }
-
-    (x, y)
-}
-
 fn movePlayer(board, direction) {
-    let player = getPlayer(board)
-    if playerCanMove(board, direction) {
-        let (playerTargetX, playerTargetY) = getAdjacentBlockPos(player, direction)
-        let blockAtPlayerTarget = getBlock(board, playerTargetX, playerTargetY)
+    let player = board | getPlayer
+    if board | playerCanMove(direction) {
+        let (playerTargetX, playerTargetY) = player | block::getAdjacentBlockPos(direction)
+        let blockAtPlayerTarget = board | getBlock(playerTargetX, playerTargetY)
 
-        if getBlockType(blockAtPlayerTarget) == "crate" {
-            let (crateTargetX, crateTargetY) = getAdjacentBlockPos(blockAtPlayerTarget, direction)
-            moveBlock(board, blockAtPlayerTarget, crateTargetX, crateTargetY)
+        if block::getType(blockAtPlayerTarget) == "crate" {
+            let (crateTargetX, crateTargetY) = blockAtPlayerTarget | block::getAdjacentBlockPos(direction)
+            board | moveBlock(blockAtPlayerTarget, crateTargetX, crateTargetY)
         }
 
-        moveBlock(board, player, playerTargetX, playerTargetY)
+        board | moveBlock(player, playerTargetX, playerTargetY)
         board->playerPos = (playerTargetX, playerTargetY)
     }
 }
 
 fn playerCanMove(board, direction) {
-    let player = getPlayer(board)
-    let (adjacentX, adjacentY) = getAdjacentBlockPos(player, direction)
-    let adjacentBlock = getBlock(board, adjacentX, adjacentY)
+    let player = board | getPlayer
+    let (adjacentX, adjacentY) = player | block::getAdjacentBlockPos(direction)
+    let adjacentBlock = board | getBlock(adjacentX, adjacentY)
 
     not adjacentBlock or
-        getBlockType(adjacentBlock) == "storage" or
-        getBlockType(adjacentBlock) == "crate" and crateCanMove(board, adjacentBlock, direction)
+        block::getType(adjacentBlock) == "storage" or
+        block::getType(adjacentBlock) == "crate" and crateCanMove(board, adjacentBlock, direction)
 }
 
 fn crateCanMove(board, crate, direction) {
-    let (adjacentX, adjacentY) = getAdjacentBlockPos(crate, direction)
-    let adjacentBlock = getBlock(board, adjacentX, adjacentY)
+    let (adjacentX, adjacentY) = crate | block::getAdjacentBlockPos(direction)
+    let adjacentBlock = board | getBlock(adjacentX, adjacentY)
 
-    not adjacentBlock or getBlockType(adjacentBlock) == "storage"
+    not adjacentBlock or block::getType(adjacentBlock) == "storage"
 }

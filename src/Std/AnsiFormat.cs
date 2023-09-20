@@ -26,6 +26,11 @@ public class AnsiFormat
     public static RuntimeString Bold(RuntimeString input)
         => new(Ansi.Bold(input.Value));
 
+    /// <returns>A string containing ansi escape codes that result in the cursor being hidden.</returns>
+    [ElkFunction("hideCursor")]
+    public static RuntimeString HideCursor()
+        => new("\x1b[?25l");
+
     /// <param name="input">Text that should be made italic</param>
     /// <returns>A string containing ansi escape codes that result in italic text in the terminal.</returns>
     [ElkFunction("italic")]
@@ -36,6 +41,11 @@ public class AnsiFormat
     [ElkFunction("reset")]
     public static RuntimeString Reset()
         => new(Ansi.Reset());
+
+    /// <returns>A string containing ansi escape codes that result in the cursor being shown.</returns>
+    [ElkFunction("showCursor")]
+    public static RuntimeString ShowCUrsor()
+        => new("\x1b[?25h");
 }
 
 static class Ansi

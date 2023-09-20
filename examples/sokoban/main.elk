@@ -2,7 +2,7 @@ with ./sokoban
 
 fn getBoardString(board) {
     let boardString = ""
-    let (_, maxY) = sokoban::getBoardMaxBounds(board)
+    let (_, maxY) = board | sokoban::getBoardMaxBounds
     for y in 0..(maxY + 1):
         boardString += rowToString(board, y) + "\n"
 
@@ -11,22 +11,23 @@ fn getBoardString(board) {
 
 fn rowToString(board, y) {
     let row = ""
-    let (maxX, _) = sokoban::getBoardMaxBounds(board)
+    let (maxX, _) = board | sokoban::getBoardMaxBounds
     for x in 0..(maxX + 1) {
-        let block = sokoban::getBlock(board, x, y)
+        let block = board | sokoban::getBlock(x, y)
         if not block {
             row += " "
-        } else {
-            let blockType = sokoban::getBlockType(block)
-            if blockType == "wall" {
-                row += "#"
-            } else if blockType == "crate" {
-                row += if sokoban::blockIsOnStorage(board, block): "*" else "o"
-            } else if blockType == "player" {
-                row += if sokoban::blockIsOnStorage(board, block): "+" else "@"
-            } else if blockType == "storage" {
-                row += "."
-            }
+            continue
+        }
+
+        let blockType = block | sokoban::block::getType
+        if blockType == "wall" {
+            row += "#"
+        } else if blockType == "crate" {
+            row += if board | sokoban::blockIsOnStorage(block): "*" else "o"
+        } else if blockType == "player" {
+            row += if board | sokoban::blockIsOnStorage(block): "+" else "@"
+        } else if blockType == "storage" {
+            row += "."
         }
     }
 
@@ -40,18 +41,18 @@ fn loadBoard(filePath) {
     let y = 0
     for c in fileContent {
         if c == "#" {
-            sokoban::addWall(board, x, y)
+            board | sokoban::addWall(x, y)
         } else if c == "@" {
-            sokoban::addPlayer(board, x, y)
+            board | sokoban::addPlayer(x, y)
         } else if c == "+" {
-            sokoban::addPlayer(board, x, y)
-            sokoban::addStorage(board, x, y)
+            board | sokoban::addPlayer(x, y)
+            board | sokoban::addStorage(x, y)
         } else if c == "o" {
-            sokoban::addCrate(board, x, y)
+            board | sokoban::addCrate(x, y)
         } else if c == "*" {
-            sokoban::addStoredCrate(board, x, y)
+            board | sokoban::addStoredCrate(x, y)
         } else if c == "." {
-            sokoban::addStorage(board, x, y)
+            board | sokoban::addStorage(x, y)
         }
 
         if c == "\n" {
@@ -66,19 +67,21 @@ fn loadBoard(filePath) {
 }
 
 fn startGame(mapPath) {
+    println(ansi::hideCursor)
+
     let board = loadBoard(mapPath)
     let gameDone = false
     while not gameDone {
         updateScreen(board)
         let inputKey = io::getKey()
         if (inputKey == "w") {
-            sokoban::movePlayer(board, "up")
+            board | sokoban::movePlayer("up")
         } else if inputKey == "a" {
-            sokoban::movePlayer(board, "left")
+            board | sokoban::movePlayer("left")
         } else if inputKey == "s" {
-            sokoban::movePlayer(board, "down")
+            board | sokoban::movePlayer("down")
         } else if inputKey == "d" {
-            sokoban::movePlayer(board, "right")
+            board | sokoban::movePlayer("right")
         }
 
         gameDone = inputKey == "q" or sokoban::hasWon(board)
@@ -86,38 +89,37 @@ fn startGame(mapPath) {
 
     if sokoban::hasWon(board) {
         updateScreen(board)
-        println("You won!")
-        println("Press enter to continue")
+        println You won!
+        println Press enter to continue
         io::input()
         clear()
     }
 }
 
 fn updateScreen(board) {
-    let boardString = getBoardString(board)
-    print("\x1b[?25l")
+    let boardString = board | getBoardString
     clear()
-    println("Points: ${sokoban::getPoints(board)}")
+    println("Points:", board | sokoban::getPoints)
     println(boardString)
-    print("\x1b[?25h")
 }
 
 let runGame = true
 while runGame {
-    println("Welcome to Sokoban, please choose a level:")
+    println(ansi::showCursor)
+    println Welcome to Sokoban, please choose a level:
 
     # get levels
     let maps = scriptPath() + "/maps.txt" | read | str::lines
 
     for (mapPath, i) in maps | withIndex {
-        let mapName = (mapPath | split("."))[0]
-        println("${i + 1}. ${mapName}")
+        let mapName = mapPath | split(".") | iter::first
+        println "${i + 1}. ${mapName}"
     }
 
-    let quitId = into::str(len(maps) + 1)
-    println("${quitId}. Quit")
+    let quitId = len(maps) + 1 | into::str
+    println "${quitId}. Quit"
 
-    let mapId = io::input("Choose: ")
+    let mapId = io::input "Choose: "
     runGame = mapId != quitId
 
     if runGame and str::isDigit(mapId) {
