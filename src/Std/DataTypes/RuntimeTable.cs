@@ -123,14 +123,24 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
         foreach (var row in rows)
         {
             foreach (var (column, i) in row.WithIndex())
+            {
+                if (widths.Length <= i)
+                    continue;
+
                 widths[i] = Math.Max(column.Length, widths[i]);
+            }
         }
 
         var builder = new StringBuilder();
         foreach (var row in rows)
         {
             foreach (var (cell, i) in row.WithIndex())
+            {
+                if (widths.Length <= i)
+                    continue;
+
                 builder.Append(cell.PadRight(widths[i] + 2));
+            }
 
             builder.AppendLine();
         }

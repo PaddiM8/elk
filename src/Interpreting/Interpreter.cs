@@ -559,7 +559,17 @@ partial class Interpreter
                 return value;
             }
 
-            objectValue.As<RuntimeStruct>().Values[fieldAccess.Identifier.Value] = value;
+            if (objectValue is RuntimeStruct structValue)
+            {
+                structValue.Values[fieldAccess.Identifier.Value] = value;
+
+                return value;
+            }
+
+            if (objectValue is not IIndexable<RuntimeObject> indexable)
+                throw new RuntimeCastException(objectValue.GetType(), "Indexable");
+
+            indexable[fieldAccess.RuntimeIdentifier!] = value;
 
             return value;
         }
@@ -583,10 +593,18 @@ partial class Interpreter
         if (objectValue is RuntimeDictionary dict)
             return dict.Entries[expr.RuntimeIdentifier!.GetHashCode()].Item2;
 
-        if (objectValue.As<RuntimeStruct>().Values.TryGetValue(expr.Identifier.Value, out var result))
-            return result;
+        if (objectValue is RuntimeStruct structValue)
 
-        throw new RuntimeNotFoundException(expr.Identifier.Value);
+        {
+            return structValue.Values.TryGetValue(expr.Identifier.Value, out var result)
+                ? result
+                : throw new RuntimeNotFoundException(expr.Identifier.Value);
+        }
+
+        if (objectValue is not IIndexable<RuntimeObject> indexable)
+            throw new RuntimeCastException(objectValue.GetType(), "Indexable");
+
+        return indexable[expr.RuntimeIdentifier!];
     }
 
     private RuntimeObject Visit(RangeExpr expr)

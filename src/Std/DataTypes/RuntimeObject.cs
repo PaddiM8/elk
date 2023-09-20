@@ -29,11 +29,10 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
 
     public int CompareTo(RuntimeObject? other)
     {
-        if (other == null)
+        if (other is null or RuntimeNil)
             return 1;
 
-        // TODO: Optimise this by avoiding the allocation for the boolean result
-        if (((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
+        if (this is RuntimeNil || ((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
             return -1;
 
         if (((RuntimeBoolean)Operation(OperationKind.EqualsEquals, other)).IsTrue)

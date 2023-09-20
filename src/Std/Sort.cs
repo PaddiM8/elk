@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -8,15 +11,34 @@ namespace Elk.Std;
 public class Sort
 {
     /// <param name="container">The container to sort.</param>
-    /// <param name="key">(for tables) The column to order by.</param>
     /// <returns>A copy of the given container in ascending order.</returns>
     [ElkFunction("asc")]
-    public static RuntimeObject Asc(RuntimeObject container, RuntimeObject? key = null)
+    public static RuntimeObject Asc(RuntimeObject container)
     {
         return container switch
         {
-            RuntimeTable table => SortTable(table, key, descending: false),
-            _ => new RuntimeList(container.As<RuntimeList>().Values.OrderBy(x => x)),
+            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderByDescending(x => x)),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(x => x)),
+            _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
+        };
+    }
+
+    /// <param name="container">The container to sort.</param>
+    /// <param name="closure">The container to sort.</param>
+    /// <returns>A copy of the given container in ascending order.</returns>
+    [ElkFunction("ascBy")]
+    public static RuntimeObject AscBy(RuntimeObject container, Func<RuntimeObject, RuntimeObject> closure)
+    {
+        return container switch
+        {
+            RuntimeTable table => new RuntimeTable(
+                table.Header,
+                table.Rows
+                    .OrderBy(closure)
+                    .Cast<RuntimeTableRow>()
+            ),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(closure)),
+            _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }
 
@@ -37,15 +59,34 @@ public class Sort
     }
 
     /// <param name="container">The container to sort.</param>
-    /// <param name="key">(for tables) The column to order by.</param>
     /// <returns>A copy of the given container in descending order.</returns>
     [ElkFunction("desc")]
-    public static RuntimeObject Desc(RuntimeObject container, RuntimeObject? key = null)
+    public static RuntimeObject Desc(RuntimeObject container)
     {
         return container switch
         {
-            RuntimeTable table => SortTable(table, key, descending: true),
-            _ => new RuntimeList(container.As<RuntimeList>().Values.OrderByDescending(x => x)),
+            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderByDescending(x => x)),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderByDescending(x => x)),
+            _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
+        };
+    }
+
+    /// <param name="container">The container to sort.</param>
+    /// <param name="closure">The container to sort.</param>
+    /// <returns>A copy of the given container in descending order.</returns>
+    [ElkFunction("descBy")]
+    public static RuntimeObject DescBy(RuntimeObject container, Func<RuntimeObject, RuntimeObject> closure)
+    {
+        return container switch
+        {
+            RuntimeTable table => new RuntimeTable(
+                table.Header,
+                table.Rows
+                    .OrderByDescending(closure)
+                    .Cast<RuntimeTableRow>()
+            ),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderByDescending(closure)),
+            _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }
 
@@ -63,18 +104,6 @@ public class Sort
         }
 
         container.As<RuntimeList>().Values.Sort((a, b) => b.CompareTo(a));
-    }
-
-    private static RuntimeTable SortTable(RuntimeTable table, RuntimeObject? key, bool descending)
-    {
-        int index = key == null
-            ? 0
-            : table.Header.IndexOf(key.As<RuntimeString>().Value);
-        var orderedRows = descending
-            ? table.Rows.OrderByDescending(x => x.Columns.ElementAtOrDefault(index))
-            : table.Rows.OrderBy(x => x.Columns.ElementAtOrDefault(index));
-
-        return new RuntimeTable(table.Header, orderedRows);
     }
 
     private static void SortTableMut(RuntimeTable table, RuntimeObject? key, bool descending)
