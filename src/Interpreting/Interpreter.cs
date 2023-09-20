@@ -561,6 +561,9 @@ partial class Interpreter
 
             if (objectValue is RuntimeStruct structValue)
             {
+                if (!structValue.Values.ContainsKey(fieldAccess.Identifier.Value))
+                    throw new RuntimeNotFoundException(fieldAccess.Identifier.Value);
+
                 structValue.Values[fieldAccess.Identifier.Value] = value;
 
                 return value;
@@ -591,7 +594,11 @@ partial class Interpreter
     {
         var objectValue = Next(expr.Object);
         if (objectValue is RuntimeDictionary dict)
-            return dict.Entries[expr.RuntimeIdentifier!.GetHashCode()].Item2;
+        {
+            return dict.Entries.TryGetValue(expr.RuntimeIdentifier!.GetHashCode(), out var result)
+                ? result.Item2
+                : throw new RuntimeNotFoundException(expr.Identifier.Value);
+        }
 
         if (objectValue is RuntimeStruct structValue)
 
