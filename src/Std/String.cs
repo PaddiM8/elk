@@ -95,6 +95,12 @@ static class String
         return new(result);
     }
 
+    /// <param name="input">Any string</param>
+    /// <returns>A string with all the digits from the input string, without any other characters.</returns>
+    [ElkFunction("digits")]
+    public static RuntimeString Digits(RuntimeString input)
+        => new(new string(input.Value.Where(char.IsDigit).ToArray()));
+
     /// <param name="input">Entire string</param>
     /// <param name="ending">Substring</param>
     /// <returns>Whether or not the input string ends with the string provided as the second argument.</returns>
