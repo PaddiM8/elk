@@ -147,26 +147,15 @@ static class IO
     /// <param name="input">Value to print</param>
     [ElkFunction("print", Reachability.Everywhere)]
     public static void Print([ElkVariadic] IEnumerable<RuntimeObject> input)
-    {
-        var builder = new StringBuilder();
-        foreach (var value in input)
-        {
-            if (value is RuntimeError err)
-            {
-                Console.Error.WriteLine(err.Value);
+        => PrintHelper(input, isLine: false, isError: false);
 
-                return;
-            }
-
-            builder.Append(value.As<RuntimeString>().Value);
-            builder.Append(' ');
-        }
-
-        if (builder.Length > 0)
-            builder.Remove(builder.Length - 1, 1);
-
-        Console.Write(builder);
-    }
+    /// <summary>
+    /// Prints the given value to stderr, without adding a new line to the end.
+    /// </summary>
+    /// <param name="input">Value to print</param>
+    [ElkFunction("printError", Reachability.Everywhere)]
+    public static void PrintError([ElkVariadic] IEnumerable<RuntimeObject> input)
+        => PrintHelper(input, isLine: false, isError: true);
 
     /// <summary>
     /// Prints the given value to the terminal while also adding a new line to the end.
@@ -175,6 +164,17 @@ static class IO
     /// <param name="input">Value to print</param>
     [ElkFunction("println", Reachability.Everywhere)]
     public static void PrintLine([ElkVariadic] IEnumerable<RuntimeObject> input)
+        => PrintHelper(input, isLine: true, isError: false);
+
+    /// <summary>
+    /// Prints the given value to stderr.
+    /// </summary>
+    /// <param name="input">Value to print</param>
+    [ElkFunction("printlnError", Reachability.Everywhere)]
+    public static void PrintLineError([ElkVariadic] IEnumerable<RuntimeObject> input)
+        => PrintHelper(input, isLine: true, isError: true);
+
+    private static void PrintHelper(IEnumerable<RuntimeObject> input, bool isLine, bool isError)
     {
         var builder = new StringBuilder();
         foreach (var value in input)
@@ -193,6 +193,14 @@ static class IO
         if (builder.Length > 0)
             builder.Remove(builder.Length - 1, 1);
 
-        Console.WriteLine(builder);
+        Action<string> textWriter = (isLine, isError) switch
+        {
+            (true, true) => Console.Error.WriteLine,
+            (false, true) => Console.Error.Write,
+            (true, false) => Console.WriteLine,
+            (false, false) => Console.Write,
+        };
+
+        textWriter(builder.ToString());
     }
 }

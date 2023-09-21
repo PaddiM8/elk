@@ -99,12 +99,12 @@ public class Into
         => value.As<RuntimeInteger>();
 
     /// <param name="input"></param>
-    /// <param name="indentationStyle">One of: "indented", "i", nil</param>
+    /// <param name="indentationStyle">One of: "--indented", "-i", nil</param>
     /// <returns>A JSON string.</returns>
     [ElkFunction("json")]
     public static RuntimeString Json(RuntimeObject input, RuntimeString? indentationStyle = null)
     {
-        var formatting = indentationStyle?.Value is "indented" or "i"
+        var formatting = indentationStyle?.Value is "--indented" or "-i"
             ? Formatting.Indented
             : Formatting.None;
 
