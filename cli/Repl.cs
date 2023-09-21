@@ -34,7 +34,7 @@ class Repl
             HighlightHandler = highlightHandler,
             HintHandler = new HintHandler(historyRepository, shell),
             EnterHandler = new EnterHandler(),
-            WordSeparators = new[] { ' ', '/' },
+            WordSeparators = new[] { ' ', '/', ':' },
         };
 
         readLine.RegisterShortcut(
