@@ -15,7 +15,7 @@ using Elk.Std.DataTypes;
 namespace Elk.Std;
 
 [ElkModule("path")]
-public class Path
+public static class Path
 {
     /// <summary>
     /// Adds the provided path to $PATH and ~/.config/elk/path.txt.
@@ -25,7 +25,7 @@ public class Path
     [ElkFunction("add")]
     public static void Add(RuntimeString path)
     {
-        File.AppendAllText(CommonPaths.PathFile, $"{path}\n");
+        System.IO.File.AppendAllText(CommonPaths.PathFile, $"{path}\n");
 
         // Reload the path variable
         string pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";
@@ -37,10 +37,10 @@ public class Path
     [ElkFunction("all")]
     public static RuntimeList All()
     {
-        if (!File.Exists(CommonPaths.PathFile))
+        if (!System.IO.File.Exists(CommonPaths.PathFile))
             return new(Array.Empty<RuntimeObject>());
 
-        var lines = File.ReadAllLines(CommonPaths.PathFile)
+        var lines = System.IO.File.ReadAllLines(CommonPaths.PathFile)
             .Select(x => new RuntimeString(x));
 
         return new(lines);
@@ -50,10 +50,10 @@ public class Path
     [ElkFunction("list")]
     public static RuntimeString List()
     {
-        if (!File.Exists(CommonPaths.PathFile))
+        if (!System.IO.File.Exists(CommonPaths.PathFile))
             return new("");
 
-        var lines = File.ReadAllLines(CommonPaths.PathFile)
+        var lines = System.IO.File.ReadAllLines(CommonPaths.PathFile)
             .Select((x, i) => $"{i}. {x}");
 
         return new(string.Join("\n", lines));
@@ -64,14 +64,14 @@ public class Path
     [ElkFunction("remove")]
     public static void Remove(RuntimeInteger index)
     {
-        if (!File.Exists(CommonPaths.PathFile))
+        if (!System.IO.File.Exists(CommonPaths.PathFile))
             throw new RuntimeStdException("Index out of range");
 
-        var lines = File.ReadAllLines(CommonPaths.PathFile).ToList();
+        var lines = System.IO.File.ReadAllLines(CommonPaths.PathFile).ToList();
         if (index.Value >= lines.Count)
             throw new RuntimeStdException("Index out of range");
 
         lines.RemoveAt((int)index.Value);
-        File.WriteAllLines(CommonPaths.PathFile, lines);
+        System.IO.File.WriteAllLines(CommonPaths.PathFile, lines);
     }
 }

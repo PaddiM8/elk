@@ -26,7 +26,7 @@ static class IO
     /// <returns>Text content of the file at the provided path.</returns>
     [ElkFunction("read", Reachability.Everywhere)]
     public static RuntimeString ReadFile(RuntimeString path, ShellEnvironment env)
-        => new(File.ReadAllText(env.GetAbsolutePath(path.Value)));
+        => new(System.IO.File.ReadAllText(env.GetAbsolutePath(path.Value)));
 
     /// <summary>Writes the provided text to a file, overwriting any previous content.</summary>
     /// <param name="content">Text that should be written to the file</param>
@@ -61,7 +61,7 @@ static class IO
         }
 
         var runtimeString = content.As<RuntimeString>();
-        File.WriteAllText(absolutePath, runtimeString.Value);
+        System.IO.File.WriteAllText(absolutePath, runtimeString.Value);
     }
 
     /// <summary>Appends the provided text on its own line to a file.</summary>
@@ -106,7 +106,7 @@ static class IO
         }
         else
         {
-            File.AppendAllText(absolutePath, runtimeString.Value);
+            System.IO.File.AppendAllText(absolutePath, runtimeString.Value);
         }
     }
 
@@ -116,7 +116,7 @@ static class IO
     /// <returns>nil</returns>
     [ElkFunction("appendEnd", Reachability.Everywhere)]
     public static void AppendEnd(RuntimeString content, RuntimeString path, ShellEnvironment env)
-        => File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
+        => System.IO.File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
 
     /// <summary>Reads the next line from the standard input stream. This is used to get input from the user in a terminal.</summary>
     /// <param name="prompt">Text that should be printed before the input prompt</param>
