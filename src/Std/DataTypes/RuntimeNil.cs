@@ -27,6 +27,9 @@ public class RuntimeNil : RuntimeObject
                 => throw new RuntimeCastException<RuntimeNil>(toType),
         };
 
+    public override int CompareTo(RuntimeObject? other)
+        => -1;
+
     public override RuntimeObject Operation(OperationKind kind)
         => kind == OperationKind.Not
             ? RuntimeBoolean.True

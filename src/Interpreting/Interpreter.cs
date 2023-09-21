@@ -27,7 +27,7 @@ partial class Interpreter
 
     public bool PrintErrors { get; init; } = true;
 
-    private TextPos Position
+    public TextPos Position
         => _lastExpr?.Position ?? TextPos.Default;
 
     private Scope.Scope _scope;
@@ -74,6 +74,19 @@ partial class Interpreter
         {
             var position = e.Position ?? Position;
             var error = new RuntimeError(e.Message, position);
+
+            if (!PrintErrors)
+                throw new AggregateException(error.ToString(), e);
+
+            return error;
+        }
+        catch (InvalidOperationException e)
+        {
+            // Sort/Order methods (eg. in the standard library) throw an exception when
+            // they fail to compare two items. This should simply be a runtime error,
+            // since that means the user is trying to compare values that can not be
+            // compared with each other.
+            var error = new RuntimeError(e.Message, Position);
 
             if (!PrintErrors)
                 throw new AggregateException(error.ToString(), e);
@@ -465,7 +478,7 @@ partial class Interpreter
         if (expr.Operator == OperationKind.And)
         {
             bool result = left.As<RuntimeBoolean>().IsTrue &&
-                          Next(expr.Right).As<RuntimeBoolean>().IsTrue;
+                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }
@@ -473,7 +486,7 @@ partial class Interpreter
         if (expr.Operator == OperationKind.Or)
         {
             bool result = left.As<RuntimeBoolean>().IsTrue ||
-                          Next(expr.Right).As<RuntimeBoolean>().IsTrue;
+                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
         }

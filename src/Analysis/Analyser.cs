@@ -675,8 +675,8 @@ class Analyser
         int argumentCount = arguments.Count;
         bool isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
         bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
-        bool tooFewArguments = parameters.Count > argumentCount &&
-                               parameters[argumentCount].DefaultValue == null && !isVariadic;
+        bool tooFewArguments = !isVariadic && parameters.Count > argumentCount &&
+            parameters[argumentCount].DefaultValue == null;
 
         if (tooManyArguments || tooFewArguments)
             throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);

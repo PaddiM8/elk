@@ -129,6 +129,7 @@ public class ShellSession
             {
                 IsRoot = true,
             };
+
             _interpreter.Interpret(new List<Expr> { call });
 
             return;
@@ -164,6 +165,16 @@ public class ShellSession
         catch (RuntimeException runtimeException)
         {
             resultString = runtimeException.Message;
+            textWriter = Console.Error;
+            Console.ForegroundColor = ConsoleColor.Red;
+        }
+        catch (InvalidOperationException e)
+        {
+            // Sort/Order methods (eg. in the standard library) throw an exception when
+            // they fail to compare two items. This should simply be a runtime error,
+            // since that means the user is trying to compare values that can not be
+            // compared with each other.
+            resultString = $"{_interpreter.Position} {e.Message}";
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
         }

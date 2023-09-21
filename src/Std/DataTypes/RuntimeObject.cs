@@ -27,12 +27,12 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
     public virtual string ToDisplayString()
         => ToString()!;
 
-    public int CompareTo(RuntimeObject? other)
+    public virtual int CompareTo(RuntimeObject? other)
     {
         if (other is null or RuntimeNil)
             return 1;
 
-        if (this is RuntimeNil || ((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
+        if (((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
             return -1;
 
         if (((RuntimeBoolean)Operation(OperationKind.EqualsEquals, other)).IsTrue)

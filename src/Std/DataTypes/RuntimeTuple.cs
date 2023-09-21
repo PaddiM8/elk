@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
-using Elk.Parsing;
 using Elk.Std.Attributes;
 
 #endregion
@@ -65,6 +64,23 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
+
+    public override int CompareTo(RuntimeObject? other)
+    {
+        if (other is not RuntimeTuple otherTuple)
+            return -1;
+
+        foreach (var (item, otherItem) in Values.Zip(otherTuple))
+        {
+            int comparison = item.CompareTo(otherItem);
+            if (comparison == 0)
+                continue;
+
+            return comparison;
+        }
+
+        return 0;
+    }
 
     public override int GetHashCode()
         => Values.GetHashCode();

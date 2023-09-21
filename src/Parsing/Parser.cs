@@ -1243,8 +1243,8 @@ internal class Parser
             var next = Peek();
             bool isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
             bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
-                            Current!.Value.StartsWith('$') &&
-                            Previous?.Value != "\\";
+                Current!.Value.StartsWith('$') &&
+                Previous?.Value != "\\";
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
                 (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
             {
@@ -1334,7 +1334,7 @@ internal class Parser
     private bool ReachedTextEnd()
     {
         var reachedComment = Previous?.Kind == TokenKind.WhiteSpace &&
-                             MatchInclWhiteSpace(TokenKind.Comment);
+            MatchInclWhiteSpace(TokenKind.Comment);
 
         return ReachedEnd || reachedComment || MatchInclWhiteSpace(
             TokenKind.AmpersandAmpersand,
