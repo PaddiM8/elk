@@ -39,6 +39,7 @@ level1 => a: {
 }
 
 # variable of function reference
-let a = &Fn => x: x + 1
+fn a(x): x + 1
 print([1, 2, 3] | map => &a | join)
 assert(([1, 2, 3] | map => &a | join) == "234")
+assert(([1, 2, 3] | iter::reduce => &math::mul) == 6)

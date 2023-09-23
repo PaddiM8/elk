@@ -676,36 +676,9 @@ internal class Parser
             return ParseBlock(StructureKind.Other);
         }
 
-        if (AdvanceIf(TokenKind.Ampersand))
+        if (Match(TokenKind.Ampersand))
         {
-            IList<Token> modulePath = Array.Empty<Token>();
-            while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
-            {
-                if (modulePath.IsReadOnly)
-                    modulePath = new List<Token>();
-
-                modulePath.Add(Eat());
-                Eat(); // ::
-            }
-
-            var pos = Current?.Position ?? TextPos.Default;
-            var identifier = Match(TokenKind.Identifier)
-                ? Eat()
-                : new Token(TokenKind.Identifier, ParsePath(), pos);
-
-            if (StdBindings.HasRuntimeType(identifier.Value))
-                return new TypeExpr(identifier);
-
-            string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
-            if (modulePath.Count == 0 && importedStdModule != null)
-            {
-                modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
-            }
-
-            var functionReference = new FunctionReferenceExpr(identifier, modulePath);
-            return Match(TokenKind.EqualsGreater)
-                ? ParseClosure(functionReference)
-                : functionReference;
+            return ParseFunctionReference();
         }
 
         if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
@@ -735,51 +708,25 @@ internal class Parser
             );
         }
 
-        if (AdvanceIf(TokenKind.Ampersand))
+        if (Match(TokenKind.Ampersand))
         {
-            var identifier = ParseIdentifier();
-            var implicitParameters = new List<Token>();
-            var blockExpressions = new List<Expr>();
-            if (identifier is CallExpr call)
-            {
-                var variableToken = call.Identifier with { Value = "x" };
-                call.Arguments.Add(new VariableExpr(variableToken));
-                implicitParameters.Add(variableToken);
-                blockExpressions.Add(call);
-            }
-            else if (identifier is VariableExpr variable)
-            {
-                var variableToken = variable.Identifier with { Value = variable.Identifier.Value + "_x" };
-                implicitParameters.Add(variableToken);
-
-                var callToCall = new CallExpr(
-                    variable.Identifier with { Value = "call" },
-                    Array.Empty<Token>(),
-                    new List<Expr> { variable, new VariableExpr(variableToken) },
-                    CallStyle.Parenthesized,
-                    Plurality.Singular,
-                    CallType.BuiltInCall
-                );
-                blockExpressions.Add(callToCall);
-            }
-            else
+            var functionReferenceMaybeClosure = ParseFunctionReference();
+            if (functionReferenceMaybeClosure is not FunctionReferenceExpr functionReference)
             {
                 throw new ParseException(
                     Current?.Position ?? TextPos.Default,
-                    "Expected function reference after ampersand closure"
+                    "Expected function or function reference to the right of closure."
                 );
             }
 
-            var implicitScope = new LocalScope(_scope);
-            implicitScope.AddVariable(implicitParameters.First().Value, RuntimeNil.Value);
             var block = new BlockExpr(
-                blockExpressions,
+                new List<Expr> { functionReference },
                 StructureKind.Other,
-                implicitParameters.First().Position,
-                implicitScope
+                Previous!.Position,
+                new LocalScope(_scope)
             );
 
-            return new ClosureExpr(function, implicitParameters, block);
+            return new ClosureExpr(function, new List<Token>(), block);
         }
 
         var scope = new LocalScope(_scope);
@@ -791,7 +738,8 @@ internal class Parser
                 var parameter = EatExpected(TokenKind.Identifier);
                 parameters.Add(parameter);
                 scope.AddVariable(parameter.Value, RuntimeNil.Value);
-            } while (AdvanceIf(TokenKind.Comma));
+            }
+            while (AdvanceIf(TokenKind.Comma));
         }
 
         BlockExpr right;
@@ -1049,6 +997,9 @@ internal class Parser
                 return ContinueParseAsDictionary(expressions.First());
         }
 
+        if (expressions.Count == 0)
+            return new DictionaryExpr(new List<(Expr, Expr)>(), pos);
+
         _scope = _scope.Parent!;
 
         return new BlockExpr(expressions, parentStructureKind, pos, blockScope);
@@ -1090,6 +1041,41 @@ internal class Parser
         EatExpected(TokenKind.ClosedBrace);
 
         return new DictionaryExpr(expressions, firstExpression.Position);
+    }
+
+    private Expr ParseFunctionReference()
+    {
+        EatExpected(TokenKind.Ampersand);
+
+        IList<Token> modulePath = Array.Empty<Token>();
+        while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
+        {
+            if (modulePath.IsReadOnly)
+                modulePath = new List<Token>();
+
+            modulePath.Add(Eat());
+            Eat(); // ::
+        }
+
+        var pos = Current?.Position ?? TextPos.Default;
+        var identifier = Match(TokenKind.Identifier)
+            ? Eat()
+            : new Token(TokenKind.Identifier, ParsePath(), pos);
+
+        if (StdBindings.HasRuntimeType(identifier.Value))
+            return new TypeExpr(identifier);
+
+        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
+        if (modulePath.Count == 0 && importedStdModule != null)
+        {
+            modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
+        }
+
+        var functionReference = new FunctionReferenceExpr(identifier, modulePath);
+
+        return Match(TokenKind.EqualsGreater)
+            ? ParseClosure(functionReference)
+            : functionReference;
     }
 
     private Expr ParseIdentifier()

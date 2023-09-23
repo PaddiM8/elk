@@ -113,7 +113,7 @@ class Analyser
         return analysedExpr;
     }
 
-    private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure)
+    private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure, bool validateParameters = true)
     {
         _lastExpr = expr;
         expr.EnclosingFunction = _enclosingFunction;
@@ -121,7 +121,7 @@ class Analyser
         var analysedExpr = expr switch
         {
             ClosureExpr closureExpr => Visit(closureExpr, pipedValue),
-            CallExpr callExpr => Visit(callExpr, pipedValue, hasClosure),
+            CallExpr callExpr => Visit(callExpr, pipedValue, hasClosure, validateParameters),
             _ => throw new RuntimeException("Expected a function call to the right of pipe."),
         };
 
@@ -376,9 +376,6 @@ class Analyser
 
     private Expr Visit(BlockExpr expr)
     {
-        if (expr.Expressions.Count == 0)
-            return Next(new DictionaryExpr(new List<(Expr, Expr)>(), expr.Position));
-
         _scope = expr.Scope;
         var blockExpressions = new List<Expr>();
         foreach (var analysed in expr.Expressions.Select(Next))
@@ -564,7 +561,11 @@ class Analyser
         return variableExpr;
     }
 
-    private CallExpr Visit(CallExpr expr, Expr? pipedValue = null, bool hasClosure = false)
+    private CallExpr Visit(
+        CallExpr expr,
+        Expr? pipedValue = null,
+        bool hasClosure = false,
+        bool validateParameters = true)
     {
         string name = expr.Identifier.Value;
         CallType? builtIn = name switch
@@ -616,7 +617,7 @@ class Analyser
             throw new RuntimeException("Expected closure.");
 
         int argumentCount = evaluatedArguments.Count;
-        if (stdFunction != null)
+        if (stdFunction != null && validateParameters)
         {
             if (argumentCount < stdFunction.MinArgumentCount ||
                 argumentCount > stdFunction.MaxArgumentCount)
@@ -632,7 +633,7 @@ class Analyser
                 throw new RuntimeException("Expected closure.");
         }
 
-        if (functionSymbol != null)
+        if (functionSymbol != null && validateParameters)
         {
             if (hasClosure && !functionSymbol.Expr.HasClosure)
                 throw new RuntimeException("Expected closure.");
@@ -788,6 +789,44 @@ class Analyser
             IsRoot = expr.IsRoot,
             CapturedVariables = expr.CapturedVariables,
         };
+
+        if (expr.Body.Expressions.Count == 1 &&
+            expr.Body.Expressions.First() is FunctionReferenceExpr functionReference)
+        {
+            var evaluatedFunctionReference = (FunctionReferenceExpr)Next(functionReference);
+            var parameters = evaluatedFunctionReference.RuntimeFunction switch
+            {
+                RuntimeStdFunction stdFunction => stdFunction.StdFunction.Parameters
+                    .Select(x => functionReference.Identifier with { Value = "'" + x.Name }),
+                RuntimeSymbolFunction symbolFunction => symbolFunction.FunctionSymbol.Expr.Parameters
+                    .Select(x => x.Identifier with { Value = "'" + x.Identifier.Value }),
+                _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
+            };
+            var callType = evaluatedFunctionReference.RuntimeFunction switch
+            {
+                RuntimeStdFunction => CallType.StdFunction,
+                RuntimeSymbolFunction => CallType.Function,
+                RuntimeProgramFunction => CallType.Program,
+                _ => CallType.Unknown,
+            };
+
+            var constructedCall = new CallExpr(
+                functionReference.Identifier,
+                functionReference.ModulePath,
+                parameters.Select(x => new VariableExpr(x)).Cast<Expr>().ToList(),
+                CallStyle.Parenthesized,
+                Plurality.Singular,
+                callType
+            );
+
+            foreach (var parameter in parameters)
+                closure.Body.Scope.AddVariable(parameter.Value, RuntimeNil.Value);
+
+            closure.Parameters.Clear();
+            closure.Parameters.AddRange(parameters);
+            closure.Body.Expressions.Clear();
+            closure.Body.Expressions.Add(constructedCall);
+        }
 
         var previousEnclosingFunction = _enclosingFunction;
         _enclosingFunction = closure;

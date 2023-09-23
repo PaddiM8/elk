@@ -836,20 +836,19 @@ partial class Interpreter
 
     private object ConstructClosureFunc(Type closureFuncType, RuntimeClosureFunction runtimeClosure)
     {
-        var parameters = runtimeClosure.Expr.Parameters;
+        var parameters = runtimeClosure.Expr.Parameters.Select(x => x.Value).ToList();
 
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
-        {
             return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body));
-        }
 
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
         {
             return new Func<RuntimeObject, RuntimeObject>(
                 a =>
                 {
-                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
+                    if (parameters.Count > 0)
+                        runtimeClosure.Environment.AddVariable(parameters[0], a);
 
                     return NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -860,8 +859,11 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
-                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
-                    runtimeClosure.Environment.AddVariable(parameters[1].Value, b);
+                    if (parameters.Count > 0)
+                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+
+                    if (parameters.Count > 1)
+                        runtimeClosure.Environment.AddVariable(parameters[1], b);
 
                     return NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -874,7 +876,8 @@ partial class Interpreter
                 a =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
+                    if (parameters.Count > 0)
+                        runtimeClosure.Environment.AddVariable(parameters[0], a);
 
                     NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -886,8 +889,11 @@ partial class Interpreter
                 (a, b) =>
                 {
                     runtimeClosure.Expr.Body.IsRoot = true;
-                    runtimeClosure.Environment.AddVariable(parameters[0].Value, a);
-                    runtimeClosure.Environment.AddVariable(parameters[1].Value, b);
+                    if (parameters.Count > 0)
+                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+
+                    if (parameters.Count > 1)
+                        runtimeClosure.Environment.AddVariable(parameters[1], b);
 
                     NextBlock(runtimeClosure.Expr.Body);
                 });
@@ -897,8 +903,8 @@ partial class Interpreter
         return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
             args =>
             {
-                foreach (var (parameter, argument) in runtimeClosure.Expr.Parameters.Zip(args))
-                    runtimeClosure.Environment.AddVariable(parameter.Value, argument);
+                foreach (var (parameter, argument) in parameters.Zip(args))
+                    runtimeClosure.Environment.AddVariable(parameter, argument);
 
                 return NextBlock(runtimeClosure.Expr.Body);
             });
