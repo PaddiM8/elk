@@ -146,27 +146,21 @@ public class ShellSession
 
     public void RunCommand(string command)
     {
-        var result = _interpreter.Interpret(command);
-        if (result is RuntimeNil)
-            return;
-
         var textWriter = Console.Out;
-        if (result is RuntimeError)
-        {
-            textWriter = Console.Error;
-            Console.ForegroundColor = ConsoleColor.Red;
-        }
-
-        string resultString;
+        string result;
         try
         {
-            resultString = result.ToString() ?? "";
+            var resultObject = _interpreter.Interpret(command);
+            if (resultObject is RuntimeNil)
+                return;
+
+            result = resultObject.ToString() ?? "";
         }
-        catch (RuntimeException runtimeException)
+        catch (RuntimeException e)
         {
-            resultString = runtimeException.Message;
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
+            result = $"{e.Position} {e.Message}";
         }
         catch (InvalidOperationException e)
         {
@@ -174,18 +168,18 @@ public class ShellSession
             // they fail to compare two items. This should simply be a runtime error,
             // since that means the user is trying to compare values that can not be
             // compared with each other.
-            resultString = $"{_interpreter.Position} {e.Message}";
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
+            result = $"{_interpreter.Position} {e.Message}";
         }
 
-        if (resultString == "" || resultString.EndsWith('\n'))
+        if (result == "" || result.EndsWith('\n'))
         {
-            textWriter.Write(resultString);
+            textWriter.Write(result);
         }
         else
         {
-            textWriter.WriteLine(resultString);
+            textWriter.WriteLine(result);
         }
 
         Console.ResetColor();
@@ -213,11 +207,24 @@ public class ShellSession
             return;
         }
 
-        var result = interpreter.Interpret(File.ReadAllText(filePath));
-        if (result is RuntimeError err)
+        try
+        {
+            interpreter.Interpret(File.ReadAllText(filePath));
+        }
+        catch (RuntimeException e)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine(err.ToString());
+            Console.Error.WriteLine($"{e.Position} {e.Message}");
+            Console.ResetColor();
+        }
+        catch (InvalidOperationException e)
+        {
+            // Sort/Order methods (eg. in the standard library) throw an exception when
+            // they fail to compare two items. This should simply be a runtime error,
+            // since that means the user is trying to compare values that can not be
+            // compared with each other.
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
             Console.ResetColor();
         }
     }

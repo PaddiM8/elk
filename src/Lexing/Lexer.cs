@@ -296,6 +296,9 @@ public class Lexer
             "module" => TokenKind.Module,
             "struct" => TokenKind.Struct,
             "new" => TokenKind.New,
+            "try" => TokenKind.Try,
+            "catch" => TokenKind.Catch,
+            "throw" => TokenKind.Throw,
             _ => TokenKind.Identifier,
         };
 

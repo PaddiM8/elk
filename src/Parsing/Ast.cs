@@ -444,7 +444,6 @@ enum CallType
     BuiltInScriptPath,
     BuiltInClosure,
     BuiltInCall,
-    BuiltInError,
     BuiltInTime,
 }
 
@@ -556,5 +555,33 @@ class ClosureExpr : Expr
         Function = function;
         Parameters = parameters;
         Body = body;
+    }
+}
+
+class TryExpr : Expr
+{
+    public BlockExpr Body { get; }
+
+    public BlockExpr CatchBody { get; }
+
+    public Token? CatchIdentifier { get; }
+
+    public TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
+        : base(body.Position)
+    {
+        Body = body;
+        CatchBody = catchBody;
+        CatchIdentifier = catchIdentifier;
+    }
+}
+
+class ThrowExpr : Expr
+{
+    public Expr Value { get; }
+
+    public ThrowExpr(Expr value)
+        : base(value.Position)
+    {
+        Value = value;
     }
 }

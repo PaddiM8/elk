@@ -157,9 +157,4 @@ public class Into
     [ElkFunction("type")]
     public static RuntimeType ToType(RuntimeObject value)
         => new(value.GetType());
-
-    /// <returns>The message stored in the given error.</returns>
-    [ElkFunction("message")]
-    public static RuntimeString Message(RuntimeError err)
-        => new(err.Value);
 }

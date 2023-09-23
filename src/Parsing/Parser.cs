@@ -666,6 +666,16 @@ internal class Parser
             return ParseWhile();
         }
 
+        if (Match(TokenKind.Try))
+        {
+            return ParseTry();
+        }
+
+        if (Match(TokenKind.Throw))
+        {
+            return ParseThrow();
+        }
+
         if (Match(TokenKind.OpenSquareBracket))
         {
             return ParseList();
@@ -911,6 +921,30 @@ internal class Parser
         var branch = ParseBlockOrSingle(StructureKind.Loop);
 
         return new WhileExpr(condition, branch);
+    }
+
+    private Expr ParseTry()
+    {
+        EatExpected(TokenKind.Try);
+        var body = ParseBlockOrSingle(StructureKind.Other);
+        EatExpected(TokenKind.Catch);
+        var catchIdentifier = AdvanceIf(TokenKind.Identifier)
+            ? Previous
+            : null;
+        var catchScope = new LocalScope(_scope);
+        if (catchIdentifier != null)
+            catchScope.AddVariable(catchIdentifier.Value, RuntimeNil.Value);
+
+        var catchBody = ParseBlockOrSingle(StructureKind.Other, catchScope);
+
+        return new TryExpr(body, catchBody, catchIdentifier);
+    }
+
+    private Expr ParseThrow()
+    {
+        EatExpected(TokenKind.Throw);
+
+        return new ThrowExpr(ParseExpr());
     }
 
     private List<Token> ParseIdentifierList()

@@ -13,7 +13,6 @@ namespace Elk.Analysis;
 class Analyser
 {
     private Scope _scope;
-    private Expr? _lastExpr;
     private Expr? _enclosingFunction;
 
     private Analyser(RootModuleScope rootModule)
@@ -24,32 +23,13 @@ class Analyser
     public static List<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module)
     {
         var analyser = new Analyser(module.RootModule);
+        analyser.AnalyseModule(module);
+        analyser._scope = module;
 
-        try
-        {
-            analyser.AnalyseModule(module);
-            analyser._scope = module;
-
-            return ast
-                .Where(expr => expr is not FunctionExpr)
-                .Select(expr => analyser.Next(expr))
-                .ToList();
-        }
-        catch (RuntimeException e)
-        {
-            var error = new RuntimeError(
-                e.Message,
-                analyser._lastExpr?.Position ?? TextPos.Default
-            );
-
-            throw new AggregateException(error.ToString(), e)
-            {
-                Data =
-                {
-                    ["error"] = error,
-                },
-            };
-        }
+        return ast
+            .Where(expr => expr is not FunctionExpr)
+            .Select(expr => analyser.Next(expr))
+            .ToList();
     }
 
     private void AnalyseModule(ModuleScope module)
@@ -74,7 +54,6 @@ class Analyser
 
     private Expr Next(Expr expr)
     {
-        _lastExpr = expr;
         expr.EnclosingFunction = _enclosingFunction;
 
         var analysedExpr = expr switch
@@ -105,6 +84,8 @@ class Analyser
             FunctionReferenceExpr e => Visit(e),
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
+            TryExpr e => Visit(e),
+            ThrowExpr e => Visit(e),
             _ => throw new NotSupportedException(),
         };
 
@@ -115,7 +96,6 @@ class Analyser
 
     private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure, bool validateParameters = true)
     {
-        _lastExpr = expr;
         expr.EnclosingFunction = _enclosingFunction;
 
         var analysedExpr = expr switch
@@ -575,7 +555,6 @@ class Analyser
             "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
-            "error" => CallType.BuiltInError,
             "time" => CallType.BuiltInTime,
             _ => null,
         };
@@ -835,6 +814,18 @@ class Analyser
 
         return closure;
     }
+
+    private TryExpr Visit(TryExpr expr)
+    {
+        return new TryExpr(
+            (BlockExpr)Next(expr.Body),
+            (BlockExpr)Next(expr.CatchBody),
+            expr.CatchIdentifier
+        );
+    }
+
+    private ThrowExpr Visit(ThrowExpr expr)
+        => new(Next(expr.Value));
 
     private StdFunction? ResolveStdFunction(string name, IList<Token> modulePath)
     {

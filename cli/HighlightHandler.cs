@@ -56,6 +56,7 @@ class HighlightHandler : IHighlightHandler
         _length = text.Length;
         _index = 0;
         _lastShellStyleInvocations.Clear();
+        _unevaluatedVariables.Clear();
 
         var builder = new StringBuilder();
         while (!ReachedEnd)
@@ -77,7 +78,7 @@ class HighlightHandler : IHighlightHandler
 
         return Current?.Kind switch
         {
-            >= TokenKind.Not and <= TokenKind.New => NextKeyword(),
+            >= TokenKind.Not and <= TokenKind.Catch => NextKeyword(),
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => NextNumberLiteral(),
             TokenKind.Comment => NextComment(),
             TokenKind.StringLiteral => NextStringLiteral(),
@@ -133,6 +134,13 @@ class HighlightHandler : IHighlightHandler
         {
             while (!ReachedEnd && Current?.Kind != TokenKind.ClosedParenthesis)
                 builder.Append(Eat()!.Value);
+        }
+        else if (keyword.Kind == TokenKind.Catch)
+        {
+            if (Current?.Kind == TokenKind.WhiteSpace)
+                builder.Append(Eat()!.Value);
+            if (Current?.Kind == TokenKind.Identifier)
+                _unevaluatedVariables.Add(Current.Value);
         }
 
         return builder.ToString();

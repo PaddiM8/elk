@@ -179,13 +179,6 @@ static class IO
         var builder = new StringBuilder();
         foreach (var value in input)
         {
-            if (value is RuntimeError err)
-            {
-                Console.Error.WriteLine(err.Value);
-
-                return;
-            }
-
             builder.Append(value.As<RuntimeString>().Value);
             builder.Append(' ');
         }

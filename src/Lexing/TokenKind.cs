@@ -13,7 +13,7 @@ public enum TokenKind
 
     // Keywords
     Not, And, Or, Fn, Let, If, Else, For, While, In, Return, Break, Continue, With, Using,
-    Nil, True, False, Alias, Unalias, Module, Struct, New,
+    Nil, True, False, Alias, Unalias, Module, Struct, New, Try, Catch, Throw,
 
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,

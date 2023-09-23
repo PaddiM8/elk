@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
-using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
 
@@ -37,7 +36,7 @@ partial class Interpreter
         }
         else
         {
-            return Error($"cd: The directory \"{path}\" does not exist");
+            throw new RuntimeException($"cd: The directory \"{path}\" does not exist", Position);
         }
 
         return RuntimeNil.Value;
@@ -144,17 +143,6 @@ partial class Interpreter
         );
 
         return result;
-    }
-
-    private RuntimeError EvaluateBuiltInError(List<RuntimeObject> arguments)
-    {
-        if (arguments.Count != 1)
-            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
-
-        return new RuntimeError(
-            arguments[0].As<RuntimeString>().Value,
-            _lastExpr?.Position ?? TextPos.Default
-        );
     }
 
     private RuntimeObject EvaluateBuiltInTime(IList<Expr> arguments)

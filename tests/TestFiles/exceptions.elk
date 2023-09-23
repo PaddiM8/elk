@@ -1,0 +1,18 @@
+let result = try {
+    1+1
+} catch {
+    assert(false)
+}
+
+assert(result == 2)
+
+let result2 = try {
+    list::column(1, 1)
+    assert(false)
+} catch e {
+    assert(isType(e, String))
+
+    "caught"
+}
+
+assert(result2 == "caught")

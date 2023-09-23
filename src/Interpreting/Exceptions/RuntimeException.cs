@@ -9,7 +9,7 @@ namespace Elk.Interpreting.Exceptions;
 
 public class RuntimeException : Exception
 {
-    public TextPos? Position { get; }
+    public TextPos? Position { get; set; }
 
     public RuntimeException(string message)
         : base(message)

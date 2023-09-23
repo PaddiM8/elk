@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
 using NUnit.Framework;
 
 #endregion
@@ -19,7 +20,17 @@ public class IntegrationTests
             PrintErrors = false,
         };
 
-        Assert.DoesNotThrow(() => interpreter.Interpret(File.ReadAllText(filePath)));
+        Assert.DoesNotThrow(() =>
+        {
+            try
+            {
+                interpreter.Interpret(File.ReadAllText(filePath));
+            }
+            catch (RuntimeException e)
+            {
+                throw new RuntimeException($"{e.Position} {e.Message}");
+            }
+        });
     }
 
     public static IEnumerable<string> ElkFiles()

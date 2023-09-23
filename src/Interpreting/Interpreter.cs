@@ -47,38 +47,19 @@ partial class Interpreter
         if (scope != null)
             _scope = scope;
 
-        List<Expr> analysedAst;
-        try
-        {
-            analysedAst = Analyser.Analyse(ast, _scope.ModuleScope);
-        }
-        catch (AggregateException e)
-        {
-            if (!PrintErrors)
-                throw;
-
-            return (RuntimeError)e.Data["error"]!;
-        }
-
+        var analysedAst = Analyser.Analyse(ast, _scope.ModuleScope);
         RuntimeObject lastResult = RuntimeNil.Value;
         try
         {
             foreach (var expr in analysedAst)
             {
                 lastResult = Next(expr);
-                if (lastResult is RuntimeError error)
-                    throw new RuntimeException(error.ToString());
             }
         }
         catch (RuntimeException e)
         {
-            var position = e.Position ?? Position;
-            var error = new RuntimeError(e.Message, position);
-
-            if (!PrintErrors)
-                throw new AggregateException(error.ToString(), e);
-
-            return error;
+            e.Position = Position;
+            throw;
         }
         catch (InvalidOperationException e)
         {
@@ -86,12 +67,7 @@ partial class Interpreter
             // they fail to compare two items. This should simply be a runtime error,
             // since that means the user is trying to compare values that can not be
             // compared with each other.
-            var error = new RuntimeError(e.Message, Position);
-
-            if (!PrintErrors)
-                throw new AggregateException(error.ToString(), e);
-
-            return error;
+            throw new RuntimeException(e.Message, Position);
         }
 
         return lastResult;
@@ -110,21 +86,13 @@ partial class Interpreter
 
             return Interpret(ast);
         }
-        catch (ParseException e)
+        catch (ParseException)
         {
-            var error = new RuntimeError(e.Message, e.Position);
             _lastExpr = null;
             _scope = _rootModule;
-
-            if (!PrintErrors)
-                throw new AggregateException(error.ToString(), e);
-
-            return error;
+            throw;
         }
     }
-
-    private RuntimeError Error(string message)
-        => new(message, Position);
 
     public bool ModuleExists(IEnumerable<string> modulePath)
         => _scope.ModuleScope.FindModule(modulePath, true) != null;
@@ -182,6 +150,8 @@ partial class Interpreter
             FunctionReferenceExpr e => Visit(e),
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
+            TryExpr e => Visit(e),
+            ThrowExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
     }
@@ -384,15 +354,10 @@ partial class Interpreter
                 child.IsRoot = expr.IsRoot;
                 lastValue = Next(child);
 
-                if (child.IsRoot && lastValue is RuntimeError lastValueError)
-                    throw new RuntimeException(lastValueError.ToString());
-
                 break;
             }
 
-            var nextValue = Next(child);
-            if (nextValue is RuntimeError error)
-                throw new RuntimeException(error.ToString());
+            Next(child);
         }
 
         _scope = prevScope;
@@ -453,18 +418,21 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.NonRedirectingAnd)
         {
-            var leftAsRoot = Next(expr.Left);
-            return leftAsRoot is RuntimeError
-                ? leftAsRoot
-                : Next(expr.Right);
+            Next(expr.Left);
+
+            return Next(expr.Right);
         }
 
         if (expr.Operator == OperationKind.NonRedirectingOr)
         {
-            var leftAsRoot = Next(expr.Left);
-            return leftAsRoot is RuntimeError
-                ? Next(expr.Right)
-                : leftAsRoot;
+            try
+            {
+                return Next(expr.Left);
+            }
+            catch (RuntimeException)
+            {
+                return Next(expr.Right);
+            }
         }
 
         var left = Next(expr.Left);
@@ -718,7 +686,6 @@ partial class Interpreter
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
                 CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
-                CallType.BuiltInError => EvaluateBuiltInError(arguments),
                 _ => throw new NotSupportedException(expr.CallType.ToString()),
             };
         }
@@ -820,17 +787,9 @@ partial class Interpreter
         {
             return stdFunction.Invoke(allArguments);
         }
-        catch (RuntimeStdException e)
-        {
-            return new RuntimeError(e.Message, Position);
-        }
-        catch (RuntimeException e)
-        {
-            throw new RuntimeException(e.Message, Position);
-        }
         catch (Exception e)
         {
-            return new RuntimeError($"Std: {e.Message}", Position);
+            throw new RuntimeStdException(e.Message);
         }
     }
 
@@ -981,7 +940,7 @@ partial class Interpreter
 
             return exitCode == 0
                 ? RuntimeNil.Value
-                : Error("");
+                : throw new RuntimeException("");
         }
 
         return new RuntimePipe(processContext, disableRedirectionBuffering);
@@ -1011,8 +970,8 @@ partial class Interpreter
         return expr.RuntimeValue!;
     }
 
-    private RuntimeObject Visit(FunctionReferenceExpr functionReferenceExpr)
-        => functionReferenceExpr.RuntimeFunction!;
+    private RuntimeObject Visit(FunctionReferenceExpr expr)
+        => expr.RuntimeFunction!;
 
     private RuntimeObject Visit(StringInterpolationExpr expr)
     {
@@ -1023,25 +982,51 @@ partial class Interpreter
         return new RuntimeString(result.ToString());
     }
 
-    private RuntimeObject Visit(ClosureExpr closureExpr)
+    private RuntimeObject Visit(ClosureExpr expr)
     {
         var scope = new LocalScope(
-            closureExpr.Function.EnclosingClosureValue?.Environment as Scope.Scope
+            expr.Function.EnclosingClosureValue?.Environment as Scope.Scope
                 ?? (Scope.Scope)_scope.ModuleScope
         );
-        foreach (var capture in closureExpr.CapturedVariables)
+        foreach (var capture in expr.CapturedVariables)
         {
-            var value = closureExpr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
+            var value = expr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
                 ?? _scope.FindVariable(capture)?.Value
                 ?? RuntimeNil.Value;
             scope.AddVariable(capture, value);
         }
 
-        var runtimeClosure = new RuntimeClosureFunction(closureExpr, scope);
-        closureExpr.RuntimeValue = runtimeClosure;
+        var runtimeClosure = new RuntimeClosureFunction(expr, scope);
+        expr.RuntimeValue = runtimeClosure;
 
-        return closureExpr.Function is CallExpr callExpr
+        return expr.Function is CallExpr callExpr
             ? NextCallWithClosure(callExpr, runtimeClosure)
             : runtimeClosure;
     }
+
+    private RuntimeObject Visit(TryExpr expr)
+    {
+        RuntimeObject result;
+        try
+        {
+            result = Next(expr.Body);
+        }
+        catch (RuntimeException e)
+        {
+            var value = e is RuntimeUserException userException
+                ? userException.Value
+                : new RuntimeString(e.Message);
+
+            var scope = new LocalScope(_scope);
+            if (expr.CatchIdentifier != null)
+                scope.AddVariable(expr.CatchIdentifier.Value, value);
+
+            result = NextBlock(expr.CatchBody, scope);
+        }
+
+        return result;
+    }
+
+    private RuntimeObject Visit(ThrowExpr expr)
+        => throw new RuntimeUserException(Next(expr));
 }
