@@ -381,6 +381,7 @@ class HighlightHandler : IHighlightHandler
         if (Current?.Kind != TokenKind.WhiteSpace)
             return "";
 
+        var textArguments = new List<string>();
         var textArgumentBuilder = new StringBuilder();
         while (!ReachedTextEnd())
         {
@@ -398,13 +399,29 @@ class HighlightHandler : IHighlightHandler
             {
                 textArgumentBuilder.Append(Color(Eat()!.Value, 0, endColor: 36));
             }
+            else if (Current?.Kind == TokenKind.WhiteSpace)
+            {
+                var whiteSpace = Eat()!.Value;
+                textArguments.Add(textArgumentBuilder.ToString());
+                textArguments.Add(whiteSpace);
+                textArgumentBuilder.Clear();
+            }
             else
             {
                 textArgumentBuilder.Append(Eat()!.Value);
             }
         }
 
-        return Color(textArgumentBuilder.ToString(), 36);
+        textArguments.Add(textArgumentBuilder.ToString());
+        textArgumentBuilder.Clear();
+
+        var highlightedTextArguments = textArguments.Select(x =>
+            FileUtils.IsValidStartOfPath(x, _shell.WorkingDirectory)
+                ? Underline(x)
+                : x
+        );
+
+        return Color(string.Join("", highlightedTextArguments), 36);
     }
 
     private string NextInterpolation(int endColor = 0)
@@ -468,6 +485,9 @@ class HighlightHandler : IHighlightHandler
         => endColor == null
             ? $"\x1b[{color}m{text}"
             : $"\x1b[{color}m{text}\x1b[{endColor}m";
+
+    private static string Underline(string text)
+        => $"\x1b[4m{text}\x1b[24m";
 
     private Token? Eat()
     {

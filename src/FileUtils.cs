@@ -52,4 +52,32 @@ public class FileUtils
             .Split(":")
             .Any(x => Directory.Exists(x) && FileIsExecutable(Path.Combine(x, name))) is true;
     }
+
+    public static bool IsValidStartOfPath(string path, string workingDirectory)
+    {
+        if (!path.StartsWith("./") && !path.StartsWith("~/") && !path.StartsWith("/"))
+            return false;
+
+        if (path.StartsWith("~"))
+            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
+
+        var absolutePath = path.StartsWith("/")
+            ? path
+            : Path.Combine(workingDirectory, path);
+        if (absolutePath == "/")
+            return true;
+
+        if (File.Exists(absolutePath) || Directory.Exists(absolutePath))
+            return true;
+
+        var parentPath = Path.GetDirectoryName(absolutePath);
+        if (!Directory.Exists(parentPath))
+            return false;
+
+        var fileName = Path.GetFileName(path);
+
+        return Directory.GetFileSystemEntries(parentPath)
+            .Select(Path.GetFileName)
+            .Any(x => x?.StartsWith(fileName) is true);
+    }
 }
