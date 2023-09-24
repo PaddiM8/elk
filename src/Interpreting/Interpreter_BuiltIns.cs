@@ -99,7 +99,7 @@ partial class Interpreter
             .Skip(1)
             .Concat(functionReference.Arguments)
             .ToList();
-        return functionReference switch
+        var evaluate = () => functionReference switch
         {
             RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(actualArguments, runtimeStdFunction.StdFunction),
             RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
@@ -117,6 +117,20 @@ partial class Interpreter
                 globbingEnabled: false
             ),
         };
+
+        if (functionReference.Plurality == Plurality.Singular || actualArguments.Count == 0)
+            return evaluate();
+
+        if (actualArguments.First() is not IEnumerable<RuntimeObject> firstArguments)
+            throw new RuntimeCastException(actualArguments.First().GetType(), "Iterable");
+
+        var evaluatedWithPlurality = firstArguments.Select(x =>
+        {
+            actualArguments[0] = x;
+            return evaluate();
+        });
+
+        return new RuntimeList(evaluatedWithPlurality);
     }
 
     private RuntimeObject EvaluateRuntimeClosure(

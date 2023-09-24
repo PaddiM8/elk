@@ -17,9 +17,12 @@ public abstract class RuntimeFunction : RuntimeObject
 {
     public IEnumerable<RuntimeObject> Arguments { get; }
 
-    internal RuntimeFunction(IEnumerable<RuntimeObject>? arguments)
+    public Plurality Plurality { get; }
+
+    internal RuntimeFunction(IEnumerable<RuntimeObject>? arguments, Plurality plurality)
     {
         Arguments = arguments ?? Array.Empty<RuntimeObject>();
+        Plurality = plurality;
     }
 
     public override RuntimeObject As(Type toType)
@@ -40,8 +43,11 @@ internal class RuntimeStdFunction : RuntimeFunction
 {
     public StdFunction StdFunction { get; }
 
-    public RuntimeStdFunction(StdFunction stdFunction, IEnumerable<RuntimeObject>? arguments)
-        : base(arguments)
+    public RuntimeStdFunction(
+        StdFunction stdFunction,
+        IEnumerable<RuntimeObject>? arguments,
+        Plurality plurality)
+        : base(arguments, plurality)
     {
         StdFunction = stdFunction;
     }
@@ -57,8 +63,11 @@ internal class RuntimeSymbolFunction : RuntimeFunction
 {
     public FunctionSymbol FunctionSymbol { get; }
 
-    public RuntimeSymbolFunction(FunctionSymbol functionSymbol, IEnumerable<RuntimeObject>? arguments)
-        : base(arguments)
+    public RuntimeSymbolFunction(
+        FunctionSymbol functionSymbol,
+        IEnumerable<RuntimeObject>? arguments,
+        Plurality plurality)
+        : base(arguments, plurality)
     {
         FunctionSymbol = functionSymbol;
     }
@@ -74,8 +83,11 @@ internal class RuntimeProgramFunction : RuntimeFunction
 {
     public string ProgramName { get; }
 
-    public RuntimeProgramFunction(string programName, IEnumerable<RuntimeObject>? arguments)
-        : base(arguments)
+    public RuntimeProgramFunction(
+        string programName,
+        IEnumerable<RuntimeObject>? arguments,
+        Plurality plurality)
+        : base(arguments, plurality)
     {
         ProgramName = programName;
     }
@@ -96,7 +108,7 @@ internal class RuntimeClosureFunction : RuntimeFunction
     public RuntimeClosureFunction(
         ClosureExpr expr,
         LocalScope environment)
-        : base(null)
+        : base(null, Plurality.Singular)
     {
         Expr = expr;
         Environment = environment;

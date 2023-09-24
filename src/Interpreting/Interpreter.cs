@@ -696,9 +696,21 @@ partial class Interpreter
 
             return expr.CallType switch
             {
-                CallType.Program => new RuntimeProgramFunction(expr.Identifier.Value, arguments),
-                CallType.StdFunction => new RuntimeStdFunction(expr.StdFunction!, arguments),
-                CallType.Function => new RuntimeSymbolFunction(expr.FunctionSymbol!, arguments),
+                CallType.Program => new RuntimeProgramFunction(
+                    expr.Identifier.Value,
+                    arguments,
+                    expr.Plurality
+                ),
+                CallType.StdFunction => new RuntimeStdFunction(
+                    expr.StdFunction!,
+                    arguments,
+                    expr.Plurality
+                ),
+                CallType.Function => new RuntimeSymbolFunction(
+                    expr.FunctionSymbol!,
+                    arguments,
+                    expr.Plurality
+                ),
                 _ => throw new RuntimeException("Cannot turn built-in functions (such as cd, exec, call) into function references."),
             };
         }
@@ -718,14 +730,13 @@ partial class Interpreter
             );
         }
 
-        var results = new List<RuntimeObject>(evaluatedArguments.Count);
-        foreach (var firstArgument in firstArguments.ToArray())
+        var evaluatedWithPlurality = firstArguments.Select(x =>
         {
-            evaluatedArguments[0] = firstArgument;
-            results.Add(Evaluate(evaluatedArguments));
-        }
+            evaluatedArguments[0] = x;
+            return Evaluate(evaluatedArguments);
+        });
 
-        return new RuntimeList(results);
+        return new RuntimeList(evaluatedWithPlurality);
     }
 
     private RuntimeObject EvaluateFunctionCall(

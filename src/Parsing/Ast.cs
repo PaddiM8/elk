@@ -434,7 +434,7 @@ enum CallStyle
     TextArguments,
 }
 
-enum Plurality
+public enum Plurality
 {
     Singular,
     Plural,
