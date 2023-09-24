@@ -28,7 +28,7 @@ public class Lexer
         ? _source[_index + 1]
         : '\0';
 
-    private char Previous => _index > 1
+    private char Previous => _index >= 1
         ? _source[_index - 1]
         : '\0';
 
@@ -263,6 +263,21 @@ public class Lexer
         int startIndex = _index;
         var value = new StringBuilder();
         value.Append(Eat());
+
+        // Question marks are generally not allowed in identifiers,
+        // but we still need to allow '$?', since that's used for
+        // exit codes.
+        if (Previous == '$' && Current == '?')
+        {
+            value.Append(Eat());
+
+            return Build(
+                TokenKind.Identifier,
+                value.ToString(),
+                new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            );
+        }
+
         while (IsValidIdentifierMiddle(Current, Peek))
         {
             if (Current == '.' && Peek == '.')

@@ -234,6 +234,9 @@ class HighlightHandler : IHighlightHandler
     {
         int startIndex = Current!.Position.Index;
         string identifier = Eat()!.Value.Trim();
+        if (identifier.StartsWith('$'))
+            return identifier;
+
         string plurality = identifier.EndsWith("!") ? "!" : "";
         identifier = identifier.TrimCharEnd('!');
 

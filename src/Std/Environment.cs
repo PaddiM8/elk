@@ -23,6 +23,17 @@ public class Environment
         System.Environment.Exit((int?)exitCode?.Value ?? 0);
     }
 
+    /// <returns>The exit code (Integer) of the last exited process, or nil.</returns>
+    [ElkFunction("exitCode")]
+    public static RuntimeObject ExitCode()
+    {
+        var exitCode = System.Environment.GetEnvironmentVariable("?");
+
+        return exitCode == null
+            ? RuntimeNil.Value
+            : new RuntimeInteger(int.Parse(exitCode));
+    }
+
     /// <returns>A string containing a modified version of the path to the current directory (the value of $PWD). The names of all the directories in the path except for the last one are replaced with their first letter, and '/home/user' is replaced with a tilde.</returns>
     /// <example>assert(prettyPwd() == "~/P/e/src")</example>
     [ElkFunction("prettyPwd")]

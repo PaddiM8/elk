@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -51,6 +52,7 @@ public class ProcessContext : IEnumerable<string>
         _process.WaitForExit();
         int exitCode = _process.ExitCode;
         CloseProcess();
+        Environment.SetEnvironmentVariable("?", exitCode.ToString());
 
         return exitCode;
     }
@@ -144,5 +146,7 @@ public class ProcessContext : IEnumerable<string>
         _exitCode = _process.ExitCode;
         _process.Dispose();
         _process = null;
+
+        Environment.SetEnvironmentVariable("?", _exitCode.ToString());
     }
 }
