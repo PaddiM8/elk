@@ -91,25 +91,7 @@ public class ShellSession
         => _interpreter.VariableExists(name);
 
     public bool ProgramExists(string name)
-    {
-        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (name.StartsWith('~'))
-            name = name[1..] + homePath;
-
-        if (name.StartsWith('.'))
-        {
-            string absolutePath = Path.Combine(WorkingDirectory, name);
-
-            return Extensions.FileIsExecutable(absolutePath);
-        }
-
-        if (name.StartsWith('/'))
-            return Extensions.FileIsExecutable(name);
-
-        return Environment.GetEnvironmentVariable("PATH")?
-            .Split(":")
-            .Any(x => Directory.Exists(x) && Extensions.FileIsExecutable(Path.Combine(x, name))) is true;
-    }
+        => FileUtils.ExecutableExists(name, WorkingDirectory);
 
     public void PrintPrompt()
     {
@@ -130,7 +112,16 @@ public class ShellSession
                 IsRoot = true,
             };
 
-            _interpreter.Interpret(new List<Expr> { call });
+            try
+            {
+                _interpreter.Interpret(new List<Expr> { call });
+            }
+            catch (RuntimeException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine($"Error evaluating elkPrompt: {e.Position} {e.Message}");
+                Console.ResetColor();
+            }
 
             return;
         }

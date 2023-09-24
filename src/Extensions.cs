@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Unix;
 
 #endregion
 
@@ -63,30 +62,5 @@ public static class Extensions
         }
 
         return "";
-    }
-
-    public static bool FileIsExecutable(string filePath)
-    {
-        var fileInfo = new UnixFileInfo(filePath);
-        if (!fileInfo.Exists || fileInfo.IsDirectory)
-            return false;
-
-        var permissions = fileInfo.FileAccessPermissions;
-        if (permissions.HasFlag(FileAccessPermissions.OtherExecute))
-            return true;
-
-        if (permissions.HasFlag(FileAccessPermissions.UserExecute) &&
-            UnixUserInfo.GetRealUserId() == fileInfo.OwnerUserId)
-        {
-            return true;
-        }
-
-        if (permissions.HasFlag(FileAccessPermissions.GroupExecute) &&
-            UnixUserInfo.GetRealUser().GroupId == fileInfo.OwnerGroupId)
-        {
-            return true;
-        }
-
-        return false;
     }
 }
