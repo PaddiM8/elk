@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.DataTypes;
 
@@ -19,6 +20,7 @@ public class ProcessContext : IEnumerable<string>
     private readonly BlockingCollection<string> _buffer = new(new ConcurrentQueue<string>());
     private bool _allowNonZeroExit;
     private int _exitCode;
+    private int _openPipeCount;
 
     public ProcessContext(Process process, RuntimeObject? pipedValue)
     {
@@ -73,10 +75,16 @@ public class ProcessContext : IEnumerable<string>
         }
 
         if (_process?.StartInfo.RedirectStandardOutput is true)
+        {
             _process.BeginOutputReadLine();
+            _openPipeCount++;
+        }
 
         if (_process?.StartInfo.RedirectStandardError is true)
+        {
             _process.BeginErrorReadLine();
+            _openPipeCount++;
+        }
 
         if (_pipedValue != null)
             Read(_pipedValue);
@@ -91,7 +99,8 @@ public class ProcessContext : IEnumerable<string>
     {
         if (eventArgs.Data == null)
         {
-            _buffer.CompleteAdding();
+            if (Interlocked.Decrement(ref _openPipeCount) == 0)
+                _buffer.CompleteAdding();
         }
         else
         {
