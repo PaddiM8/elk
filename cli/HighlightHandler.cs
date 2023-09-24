@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -289,7 +288,8 @@ class HighlightHandler : IHighlightHandler
         // Gather all identifiers (parameters) after the `=>` and add them to
         // the _unevaluatedVariables hashset in order to keep track of closure
         // parameters that haven't been interpreted yet but should be highlighted.
-        while (Current?.Kind is not (TokenKind.Colon or TokenKind.OpenBrace or TokenKind.EndOfFile or null))
+        while (Current?.Kind is not (TokenKind.Ampersand or TokenKind.Colon or
+               TokenKind.OpenBrace or TokenKind.EndOfFile or null))
         {
             var token = Eat()!;
             builder.Append(token.Value);
