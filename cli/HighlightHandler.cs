@@ -97,8 +97,20 @@ class HighlightHandler : IHighlightHandler
 
         if (keyword.Kind == TokenKind.Fn)
         {
+            bool insideParameterList = false;
             while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
-                builder.Append(Eat()!.Value);
+            {
+                var token = Eat()!;
+                if (token.Kind == TokenKind.OpenParenthesis)
+                    insideParameterList = true;
+                if (token.Kind == TokenKind.ClosedParenthesis)
+                    insideParameterList = false;
+
+                if (insideParameterList && token.Kind == TokenKind.Identifier)
+                    _unevaluatedVariables.Add(token.Value);
+
+                builder.Append(token.Value);
+            }
         }
         else if (keyword.Kind is TokenKind.Let or TokenKind.Alias)
         {
