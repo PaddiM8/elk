@@ -37,7 +37,7 @@ class Analyser
         module.IsAnalysed = true;
 
         foreach (var functionSymbol in module.Functions
-                     .Where(x => !x.Expr.FailedAnalysis)
+                     .Where(x => x.Expr.AnalysisStatus == AnalysisStatus.None)
                      .Concat(module.ImportedFunctions))
         {
             _scope = functionSymbol.Expr.Module;
@@ -153,6 +153,7 @@ class Analyser
         )
         {
             IsRoot = expr.IsRoot,
+            AnalysisStatus = AnalysisStatus.Done,
         };
 
         // Need to set _enclosingFunction *before* analysing the block
@@ -165,7 +166,7 @@ class Analyser
         }
         catch (RuntimeException)
         {
-            expr.FailedAnalysis = true;
+            expr.AnalysisStatus = AnalysisStatus.Done;
 
             throw;
         }

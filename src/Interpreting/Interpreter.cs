@@ -82,15 +82,16 @@ partial class Interpreter
                 _scope
             );
             if (lexError != null)
-                throw new ParseException(lexError.Position, lexError.Message);
+                throw new RuntimeException(lexError.Message, lexError.Position);
 
             return Interpret(ast);
         }
-        catch (ParseException)
+        catch (ParseException e)
         {
             _lastExpr = null;
             _scope = _rootModule;
-            throw;
+
+            throw new RuntimeException(e.Message, e.Position);
         }
     }
 

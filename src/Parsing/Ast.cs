@@ -112,6 +112,13 @@ class StructExpr : Expr
     }
 }
 
+enum AnalysisStatus
+{
+    None,
+    Failed,
+    Done,
+}
+
 class FunctionExpr : Expr
 {
     public Token Identifier { get; }
@@ -126,7 +133,7 @@ class FunctionExpr : Expr
 
     public RuntimeClosureFunction? GivenClosure { get; set; }
 
-    public bool FailedAnalysis { get; set; }
+    public AnalysisStatus AnalysisStatus { get; set; }
 
     public FunctionExpr(
         Token identifier,
