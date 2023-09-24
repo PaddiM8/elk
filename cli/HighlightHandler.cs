@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -232,7 +233,7 @@ class HighlightHandler : IHighlightHandler
         {
             _lastShellStyleInvocations.Add(
                 new(
-                    identifier,
+                    string.Join("::", modulePath.Append(identifier)),
                     textArguments,
                     startIndex, Current?.Position.Index ?? _length
                 )
@@ -289,6 +290,17 @@ class HighlightHandler : IHighlightHandler
         builder.Append(Color(name, 34));
         if (Current is not { Kind: TokenKind.ColonColon })
             return builder.ToString();
+
+        int pos = Current?.Position.Index ?? _length;
+        string textForCompletion = string.Join("::", modulePath) + "::";
+        _lastShellStyleInvocations.Add(
+            new(
+                textForCompletion,
+                "",
+                pos - textForCompletion.Length,
+                pos
+            )
+        );
 
         builder.Append(Eat()!.Value);
 

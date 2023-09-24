@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace Elk.Std.Bindings;
 
@@ -11,8 +12,8 @@ namespace Elk.Std.Bindings;
 /// </summary>
 public static partial class StdBindings
 {
-    public static IEnumerable<string> GlobalFunctionNames
-        => _modules["*"].functionNames;
+    public static IEnumerable<string> FullSymbolNames
+        => _modules.Keys.Select(x => $"{x}::").Concat(_functions.Keys);
     public static bool HasModule(string moduleName)
         => _modules.ContainsKey(moduleName);
 

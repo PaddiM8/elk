@@ -147,7 +147,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Where(Directory.Exists)
             .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
             .Select(Path.GetFileName)
-            .Concat(StdBindings.GlobalFunctionNames)
+            .Concat(StdBindings.FullSymbolNames)
             .Where(x => x != null && x.StartsWith(name))
             .Distinct()
             .OrderBy(x => x)
