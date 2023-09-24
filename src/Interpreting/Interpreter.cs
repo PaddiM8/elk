@@ -148,7 +148,6 @@ partial class Interpreter
             VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
             LiteralExpr e => Visit(e),
-            FunctionReferenceExpr e => Visit(e),
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             TryExpr e => Visit(e),
@@ -651,7 +650,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
     {
-        if (expr.CallType == CallType.BuiltInTime)
+        if (expr is { IsReference: false, CallType: CallType.BuiltInTime })
             return EvaluateBuiltInTime(expr.Arguments);
 
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
@@ -688,6 +687,19 @@ partial class Interpreter
                 CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 _ => throw new NotSupportedException(expr.CallType.ToString()),
+            };
+        }
+
+        if (expr.IsReference)
+        {
+            var arguments = expr.Arguments.Select(Next);
+
+            return expr.CallType switch
+            {
+                CallType.Program => new RuntimeProgramFunction(expr.Identifier.Value, arguments),
+                CallType.StdFunction => new RuntimeStdFunction(expr.StdFunction!, arguments),
+                CallType.Function => new RuntimeSymbolFunction(expr.FunctionSymbol!, arguments),
+                _ => throw new RuntimeException("Cannot turn built-in functions (such as cd, exec, call) into function references."),
             };
         }
 
@@ -796,7 +808,9 @@ partial class Interpreter
 
     private object ConstructClosureFunc(Type closureFuncType, RuntimeClosureFunction runtimeClosure)
     {
-        var parameters = runtimeClosure.Expr.Parameters.Select(x => x.Value).ToList();
+        var parameters = runtimeClosure.Expr.Parameters
+            .Select(x => x.Value)
+            .ToList();
 
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
@@ -971,9 +985,6 @@ partial class Interpreter
         return expr.RuntimeValue!;
     }
 
-    private RuntimeObject Visit(FunctionReferenceExpr expr)
-        => expr.RuntimeFunction!;
-
     private RuntimeObject Visit(StringInterpolationExpr expr)
     {
         var result = new StringBuilder();
@@ -1000,9 +1011,9 @@ partial class Interpreter
         var runtimeClosure = new RuntimeClosureFunction(expr, scope);
         expr.RuntimeValue = runtimeClosure;
 
-        return expr.Function is CallExpr callExpr
-            ? NextCallWithClosure(callExpr, runtimeClosure)
-            : runtimeClosure;
+        return expr.Function.IsReference
+            ? runtimeClosure
+            : NextCallWithClosure(expr.Function, runtimeClosure);
     }
 
     private RuntimeObject Visit(TryExpr expr)

@@ -15,6 +15,13 @@ namespace Elk.Std.DataTypes;
 [ElkType("Function")]
 public abstract class RuntimeFunction : RuntimeObject
 {
+    public IEnumerable<RuntimeObject> Arguments { get; }
+
+    internal RuntimeFunction(IEnumerable<RuntimeObject>? arguments)
+    {
+        Arguments = arguments ?? Array.Empty<RuntimeObject>();
+    }
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {
@@ -33,7 +40,8 @@ internal class RuntimeStdFunction : RuntimeFunction
 {
     public StdFunction StdFunction { get; }
 
-    public RuntimeStdFunction(StdFunction stdFunction)
+    public RuntimeStdFunction(StdFunction stdFunction, IEnumerable<RuntimeObject>? arguments)
+        : base(arguments)
     {
         StdFunction = stdFunction;
     }
@@ -49,7 +57,8 @@ internal class RuntimeSymbolFunction : RuntimeFunction
 {
     public FunctionSymbol FunctionSymbol { get; }
 
-    public RuntimeSymbolFunction(FunctionSymbol functionSymbol)
+    public RuntimeSymbolFunction(FunctionSymbol functionSymbol, IEnumerable<RuntimeObject>? arguments)
+        : base(arguments)
     {
         FunctionSymbol = functionSymbol;
     }
@@ -65,7 +74,8 @@ internal class RuntimeProgramFunction : RuntimeFunction
 {
     public string ProgramName { get; }
 
-    public RuntimeProgramFunction(string programName)
+    public RuntimeProgramFunction(string programName, IEnumerable<RuntimeObject>? arguments)
+        : base(arguments)
     {
         ProgramName = programName;
     }
@@ -86,6 +96,7 @@ internal class RuntimeClosureFunction : RuntimeFunction
     public RuntimeClosureFunction(
         ClosureExpr expr,
         LocalScope environment)
+        : base(null)
     {
         Expr = expr;
         Environment = environment;

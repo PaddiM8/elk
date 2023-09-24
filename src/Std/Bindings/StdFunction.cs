@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Elk.Std.DataTypes;
 
 namespace Elk.Std.Bindings;
@@ -21,4 +22,23 @@ public record StdFunction(
     int? VariadicStart,
     bool ConsumesPipe,
     ImmutableArray<StdFunctionParameter> Parameters,
-    Func<List<object?>, RuntimeObject> Invoke);
+    Func<List<object?>, RuntimeObject> Invoke)
+{
+    public int? ClosureParameterCount
+    {
+        get
+        {
+            if (Parameters.Length == 0)
+                return null;
+
+            string lastParameterType = Parameters.Last().Type.ToString();
+            if (lastParameterType.StartsWith("System.Func`"))
+                return lastParameterType[lastParameterType.IndexOf('`') + 1] - '0' - 1;
+
+            if (lastParameterType.StartsWith("System.Action`"))
+                return lastParameterType[lastParameterType.IndexOf('`') + 1] - '0';
+
+            return null;
+        }
+    }
+}

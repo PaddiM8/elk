@@ -38,8 +38,11 @@ level1 => a: {
     }
 }
 
-# variable of function reference
+# function reference
 fn a(x): x + 1
-print([1, 2, 3] | map => &a | join)
 assert(([1, 2, 3] | map => &a | join) == "234")
 assert(([1, 2, 3] | iter::reduce => &math::mul) == 6)
+
+fn b(x, y): x + y
+assert(([1, 2, 3] | map => &b(10) | join ", ") == "11, 12, 13")
+assert(([1, 2, 3] | map => &math::mul(3) | math::sum) == 18)

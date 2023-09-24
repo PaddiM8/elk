@@ -692,12 +692,7 @@ internal class Parser
             return ParseBlock(StructureKind.Other);
         }
 
-        if (Match(TokenKind.Ampersand))
-        {
-            return ParseFunctionReference();
-        }
-
-        if (Match(TokenKind.Identifier, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
+        if (Match(TokenKind.Identifier, TokenKind.Ampersand, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
         {
             return ParseIdentifier();
         }
@@ -717,7 +712,7 @@ internal class Parser
     private Expr ParseClosure(Expr function)
     {
         EatExpected(TokenKind.EqualsGreater);
-        if (function is not CallExpr and not FunctionReferenceExpr)
+        if (function is not CallExpr left)
         {
             throw new ParseException(
                 Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure"
@@ -726,8 +721,8 @@ internal class Parser
 
         if (Match(TokenKind.Ampersand))
         {
-            var functionReferenceMaybeClosure = ParseFunctionReference();
-            if (functionReferenceMaybeClosure is not FunctionReferenceExpr functionReference)
+            var call = ParseIdentifier();
+            if (call is not CallExpr { IsReference: true } functionReference)
             {
                 throw new ParseException(
                     Current?.Position ?? TextPos.Default,
@@ -742,7 +737,7 @@ internal class Parser
                 new LocalScope(_scope)
             );
 
-            return new ClosureExpr(function, new List<Token>(), block);
+            return new ClosureExpr(left, new List<Token>(), block);
         }
 
         var scope = new LocalScope(_scope);
@@ -778,7 +773,7 @@ internal class Parser
             right = ParseBlock(StructureKind.Other, scope);
         }
 
-        return new ClosureExpr(function, parameters, right);
+        return new ClosureExpr(left, parameters, right);
     }
 
 
@@ -1083,43 +1078,9 @@ internal class Parser
         return new DictionaryExpr(expressions, firstExpression.Position);
     }
 
-    private Expr ParseFunctionReference()
-    {
-        EatExpected(TokenKind.Ampersand);
-
-        IList<Token> modulePath = Array.Empty<Token>();
-        while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
-        {
-            if (modulePath.IsReadOnly)
-                modulePath = new List<Token>();
-
-            modulePath.Add(Eat());
-            Eat(); // ::
-        }
-
-        var pos = Current?.Position ?? TextPos.Default;
-        var identifier = Match(TokenKind.Identifier)
-            ? Eat()
-            : new Token(TokenKind.Identifier, ParsePath(), pos);
-
-        if (StdBindings.HasRuntimeType(identifier.Value))
-            return new TypeExpr(identifier);
-
-        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value);
-        if (modulePath.Count == 0 && importedStdModule != null)
-        {
-            modulePath.Add(new Token(TokenKind.Identifier, importedStdModule, TextPos.Default));
-        }
-
-        var functionReference = new FunctionReferenceExpr(identifier, modulePath);
-
-        return Match(TokenKind.EqualsGreater)
-            ? ParseClosure(functionReference)
-            : functionReference;
-    }
-
     private Expr ParseIdentifier()
     {
+        bool isReference = AdvanceIf(TokenKind.Ampersand);
         var pos = Current?.Position ?? TextPos.Default;
         IList<Token> modulePath = Array.Empty<Token>();
         while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
@@ -1178,7 +1139,10 @@ internal class Parser
                 CallStyle.Parenthesized,
                 functionPlurality,
                 CallType.Unknown
-            );
+            )
+            {
+                IsReference = isReference,
+            };
 
             return Match(TokenKind.EqualsGreater)
                 ? ParseClosure(call)
@@ -1211,7 +1175,10 @@ internal class Parser
             CallStyle.TextArguments,
             plurality,
             CallType.Unknown
-        );
+        )
+        {
+            IsReference = isReference,
+        };
 
         return Match(TokenKind.EqualsGreater)
             ? ParseClosure(textCall)

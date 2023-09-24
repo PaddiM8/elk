@@ -495,7 +495,7 @@ public class StdBindingsGenerator : ISourceGenerator
                 maxArgumentCount++;
             }
 
-            if (typeName.StartsWith("Func<"))
+            if (typeName.StartsWith("Func<") || typeName.StartsWith("Action<"))
                 hasClosure = true;
 
             parameters.Add((type.ToString(), parameter.Identifier.Text));

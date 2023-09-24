@@ -92,8 +92,13 @@ partial class Interpreter
         if (arguments.Count == 0)
             throw new RuntimeWrongNumberOfArgumentsException(1, 0, true);
 
-        var functionReference = arguments.First().As<RuntimeFunction>();
-        var actualArguments = arguments.Skip(1).ToList();
+        var functionReference = arguments
+            .First()
+            .As<RuntimeFunction>();
+        var actualArguments = arguments
+            .Skip(1)
+            .Concat(functionReference.Arguments)
+            .ToList();
         return functionReference switch
         {
             RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(actualArguments, runtimeStdFunction.StdFunction),
@@ -119,26 +124,24 @@ partial class Interpreter
         RuntimeClosureFunction runtimeClosure,
         bool isRoot)
     {
-        var functionReferenceExpr = (FunctionReferenceExpr)runtimeClosure.Expr.Function;
-
-        var innerFunction = functionReferenceExpr.RuntimeFunction!;
-        if (innerFunction is RuntimeStdFunction runtimeStdFunction)
+        var call = runtimeClosure.Expr.Function;
+        if (call.StdFunction != null)
         {
             var stdResult = EvaluateStdCall(
                 arguments,
-                runtimeStdFunction.StdFunction,
+                call.StdFunction,
                 runtimeClosure
             );
 
             return stdResult;
         }
 
-        if (innerFunction is not RuntimeSymbolFunction runtimeSymbolFunction)
+        if (call.FunctionSymbol == null)
             throw new RuntimeException("Closures are not supported for built-in non-std functions");
 
         var result = EvaluateFunctionCall(
             arguments,
-            runtimeSymbolFunction.FunctionSymbol.Expr,
+            call.FunctionSymbol.Expr,
             isRoot
         );
 

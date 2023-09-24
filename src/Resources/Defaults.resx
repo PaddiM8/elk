@@ -26,7 +26,7 @@ let gitExists = file::executableExists git
 fn elkPrompt() {
     let branch = if gitExists {
         git branch
-            |all where => x: str::startsWith(x, "* ")
+            |all where => &amp;str::startsWith("* ")
             | map => x: x[2..]
             | iter::first
     }

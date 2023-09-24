@@ -81,7 +81,6 @@ class Analyser
             VariableExpr e => Visit(e),
             CallExpr e => Visit(e),
             LiteralExpr e => Visit(e),
-            FunctionReferenceExpr e => Visit(e),
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             TryExpr e => Visit(e),
@@ -254,7 +253,11 @@ class Analyser
         if (symbol?.Expr == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
-        ValidateArguments(expr.Arguments, symbol.Expr.Parameters);
+        ValidateArguments(
+            expr.Arguments,
+            symbol.Expr.Parameters,
+            isReference: false
+        );
 
         return new NewExpr(
             expr.Identifier,
@@ -599,8 +602,8 @@ class Analyser
         int argumentCount = evaluatedArguments.Count;
         if (stdFunction != null && validateParameters)
         {
-            if (argumentCount < stdFunction.MinArgumentCount ||
-                argumentCount > stdFunction.MaxArgumentCount)
+            bool hasEnoughArguments = expr.IsReference || argumentCount >= stdFunction.MinArgumentCount;
+            if (!hasEnoughArguments || argumentCount > stdFunction.MaxArgumentCount)
             {
                 throw new RuntimeWrongNumberOfArgumentsException(
                     stdFunction.MinArgumentCount,
@@ -618,7 +621,11 @@ class Analyser
             if (hasClosure && !functionSymbol.Expr.HasClosure)
                 throw new RuntimeException("Expected closure.");
 
-            ValidateArguments(evaluatedArguments, functionSymbol.Expr.Parameters);
+            ValidateArguments(
+                evaluatedArguments,
+                functionSymbol.Expr.Parameters,
+                expr.IsReference
+            );
         }
 
         if (pipedValue is CallExpr { CallType: CallType.Program } pipedCall)
@@ -648,15 +655,16 @@ class Analyser
                 : null,
             RedirectionKind = expr.RedirectionKind,
             DisableRedirectionBuffering = expr.DisableRedirectionBuffering,
+            IsReference = expr.IsReference,
         };
     }
 
-    private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters)
+    private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters, bool isReference)
     {
         int argumentCount = arguments.Count;
         bool isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
         bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
-        bool tooFewArguments = !isVariadic && parameters.Count > argumentCount &&
+        bool tooFewArguments = !isReference && !isVariadic && parameters.Count > argumentCount &&
             parameters[argumentCount].DefaultValue == null;
 
         if (tooManyArguments || tooFewArguments)
@@ -718,34 +726,6 @@ class Analyser
         return int.Parse(numberLiteral);
     }
 
-    private Expr Visit(FunctionReferenceExpr expr)
-    {
-        string name = expr.Identifier.Value;
-        RuntimeFunction? runtimeFunction = null;
-
-        // Try to resolve as std function
-        var stdFunction = ResolveStdFunction(name, expr.ModulePath);
-        if (stdFunction != null)
-            runtimeFunction = new RuntimeStdFunction(stdFunction);
-
-        // Try to resolve as regular function
-        if (runtimeFunction == null)
-        {
-            var functionSymbol = ResolveFunctionSymbol(name, expr.ModulePath);
-            if (functionSymbol != null)
-                runtimeFunction = new RuntimeSymbolFunction(functionSymbol);
-        }
-
-        // Fallback: resolve as program
-        runtimeFunction ??= new RuntimeProgramFunction(expr.Identifier.Value);
-
-        return new FunctionReferenceExpr(expr.Identifier, expr.ModulePath)
-        {
-            RuntimeFunction = runtimeFunction,
-            IsRoot = expr.IsRoot,
-        };
-    }
-
     private StringInterpolationExpr Visit(StringInterpolationExpr expr)
     {
         var parts = expr.Parts.Select(Next).ToList();
@@ -760,58 +740,50 @@ class Analyser
     {
         expr.EnclosingFunction = expr;
 
-        var function = expr.Function is CallExpr callExpr
-            ? NextCallOrClosure(callExpr, pipedValue, hasClosure: true)
-            : Next(expr.Function);
-
+        var function = (CallExpr)NextCallOrClosure(expr.Function, pipedValue, hasClosure: true);
         var closure = new ClosureExpr(function, expr.Parameters, expr.Body)
         {
             IsRoot = expr.IsRoot,
             CapturedVariables = expr.CapturedVariables,
         };
 
-        if (expr.Body.Expressions.Count == 1 &&
-            expr.Body.Expressions.First() is FunctionReferenceExpr functionReference)
-        {
-            var evaluatedFunctionReference = (FunctionReferenceExpr)Next(functionReference);
-            var parameters = evaluatedFunctionReference.RuntimeFunction switch
-            {
-                RuntimeStdFunction stdFunction => stdFunction.StdFunction.Parameters
-                    .Select(x => functionReference.Identifier with { Value = "'" + x.Name }),
-                RuntimeSymbolFunction symbolFunction => symbolFunction.FunctionSymbol.Expr.Parameters
-                    .Select(x => x.Identifier with { Value = "'" + x.Identifier.Value }),
-                _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
-            };
-            var callType = evaluatedFunctionReference.RuntimeFunction switch
-            {
-                RuntimeStdFunction => CallType.StdFunction,
-                RuntimeSymbolFunction => CallType.Function,
-                RuntimeProgramFunction => CallType.Program,
-                _ => CallType.Unknown,
-            };
-
-            var constructedCall = new CallExpr(
-                functionReference.Identifier,
-                functionReference.ModulePath,
-                parameters.Select(x => new VariableExpr(x)).Cast<Expr>().ToList(),
-                CallStyle.Parenthesized,
-                Plurality.Singular,
-                callType
-            );
-
-            foreach (var parameter in parameters)
-                closure.Body.Scope.AddVariable(parameter.Value, RuntimeNil.Value);
-
-            closure.Parameters.Clear();
-            closure.Parameters.AddRange(parameters);
-            closure.Body.Expressions.Clear();
-            closure.Body.Expressions.Add(constructedCall);
-        }
-
         var previousEnclosingFunction = _enclosingFunction;
         _enclosingFunction = closure;
         closure.Body = (BlockExpr)Next(expr.Body);
         _enclosingFunction = previousEnclosingFunction;
+
+        if (closure.Body.Expressions.Count != 1 ||
+            closure.Body.Expressions.First() is not CallExpr { IsReference: true } functionReference)
+        {
+            return closure;
+        }
+
+        var closureParameters = function switch
+        {
+            not { StdFunction: null } => Enumerable
+                .Repeat(functionReference.Identifier, function.StdFunction.ClosureParameterCount!.Value)
+                .Select((x, i) => x with { Value = "'" + i }),
+            not { FunctionSymbol: null } => function.FunctionSymbol.Expr.Parameters
+                .Select(x => x.Identifier with { Value = "'" + x.Identifier.Value }),
+            _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
+        };
+        var implicitArguments = closureParameters
+            .Select(x => new VariableExpr(x)
+            {
+                EnclosingFunction = closure,
+            });
+        functionReference.Arguments = implicitArguments
+            .Concat(functionReference.Arguments)
+            .ToList();
+        functionReference.IsReference = false;
+
+        foreach (var parameter in closureParameters)
+            closure.Body.Scope.AddVariable(parameter.Value, RuntimeNil.Value);
+
+        closure.Parameters.Clear();
+        closure.Parameters.AddRange(closureParameters);
+        closure.Body.Expressions.Clear();
+        closure.Body.Expressions.Add(functionReference);
 
         return closure;
     }

@@ -468,7 +468,7 @@ class CallExpr : Expr
 
     public IList<Token> ModulePath { get; }
 
-    public IList<Expr> Arguments { get; }
+    public IList<Expr> Arguments { get; set; }
 
     public CallStyle CallStyle { get; }
 
@@ -485,6 +485,8 @@ class CallExpr : Expr
     public RedirectionKind RedirectionKind { get; set; }
 
     public bool DisableRedirectionBuffering { get; set; }
+
+    public bool IsReference { get; set; }
 
     public CallExpr(
         Token identifier,
@@ -517,22 +519,6 @@ class LiteralExpr : Expr
     }
 }
 
-class FunctionReferenceExpr : Expr
-{
-    public Token Identifier { get; }
-
-    public IList<Token> ModulePath { get; }
-
-    public RuntimeFunction? RuntimeFunction { get; init; }
-
-    public FunctionReferenceExpr(Token identifier, IList<Token> modulePath)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        ModulePath = modulePath;
-    }
-}
-
 class StringInterpolationExpr : Expr
 {
     public List<Expr> Parts { get; }
@@ -546,7 +532,7 @@ class StringInterpolationExpr : Expr
 
 class ClosureExpr : Expr
 {
-    public Expr Function { get; }
+    public CallExpr Function { get; }
 
     public List<Token> Parameters { get; }
 
@@ -556,7 +542,7 @@ class ClosureExpr : Expr
 
     public RuntimeClosureFunction? RuntimeValue { get; set; }
 
-    public ClosureExpr(Expr function, List<Token> parameters, BlockExpr body)
+    public ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body)
         : base(body.Position)
     {
         Function = function;
