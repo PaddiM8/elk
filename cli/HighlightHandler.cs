@@ -103,12 +103,24 @@ class HighlightHandler : IHighlightHandler
         else if (keyword.Kind is TokenKind.Let or TokenKind.Alias)
         {
             while (!ReachedEnd && Current?.Kind is not TokenKind.Equals)
-                builder.Append(Eat()!.Value);
+            {
+                var token = Eat()!;
+                if (token.Kind == TokenKind.Identifier)
+                    _unevaluatedVariables.Add(token.Value);
+
+                builder.Append(token.Value);
+            }
         }
         else if (keyword.Kind == TokenKind.For)
         {
             while (!ReachedEnd && Current?.Kind is not TokenKind.In)
-                builder.Append(Eat()!.Value);
+            {
+                var token = Eat()!;
+                if (token.Kind == TokenKind.Identifier)
+                    _unevaluatedVariables.Add(token.Value);
+
+                builder.Append(token.Value);
+            }
         }
         else if (keyword.Kind == TokenKind.With)
         {
