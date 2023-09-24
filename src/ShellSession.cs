@@ -46,7 +46,14 @@ public class ShellSession
         RunCommand(Defaults.init_file);
 
         if (File.Exists(CommonPaths.InitFile))
+        {
             RunFile(_interpreter, CommonPaths.InitFile);
+        }
+        else
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
+            File.WriteAllText(CommonPaths.InitFile, Defaults.init_file.Trim());
+        }
     }
 
     private void LoadPaths()

@@ -20,25 +20,24 @@
     </resheader>
 
     <data name="init_file">
-        alias ls = "ls --color"
-        let gitExists = file::executableExists git
-        let sedExists = file::executableExists sed
+alias ls = "ls --color"
+let gitExists = file::executableExists git
 
-        fn elkPrompt() {
-            let branch = if gitExists and sedExists {
-                git branch
-                    |all where => x: str::startsWith(x, "* ")
-                    | map => x: x[2..]
-                    | iter::first
-            }
+fn elkPrompt() {
+    let branch = if gitExists {
+        git branch
+            |all where => x: str::startsWith(x, "* ")
+            | map => x: x[2..]
+            | iter::first
+    }
 
-            let pwd = env::prettyPwd | ansi::color blue
-            if branch {
-                let formattedBranch = " ${branch}" | ansi::color magenta
-                print(pwd, formattedBranch, "❯ ")
-            } else {
-                print(pwd, "❯ ")
-            }
-        }
+    let pwd = env::prettyPwd | ansi::color blue
+    if branch {
+        let formattedBranch = " ${branch}" | ansi::color magenta
+        print(pwd, formattedBranch, "❯ ")
+    } else {
+        print(pwd, "❯ ")
+    }
+}
     </data>
 </root>
