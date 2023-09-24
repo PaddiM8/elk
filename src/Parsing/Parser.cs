@@ -71,6 +71,12 @@ internal class Parser
                 continue;
             }
 
+            while (parser.Match(TokenKind.Comment))
+                parser.Eat();
+
+            if (parser.ReachedEnd)
+                break;
+
             var expr = parser.ParseExpr();
             expr.IsRoot = true;
             expressions.Add(expr);
