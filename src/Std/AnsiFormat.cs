@@ -46,6 +46,12 @@ public class AnsiFormat
     [ElkFunction("showCursor")]
     public static RuntimeString ShowCUrsor()
         => new("\x1b[?25h");
+
+    /// <param name="input">Text that should be underlined</param>
+    /// <returns>A string containing ansi escape codes that result in underlined text in the terminal.</returns>
+    [ElkFunction("underline")]
+    public static RuntimeString Underline(RuntimeString input)
+        => new(Ansi.Underline(input.Value));
 }
 
 static class Ansi
@@ -73,6 +79,9 @@ static class Ansi
 
     public static string Bold(string value)
         => Escape(value, 1, 22);
+
+    public static string Underline(string value)
+        => Escape(value, 4, 24);
 
     public static string Color(string value, string colorName)
     {

@@ -1,7 +1,6 @@
 #region
 
 using System;
-using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
