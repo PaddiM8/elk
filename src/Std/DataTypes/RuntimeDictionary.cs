@@ -17,6 +17,11 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
 {
     public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; }
 
+    public RuntimeDictionary()
+    {
+        Entries = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
+    }
+
     public RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> entries)
     {
         Entries = entries;
@@ -78,6 +83,23 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         stringBuilder.Append("\n}");
 
         return stringBuilder.ToString();
+    }
+
+    public T? GetValue<T>(string key)
+        where T : RuntimeObject
+    {
+        return Entries.TryGetValue(key.GetHashCode(), out var value)
+            ? value.Item2.As<T>()
+            : default;
+    }
+
+    public T GetExpectedValue<T>(string key)
+        where T : RuntimeObject
+    {
+        if (!Entries.TryGetValue(key.GetHashCode(), out var value))
+            throw new RuntimeNotFoundException(key);
+
+        return value.Item2.As<T>();
     }
 }
 

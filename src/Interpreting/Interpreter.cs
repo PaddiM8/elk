@@ -86,6 +86,11 @@ partial class Interpreter
 
             return Interpret(ast);
         }
+        catch (RuntimeException e)
+        {
+            e.Position = Position;
+            throw;
+        }
         catch (ParseException e)
         {
             _lastExpr = null;
@@ -470,7 +475,7 @@ partial class Interpreter
                 RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
-                _ => throw new RuntimeInvalidOperationException("in", right.GetType().ToString()[7..]),
+                _ => throw new RuntimeInvalidOperationException("in", right.GetType()),
             };
 
             return RuntimeBoolean.From(result);

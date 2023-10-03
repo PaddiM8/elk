@@ -594,7 +594,13 @@ class Analyser
 
         bool definitionHasClosure = functionSymbol?.Expr.HasClosure is true || stdFunction?.HasClosure is true;
         if (!definitionHasClosure && hasClosure)
-            throw new RuntimeException("Unexpected closure.");
+        {
+            var additionalInfo = callType == CallType.Program
+                ? " The call was evaluated as a program invocation since a function with this name could not be found."
+                : "";
+
+            throw new RuntimeException($"Unexpected closure.{additionalInfo}");
+        }
 
         if (definitionHasClosure && !hasClosure)
             throw new RuntimeException("Expected closure.");

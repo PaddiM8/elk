@@ -1042,6 +1042,8 @@ internal class Parser
 
     private Expr ContinueParseAsSet(Expr firstExpression)
     {
+        _scope = _scope.Parent!;
+
         var expressions = new List<Expr>
         {
             firstExpression,
@@ -1057,6 +1059,8 @@ internal class Parser
 
     private Expr ContinueParseAsDictionary(Expr firstExpression)
     {
+        _scope = _scope.Parent!;
+
         if (Previous == null || !(IsLiteral(Previous.Kind) || Previous.Kind == TokenKind.Identifier))
             throw Error("Expected literal or identifier as dictionary key");
 

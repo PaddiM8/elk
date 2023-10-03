@@ -43,12 +43,12 @@ public class StdBindingsGenerator : ISourceGenerator
     // ReSharper disable once ConvertToConstant.Local
     private readonly bool _useDebugger = false;
     private readonly HashSet<string> _typeNames = new();
-    private const string BaseObjectName = "RuntimeObject";
+    private const string BaseObjectName = "Elk.Std.DataTypes.RuntimeObject";
 
     private readonly Dictionary<string, string> _additionalTypes = new()
     {
-        { "Iterable", $"IEnumerable<{BaseObjectName}>" },
-        { "Indexable", $"IIndexable<{BaseObjectName}>" },
+        { "Iterable", $"System.Collections.Generic.IEnumerable<{BaseObjectName}>" },
+        { "Indexable", $"Elk.Std.DataTypes.IIndexable<{BaseObjectName}>" },
     };
 
 
@@ -145,12 +145,33 @@ public class StdBindingsGenerator : ISourceGenerator
                 .First()
                 .Expression;
             var typeName = nameExpr.Token.ValueText;
-
-            var classType = declaredClass.Identifier.ValueText;
+            var classType = GetFullTypeName(compilation, declaredClass);
 
             _typeNames.Add(classType);
             sourceBuilder.Append($"\n\t\t{{ \"{typeName}\", typeof({classType}) }},");
         }
+    }
+
+    private static string GetFullTypeName(Compilation compilation, BaseTypeDeclarationSyntax syntaxNode)
+    {
+        var name = compilation
+            .GetSemanticModel(syntaxNode.SyntaxTree)
+            .GetDeclaredSymbol(syntaxNode)?
+            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            .Replace("<T>", "<Elk.Std.DataTypes.RuntimeObject>") ?? syntaxNode.ToString();
+
+        return name.StartsWith("global::")
+            ? name["global::".Length..]
+            : name;
+    }
+
+    private static string GetFullTypeName(Compilation compilation, ExpressionSyntax syntaxNode)
+    {
+        return compilation
+            .GetSemanticModel(syntaxNode.SyntaxTree)
+            .GetTypeInfo(syntaxNode)
+            .Type!
+            .ToDisplayString();
     }
 
     private void GenerateFunctionEntries(
@@ -221,15 +242,15 @@ public class StdBindingsGenerator : ISourceGenerator
                 if (i != 0)
                     sourceBuilder.Append(", ");
 
-                string typeName = parameter.Type!.ToString();
-                bool isStdType = typeName.StartsWith("Runtime");
+                var typeName = GetFullTypeName(compilation, parameter.Type!);
+                bool isStdType = parameter.Type!.ToString().StartsWith("Runtime");
                 string nullable = parameter.Type is NullableTypeSyntax
                     ? "?"
                     : "";
                 sourceBuilder.Append(
                     isStdType
                         ? $"(({BaseObjectName}{nullable})"
-                        : $"({typeName})"
+                        : $"({typeName}{nullable})"
                 );
 
                 sourceBuilder.Append($"args[{i}]");
@@ -243,8 +264,8 @@ public class StdBindingsGenerator : ISourceGenerator
                     // It is not possible to convert a value to RuntimeObject
                     // with As<T>(). Therefore, this method should only be
                     // added if it is not expecting just a RuntimeObject.
-                    if (typeName.TrimEnd('?') != BaseObjectName)
-                        sourceBuilder.Append($"{nullable}.As<{typeName.TrimEnd('?')}>()");
+                    if (typeName != BaseObjectName)
+                        sourceBuilder.Append($"{nullable}.As<{typeName}>()");
                 }
             }
 
@@ -272,7 +293,7 @@ public class StdBindingsGenerator : ISourceGenerator
                 additional = ", true";
 
             // Closure
-            if (parameter.type.StartsWith("Func<") || parameter.type.StartsWith("Action<"))
+            if (parameter.type.StartsWith("System.Func<") || parameter.type.StartsWith("System.Action<"))
                 additional = ", false, true";
 
             sourceBuilder.Append($"new(typeof({parameter.type.TrimEnd('?')}), \"{parameter.name}\"{additional})");
@@ -380,7 +401,7 @@ public class StdBindingsGenerator : ISourceGenerator
             from declaredMethod in declaredMethods
             let attribute = FindAttribute(declaredMethod, "ElkStruct")
             where attribute != null
-            select AnalyseStruct(declaredMethod, attribute, module);
+            select AnalyseStruct(compilation, declaredMethod, attribute, module);
     }
 
     private IEnumerable<StdFunctionInfo> FindMethods(Compilation compilation)
@@ -394,10 +415,11 @@ public class StdBindingsGenerator : ISourceGenerator
             from declaredMethod in declaredMethods
             let attribute = FindAttribute(declaredMethod, "ElkFunction")
             where attribute != null
-            select AnalyseMethod(declaredMethod, attribute, module);
+            select AnalyseMethod(compilation, declaredMethod, attribute, module);
     }
 
     private StdStructInfo AnalyseStruct(
+        Compilation compilation,
         MethodDeclarationSyntax methodSyntax,
         AttributeSyntax attribute,
         StdModuleInfo module)
@@ -405,6 +427,7 @@ public class StdBindingsGenerator : ISourceGenerator
         var attributeArguments = attribute.ArgumentList!.Arguments;
         var name = ((LiteralExpressionSyntax)attributeArguments[0].Expression).Token.ValueText;
         var parameters = AnalyseParameters(
+            compilation,
             methodSyntax.ParameterList.Parameters,
             out int minArgumentCount,
             out int maxArgumentCount,
@@ -424,6 +447,7 @@ public class StdBindingsGenerator : ISourceGenerator
     }
 
     private StdFunctionInfo AnalyseMethod(
+        Compilation compilation,
         MethodDeclarationSyntax methodSyntax,
         AttributeSyntax attribute,
         StdModuleInfo module)
@@ -446,6 +470,7 @@ public class StdBindingsGenerator : ISourceGenerator
 
         var name = ((LiteralExpressionSyntax)attributeArguments[0].Expression).Token.ValueText;
         var parameters = AnalyseParameters(
+            compilation,
             methodSyntax.ParameterList.Parameters,
             out int minArgumentCount,
             out int maxArgumentCount,
@@ -468,6 +493,7 @@ public class StdBindingsGenerator : ISourceGenerator
     }
 
     private List<(string, string)> AnalyseParameters(
+        Compilation compilation,
         SeparatedSyntaxList<ParameterSyntax> parameterSyntaxes,
         out int minArgumentCount,
         out int maxArgumentCount,
@@ -482,8 +508,8 @@ public class StdBindingsGenerator : ISourceGenerator
         foreach (var (parameter, i) in parameterSyntaxes.WithIndex())
         {
             var type = parameter.Type!;
-            string typeName = type.ToString().TrimEnd('?');
-            if (_typeNames.Contains(typeName))
+            var fullTypeName = GetFullTypeName(compilation, type);
+            if (_typeNames.Contains(fullTypeName))
             {
                 bool isVariadic = FindAttribute(parameter, "ElkVariadic") != null;
                 if (isVariadic)
@@ -495,10 +521,14 @@ public class StdBindingsGenerator : ISourceGenerator
                 maxArgumentCount++;
             }
 
-            if (typeName.StartsWith("Func<") || typeName.StartsWith("Action<"))
+            var unqualifiedTypeName = type.ToString();
+            if (unqualifiedTypeName.StartsWith("Func<") || unqualifiedTypeName.StartsWith("Action<"))
                 hasClosure = true;
 
-            parameters.Add((type.ToString(), parameter.Identifier.Text));
+            var nullability = unqualifiedTypeName.EndsWith("?")
+                ? "?"
+                : "";
+            parameters.Add((fullTypeName + nullability, parameter.Identifier.Text));
         }
 
         if (variadicStart.HasValue)

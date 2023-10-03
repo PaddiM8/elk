@@ -1,6 +1,6 @@
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
-public class CommandLineArgument
+public class CliArgument
 {
     public required string Identifier { get; init; }
 

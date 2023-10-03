@@ -1,15 +1,22 @@
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
-public class CommandLineResult
+public class CliResult : IEnumerable<KeyValuePair<string, object?>>
 {
     private readonly Dictionary<string, object?> _values;
 
-    public CommandLineResult(Dictionary<string, object?> values)
+    public CliResult(Dictionary<string, object?> values)
     {
         _values = values;
     }
+
+    public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
+        => _values.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
 
     public bool Contains(string identifier)
         => _values.ContainsKey(identifier);
@@ -19,6 +26,13 @@ public class CommandLineResult
         _values.TryGetValue(identifier, out var result);
 
         return result as string;
+    }
+
+    public string GetRequiredString(string identifier)
+    {
+        _values.TryGetValue(identifier, out var result);
+
+        return (string)result!;
     }
 
     public List<string>? GetList(string identifier)

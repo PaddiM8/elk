@@ -1,6 +1,6 @@
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
-public class CommandLineFlag
+public class CliFlag
 {
     public required string Identifier { get; init; }
 

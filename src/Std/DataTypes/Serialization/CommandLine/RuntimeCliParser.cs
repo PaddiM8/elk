@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elk.Interpreting.Exceptions;
+using Elk.Std.Attributes;
 
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
@@ -10,38 +12,51 @@ static class ParserStorage
     public static readonly Dictionary<string, object> Parsers = new();
 }
 
-public class CommandLineParser<T>
+[ElkType("CliParser")]
+public class RuntimeCliParser : RuntimeObject
 {
     private readonly string _name;
     private string? _description;
-    private CommandLineParser<T>? _parent;
-    private readonly Dictionary<string, CommandLineParser<T>> _verbs = new();
-    private readonly List<CommandLineFlag> _flags = new();
+    private bool _ignoreFlagsAfterArguments;
+    private RuntimeCliParser? _parent;
+    private readonly Dictionary<string, RuntimeCliParser> _verbs = new();
+    private readonly List<CliFlag> _flags = new();
     private readonly List<string> _requiredFlags = new();
-    private readonly List<CommandLineArgument> _arguments = new();
+    private readonly List<CliArgument> _arguments = new();
     private readonly List<string> _requiredArguments = new();
-    private Func<CommandLineResult, T>? _action;
 
-    public CommandLineParser(string name)
+    public RuntimeCliParser(string name)
     {
         _name = name;
     }
 
-    public static CommandLineParser<T> LazyLoad(string name, Action<CommandLineParser<T>> construct)
+    public override RuntimeObject As(Type toType)
+        => toType switch
+        {
+            _ when toType == typeof(RuntimeCliParser)
+                => this,
+            _
+                => throw new RuntimeCastException<RuntimeDictionary>(toType),
+        };
+
+    public override string ToString()
+        => "CliParser";
+
+    public static RuntimeCliParser LazyLoad(string name, Action<RuntimeCliParser> construct)
     {
         if (ParserStorage.Parsers.TryGetValue(name, out var parser))
-            return (CommandLineParser<T>)parser;
+            return (RuntimeCliParser)parser;
 
-        var newParser = new CommandLineParser<T>(name);
+        var newParser = new RuntimeCliParser(name);
         construct(newParser);
         ParserStorage.Parsers[name] = newParser;
 
         return newParser;
     }
 
-    public CommandLineParser<T> AddVerb(string name, Action<CommandLineParser<T>> setup)
+    public RuntimeCliParser AddVerb(string name, Action<RuntimeCliParser> setup)
     {
-        var actionParser = new CommandLineParser<T>(name)
+        var actionParser = new RuntimeCliParser(name)
         {
             _parent = this,
         };
@@ -52,7 +67,7 @@ public class CommandLineParser<T>
         return this;
     }
 
-    public CommandLineParser<T> AddFlag(CommandLineFlag flag)
+    public RuntimeCliParser AddFlag(CliFlag flag)
     {
         _flags.Add(flag);
         if (flag.IsRequired)
@@ -61,7 +76,7 @@ public class CommandLineParser<T>
         return this;
     }
 
-    public CommandLineParser<T> AddArgument(CommandLineArgument argument)
+    public RuntimeCliParser AddArgument(CliArgument argument)
     {
         _arguments.Add(argument);
         if (argument.IsRequired)
@@ -70,42 +85,50 @@ public class CommandLineParser<T>
         return this;
     }
 
-    public CommandLineParser<T> SetAction(Func<CommandLineResult, T> action)
-    {
-        _action = action;
-
-        return this;
-    }
-
-    public CommandLineParser<T> SetDescription(string description)
+    public RuntimeCliParser SetDescription(string description)
     {
         _description = description;
 
         return this;
     }
 
-    public bool Run(IEnumerable<string> arguments, out T? result)
+    public RuntimeCliParser IgnoreFlagsAfterArguments()
     {
-        result = default;
+        _ignoreFlagsAfterArguments = true;
 
+        return this;
+    }
+
+    public CliResult? Run(IEnumerable<string> arguments)
+    {
         var values = new Dictionary<string, object?>();
-        using var enumerator = arguments.GetEnumerator();
+        using var enumerator = arguments
+            .Select(x => x.Trim())
+            .GetEnumerator();
         bool isFirst = true;
         var variadicArgumentTokens = new List<string>();
         int argumentIndex = 0;
+        bool hasParsedArgument = false;
         while (enumerator.MoveNext())
         {
             var token = enumerator.Current;
 
             if (isFirst && _verbs.TryGetValue(token, out var verbParser))
-                return verbParser.Run(arguments.Skip(1), out result);
+                return verbParser.Run(arguments.Skip(1));
 
             isFirst = false;
-            if (token.StartsWith("--") || token.StartsWith("-"))
+            bool couldBeFlag = !_ignoreFlagsAfterArguments || !hasParsedArgument;
+            if (couldBeFlag && (token.StartsWith("--") || token.StartsWith("-")))
             {
                 var parsedFlag = ParseFlag(enumerator);
                 if (parsedFlag == null)
-                    return false;
+                    return null;
+
+                if (!parsedFlag.Value.isFlag)
+                {
+                    variadicArgumentTokens.Add(parsedFlag.Value.identifier);
+                    continue;
+                }
 
                 values[parsedFlag.Value.identifier] = parsedFlag.Value.value;
                 continue;
@@ -114,6 +137,7 @@ public class CommandLineParser<T>
             if (argumentIndex == _arguments.Count - 1 && _arguments.Last().IsVariadic)
             {
                 variadicArgumentTokens.Add(token);
+                hasParsedArgument = true;
                 continue;
             }
 
@@ -121,10 +145,11 @@ public class CommandLineParser<T>
             {
                 Console.Error.WriteLine($"Unexpected token: {token}");
 
-                return false;
+                return null;
             }
 
             values[_arguments[argumentIndex].Identifier] = token;
+            hasParsedArgument = true;
             argumentIndex++;
         }
 
@@ -135,7 +160,7 @@ public class CommandLineParser<T>
         {
             Console.Error.WriteLine($"Expected one of: {string.Join(", ", _verbs.Keys)}");
 
-            return false;
+            return null;
         }
 
         var missingRequiredFlags = _requiredFlags.Where(x => !values.ContainsKey(x));
@@ -143,7 +168,7 @@ public class CommandLineParser<T>
         {
             Console.Error.WriteLine($"Missing required flags: {string.Join(", ", missingRequiredFlags)}");
 
-            return false;
+            return null;
         }
 
         var missingRequiredArguments = _requiredArguments.Where(x => !values.ContainsKey(x));
@@ -151,16 +176,13 @@ public class CommandLineParser<T>
         {
             Console.Error.WriteLine($"Missing required argument: {string.Join(", ", missingRequiredArguments)}");
 
-            return false;
+            return null;
         }
 
-        if (_action != null)
-            result = _action(new CommandLineResult(values));
-
-        return true;
+        return new CliResult(values);
     }
 
-    private (string identifier, string? value)? ParseFlag(IEnumerator<string> enumerator)
+    private (string identifier, string? value, bool isFlag)? ParseFlag(IEnumerator<string> enumerator)
     {
         var givenFlag = enumerator.Current;
         if (givenFlag is "-h" or "--help")
@@ -184,7 +206,7 @@ public class CommandLineParser<T>
         }
 
         if (!flag.ExpectsValue)
-            return (flag.Identifier, null);
+            return (flag.Identifier, null, true);
 
         if (!enumerator.MoveNext() || enumerator.Current.StartsWith("-"))
         {
@@ -193,7 +215,7 @@ public class CommandLineParser<T>
             return null;
         }
 
-        return (flag.Identifier, enumerator.Current);
+        return (flag.Identifier, enumerator.Current, true);
     }
 
     private void ShowHelp()
@@ -228,7 +250,7 @@ public class CommandLineParser<T>
         // Options
         builder.AppendLine(Ansi.Bold(Ansi.Underline("\nOptions:")));
 
-        var helpFlag = new CommandLineFlag
+        var helpFlag = new CliFlag
         {
             Identifier = "help",
             ShortName = "h",
@@ -271,7 +293,7 @@ public class CommandLineParser<T>
         return builder.ToString();
     }
 
-    private string BuildArgumentHelp(CommandLineArgument argument)
+    private string BuildArgumentHelp(CliArgument argument)
     {
         var builder = new StringBuilder();
         var variadic = argument.IsVariadic
@@ -293,7 +315,7 @@ public class CommandLineParser<T>
         return builder.ToString().TrimEnd();
     }
 
-    private string BuildFlagHelp(CommandLineFlag flag)
+    private string BuildFlagHelp(CliFlag flag)
     {
         var builder = new StringBuilder();
         var shortName = flag.ShortName == null

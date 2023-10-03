@@ -6,34 +6,32 @@ using Elk.Std.DataTypes.Serialization.CommandLine;
 
 #endregion
 
-var cliParser = new CommandLineParser<object?>("elk")
-    .AddArgument(new CommandLineArgument
+var cliParser = new RuntimeCliParser("elk")
+    .IgnoreFlagsAfterArguments()
+    .AddArgument(new CliArgument
     {
         Identifier = "file_path",
         Description = "Path to the elk file that should be executed.",
     })
-    .AddArgument(new CommandLineArgument
+    .AddArgument(new CliArgument
     {
         Identifier = "arguments",
         Description = "Arguments for the script.",
         IsVariadic = true,
-    })
-    .SetAction(options =>
-    {
-        var filePath = options.GetString("file_path");
-        if (filePath == null)
-        {
-            Repl.Run();
-        }
-        else
-        {
-            ShellSession.RunFile(
-                filePath,
-                options.GetList("arguments")
-            );
-        }
-
-        return null;
     });
 
-cliParser.Run(args, out _);
+var options = cliParser.Run(args);
+if (options == null)
+    return;
+
+var filePath = options.GetString("file_path");
+if (filePath == null)
+{
+    Repl.Run();
+    return;
+}
+
+ShellSession.RunFile(
+    filePath,
+    options.GetList("arguments")
+);
