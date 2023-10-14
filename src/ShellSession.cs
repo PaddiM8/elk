@@ -158,7 +158,7 @@ public class ShellSession
         {
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
-            result = $"{e.Position} {e.Message}";
+            result = $"{e.Position ?? _interpreter.Position} {e.Message}";
         }
         catch (InvalidOperationException e)
         {
@@ -209,7 +209,7 @@ public class ShellSession
 
         try
         {
-            interpreter.Interpret(File.ReadAllText(filePath));
+            interpreter.InterpretModule(File.ReadAllText(filePath));
         }
         catch (RuntimeException e)
         {

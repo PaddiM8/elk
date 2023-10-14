@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Lexing;
@@ -35,7 +36,9 @@ class ModuleScope : Scope
 
     public string? FilePath { get; }
 
-    public bool IsAnalysed { get; set; }
+    public IList<Expr> Ast { get; set; } = Array.Empty<Expr>();
+
+    public AnalysisStatus AnalysisStatus { get; set; }
 
     public RootModuleScope RootModule { get; }
 

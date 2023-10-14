@@ -42,38 +42,68 @@ partial class Interpreter
         _scope = _rootModule;
     }
 
-    public RuntimeObject Interpret(List<Expr> ast, ModuleScope? scope = null)
+    public RuntimeObject InterpretModule(IList<Expr> ast)
+        => Interpret(ast, null, isEntireModule: true);
+
+    public RuntimeObject InterpretModule(string input)
+        => InterpretText(input, isEntireModule: true);
+
+    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope = null)
+        => Interpret(ast, scope, isEntireModule: false);
+
+    public RuntimeObject Interpret(string input)
+        => InterpretText(input, isEntireModule: false);
+
+    private RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope, bool isEntireModule)
     {
         if (scope != null)
             _scope = scope;
 
-        var analysedAst = Analyser.Analyse(ast, _scope.ModuleScope);
+        var previousScope = _scope;
+        foreach (var module in _scope.ModuleScope.Modules
+            .Concat(_scope.ModuleScope.ImportedModules)
+            .Where(x => x != _scope)
+            .Where(x => x.AnalysisStatus != AnalysisStatus.Failed && x.AnalysisStatus != AnalysisStatus.Evaluated))
+        {
+            _scope = module;
+            if (module.AnalysisStatus == AnalysisStatus.None)
+                Analyser.Analyse(module.Ast, module, isEntireModule: true);
+
+            module.AnalysisStatus = AnalysisStatus.Evaluated;
+            Interpret(module.Ast, module, isEntireModule: true);
+        }
+
+        _scope = previousScope;
+
+        var analysedAst = Analyser.Analyse(ast, _scope.ModuleScope, isEntireModule);
         RuntimeObject lastResult = RuntimeNil.Value;
         try
         {
             foreach (var expr in analysedAst)
-            {
                 lastResult = Next(expr);
-            }
         }
         catch (RuntimeException e)
         {
             e.Position = Position;
+            _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
             throw;
         }
         catch (InvalidOperationException e)
         {
+            _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
+
             // Sort/Order methods (eg. in the standard library) throw an exception when
             // they fail to compare two items. This should simply be a runtime error,
             // since that means the user is trying to compare values that can not be
             // compared with each other.
+            // This has to be caught here due to generators being used.
             throw new RuntimeException(e.Message, Position);
         }
 
         return lastResult;
     }
 
-    public RuntimeObject Interpret(string input)
+    private RuntimeObject InterpretText(string input, bool isEntireModule)
     {
         try
         {
@@ -84,11 +114,13 @@ partial class Interpreter
             if (lexError != null)
                 throw new RuntimeException(lexError.Message, lexError.Position);
 
-            return Interpret(ast);
+            return Interpret(ast, null, isEntireModule);
         }
         catch (RuntimeException e)
         {
             e.Position = Position;
+            _lastExpr = null;
+            _scope = _rootModule;
             throw;
         }
         catch (ParseException e)

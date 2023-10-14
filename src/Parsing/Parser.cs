@@ -217,7 +217,7 @@ internal class Parser
                 absolutePath
             );
 
-            Parse(
+            importScope.Ast = Parse(
                 Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
                 importScope
             );

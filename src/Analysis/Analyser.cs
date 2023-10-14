@@ -20,36 +20,25 @@ class Analyser
         _scope = rootModule;
     }
 
-    public static List<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module)
+    public static IList<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module, bool isEntireModule)
     {
-        var analyser = new Analyser(module.RootModule);
-        analyser.AnalyseModule(module);
-        analyser._scope = module;
+        if (isEntireModule && module.AnalysisStatus != AnalysisStatus.None)
+            return module.Ast;
 
-        return ast
-            .Where(expr => expr is not FunctionExpr)
+        var analyser = new Analyser(module.RootModule)
+        {
+            _scope = module,
+        };
+
+        module.AnalysisStatus = AnalysisStatus.Analysed;
+
+        var analysedAst = ast
             .Select(expr => analyser.Next(expr))
             .ToList();
-    }
+        if (isEntireModule)
+            module.Ast = analysedAst;
 
-    private void AnalyseModule(ModuleScope module)
-    {
-        module.IsAnalysed = true;
-
-        foreach (var functionSymbol in module.Functions
-                     .Where(x => x.Expr.AnalysisStatus == AnalysisStatus.None)
-                     .Concat(module.ImportedFunctions))
-        {
-            _scope = functionSymbol.Expr.Module;
-            Next(functionSymbol.Expr);
-        }
-
-        foreach (var submodule in module.Modules
-                     .Concat(module.ImportedModules)
-                     .Where(x => !x.IsAnalysed))
-        {
-            AnalyseModule(submodule);
-        }
+        return analysedAst;
     }
 
     private Expr Next(Expr expr)
@@ -136,6 +125,9 @@ class Analyser
 
     private FunctionExpr Visit(FunctionExpr expr)
     {
+        if (expr.AnalysisStatus != AnalysisStatus.None)
+            return expr;
+
         expr.EnclosingFunction = expr;
         var parameters = AnalyseParameters(expr.Parameters);
         foreach (var parameter in parameters)
@@ -152,7 +144,7 @@ class Analyser
         )
         {
             IsRoot = expr.IsRoot,
-            AnalysisStatus = AnalysisStatus.Done,
+            AnalysisStatus = AnalysisStatus.Analysed,
         };
 
         // Need to set _enclosingFunction *before* analysing the block
@@ -161,17 +153,19 @@ class Analyser
 
         try
         {
+            var previousScope = _scope;
+            _scope = expr.Module;
             newFunction.Block = (BlockExpr)Next(expr.Block);
+            _scope = previousScope;
         }
         catch (RuntimeException)
         {
-            expr.AnalysisStatus = AnalysisStatus.Done;
+            expr.AnalysisStatus = AnalysisStatus.Failed;
 
             throw;
         }
 
         _enclosingFunction = null;
-
         expr.Module.AddFunction(newFunction);
 
         return newFunction;

@@ -116,7 +116,8 @@ enum AnalysisStatus
 {
     None,
     Failed,
-    Done,
+    Analysed,
+    Evaluated,
 }
 
 class FunctionExpr : Expr
