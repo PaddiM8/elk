@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
 public class CliFlag
@@ -14,5 +17,9 @@ public class CliFlag
 
     public bool ExpectsValue { get; init; }
 
+    public CliValueKind ValueKind { get; init; }
+
     public bool IsRequired { get; init; }
+
+    public Func<CliResult, IEnumerable<string>>? CompletionHandler { get; init; }
 }

@@ -4,9 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Elk.Interpreting.Exceptions;
 using Elk.ReadLine;
 using Elk.Std.Bindings;
+using Elk.Std.DataTypes.Serialization.CommandLine;
 
 #endregion
 
@@ -17,7 +18,6 @@ class AutoCompleteHandler : IAutoCompleteHandler
     public char[] Separators { get; set; }
 
     private readonly ShellSession _shell;
-    private readonly Regex _formattingRegex = new("[{}()|$ ]");
     private readonly HighlightHandler _highlightHandler;
     private ShellStyleInvocationInfo? _currentInvocationInfo;
 
@@ -36,8 +36,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (_currentInvocationInfo == null)
             return 0;
 
-        string path = FindPathBefore(text, cursorPos);
-        string completionTarget = Path.GetFileName(path);
+        var path = FindPathBefore(text, cursorPos);
+        var completionTarget = Path.GetFileName(path);
 
         return cursorPos - completionTarget.Length;
     }
@@ -47,93 +47,42 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (_currentInvocationInfo == null)
             return Array.Empty<Completion>();
 
-        string path = FindPathBefore(text, endPos);
-        if (path.StartsWith("~"))
-            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
+        if (ParserStorage.CompletionParsers.TryGetValue(_currentInvocationInfo.Name, out var completionParser))
+        {
+            try
+            {
+                var textArgumentStartIndex = Math.Min(
+                    _currentInvocationInfo.TextArgumentStartIndex,
+                    text.Length
+                );
 
-        bool isRelativeIdentifier = _currentInvocationInfo.Name.First() is '.' or '/' or '~';
+                return completionParser
+                    .GetCompletions(text[textArgumentStartIndex..], endPos - textArgumentStartIndex)
+                    .ToList();
+            }
+            catch (RuntimeException)
+            {
+                // TODO: Handle this
+            }
+        }
+
+        var isRelativeIdentifier = _currentInvocationInfo.Name.First() is '.' or '/' or '~';
         if (!isRelativeIdentifier && endPos < _currentInvocationInfo.TextArgumentStartIndex)
             return GetIdentifierSuggestions(_currentInvocationInfo.Name);
 
-        string completionTarget = text[startPos..endPos];
-        string fullPath = Path.Combine(
+        // `startPos` is only the index of the start of the file name in the path.
+        // At this stage, we want the entire path instead.
+        // ./program some/directory/and.file
+        //           ^^^^^^^^^^^^^^^^^^^^^^^
+        var path = FindPathBefore(text, endPos);
+        if (path.StartsWith("~"))
+            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
+
+        return FileUtils.GetPathCompletions(
+            path,
             _shell.WorkingDirectory,
-            path[..^completionTarget.Length]
+            isRelativeIdentifier ? FileType.Executable : FileType.All
         );
-        if (!Directory.Exists(fullPath))
-            return Array.Empty<Completion>();
-
-        bool includeHidden = completionTarget.StartsWith(".");
-        var directories = Directory.GetDirectories(fullPath)
-            .Select(Path.GetFileName)
-            .Where(x => includeHidden || !x!.StartsWith("."))
-            .Where(x => x!.StartsWith(completionTarget))
-            .Order()
-            .Select(x => FormatSuggestion(x!))
-            .Select(x => new Completion(x, $"{x}/"))
-            .ToList();
-
-        var files = Directory.GetFiles(fullPath)
-            .Where(x => !isRelativeIdentifier || IsExecutable(x))
-            .Select(Path.GetFileName)
-            .Where(x => includeHidden || !x!.StartsWith("."))
-            .Where(x => x!.StartsWith(completionTarget))
-            .Order()
-            .Select(x => FormatSuggestion(x!))
-            .Select(x => new Completion(x));
-
-        if (!directories.Any() && !files.Any())
-        {
-            const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-            directories = Directory.GetDirectories(fullPath)
-                .Select(Path.GetFileName)
-                .Where(x => x!.Contains(completionTarget, comparison))
-                .Order()
-                .Select(x => FormatSuggestion(x!))
-                .Select(x => new Completion(x, $"{x}/"))
-                .ToList();
-
-            files = Directory.GetFiles(fullPath)
-                .Where(x => !isRelativeIdentifier || IsExecutable(x))
-                .Select(Path.GetFileName)
-                .Where(x => x!.Contains(completionTarget, comparison))
-                .Order()
-                .Select(x => FormatSuggestion(x!))
-                .Select(x => new Completion(x));
-        }
-
-        // Add a trailing slash if it's the only one, since
-        // there are no tab completions to scroll through
-        // anyway and the user can continue tabbing directly.
-        if (directories.Count == 1 && !files.Any())
-        {
-            directories[0] = new Completion(
-                $"{directories[0].CompletionText}/",
-                directories[0].DisplayText
-            );
-        }
-
-        var completions = directories.Concat(files).ToList();
-        if (completions.Count > 1 && completionTarget.Length > 0 &&
-            !"./~".Contains(completionTarget.Last()))
-        {
-            completions.Insert(0, new Completion(completionTarget));
-        }
-
-        return completions;
-    }
-
-    private bool IsExecutable(string filePath)
-    {
-        if (OperatingSystem.IsWindows())
-            return true;
-
-        var handle = File.OpenHandle(filePath);
-
-        return File.GetUnixFileMode(handle)
-            is UnixFileMode.OtherExecute
-            or UnixFileMode.GroupExecute
-            or UnixFileMode.UserExecute;
     }
 
     private IList<Completion> GetIdentifierSuggestions(string name)
@@ -165,7 +114,4 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
         return text;
     }
-
-    private string FormatSuggestion(string completion)
-        => _formattingRegex.Replace(completion, m => $"\\{m.Value}");
 }

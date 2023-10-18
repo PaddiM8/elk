@@ -12,6 +12,8 @@ using Elk.Std.Bindings;
 
 namespace Elk.Std.DataTypes;
 
+public delegate RuntimeObject Invoker(List<RuntimeObject> arguments, bool isRoot);
+
 [ElkType("Function")]
 public abstract class RuntimeFunction : RuntimeObject
 {
@@ -19,10 +21,16 @@ public abstract class RuntimeFunction : RuntimeObject
 
     public Plurality Plurality { get; }
 
-    internal RuntimeFunction(IEnumerable<RuntimeObject>? arguments, Plurality plurality)
+    public Invoker Invoker { get; }
+
+    internal RuntimeFunction(
+        IEnumerable<RuntimeObject>? arguments,
+        Plurality plurality,
+        Func<RuntimeFunction, Invoker> createInvoker)
     {
         Arguments = arguments ?? Array.Empty<RuntimeObject>();
         Plurality = plurality;
+        Invoker = createInvoker(this);
     }
 
     public override RuntimeObject As(Type toType)
@@ -46,8 +54,9 @@ internal class RuntimeStdFunction : RuntimeFunction
     public RuntimeStdFunction(
         StdFunction stdFunction,
         IEnumerable<RuntimeObject>? arguments,
-        Plurality plurality)
-        : base(arguments, plurality)
+        Plurality plurality,
+        Func<RuntimeFunction, Invoker> createInvoker)
+        : base(arguments, plurality, createInvoker)
     {
         StdFunction = stdFunction;
     }
@@ -66,8 +75,9 @@ internal class RuntimeSymbolFunction : RuntimeFunction
     public RuntimeSymbolFunction(
         FunctionSymbol functionSymbol,
         IEnumerable<RuntimeObject>? arguments,
-        Plurality plurality)
-        : base(arguments, plurality)
+        Plurality plurality,
+        Func<RuntimeFunction, Invoker> createInvoker)
+        : base(arguments, plurality, createInvoker)
     {
         FunctionSymbol = functionSymbol;
     }
@@ -86,8 +96,9 @@ internal class RuntimeProgramFunction : RuntimeFunction
     public RuntimeProgramFunction(
         string programName,
         IEnumerable<RuntimeObject>? arguments,
-        Plurality plurality)
-        : base(arguments, plurality)
+        Plurality plurality,
+        Func<RuntimeFunction, Invoker> createInvoker)
+        : base(arguments, plurality, createInvoker)
     {
         ProgramName = programName;
     }
@@ -107,8 +118,9 @@ internal class RuntimeClosureFunction : RuntimeFunction
 
     public RuntimeClosureFunction(
         ClosureExpr expr,
-        LocalScope environment)
-        : base(null, Plurality.Singular)
+        LocalScope environment,
+        Func<RuntimeFunction, Invoker> createInvoker)
+        : base(null, Plurality.Singular, createInvoker)
     {
         Expr = expr;
         Environment = environment;

@@ -99,18 +99,27 @@ partial class Interpreter
             .Skip(1)
             .Concat(functionReference.Arguments)
             .ToList();
+
+        return EvaluateBuiltInCall(functionReference, actualArguments, isRoot);
+    }
+
+    private RuntimeObject EvaluateBuiltInCall(RuntimeFunction functionReference, List<RuntimeObject> arguments, bool isRoot)
+    {
+        if (arguments.Count == 0)
+            throw new RuntimeWrongNumberOfArgumentsException(1, 0, true);
+
         var evaluate = () => functionReference switch
         {
-            RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(actualArguments, runtimeStdFunction.StdFunction),
+            RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(arguments, runtimeStdFunction.StdFunction),
             RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
-                actualArguments,
+                arguments,
                 runtimeSymbolFunction.FunctionSymbol.Expr,
                 isRoot
             ),
-            RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(actualArguments, runtimeClosure, isRoot),
+            RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(arguments, runtimeClosure, isRoot),
             _ => EvaluateProgramCall(
                 ((RuntimeProgramFunction)functionReference).ProgramName,
-                actualArguments,
+                arguments,
                 pipedValue: null,
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
@@ -118,15 +127,15 @@ partial class Interpreter
             ),
         };
 
-        if (functionReference.Plurality == Plurality.Singular || actualArguments.Count == 0)
+        if (functionReference.Plurality == Plurality.Singular || arguments.Count == 0)
             return evaluate();
 
-        if (actualArguments.First() is not IEnumerable<RuntimeObject> firstArguments)
-            throw new RuntimeCastException(actualArguments.First().GetType(), "Iterable");
+        if (arguments.First() is not IEnumerable<RuntimeObject> firstArguments)
+            throw new RuntimeCastException(arguments.First().GetType(), "Iterable");
 
         var evaluatedWithPlurality = firstArguments.Select(x =>
         {
-            actualArguments[0] = x;
+            arguments[0] = x;
             return evaluate();
         });
 

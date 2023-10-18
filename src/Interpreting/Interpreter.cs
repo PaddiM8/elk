@@ -736,17 +736,20 @@ partial class Interpreter
                 CallType.Program => new RuntimeProgramFunction(
                     expr.Identifier.Value,
                     arguments,
-                    expr.Plurality
+                    expr.Plurality,
+                    BuildRuntimeFunctionInvoker
                 ),
                 CallType.StdFunction => new RuntimeStdFunction(
                     expr.StdFunction!,
                     arguments,
-                    expr.Plurality
+                    expr.Plurality,
+                    BuildRuntimeFunctionInvoker
                 ),
                 CallType.Function => new RuntimeSymbolFunction(
                     expr.FunctionSymbol!,
                     arguments,
-                    expr.Plurality
+                    expr.Plurality,
+                    BuildRuntimeFunctionInvoker
                 ),
                 _ => throw new RuntimeException("Cannot turn built-in functions (such as cd, exec, call) into function references."),
             };
@@ -774,6 +777,11 @@ partial class Interpreter
         });
 
         return new RuntimeList(evaluatedWithPlurality);
+    }
+
+    private Invoker BuildRuntimeFunctionInvoker(RuntimeFunction function)
+    {
+        return (invokerArguments, invokerIsRoot) => EvaluateBuiltInCall(function, invokerArguments, invokerIsRoot);
     }
 
     private RuntimeObject EvaluateFunctionCall(
@@ -922,14 +930,13 @@ partial class Interpreter
         }
 
         // Fallback, variadic
-        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(
-            args =>
-            {
-                foreach (var (parameter, argument) in parameters.Zip(args))
-                    runtimeClosure.Environment.AddVariable(parameter, argument);
+        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(args =>
+        {
+            foreach (var (parameter, argument) in parameters.Zip(args))
+                runtimeClosure.Environment.AddVariable(parameter, argument);
 
-                return NextBlock(runtimeClosure.Expr.Body);
-            });
+            return NextBlock(runtimeClosure.Expr.Body);
+        });
     }
 
     private RuntimeObject EvaluateProgramCall(
@@ -1056,7 +1063,11 @@ partial class Interpreter
             scope.AddVariable(capture, value);
         }
 
-        var runtimeClosure = new RuntimeClosureFunction(expr, scope);
+        var runtimeClosure = new RuntimeClosureFunction(
+            expr,
+            scope,
+            BuildRuntimeFunctionInvoker
+        );
         expr.RuntimeValue = runtimeClosure;
 
         return expr.Function.IsReference

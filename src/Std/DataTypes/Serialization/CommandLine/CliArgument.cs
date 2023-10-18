@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
 public class CliArgument
@@ -8,5 +11,9 @@ public class CliArgument
 
     public bool IsRequired { get; init; }
 
+    public CliValueKind ValueKind { get; init; }
+
     public bool IsVariadic { get; init; }
+
+    public Func<CliResult, IEnumerable<string>>? CompletionHandler { get; init; }
 }

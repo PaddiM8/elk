@@ -39,6 +39,19 @@ static class Cli
     [ElkFunction("addFlag")]
     public static RuntimeObject AddFlag(RuntimeCliParser parser, RuntimeDictionary flag)
     {
+        Func<CliResult, IEnumerable<string>>? completionHandler = null;
+        var runtimeCompletionHandler = flag.GetValue<RuntimeFunction>("completionHandler");
+        if (runtimeCompletionHandler != null)
+        {
+            completionHandler = result =>
+            {
+                return runtimeCompletionHandler
+                    .Invoker(new List<RuntimeObject> { result.ToRuntimeDictionary() }, false)
+                    .As<RuntimeList>()
+                    .Select(x => x.As<RuntimeString>().Value);
+            };
+        }
+
         parser.AddFlag(new CliFlag
         {
             Identifier = flag.GetExpectedValue<RuntimeString>("identifier").Value,
@@ -47,7 +60,14 @@ static class Cli
             Description = flag.GetValue<RuntimeString>("description")?.Value,
             Format = flag.GetValue<RuntimeString>("format")?.Value,
             ExpectsValue = flag.GetValue<RuntimeBoolean>("expectsValue")?.IsTrue ?? false,
+            ValueKind = flag.GetValue<RuntimeString>("valueKind")?.Value switch
+            {
+                "directory" => CliValueKind.Directory,
+                "text" => CliValueKind.Text,
+                _ => CliValueKind.Path,
+            },
             IsRequired = flag.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
+            CompletionHandler = completionHandler,
         });
 
         return parser;
@@ -70,12 +90,28 @@ static class Cli
     [ElkFunction("addArgument")]
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
     {
+        Func<CliResult, IEnumerable<string>>? completionHandler = null;
+        var runtimeCompletionHandler = argument.GetValue<RuntimeFunction>("completionHandler");
+        if (runtimeCompletionHandler != null)
+        {
+            completionHandler = result => runtimeCompletionHandler
+                .Invoker(new List<RuntimeObject> { result.ToRuntimeDictionary() }, false)
+                .As<RuntimeList>().Select(x => x.As<RuntimeString>().Value);
+        }
+
         var typedArgument = new CliArgument
         {
             Identifier = argument.GetExpectedValue<RuntimeString>("identifier").Value,
             Description = argument.GetValue<RuntimeString>("description")?.Value,
             IsRequired = argument.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
+            ValueKind = argument.GetValue<RuntimeString>("valueKind")?.Value switch
+            {
+                "directory" => CliValueKind.Directory,
+                "text" => CliValueKind.Text,
+                _ => CliValueKind.Path,
+            },
             IsVariadic = argument.GetValue<RuntimeBoolean>("variadic")?.IsTrue ?? false,
+            CompletionHandler = completionHandler,
         };
         parser.AddArgument(typedArgument);
 
@@ -143,33 +179,9 @@ static class Cli
     /// </returns>
     [ElkFunction("parse")]
     public static RuntimeObject Parse(RuntimeCliParser parser, IEnumerable<RuntimeObject> args)
-    {
-        var result = parser.Run(args.Select(x => x.As<RuntimeString>().Value));
-        if (result == null)
-            return RuntimeNil.Value;
-
-        var runtimeResult = result.Select(pair =>
-        {
-            var key = new RuntimeString(pair.Key);
-            RuntimeObject value = pair.Value switch
-            {
-                IEnumerable<string> list => new RuntimeList(
-                    list.Select(x => new RuntimeString(x))
-                ),
-                null => RuntimeNil.Value,
-                _ => new RuntimeString(pair.Value.ToString() ?? ""),
-            };
-
-            return new KeyValuePair<int, (RuntimeObject, RuntimeObject)>(
-                key.GetHashCode(),
-                (key, value)
-            );
-        });
-
-        return new RuntimeDictionary(
-            new Dictionary<int, (RuntimeObject, RuntimeObject)>(runtimeResult)
-        );
-    }
+        => parser
+            .Parse(args.Select(x => x.As<RuntimeString>().Value))?
+            .ToRuntimeDictionary() ?? (RuntimeObject)RuntimeNil.Value;
 
     /// <summary>
     /// Parses the contents of the `argv` list using the given parser.
@@ -183,4 +195,18 @@ static class Cli
     [ElkFunction("parseArgv")]
     public static RuntimeObject ParseArgv(RuntimeCliParser parser, ShellEnvironment env)
         => Parse(parser, env.Argv.Skip(1));
+
+    [ElkFunction("getCompletions")]
+    public static RuntimeList GetCompletions(RuntimeCliParser parser, RuntimeString partialCommand)
+        => new(
+            parser
+                .GetCompletions(partialCommand.Value)
+                .Select(x => new RuntimeString(x.CompletionText))
+        );
+
+    [ElkFunction("registerForCompletion")]
+    public static void RegisterForCompletion(RuntimeCliParser parser, RuntimeString name)
+    {
+        ParserStorage.CompletionParsers[name.Value] = parser;
+    }
 }

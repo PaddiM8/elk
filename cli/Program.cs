@@ -20,7 +20,7 @@ var cliParser = new RuntimeCliParser("elk")
         IsVariadic = true,
     });
 
-var options = cliParser.Run(args);
+var options = cliParser.Parse(args);
 if (options == null)
     return;
 

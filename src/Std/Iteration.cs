@@ -69,6 +69,13 @@ static class Iteration
         return new RuntimeList(chunks);
     }
 
+    /// <param name="first">The first Iterable.</param>
+    /// <param name="second">The second Iterable.</param>
+    /// <returns>A new list containing the items of both the the given Iterables.</returns>
+    [ElkFunction("concat")]
+    public static RuntimeList Concat(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+        => new(first.Concat(second));
+
     /// <param name="items">The items to count</param>
     /// <param name="closure">A condition for which items should be counted</param>
     /// <returns>The amount of items that meet the condition.</returns>

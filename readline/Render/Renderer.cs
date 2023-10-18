@@ -275,12 +275,12 @@ internal class Renderer : IRenderer
         int offset = lastLineLength - _left;
         string horizontalMovement = "";
         if (offset < 0)
-            horizontalMovement = $"{Math.Abs(offset)}C";
+            horizontalMovement = $"\x1b[{Math.Abs(offset)}C";
         else if (offset > 0)
-            horizontalMovement = $"{offset}D";
+            horizontalMovement = $"\x1b[{offset}D";
 
         CaretVisible = false;
-        WriteRaw($"\n\x1b[K{value}\x1b[{horizontalMovement}\x1b[{rowCount}A");
+        WriteRaw($"\n\x1b[K{value}{horizontalMovement}\x1b[{rowCount}A");
         CaretVisible = true;
     }
 

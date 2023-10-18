@@ -23,6 +23,7 @@
 
   <ItemGroup>
       <ProjectReference Include="../generators/Elk.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <ProjectReference Include="..\readline\Elk.ReadLine.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

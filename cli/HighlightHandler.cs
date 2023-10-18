@@ -261,7 +261,8 @@ class HighlightHandler : IHighlightHandler
                 new(
                     string.Join("::", modulePath.Append(identifier)),
                     textArguments,
-                    startIndex, Current?.Position.Index ?? _length
+                    startIndex,
+                    Current?.Position.Index ?? _length
                 )
             );
         }
@@ -364,7 +365,8 @@ class HighlightHandler : IHighlightHandler
                 new(
                     identifier,
                     textArguments,
-                    startIndex, Current?.Position.Index ?? _length
+                    startIndex,
+                    Current?.Position.Index ?? _length
                 )
             );
         }

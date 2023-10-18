@@ -2,14 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
+using Elk.ReadLine;
 using Elk.Std.Attributes;
 
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
-static class ParserStorage
+public static class ParserStorage
 {
-    public static readonly Dictionary<string, object> Parsers = new();
+    public static readonly Dictionary<string, RuntimeCliParser> InternalParser = new();
+
+    public static readonly Dictionary<string, RuntimeCliParser> CompletionParsers = new();
 }
 
 [ElkType("CliParser")]
@@ -35,6 +39,8 @@ public class RuntimeCliParser : RuntimeObject
         {
             _ when toType == typeof(RuntimeCliParser)
                 => this,
+            _ when toType == typeof(RuntimeString)
+                => new RuntimeString("CliParser"),
             _
                 => throw new RuntimeCastException<RuntimeDictionary>(toType),
         };
@@ -44,12 +50,12 @@ public class RuntimeCliParser : RuntimeObject
 
     public static RuntimeCliParser LazyLoad(string name, Action<RuntimeCliParser> construct)
     {
-        if (ParserStorage.Parsers.TryGetValue(name, out var parser))
-            return (RuntimeCliParser)parser;
+        if (ParserStorage.InternalParser.TryGetValue(name, out var parser))
+            return parser;
 
         var newParser = new RuntimeCliParser(name);
         construct(newParser);
-        ParserStorage.Parsers[name] = newParser;
+        ParserStorage.InternalParser[name] = newParser;
 
         return newParser;
     }
@@ -99,30 +105,162 @@ public class RuntimeCliParser : RuntimeObject
         return this;
     }
 
-    public CliResult? Run(IEnumerable<string> arguments)
+    public IEnumerable<Completion> GetCompletions(string args, int? caret = null)
+    {
+        caret ??= args.Length;
+        var whitespaceRegex = new System.Text.RegularExpressions.Regex(@"(?<!\\)\s");
+        var tokensBeforeCaret = whitespaceRegex
+            .Split(args[..caret.Value])
+            .Select(x => x.Trim());
+        var allTokens = whitespaceRegex
+            .Split(args)
+            .Select(x => x.Trim());
+
+        return GetCompletions(tokensBeforeCaret, Parse(allTokens, ignoreErrors: true));
+    }
+
+    private IEnumerable<Completion> GetCompletions(IEnumerable<string> tokens, CliResult? cliResult)
+    {
+        var flagNames = _flags
+            .Select(x =>
+                x.ShortName == null
+                    ? "--" + x.LongName
+                    : "-" + x.ShortName
+            );
+
+        // If there are no existing tokens, return all the verbs and flags
+        if (!tokens.Any())
+        {
+            return _verbs.Keys
+                .Concat(flagNames)
+                .Select(x => new Completion(x));
+        }
+
+        // If the first argument is a verb, let the verb's parser deal with the rest
+        if (_verbs.TryGetValue(tokens.First(), out var verbParser))
+            return verbParser.GetCompletions(tokens.Skip(1), cliResult);
+
+        // If there is only one token and the parser contains verbs,
+        // that means two things: the cursor is at the token, and
+        // the token could be a verb. If these things are true,
+        // and it isn't a flag, return the matched verbs.
+        var last = tokens.Last();
+        var matchedFlags = flagNames
+            .Where(x => x.StartsWith(last))
+            .Select(x => new Completion(x));
+        var collectedTokens = tokens.ToList();
+        if (collectedTokens.Count == 1 && _verbs.Any() && !last.StartsWith("-"))
+        {
+            // Also include matchedFlags, in case the token is empty,
+            // which would mean it could either be a verb or a flag.
+            return _verbs.Keys
+                .Where(x => x.StartsWith(collectedTokens.First()))
+                .Select(x => new Completion(x))
+                .Concat(matchedFlags);
+        }
+
+        // If the second last token is a flag that expects a value, invoke the flag's
+        // completion handler (if it exists).
+        if (collectedTokens.Count >= 2)
+        {
+            var secondLast = collectedTokens[^2];
+            CliFlag? flag = null;
+            if (secondLast.StartsWith("--"))
+            {
+                flag = _flags.FirstOrDefault(x => x.LongName == secondLast[2..]);
+            }
+            else if (secondLast.StartsWith("-"))
+            {
+                flag = _flags.FirstOrDefault(x => x.ShortName == secondLast[1..]);
+            }
+
+            if (flag is { ExpectsValue: true, CompletionHandler: not null } && cliResult != null)
+            {
+                return flag
+                    .CompletionHandler(cliResult)
+                    .Select(x => new Completion(x));
+            }
+
+            if (flag is { ExpectsValue: true, ValueKind: CliValueKind.Path or CliValueKind.Directory })
+            {
+                return FileUtils.GetPathCompletions(
+                    last,
+                    ShellEnvironment.WorkingDirectory,
+                    flag.ValueKind == CliValueKind.Directory
+                        ? FileType.Directory
+                        : FileType.All
+                );
+            }
+
+            if (flag?.ExpectsValue is true)
+                return Array.Empty<Completion>();
+        }
+
+        // If the token that is currently being edited is going to be parsed as an argument,
+        // find the relevant CliArgument and invoke the completion handler (if there is one).
+        var argumentCount = cliResult?.ArgumentIndices
+            .TakeWhile(x => x < collectedTokens.Count)
+            .Count() ?? 0;
+        var lastIsArgument = cliResult?.ArgumentIndices.Contains(tokens.Count() - 1) is true;
+        var currentArgument = lastIsArgument
+            ? _arguments.ElementAtOrDefault(argumentCount - 1)
+            : null;
+        if (currentArgument?.CompletionHandler != null && cliResult != null)
+        {
+            return currentArgument
+                .CompletionHandler(cliResult)
+                .Select(x => new Completion(x));
+        }
+
+        if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
+        {
+            var completions = FileUtils.GetPathCompletions(
+                last,
+                ShellEnvironment.WorkingDirectory,
+                currentArgument.ValueKind == CliValueKind.Directory
+                    ? FileType.Directory
+                    : FileType.All
+            );
+
+            return last.StartsWith('-')
+                ? completions.Concat(matchedFlags)
+                : completions;
+        }
+
+        // If none of the above actions are relevant, simply return the matched flags.
+        return matchedFlags;
+    }
+
+    public CliResult? Parse(IEnumerable<string> args, bool ignoreErrors = false)
     {
         var values = new Dictionary<string, object?>();
-        using var enumerator = arguments
+        using var enumerator = args
             .Select(x => x.Trim())
+            .WithIndex()
             .GetEnumerator();
-        bool isFirst = true;
+        var isFirst = true;
         var variadicArgumentTokens = new List<string>();
-        int argumentIndex = 0;
-        bool hasParsedArgument = false;
+        var argumentIndices = new List<int>();
+        var argumentIndex = 0;
+        var hasParsedArgument = false;
         while (enumerator.MoveNext())
         {
-            var token = enumerator.Current;
-
+            var token = enumerator.Current.item;
             if (isFirst && _verbs.TryGetValue(token, out var verbParser))
-                return verbParser.Run(arguments.Skip(1));
+                return verbParser.Parse(args.Skip(1), ignoreErrors);
 
             isFirst = false;
-            bool couldBeFlag = !_ignoreFlagsAfterArguments || !hasParsedArgument;
+            var couldBeFlag = !_ignoreFlagsAfterArguments || !hasParsedArgument;
             if (couldBeFlag && (token.StartsWith("--") || token.StartsWith("-")))
             {
-                var parsedFlag = ParseFlag(enumerator);
+                var parsedFlag = ParseFlag(enumerator, ignoreErrors);
                 if (parsedFlag == null)
+                {
+                    if (ignoreErrors)
+                        continue;
+
                     return null;
+                }
 
                 if (!parsedFlag.Value.isFlag)
                 {
@@ -143,6 +281,9 @@ public class RuntimeCliParser : RuntimeObject
 
             if (argumentIndex >= _arguments.Count)
             {
+                if (ignoreErrors)
+                    continue;
+
                 Console.Error.WriteLine($"Unexpected token: {token}");
 
                 return null;
@@ -150,12 +291,17 @@ public class RuntimeCliParser : RuntimeObject
 
             values[_arguments[argumentIndex].Identifier] = token;
             hasParsedArgument = true;
+            argumentIndices.Add(enumerator.Current.index);
             argumentIndex++;
         }
 
         if (variadicArgumentTokens.Any())
             values[_arguments.Last().Identifier] = variadicArgumentTokens;
 
+        if (ignoreErrors)
+            return new CliResult(values, argumentIndices);
+
+        // Error handling
         if (_verbs.Any())
         {
             Console.Error.WriteLine($"Expected one of: {string.Join(", ", _verbs.Keys)}");
@@ -179,12 +325,14 @@ public class RuntimeCliParser : RuntimeObject
             return null;
         }
 
-        return new CliResult(values);
+        return new CliResult(values, argumentIndices);
     }
 
-    private (string identifier, string? value, bool isFlag)? ParseFlag(IEnumerator<string> enumerator)
+    private (string identifier, string? value, bool isFlag)? ParseFlag(
+        IEnumerator<(string item, int index)> enumerator,
+        bool ignoreErrors)
     {
-        var givenFlag = enumerator.Current;
+        var givenFlag = enumerator.Current.item;
         if (givenFlag is "-h" or "--help")
         {
             ShowHelp();
@@ -200,6 +348,9 @@ public class RuntimeCliParser : RuntimeObject
 
         if (flag == null)
         {
+            if (ignoreErrors)
+                return (enumerator.Current.item, null, true);
+
             Console.Error.WriteLine($"Unrecognized flag: {givenFlag}");
 
             return null;
@@ -208,14 +359,17 @@ public class RuntimeCliParser : RuntimeObject
         if (!flag.ExpectsValue)
             return (flag.Identifier, null, true);
 
-        if (!enumerator.MoveNext() || enumerator.Current.StartsWith("-"))
+        if (!enumerator.MoveNext() || enumerator.Current.item.StartsWith("-"))
         {
+            if (ignoreErrors)
+                return (enumerator.Current.item, null, true);
+
             Console.Error.WriteLine($"Expected value for flag: {givenFlag}");
 
             return null;
         }
 
-        return (flag.Identifier, enumerator.Current, true);
+        return (flag.Identifier, enumerator.Current.item, true);
     }
 
     private void ShowHelp()

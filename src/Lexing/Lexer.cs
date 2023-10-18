@@ -502,7 +502,12 @@ public class Lexer
         return new Token(
             kind,
             value,
-            pos ?? new TextPos(_pos.line, _pos.column, _index, _filePath)
+            pos ?? new TextPos(
+                _pos.line,
+                _pos.column,
+                _index - value.Length,
+                _filePath
+            )
         );
     }
 
