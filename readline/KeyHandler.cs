@@ -216,8 +216,8 @@ public class KeyHandler
 
     public void MoveCursorWordLeft()
     {
-        string text = _renderer.Text;
-        int i = _renderer.Caret;
+        var text = _renderer.Text;
+        var i = _renderer.Caret;
         while (i > 0 && WordSeparators.Contains(text[i - 1]))
             i--;
         while (i > 0 && !WordSeparators.Contains(text[i - 1]))
@@ -228,8 +228,8 @@ public class KeyHandler
 
     public void MoveCursorWordRight()
     {
-        string text = _renderer.Text;
-        int i = _renderer.Caret;
+        var text = _renderer.Text;
+        var i = _renderer.Caret;
         while (i + 1 < text.Length && WordSeparators.Contains(text[i + 1]))
             i++;
         while (i + 1 < text.Length && !WordSeparators.Contains(text[i + 1]))
@@ -249,7 +249,7 @@ public class KeyHandler
             return;
         }
 
-        int start = AutoCompleteHandler.GetCompletionStart(_renderer.Text, _renderer.Caret);
+        var start = AutoCompleteHandler.GetCompletionStart(_renderer.Text, _renderer.Caret);
         var completions = AutoCompleteHandler.GetSuggestions(_renderer.Text, start, _renderer.Caret);
         if (completions.Count > 0)
         {
@@ -267,7 +267,7 @@ public class KeyHandler
 
     public void UpArrow()
     {
-        string text = _renderer.Text;
+        var text = _renderer.Text;
         if (text.Contains('\n') && _renderer.Caret != 0 && _renderer.Caret != text.Length)
         {
             _renderer.CaretUp();
@@ -306,8 +306,8 @@ public class KeyHandler
 
     public void RemoveWordLeft()
     {
-        string text = _renderer.Text;
-        int i = _renderer.Caret;
+        var text = _renderer.Text;
+        var i = _renderer.Caret;
         while (i > 0 && WordSeparators.Contains(text[i - 1]))
             i--;
         while (i > 0 && !WordSeparators.Contains(text[i - 1]))

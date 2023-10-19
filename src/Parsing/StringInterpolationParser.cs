@@ -20,9 +20,9 @@ class StringInterpolationParser
 {
     public static IEnumerable<InterpolationPart> Parse(Token token)
     {
-        string literal = token.Value;
+        var literal = token.Value;
         var textString = new StringBuilder();
-        for (int i = 0; i < literal.Length; i++)
+        for (var i = 0; i < literal.Length; i++)
         {
             // Parse escaped dollar signs literally
             var next = literal.Length > i + 1
@@ -44,7 +44,7 @@ class StringInterpolationParser
                     textString.Clear();
                 }
 
-                string expressionPart = NextExpressionPart(token, i + 1);
+                var expressionPart = NextExpressionPart(token, i + 1);
                 yield return new(expressionPart, InterpolationPartKind.Expression);
                 i += expressionPart.Length + 1; // One additional for the closing brace
 
@@ -62,9 +62,9 @@ class StringInterpolationParser
     {
         var (_, literal, textPos) = token;
         var exprString = new StringBuilder();
-        int openBraceCount = 0;
-        int i = startIndex;
-        bool inString = false;
+        var openBraceCount = 0;
+        var i = startIndex;
+        var inString = false;
         while (i < literal.Length && (openBraceCount > 0 || literal[i] != '}'))
         {
             if (i >= literal.Length)

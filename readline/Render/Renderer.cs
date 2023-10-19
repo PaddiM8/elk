@@ -23,7 +23,7 @@ internal class Renderer : IRenderer
 
         set
         {
-            WriteRaw(IndexToMovement(value, out int newTop, out int newLeft));
+            WriteRaw(IndexToMovement(value, out var newTop, out var newLeft));
 
             _top = newTop;
             _left = newLeft;
@@ -70,7 +70,7 @@ internal class Renderer : IRenderer
     {
         get
         {
-            int index = Text.IndexOf('\n', Caret);
+            var index = Text.IndexOf('\n', Caret);
 
             return index == -1
                 ? _text.Length
@@ -108,29 +108,29 @@ internal class Renderer : IRenderer
 
     public void CaretUp()
     {
-        int lineStart = LineStartIndex;
+        var lineStart = LineStartIndex;
         if (lineStart == 0)
         {
             Caret = 0;
             return;
         }
 
-        int newLineStart = Text.LastIndexOf('\n', lineStart - 1);
-        int newLineEnd = lineStart - 1;
+        var newLineStart = Text.LastIndexOf('\n', lineStart - 1);
+        var newLineEnd = lineStart - 1;
         Caret = Math.Min(newLineEnd, newLineStart + (Caret - lineStart));
     }
 
     public void CaretDown()
     {
-        int lineEnd = LineEndIndex;
+        var lineEnd = LineEndIndex;
         if (lineEnd == _text.Length)
         {
             Caret = _text.Length;
             return;
         }
 
-        int lineStart = Text.LastIndexOf('\n', Math.Max(0, Caret - 1));
-        int newLineEnd = Text.IndexOf('\n', lineEnd + 1);
+        var lineStart = Text.LastIndexOf('\n', Math.Max(0, Caret - 1));
+        var newLineEnd = Text.IndexOf('\n', lineEnd + 1);
         if (newLineEnd == -1)
             newLineEnd = _text.Length;
 
@@ -144,7 +144,7 @@ internal class Renderer : IRenderer
 
     public void ClearLineLeft(int? fromIndex = null)
     {
-        int start = LineStartIndex;
+        var start = LineStartIndex;
 
         // Don't include the new line character
         if (start != 0)
@@ -160,8 +160,8 @@ internal class Renderer : IRenderer
         if (fromIndex != null)
             Caret = fromIndex.Value;
 
-        int end = LineEndIndex;
-        int pos = Caret;
+        var end = LineEndIndex;
+        var pos = Caret;
         _text.Remove(Caret, end - Caret);
         RenderText(includeHint: _text.Length > 0);
 
@@ -176,7 +176,7 @@ internal class Renderer : IRenderer
 
     public void Insert(string input, bool includeHint)
     {
-        bool hasHint = includeHint && _text.Length + input.Length > 0;
+        var hasHint = includeHint && _text.Length + input.Length > 0;
         if (IsEndOfLine)
         {
             _text.Append(input);
@@ -186,7 +186,7 @@ internal class Renderer : IRenderer
         {
             _text.Insert(Caret, input);
 
-            int newPos = Caret + input.Length;
+            var newPos = Caret + input.Length;
             RenderText(hasHint);
             Caret = newPos;
         }
@@ -199,7 +199,7 @@ internal class Renderer : IRenderer
         if (count == 0)
             return;
 
-        int newPos = Caret - count;
+        var newPos = Caret - count;
         _text.Remove(newPos, count);
         RenderText(includeHint: _text.Length > 0);
         Caret = newPos;
@@ -212,7 +212,7 @@ internal class Renderer : IRenderer
         if (count == 0 || Caret == _text.Length)
             return;
 
-        int newPos = Caret;
+        var newPos = Caret;
         _text.Remove(Caret, count);
         RenderText(includeHint: _text.Length > 0);
         Caret = newPos;
@@ -226,22 +226,22 @@ internal class Renderer : IRenderer
         if (HintText?.Length == 0)
             HintText = null;
 
-        string movementToStart = IndexToMovement(0);
+        var movementToStart = IndexToMovement(0);
         var (top, left) = IndexToTopLeft(_text.Length);
-        string newLine = top > 0 && left == 0 && _text[^1] != '\n'
+        var newLine = top > 0 && left == 0 && _text[^1] != '\n'
             ? "\n"
             : "";
-        string formattedText = Indent(Highlight(Text));
+        var formattedText = Indent(Highlight(Text));
 
         // Hint
-        string formattedHint = "";
-        string hintMovement = "";
-        int hintHeight = 0;
+        var formattedHint = "";
+        var hintMovement = "";
+        var hintHeight = 0;
         if (HintText != null)
         {
             var (hintTop, _) = IndexToTopLeft(_text.Length + HintText.Length, Text + HintText);
             hintHeight = hintTop - top;
-            string upMovement = hintTop == top
+            var upMovement = hintTop == top
                 ? ""
                 : $"\x1b[{hintHeight}A";
             hintMovement = $"{upMovement}\x1b[{left + 1}G";
@@ -253,11 +253,11 @@ internal class Renderer : IRenderer
         SetPositionWithoutMoving(_text.Length);
 
         // If there are leftover lines under, clear them.
-        int newTop = _top + hintHeight;
+        var newTop = _top + hintHeight;
         if (_previousRenderTop > newTop)
         {
-            int diff = _previousRenderTop - newTop;
-            string clearLines = string.Join(
+            var diff = _previousRenderTop - newTop;
+            var clearLines = string.Join(
                 "",
                 Enumerable.Repeat("\x1b[B\x1b[G\x1b[K", diff)
             );
@@ -272,8 +272,8 @@ internal class Renderer : IRenderer
 
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {
-        int offset = lastLineLength - _left;
-        string horizontalMovement = "";
+        var offset = lastLineLength - _left;
+        var horizontalMovement = "";
         if (offset < 0)
             horizontalMovement = $"\x1b[{Math.Abs(offset)}C";
         else if (offset > 0)
@@ -291,7 +291,7 @@ internal class Renderer : IRenderer
 
     private void SetPositionWithoutMoving(int index)
     {
-        (int top, int left) = IndexToTopLeft(index);
+        (var top, var left) = IndexToTopLeft(index);
         _top = top;
         _left = left;
         _caret = index;
@@ -299,10 +299,10 @@ internal class Renderer : IRenderer
 
     private (int, int) IndexToTopLeft(int index, string? content = null)
     {
-        string text = content ?? Text;
-        int top = 0;
-        int left = InputStart;
-        for (int i = 0; i < index; i++)
+        var text = content ?? Text;
+        var top = 0;
+        var left = InputStart;
+        for (var i = 0; i < index; i++)
         {
             if (text.Length > i && text[i] == '\n')
             {
@@ -327,11 +327,11 @@ internal class Renderer : IRenderer
     }
 
     private string IndexToMovement(int index)
-        => IndexToMovement(index, _top, out int _, out int _);
+        => IndexToMovement(index, _top, out var _, out var _);
 
     private string IndexToMovement(int index, out int newTop, out int newLeft)
     {
-        string result = IndexToMovement(index, _top, out int a, out int b);
+        var result = IndexToMovement(index, _top, out var a, out var b);
         newTop = a;
         newLeft = b;
 
@@ -343,8 +343,8 @@ internal class Renderer : IRenderer
         index = Math.Max(Math.Min(_text.Length, index), 0);
         (newTop, newLeft) = IndexToTopLeft(index);
 
-        int topDiff = newTop - originalTop;
-        string verticalMovement = "";
+        var topDiff = newTop - originalTop;
+        var verticalMovement = "";
         if (topDiff != 0)
         {
             verticalMovement = topDiff > 0

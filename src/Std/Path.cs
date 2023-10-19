@@ -27,8 +27,8 @@ public static class Path
         System.IO.File.AppendAllText(CommonPaths.PathFile, $"{path}\n");
 
         // Reload the path variable
-        string pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";
-        string colon = pathVar == "" ? "" : ":";
+        var pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";
+        var colon = pathVar == "" ? "" : ":";
         System.Environment.SetEnvironmentVariable("PATH", pathVar + colon + path);
     }
 

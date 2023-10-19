@@ -37,12 +37,12 @@ public class RuntimeTableRow : RuntimeObject, IEnumerable<RuntimeObject>, IIndex
         {
             if (index is RuntimeRange range)
             {
-                int length = (range.To ?? Columns.Count) - (range.From ?? 0);
+                var length = (range.To ?? Columns.Count) - (range.From ?? 0);
 
                 return new RuntimeList(Columns.GetRange(range.From ?? 0, length));
             }
 
-            int numericalIndex = index is RuntimeInteger integer
+            var numericalIndex = index is RuntimeInteger integer
                 ? (int)integer.Value
                 : _table.Header.IndexOf(index.As<RuntimeString>().Value);
 
@@ -54,7 +54,7 @@ public class RuntimeTableRow : RuntimeObject, IEnumerable<RuntimeObject>, IIndex
         {
             try
             {
-                int numericalIndex = index is RuntimeInteger integer
+                var numericalIndex = index is RuntimeInteger integer
                     ? (int)integer.Value
                     : _table.Header.IndexOf(index.As<RuntimeString>().Value);
 

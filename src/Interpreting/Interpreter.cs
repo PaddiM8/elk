@@ -482,7 +482,7 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.And)
         {
-            bool result = left.As<RuntimeBoolean>().IsTrue &&
+            var result = left.As<RuntimeBoolean>().IsTrue &&
                 Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
@@ -490,7 +490,7 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.Or)
         {
-            bool result = left.As<RuntimeBoolean>().IsTrue ||
+            var result = left.As<RuntimeBoolean>().IsTrue ||
                 Next(expr.Right).As<RuntimeBoolean>().IsTrue;
 
             return RuntimeBoolean.From(result);
@@ -499,7 +499,7 @@ partial class Interpreter
         var right = Next(expr.Right);
         if (expr.Operator == OperationKind.In)
         {
-            bool result = right switch
+            var result = right switch
             {
                 RuntimeList list => list.Values
                     .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
@@ -670,10 +670,10 @@ partial class Interpreter
 
     private RuntimeObject Visit(VariableExpr expr)
     {
-        string name = expr.Identifier.Value;
+        var name = expr.Identifier.Value;
         if (name.StartsWith('$'))
         {
-            string? value = Environment.GetEnvironmentVariable(name[1..]);
+            var value = Environment.GetEnvironmentVariable(name[1..]);
 
             return value == null
                 ? RuntimeNil.Value
@@ -760,7 +760,7 @@ partial class Interpreter
 
         if (evaluatedArguments.First() is not IEnumerable<RuntimeObject> firstArguments)
         {
-            string message = expr.CallType == CallType.Program
+            var message = expr.CallType == CallType.Program
                 ? "Note: The call with plurality was evaluated as a program call, since a function with that name could not be found."
                 : "";
             throw new RuntimeCastException(
@@ -841,7 +841,7 @@ partial class Interpreter
             allArguments.AddRange(arguments);
         }
 
-        int additionalsIndex = allArguments.Count;
+        var additionalsIndex = allArguments.Count;
         foreach (var parameter in stdFunction.Parameters.Reverse())
         {
             if (parameter.IsNullable)
@@ -950,7 +950,7 @@ partial class Interpreter
         var newArguments = new List<string>();
         foreach (var argument in arguments)
         {
-            string value = argument is RuntimeNil
+            var value = argument is RuntimeNil
                 ? string.Empty
                 : argument.As<RuntimeString>().Value;
             if (!globbingEnabled)
@@ -970,7 +970,7 @@ partial class Interpreter
         }
 
         // Read potential shebang
-        bool hasShebang = false;
+        var hasShebang = false;
         if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
         {
             using var streamReader = new StreamReader(ShellEnvironment.GetAbsolutePath(fileName));
@@ -1006,7 +1006,7 @@ partial class Interpreter
         var processContext = new ProcessContext(process, pipedValue);
         if (redirectionKind == RedirectionKind.None)
         {
-            int exitCode = processContext.Start();
+            var exitCode = processContext.Start();
 
             return exitCode == 0
                 ? RuntimeNil.Value

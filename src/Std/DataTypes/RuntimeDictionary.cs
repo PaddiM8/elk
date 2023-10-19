@@ -74,8 +74,8 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         foreach (var entry in Entries)
         {
             stringBuilder.Append("    ");
-            string key = entry.Value.Item1.ToDisplayString();
-            string value = entry.Value.Item2.ToDisplayString();
+            var key = entry.Value.Item1.ToDisplayString();
+            var value = entry.Value.Item2.ToDisplayString();
             stringBuilder.AppendLine($"{key}: {value},");
         }
 
@@ -122,7 +122,7 @@ class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
 
     public bool MoveNext()
     {
-        bool success = _enumerator.MoveNext();
+        var success = _enumerator.MoveNext();
         if (success)
         {
             Current = new RuntimeTuple(new[]

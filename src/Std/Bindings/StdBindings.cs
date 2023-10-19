@@ -26,7 +26,7 @@ public static partial class StdBindings
 
     public static StdFunction? GetFunction(string functionName, string? moduleName)
     {
-        string fullName = moduleName == null
+        var fullName = moduleName == null
             ? functionName
             : $"{moduleName}::{functionName}";
         _functions.TryGetValue(fullName, out var result);
@@ -39,7 +39,7 @@ public static partial class StdBindings
 
     public static bool HasFunction(string functionName, string? moduleName)
     {
-        string fullName = moduleName == null
+        var fullName = moduleName == null
             ? functionName
             : $"{moduleName}::{functionName}";
 
@@ -51,7 +51,7 @@ public static partial class StdBindings
         out ImmutableArray<string> structNames,
         out ImmutableArray<string> functionNames)
     {
-        bool success = _modules.TryGetValue(moduleName, out var names);
+        var success = _modules.TryGetValue(moduleName, out var names);
         structNames = names.structNames;
         functionNames = names.functionNames;
 

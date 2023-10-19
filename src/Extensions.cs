@@ -25,8 +25,8 @@ public static class Extensions
     {
         using var enumerator1 = a.GetEnumerator();
         using var enumerator2 = b.GetEnumerator();
-        bool hasNext1 = enumerator1.MoveNext();
-        bool hasNext2 = enumerator2.MoveNext();
+        var hasNext1 = enumerator1.MoveNext();
+        var hasNext2 = enumerator2.MoveNext();
         while (hasNext1 || hasNext2)
         {
             yield return (
@@ -44,7 +44,7 @@ public static class Extensions
 
     public static string TrimCharStart(this string input, char target)
     {
-        for (int i = 0; i < input.Length; i++)
+        for (var i = 0; i < input.Length; i++)
         {
             if (input[i] != target)
                 return input[i..];
@@ -55,7 +55,7 @@ public static class Extensions
 
     public static string TrimCharEnd(this string input, char target)
     {
-        for (int i = input.Length - 1; i >= 0; i--)
+        for (var i = input.Length - 1; i >= 0; i--)
         {
             if (input[i] != target)
                 return input[..(i + 1)];

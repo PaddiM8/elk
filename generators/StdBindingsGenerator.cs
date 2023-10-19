@@ -181,7 +181,7 @@ public class StdBindingsGenerator : ISourceGenerator
     {
         foreach (var function in FindMethods(compilation))
         {
-            string fullName = function.ModuleName == null
+            var fullName = function.ModuleName == null
                 ? function.FunctionName
                 : $"{function.ModuleName}::{function.FunctionName}";
             sourceBuilder.Append("\n\t\t{ \"");
@@ -211,13 +211,13 @@ public class StdBindingsGenerator : ISourceGenerator
             sourceBuilder.Append($"{function.MinArgumentCount}, ");
             sourceBuilder.Append($"{function.MaxArgumentCount}, ");
 
-            string hasClosure = function.HasClosure
+            var hasClosure = function.HasClosure
                 ? "true"
                 : "false";
-            string variadicStart = function.VariadicStart.HasValue
+            var variadicStart = function.VariadicStart.HasValue
                 ? function.VariadicStart.Value.ToString()
                 : "null";
-            string consumesPipe = function.ConsumesPipe
+            var consumesPipe = function.ConsumesPipe
                 ? "true"
                 : "false";
             sourceBuilder.Append($"{hasClosure}, ");
@@ -231,7 +231,7 @@ public class StdBindingsGenerator : ISourceGenerator
             // Invocation object
             sourceBuilder.Append("args => ");
 
-            bool isVoid = function.Syntax.ReturnType.ToString() == "void";
+            var isVoid = function.Syntax.ReturnType.ToString() == "void";
             if (isVoid)
                 sourceBuilder.Append("{ ");
 
@@ -243,8 +243,8 @@ public class StdBindingsGenerator : ISourceGenerator
                     sourceBuilder.Append(", ");
 
                 var typeName = GetFullTypeName(compilation, parameter.Type!);
-                bool isStdType = parameter.Type!.ToString().StartsWith("Runtime");
-                string nullable = parameter.Type is NullableTypeSyntax
+                var isStdType = parameter.Type!.ToString().StartsWith("Runtime");
+                var nullable = parameter.Type is NullableTypeSyntax
                     ? "?"
                     : "";
                 sourceBuilder.Append(
@@ -286,7 +286,7 @@ public class StdBindingsGenerator : ISourceGenerator
             if (i != 0)
                 sourceBuilder.Append(", ");
 
-            string additional = "";
+            var additional = "";
 
             // Nullable
             if (parameter.type.EndsWith("?"))
@@ -309,10 +309,10 @@ public class StdBindingsGenerator : ISourceGenerator
     {
         foreach (var structInfo in FindStructs(compilation))
         {
-            string fullName = $"{structInfo.ModuleName}::{structInfo.StructName}";
+            var fullName = $"{structInfo.ModuleName}::{structInfo.StructName}";
             sourceBuilder.Append($"\n\t\t{{ \"{fullName}\", ");
 
-            string moduleName = $"\"{structInfo.ModuleName}\"";
+            var moduleName = $"\"{structInfo.ModuleName}\"";
             if (!modules.TryGetValue(moduleName, out var moduleEntries))
                 modules.Add(moduleName, new(new List<string> { structInfo.StructName }, new List<string>()));
             else
@@ -324,7 +324,7 @@ public class StdBindingsGenerator : ISourceGenerator
             sourceBuilder.Append($"{structInfo.MinArgumentCount}, ");
             sourceBuilder.Append($"{structInfo.MaxArgumentCount}, ");
 
-            string variadicStart = structInfo.VariadicStart.HasValue
+            var variadicStart = structInfo.VariadicStart.HasValue
                 ? structInfo.VariadicStart.Value.ToString()
                 : "null";
             sourceBuilder.Append($"{variadicStart}, ");
@@ -340,10 +340,10 @@ public class StdBindingsGenerator : ISourceGenerator
         {
             var structNames = string.Join(", ", module.Value.StructNames.Select(x => $"\"{x}\""));
             var functionNames = string.Join(", ", module.Value.FunctionNames.Select(x => $"\"{x}\""));
-            string structArrayType = module.Value.StructNames.Any()
+            var structArrayType = module.Value.StructNames.Any()
                 ? ""
                 : " string";
-            string functionArrayType = module.Value.FunctionNames.Any()
+            var functionArrayType = module.Value.FunctionNames.Any()
                 ? ""
                 : " string";
             sourceBuilder.Append($"\n\t\t{{ {module.Key}, (");
@@ -429,10 +429,10 @@ public class StdBindingsGenerator : ISourceGenerator
         var parameters = AnalyseParameters(
             compilation,
             methodSyntax.ParameterList.Parameters,
-            out int minArgumentCount,
-            out int maxArgumentCount,
-            out bool _,
-            out int? variadicStart
+            out var minArgumentCount,
+            out var maxArgumentCount,
+            out var _,
+            out var variadicStart
         );
 
         return new StdStructInfo(
@@ -454,12 +454,12 @@ public class StdBindingsGenerator : ISourceGenerator
     {
         // Attribute
         var attributeArguments = attribute.ArgumentList!.Arguments;
-        bool reachableEverywhere = false;
-        bool consumesPipe = false;
+        var reachableEverywhere = false;
+        var consumesPipe = false;
         if (attributeArguments.Count > 1)
         {
             var reachabilityExpr = (MemberAccessExpressionSyntax)attributeArguments[1].Expression;
-            string reachability = reachabilityExpr.Name.Identifier.Text;
+            var reachability = reachabilityExpr.Name.Identifier.Text;
             reachableEverywhere = reachability == "Everywhere";
             consumesPipe = attributeArguments
                 .FirstOrDefault(x => x.NameEquals?.Name.Identifier.Text == "ConsumesPipe")?
@@ -472,10 +472,10 @@ public class StdBindingsGenerator : ISourceGenerator
         var parameters = AnalyseParameters(
             compilation,
             methodSyntax.ParameterList.Parameters,
-            out int minArgumentCount,
-            out int maxArgumentCount,
-            out bool hasClosure,
-            out int? variadicStart
+            out var minArgumentCount,
+            out var maxArgumentCount,
+            out var hasClosure,
+            out var variadicStart
         );
 
         return new StdFunctionInfo(
@@ -511,7 +511,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var fullTypeName = GetFullTypeName(compilation, type);
             if (_typeNames.Contains(fullTypeName))
             {
-                bool isVariadic = FindAttribute(parameter, "ElkVariadic") != null;
+                var isVariadic = FindAttribute(parameter, "ElkVariadic") != null;
                 if (isVariadic)
                     variadicStart = i;
 

@@ -129,7 +129,7 @@ static class Maths
     public static RuntimeObject Sum(IEnumerable<RuntimeObject> items)
     {
         // TODO: Better handling for Integers
-        double result = items.Sum(x => x.As<RuntimeFloat>().Value);
+        var result = items.Sum(x => x.As<RuntimeFloat>().Value);
 
         return Math.Floor(result) == result
             ? new RuntimeInteger((int)result)

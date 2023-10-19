@@ -108,7 +108,7 @@ public class Sort
 
     private static void SortTableMut(RuntimeTable table, RuntimeObject? key, bool descending)
     {
-        int index = key == null
+        var index = key == null
             ? 0
             : table.Header.IndexOf(key.As<RuntimeString>().Value);
 

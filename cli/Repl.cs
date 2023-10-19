@@ -46,7 +46,7 @@ class Repl
         {
             shell.PrintPrompt();
 
-            string input = readLine.Read();
+            var input = readLine.Read();
             if (input.Trim().Any())
             {
                 historyHandler.Add(new HistoryEntry

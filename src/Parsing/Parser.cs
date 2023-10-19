@@ -92,8 +92,8 @@ internal class Parser
 
         // Peek ahead to check if there is a 'from', then backtrack
         SkipWhiteSpace();
-        int prevIndex = _index;
-        bool hasFrom = Eat().Kind == TokenKind.Identifier &&
+        var prevIndex = _index;
+        var hasFrom = Eat().Kind == TokenKind.Identifier &&
                        (Match(TokenKind.Comma) || MatchIdentifier("from"));
         _index = prevIndex;
 
@@ -113,8 +113,8 @@ internal class Parser
         }
 
         SkipWhiteSpace();
-        string relativePath = ParsePath();
-        string moduleName = Path.GetFileNameWithoutExtension(relativePath);
+        var relativePath = ParsePath();
+        var moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
         if (StdBindings.HasModule(moduleName))
         {
@@ -167,20 +167,20 @@ internal class Parser
     {
         var pos = EatExpected(TokenKind.Using).Position;
         SkipWhiteSpace();
-        string relativePath = ParsePath();
-        string moduleName = Path.GetFileNameWithoutExtension(relativePath);
+        var relativePath = ParsePath();
+        var moduleName = Path.GetFileNameWithoutExtension(relativePath);
 
-        bool isStdModule = StdBindings.GetModuleSymbolNames(
+        var isStdModule = StdBindings.GetModuleSymbolNames(
             moduleName,
             out var stdStructNames,
             out var stdFunctionNames
         );
         if (isStdModule)
         {
-            foreach (string stdStructName in stdStructNames)
+            foreach (var stdStructName in stdStructNames)
                 _scope.ModuleScope.ImportStdStruct(stdStructName, moduleName);
 
-            foreach (string stdFunctionName in stdFunctionNames)
+            foreach (var stdFunctionName in stdFunctionNames)
                 _scope.ModuleScope.ImportStdFunction(stdFunctionName, moduleName);
 
             return;
@@ -199,10 +199,10 @@ internal class Parser
 
     private ModuleScope ImportUserModule(string path, string moduleName, TextPos pos)
     {
-        string directoryPath = Path.GetDirectoryName(
+        var directoryPath = Path.GetDirectoryName(
             _scope.ModuleScope.FilePath ?? ShellEnvironment.WorkingDirectory
         )!;
-        string absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
+        var absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
         if (!File.Exists(absolutePath))
         {
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
@@ -286,7 +286,7 @@ internal class Parser
         }
 
         // Has closure?
-        bool hasClosure = false;
+        var hasClosure = false;
         if (AdvanceIf(TokenKind.EqualsGreater))
         {
             if (MatchIdentifier("closure"))
@@ -317,7 +317,7 @@ internal class Parser
     private Expr ParseAlias()
     {
         var pos = EatExpected(TokenKind.Alias).Position;
-        string name = EatExpected(TokenKind.Identifier).Value;
+        var name = EatExpected(TokenKind.Identifier).Value;
         EatExpected(TokenKind.Equals);
         var value = EatExpected(TokenKind.StringLiteral);
 
@@ -329,7 +329,7 @@ internal class Parser
     private Expr ParseUnalias()
     {
         var pos = EatExpected(TokenKind.Unalias).Position;
-        string name = EatExpected(TokenKind.Identifier).Value;
+        var name = EatExpected(TokenKind.Identifier).Value;
         _scope.ModuleScope.RemoveAlias(name);
 
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
@@ -347,7 +347,7 @@ internal class Parser
 
             var identifier = EatExpected(TokenKind.Identifier);
             Expr? defaultValue = null;
-            bool variadic = false;
+            var variadic = false;
 
             if (AdvanceIf(TokenKind.Equals))
                 defaultValue = ParseExpr();
@@ -368,7 +368,7 @@ internal class Parser
 
     private Expr ParseBinaryIf(Expr? existingLeft = null)
     {
-        int leftLine = Current?.Position.Line ?? 0;
+        var leftLine = Current?.Position.Line ?? 0;
         var left = existingLeft ?? ParseKeyword();
         if (existingLeft != null || leftLine == Current?.Position.Line && Match(TokenKind.If))
         {
@@ -519,7 +519,7 @@ internal class Parser
     {
         if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
-            bool inclusive = AdvanceIf(TokenKind.Equals);
+            var inclusive = AdvanceIf(TokenKind.Equals);
 
             return new RangeExpr(null, ParseCoalescing(), inclusive);
         }
@@ -527,7 +527,7 @@ internal class Parser
         var left = ParseCoalescing();
         if (Peek()?.Kind is not TokenKind.Slash && AdvanceIf(TokenKind.DotDot))
         {
-            bool inclusive = AdvanceIf(TokenKind.Equals);
+            var inclusive = AdvanceIf(TokenKind.Equals);
 
             _allowEndOfExpression = true;
             var right = ParseCoalescing();
@@ -792,7 +792,7 @@ internal class Parser
         var stringLiteral = EatExpected(TokenKind.StringLiteral);
         var parts = StringInterpolationParser.Parse(stringLiteral);
         var parsedParts = new List<Expr>();
-        int column = stringLiteral.Position.Column;
+        var column = stringLiteral.Position.Column;
         foreach (var part in parts)
         {
             var textPos = stringLiteral.Position with { Column = column, FilePath = _scope.ModuleScope.FilePath };
@@ -1084,7 +1084,7 @@ internal class Parser
 
     private Expr ParseIdentifier()
     {
-        bool isReference = AdvanceIf(TokenKind.Ampersand);
+        var isReference = AdvanceIf(TokenKind.Ampersand);
         var pos = Current?.Position ?? TextPos.Default;
         IList<Token> modulePath = Array.Empty<Token>();
         while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
@@ -1103,7 +1103,7 @@ internal class Parser
         if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.ContainsStruct(identifier.Value))
             return new TypeExpr(identifier);
 
-        string? importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)
+        var importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)
             ?? _scope.ModuleScope.FindImportedStdStructModule(identifier.Value);
         if (modulePath.Count == 0 && importedStdModule != null)
         {
@@ -1238,8 +1238,8 @@ internal class Parser
             }
 
             var next = Peek();
-            bool isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
-            bool isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
+            var isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
+            var isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
                 Current!.Value.StartsWith('$') &&
                 Previous?.Value != "\\";
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
@@ -1350,7 +1350,7 @@ internal class Parser
 
     private bool AdvanceIf(TokenKind kind)
     {
-        int prevIndex = _index;
+        var prevIndex = _index;
 
         if (Match(kind))
         {

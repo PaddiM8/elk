@@ -25,7 +25,7 @@ public class ReadLinePrompt
     public string Read(string prompt = "", string @default = "")
     {
         Console.Write(prompt);
-        bool enterPressed = false;
+        var enterPressed = false;
         _keyHandler = new KeyHandler(new Renderer(), _shortcuts)
         {
             HistoryHandler = HistoryHandler,
@@ -45,7 +45,7 @@ public class ReadLinePrompt
             _keyHandler.Handle(firstKey, remaining);
         }
 
-        string text = _keyHandler.Text;
+        var text = _keyHandler.Text;
         if (string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(@default))
         {
             text = @default;

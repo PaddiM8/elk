@@ -35,7 +35,7 @@ public class IntegrationTests
 
     public static IEnumerable<string> ElkFiles()
     {
-        string dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles");
+        var dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles");
 
         return Directory.GetFiles(dataPath, "*.elk", SearchOption.AllDirectories);
     }

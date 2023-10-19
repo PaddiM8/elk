@@ -16,7 +16,7 @@ partial class Interpreter
         if (arguments.Count > 1)
             throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
 
-        string argument = arguments.Any()
+        var argument = arguments.Any()
             ? arguments.First().As<RuntimeString>().Value
             : "";
         if (argument == "")
@@ -25,7 +25,7 @@ partial class Interpreter
             return RuntimeNil.Value;
         }
 
-        string path = argument == "-"
+        var path = argument == "-"
             ? Environment.GetEnvironmentVariable("OLDPWD") ?? ""
             : ShellEnvironment.GetAbsolutePath(argument);
 
@@ -48,7 +48,7 @@ partial class Interpreter
         bool disableRedirectionBuffering,
         bool globbingEnabled)
     {
-        string programName = arguments[0].As<RuntimeString>().Value;
+        var programName = arguments[0].As<RuntimeString>().Value;
 
         return EvaluateProgramCall(
             programName,
@@ -65,7 +65,7 @@ partial class Interpreter
         if (arguments.Any())
             throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
 
-        string path = _lastExpr!.Position.FilePath == null
+        var path = _lastExpr!.Position.FilePath == null
             ? ShellEnvironment.WorkingDirectory
             : Path.GetDirectoryName(_lastExpr.Position.FilePath)!;
 
@@ -181,8 +181,8 @@ partial class Interpreter
         var result = Next(arguments.Single());
         stopWatch.Stop();
 
-        long milliseconds = Math.Max(0, stopWatch.ElapsedMilliseconds - 1);
-        string paddedMilliseconds = milliseconds.ToString().PadLeft(3, '0');
+        var milliseconds = Math.Max(0, stopWatch.ElapsedMilliseconds - 1);
+        var paddedMilliseconds = milliseconds.ToString().PadLeft(3, '0');
         Console.WriteLine($"time: {stopWatch.Elapsed.Minutes}m{stopWatch.Elapsed.Seconds}.{paddedMilliseconds}\n");
 
         return result;

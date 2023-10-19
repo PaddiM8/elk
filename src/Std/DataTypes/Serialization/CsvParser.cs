@@ -28,7 +28,7 @@ public class CsvParser : IEnumerable<RuntimeObject>
         if (line.Length == 0)
             return null;
 
-        int quoteCount = line.Count(x => x == '"');
+        var quoteCount = line.Count(x => x == '"');
         if (quoteCount % 2 != 0)
         {
             _unfinishedLine.AppendLine(line);
@@ -36,7 +36,7 @@ public class CsvParser : IEnumerable<RuntimeObject>
             return null;
         }
 
-        string row = line;
+        var row = line;
         if (_unfinishedLine.Length > 0)
         {
             _unfinishedLine.Append(line);
@@ -45,11 +45,11 @@ public class CsvParser : IEnumerable<RuntimeObject>
         }
 
         var columns = new List<RuntimeString>();
-        bool inQuotes = false;
-        int lastSeparatorPos = -1;
-        for (int i = 0; i < row.Length; i++)
+        var inQuotes = false;
+        var lastSeparatorPos = -1;
+        for (var i = 0; i < row.Length; i++)
         {
-            char c = row[i];
+            var c = row[i];
             if (c == '"')
                 inQuotes = !inQuotes;
 
@@ -58,14 +58,14 @@ public class CsvParser : IEnumerable<RuntimeObject>
 
             if (c == _separator)
             {
-                int start = lastSeparatorPos + 1;
+                var start = lastSeparatorPos + 1;
                 columns.Add(new RuntimeString(row[start..i]));
                 lastSeparatorPos = i;
             }
         }
 
         // The final column
-        int finalSeparatorEnd = lastSeparatorPos + 1;
+        var finalSeparatorEnd = lastSeparatorPos + 1;
         if (row.Length > finalSeparatorEnd)
             columns.Add(new RuntimeString(row[finalSeparatorEnd..row.Length]));
 

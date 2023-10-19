@@ -71,8 +71,8 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
 
     private IEnumerable<RuntimeInteger> AsEnumerable()
     {
-        int from = From ?? 0;
-        int count = (To ?? from) - from;
+        var from = From ?? 0;
+        var count = (To ?? from) - from;
 
         return Enumerable.Range(from, count).Select(x => new RuntimeInteger(x));
     }

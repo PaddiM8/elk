@@ -58,7 +58,7 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
         {
             if (index is RuntimeRange range)
             {
-                int length = (range.To ?? Rows.Count) - (range.From ?? 0);
+                var length = (range.To ?? Rows.Count) - (range.From ?? 0);
 
                 return new RuntimeTable(
                     new RuntimeList(Header.Select(x => new RuntimeString(x))),

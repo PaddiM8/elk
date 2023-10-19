@@ -14,7 +14,7 @@ internal class ShortcutBag
 
     public bool TryGetValue(KeyPress key, out Action<KeyHandler>? action)
     {
-        bool success = _shortcuts.TryGetValue(key, out var retrievedAction);
+        var success = _shortcuts.TryGetValue(key, out var retrievedAction);
         action = retrievedAction;
 
         return success;

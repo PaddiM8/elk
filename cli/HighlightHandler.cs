@@ -96,7 +96,7 @@ class HighlightHandler : IHighlightHandler
 
         if (keyword.Kind == TokenKind.Fn)
         {
-            bool insideParameterList = false;
+            var insideParameterList = false;
             while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
             {
                 var token = Eat()!;
@@ -178,9 +178,9 @@ class HighlightHandler : IHighlightHandler
 
     private string NextStringLiteral(int endColor = 0)
     {
-        string value = Eat()!.Value;
+        var value = Eat()!.Value;
         var builder = new StringBuilder();
-        for (int i = 0; i < value.Length; i++)
+        for (var i = 0; i < value.Length; i++)
         {
             char? c = value[i];
             if (value.ElementAtOrDefault(i - 1) != '\\' &&
@@ -191,9 +191,9 @@ class HighlightHandler : IHighlightHandler
                 c = value.ElementAtOrDefault(i);
                 builder.Append(Color("${", 37));
 
-                int interpolationContentStart = i;
-                int openBraces = 1;
-                bool inString = false;
+                var interpolationContentStart = i;
+                var openBraces = 1;
+                var inString = false;
                 while (i < value.Length && openBraces != 0)
                 {
                     if (c == '"' && value[i - 1] != '\\')
@@ -211,7 +211,7 @@ class HighlightHandler : IHighlightHandler
 
                 if (value[i - 1] == '}')
                 {
-                    int interpolationContentEnd = i - 1;
+                    var interpolationContentEnd = i - 1;
                     builder.Append(
                         _innerHighlighter.Highlight(value[interpolationContentStart..interpolationContentEnd])
                     );
@@ -232,12 +232,12 @@ class HighlightHandler : IHighlightHandler
 
     private string NextIdentifier(List<string>? modulePath = null)
     {
-        int startIndex = Current!.Position.Index;
-        string identifier = Eat()!.Value.Trim();
+        var startIndex = Current!.Position.Index;
+        var identifier = Eat()!.Value.Trim();
         if (identifier.StartsWith('$'))
             return identifier;
 
-        string plurality = identifier.EndsWith("!") ? "!" : "";
+        var plurality = identifier.EndsWith("!") ? "!" : "";
         identifier = identifier.TrimCharEnd('!');
 
         modulePath ??= new List<string>();
@@ -254,7 +254,7 @@ class HighlightHandler : IHighlightHandler
         if (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier))
             return identifier + plurality;
 
-        string textArguments = NextTextArguments();
+        var textArguments = NextTextArguments();
         if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
         {
             _lastShellStyleInvocations.Add(
@@ -267,9 +267,9 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
-        bool isFunctionCall = _shell.FunctionExists(identifier, modulePath);
-        bool isCallable = isFunctionCall || _shell.ProgramExists(identifier);
-        int colorCode = isCallable ? 95 : 91;
+        var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
+        var isCallable = isFunctionCall || _shell.ProgramExists(identifier);
+        var colorCode = isCallable ? 95 : 91;
 
         var nextBuilder = new StringBuilder();
         if (Current?.Kind == TokenKind.WhiteSpace)
@@ -307,7 +307,7 @@ class HighlightHandler : IHighlightHandler
     private string NextModule(List<string> modulePath)
     {
         var builder = new StringBuilder();
-        string name = Previous!.Value;
+        var name = Previous!.Value;
         if (!_shell.ModuleExists(modulePath))
         {
             builder.Append(Color(name, 91));
@@ -319,8 +319,8 @@ class HighlightHandler : IHighlightHandler
         if (Current is not { Kind: TokenKind.ColonColon })
             return builder.ToString();
 
-        int pos = Current?.Position.Index ?? _length;
-        string textForCompletion = string.Join("::", modulePath) + "::";
+        var pos = Current?.Position.Index ?? _length;
+        var textForCompletion = string.Join("::", modulePath) + "::";
         _lastShellStyleInvocations.Add(
             new(
                 textForCompletion,
@@ -340,7 +340,7 @@ class HighlightHandler : IHighlightHandler
 
     private string NextPath()
     {
-        int startIndex = Current!.Position.Index;
+        var startIndex = Current!.Position.Index;
         var builder = new StringBuilder();
         while (!ReachedTextEnd() &&
                Current?.Kind is not (TokenKind.WhiteSpace or TokenKind.OpenParenthesis or TokenKind.OpenSquareBracket))
@@ -357,8 +357,8 @@ class HighlightHandler : IHighlightHandler
             builder.Append(Eat()!.Value);
         }
 
-        string identifier = builder.ToString();
-        string textArguments = NextTextArguments();
+        var identifier = builder.ToString();
+        var textArguments = NextTextArguments();
         if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
         {
             _lastShellStyleInvocations.Add(
@@ -371,7 +371,7 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
-        int colorCode = _shell.ProgramExists(identifier) ? 95 : 91;
+        var colorCode = _shell.ProgramExists(identifier) ? 95 : 91;
 
         return textArguments.Length > 0
             ? Color(identifier, colorCode, null) + textArguments
@@ -433,7 +433,7 @@ class HighlightHandler : IHighlightHandler
         Eat(); // {
         builder.Append(Color("${", 37));
 
-        int openBraces = 1;
+        var openBraces = 1;
         while (!ReachedEnd && openBraces > 0)
         {
             if (Current?.Kind == TokenKind.OpenBrace)

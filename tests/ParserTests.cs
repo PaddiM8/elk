@@ -87,14 +87,14 @@ internal class ParserTests
             Token(TokenKind.Identifier, "world"),
         };
         dynamic ast = Parse(tokens);
-        dynamic left = ast[0].Left;
+        var left = ast[0].Left;
         Assert.IsInstanceOf<CallExpr>(left);
         Assert.AreEqual("echo", left.Identifier.Value);
         Assert.AreEqual(2, left.Arguments.Count);
         Assert.AreEqual("+", left.Arguments[0].Parts[0].Value.Value);
         Assert.AreEqual("hello", left.Arguments[1].Parts[0].Value.Value);
 
-        dynamic right = ast[0].Right;
+        var right = ast[0].Right;
         Assert.AreEqual("world", right.Identifier.Value);
         Assert.IsEmpty(right.Arguments);
     }

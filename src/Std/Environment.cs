@@ -39,12 +39,12 @@ public class Environment
     [ElkFunction("prettyPwd")]
     public static RuntimeString PrettyPwd()
     {
-        string homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        string? pwd = System.Environment.GetEnvironmentVariable("PWD");
+        var homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+        var pwd = System.Environment.GetEnvironmentVariable("PWD");
         if (string.IsNullOrEmpty(pwd))
             pwd = homePath;
 
-        bool containsHome = false;
+        var containsHome = false;
         if (pwd.StartsWith(homePath))
         {
             containsHome = true;

@@ -57,9 +57,9 @@ class XmlDocumentationReader : IDisposable
             var currentElement = _reader.Name;
             if (currentElement == "member" && _reader["name"]?.StartsWith("M:Elk.Std") is true)
             {
-                string fullName = _reader["name"]!;
-                int parenthesisIndex = fullName.IndexOf('(');
-                string name = parenthesisIndex == -1
+                var fullName = _reader["name"]!;
+                var parenthesisIndex = fullName.IndexOf('(');
+                var name = parenthesisIndex == -1
                     ? fullName[2..]
                     : fullName[2..parenthesisIndex];
                 currentFunctionDocs = new FunctionDocumentation(name);

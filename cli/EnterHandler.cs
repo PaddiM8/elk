@@ -32,12 +32,12 @@ public class EnterHandler : IEnterHandler
         if (promptText.EndsWith('\\'))
             return true;
 
-        int openBraces = 0;
-        int singleQuotes = 0;
-        int doubleQuotes = 0;
-        for (int i = 0; i < promptText.Length; i++)
+        var openBraces = 0;
+        var singleQuotes = 0;
+        var doubleQuotes = 0;
+        for (var i = 0; i < promptText.Length; i++)
         {
-            char c = promptText[i];
+            var c = promptText[i];
             if (c == '\\')
             {
                 i++;

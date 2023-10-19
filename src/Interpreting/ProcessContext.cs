@@ -50,7 +50,7 @@ public class ProcessContext : IEnumerable<string>
             Read(_pipedValue);
 
         _process.WaitForExit();
-        int exitCode = _process.ExitCode;
+        var exitCode = _process.ExitCode;
         CloseProcess();
         Environment.SetEnvironmentVariable("?", exitCode.ToString());
 

@@ -109,7 +109,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
     private string FindPathBefore(string text, int startPos)
     {
-        for (int i = startPos - 1; i > 0; i--)
+        for (var i = startPos - 1; i > 0; i--)
         {
             if (text[i] == ' ' && text.ElementAtOrDefault(i - 1) != '\\')
                 return text[(i + 1)..startPos];

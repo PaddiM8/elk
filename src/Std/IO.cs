@@ -35,7 +35,7 @@ static class IO
     [ElkFunction("write", Reachability.Everywhere, ConsumesPipe = true)]
     public static void WriteToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
-        string absolutePath = env.GetAbsolutePath(path.Value);
+        var absolutePath = env.GetAbsolutePath(path.Value);
         if (content is RuntimePipe runtimePipe)
         {
             var fileInfo = new FileInfo(absolutePath);
@@ -71,7 +71,7 @@ static class IO
     [ElkFunction("append", Reachability.Everywhere)]
     public static void AppendToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
-        string absolutePath = env.GetAbsolutePath(path.Value);
+        var absolutePath = env.GetAbsolutePath(path.Value);
         var fileInfo = new FileInfo(absolutePath);
 
         if (content is RuntimePipe runtimePipe)

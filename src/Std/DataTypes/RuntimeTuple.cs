@@ -72,7 +72,7 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
 
         foreach (var (item, otherItem) in Values.Zip(otherTuple))
         {
-            int comparison = item.CompareTo(otherItem);
+            var comparison = item.CompareTo(otherItem);
             if (comparison == 0)
                 continue;
 

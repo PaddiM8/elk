@@ -13,8 +13,8 @@ static class Extensions
         if (input.Length <= 3)
             return input;
 
-        int width = 0;
-        for (int i = 0; i < input.Length; i++)
+        var width = 0;
+        for (var i = 0; i < input.Length; i++)
         {
             width += UnicodeCalculator.GetWidth(input[i]);
             if (width == maxLength)

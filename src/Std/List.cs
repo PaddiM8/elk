@@ -59,7 +59,7 @@ public class List
     [ElkFunction("pop", Reachability.Everywhere)]
     public static RuntimeObject Pop(RuntimeList list, RuntimeInteger? index = null)
     {
-        int i = (int?)index?.Value ?? list.Count - 1;
+        var i = (int?)index?.Value ?? list.Count - 1;
         var value = list.Values.ElementAtOrDefault(i);
         if (value != null)
             list.Values.RemoveAt(i);
@@ -76,8 +76,8 @@ public class List
     [ElkFunction("removeRange", Reachability.Everywhere)]
     public static RuntimeObject RemoveRange(RuntimeList list, RuntimeRange range)
     {
-        int from = range.From ?? 0;
-        int to = range.To ?? list.Count;
+        var from = range.From ?? 0;
+        var to = range.To ?? list.Count;
         list.Values.RemoveRange(from, to - from);
 
         return list;

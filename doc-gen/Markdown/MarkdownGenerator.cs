@@ -28,14 +28,14 @@ public class MarkdownGenerator
             if (!module.Functions.Any())
                 continue;
 
-            bool isBuiltIn = module.DisplayName == "Built-in";
-            string title = isBuiltIn
+            var isBuiltIn = module.DisplayName == "Built-in";
+            var title = isBuiltIn
                 ? "Built-in"
                 : $"{module.DisplayName} ({module.Name})";
-            string description = isBuiltIn
+            var description = isBuiltIn
                 ? "# Built-in\nThese functions do not belong to a module and are always available."
                 : $"# {title}\nFunctions in this module can be accessed by with the syntax {module.Name}::functionName or by importing the function from the {module.Name} module.";
-            string folderPath = TitleToFolderName(title);
+            var folderPath = TitleToFolderName(title);
 
             Directory.CreateDirectory(Path.Combine(dir, folderPath));
             File.WriteAllText(Path.Combine(dir, $"{folderPath}/README.md"), description);
@@ -104,8 +104,8 @@ public class MarkdownGenerator
         var table = new MarkdownTable("Parameter", "Type", "Description");
         foreach (var (name, valueInfo, isOptional, isVariadic) in parameters)
         {
-            string firstColumn = isOptional ? $"(optional) {name}" : name;
-            string typeName = valueInfo.TypeName ?? "*";
+            var firstColumn = isOptional ? $"(optional) {name}" : name;
+            var typeName = valueInfo.TypeName ?? "*";
             if (isVariadic)
             {
                 firstColumn = $"(variadic) {name}";
@@ -142,7 +142,7 @@ public class MarkdownGenerator
             if (returnTypeName != null)
                 functionString.Append($"({returnTypeName}) ");
 
-            string? description = functionInfo.ReturnValue.Description;
+            var description = functionInfo.ReturnValue.Description;
             if (!string.IsNullOrEmpty(description))
                 functionString.Append(description);
 
@@ -153,7 +153,7 @@ public class MarkdownGenerator
         if (functionInfo.Example != null)
         {
             functionString.AppendLine("\n## Example\n");
-            string lang = functionInfo.Example.Contains('#')
+            var lang = functionInfo.Example.Contains('#')
                 ? "nim"
                 : "rust";
             functionString.AppendLine($"```{lang}");

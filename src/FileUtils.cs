@@ -46,13 +46,13 @@ public static class FileUtils
 
     public static bool ExecutableExists(string name, string workingDirectory)
     {
-        string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (name.StartsWith('~'))
             name = name[1..] + homePath;
 
         if (name.StartsWith('.'))
         {
-            string absolutePath = Path.Combine(workingDirectory, name);
+            var absolutePath = Path.Combine(workingDirectory, name);
 
             return FileIsExecutable(absolutePath);
         }

@@ -58,14 +58,14 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             {
                 Collect();
 
-                int length = (range.To ?? _value.Length) - (range.From ?? 0);
+                var length = (range.To ?? _value.Length) - (range.From ?? 0);
                 if (range.From < 0 || range.From >= _value.Length || range.To < 0 || range.To > _value.Length)
                     throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");
 
                 return new RuntimeString(_value.ToString(range.From ?? 0, length));
             }
 
-            int indexValue = (int)index.As<RuntimeInteger>().Value;
+            var indexValue = (int)index.As<RuntimeInteger>().Value;
             if (indexValue < 0 || indexValue >= _value.Length)
                 throw new RuntimeItemNotFoundException(indexValue.ToString());
 
@@ -85,9 +85,9 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
                 => this,
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(Value),
-            _ when toType == typeof(RuntimeInteger) && int.TryParse(Value, out int number)
+            _ when toType == typeof(RuntimeInteger) && int.TryParse(Value, out var number)
                 => new RuntimeInteger(number),
-            _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out double number)
+            _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out var number)
                 => new RuntimeFloat(number),
             _ when toType == typeof(RuntimeRegex)
                 => new RuntimeRegex(new System.Text.RegularExpressions.Regex(Value)),
@@ -196,7 +196,7 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
     public bool MoveNext()
     {
-        bool result = _processEnumerator.MoveNext();
+        var result = _processEnumerator.MoveNext();
         if (result)
         {
             Current = _processEnumerator.Current;

@@ -34,7 +34,7 @@ public class MarkdownTable
         var builder = new StringBuilder();
         foreach (var (column, i) in columns.WithIndex())
         {
-            int width = _columnWidths[i];
+            var width = _columnWidths[i];
             builder.Append($"| {column.PadRight(width)} ");
         }
 

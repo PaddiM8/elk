@@ -31,7 +31,7 @@ public record StdFunction(
             if (Parameters.Length == 0)
                 return null;
 
-            string lastParameterType = Parameters.Last().Type.ToString();
+            var lastParameterType = Parameters.Last().Type.ToString();
             if (lastParameterType.StartsWith("System.Func`"))
                 return lastParameterType[lastParameterType.IndexOf('`') + 1] - '0' - 1;
 

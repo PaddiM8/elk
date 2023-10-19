@@ -15,7 +15,7 @@ public static partial class Parse
     [ElkFunction("csv")]
     public static RuntimeList Csv(RuntimeObject csv, RuntimeString? separator = null)
     {
-        char separatorChar = separator?.Value.FirstOrDefault() ?? ',';
+        var separatorChar = separator?.Value.FirstOrDefault() ?? ',';
         var lines = csv is RuntimePipe pipe
             ? pipe.Select(x => x.As<RuntimeString>().Value)
             : csv.As<RuntimeString>().Value.ToLines();
@@ -31,11 +31,11 @@ public static partial class Parse
     [ElkFunction("hex")]
     public static RuntimeObject Hex(RuntimeString str)
     {
-        bool success = int.TryParse(
+        var success = int.TryParse(
             str.Value.TrimStart('0').TrimStart('x'),
             NumberStyles.HexNumber,
             CultureInfo.InvariantCulture,
-            out int result
+            out var result
         );
 
         return success

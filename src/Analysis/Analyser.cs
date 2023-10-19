@@ -173,7 +173,7 @@ class Analyser
 
     private List<Parameter> AnalyseParameters(ICollection<Parameter> parameters)
     {
-        bool encounteredDefaultParameter = false;
+        var encounteredDefaultParameter = false;
         var newParameters = new List<Parameter>();
         foreach (var (parameter, i) in parameters.WithIndex())
         {
@@ -214,7 +214,7 @@ class Analyser
         var module = _scope.ModuleScope.FindModule(expr.ModulePath, lookInImports: true);
         if (module == null)
         {
-            string? firstModule = expr.ModulePath.FirstOrDefault()?.Value;
+            var firstModule = expr.ModulePath.FirstOrDefault()?.Value;
             if (firstModule == null || !StdBindings.HasModule(firstModule))
                 throw new RuntimeModuleNotFoundException(expr.ModulePath);
 
@@ -222,7 +222,7 @@ class Analyser
             if (stdStruct == null)
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
 
-            int argumentCount = expr.Arguments.Count;
+            var argumentCount = expr.Arguments.Count;
             if (argumentCount < stdStruct.MinArgumentCount ||
                 argumentCount > stdStruct.MaxArgumentCount)
             {
@@ -413,10 +413,10 @@ class Analyser
         {
             expr.Right.IsRoot = expr.IsRoot;
 
-            bool isProgramCall = left is CallExpr { CallType: CallType.Program };
+            var isProgramCall = left is CallExpr { CallType: CallType.Program };
             if (!isProgramCall && expr.Operator is OperationKind.PipeErr or OperationKind.PipeAll)
             {
-                string pipeString = expr.Operator == OperationKind.PipeErr ? "|err" : "|all";
+                var pipeString = expr.Operator == OperationKind.PipeErr ? "|err" : "|all";
 
                 throw new RuntimeInvalidOperationException(pipeString, "non-program");
             }
@@ -545,7 +545,7 @@ class Analyser
         bool hasClosure = false,
         bool validateParameters = true)
     {
-        string name = expr.Identifier.Value;
+        var name = expr.Identifier.Value;
         CallType? builtIn = name switch
         {
             "cd" => CallType.BuiltInCd,
@@ -586,7 +586,7 @@ class Analyser
         if (pipedValue != null && callType != CallType.Program)
             evaluatedArguments.Insert(0, pipedValue);
 
-        bool definitionHasClosure = functionSymbol?.Expr.HasClosure is true || stdFunction?.HasClosure is true;
+        var definitionHasClosure = functionSymbol?.Expr.HasClosure is true || stdFunction?.HasClosure is true;
         if (!definitionHasClosure && hasClosure)
         {
             var additionalInfo = callType == CallType.Program
@@ -599,10 +599,10 @@ class Analyser
         if (definitionHasClosure && !hasClosure)
             throw new RuntimeException("Expected closure.");
 
-        int argumentCount = evaluatedArguments.Count;
+        var argumentCount = evaluatedArguments.Count;
         if (stdFunction != null && validateParameters)
         {
-            bool hasEnoughArguments = expr.IsReference || argumentCount >= stdFunction.MinArgumentCount;
+            var hasEnoughArguments = expr.IsReference || argumentCount >= stdFunction.MinArgumentCount;
             if (!hasEnoughArguments || argumentCount > stdFunction.MaxArgumentCount)
             {
                 throw new RuntimeWrongNumberOfArgumentsException(
@@ -661,10 +661,10 @@ class Analyser
 
     private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters, bool isReference)
     {
-        int argumentCount = arguments.Count;
-        bool isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
-        bool tooManyArguments = argumentCount > parameters.Count && !isVariadic;
-        bool tooFewArguments = !isReference && !isVariadic && parameters.Count > argumentCount &&
+        var argumentCount = arguments.Count;
+        var isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
+        var tooManyArguments = argumentCount > parameters.Count && !isVariadic;
+        var tooFewArguments = !isReference && !isVariadic && parameters.Count > argumentCount &&
             parameters[argumentCount].DefaultValue == null;
 
         if (tooManyArguments || tooFewArguments)
@@ -672,9 +672,9 @@ class Analyser
 
         if (parameters.LastOrDefault()?.IsVariadic is true)
         {
-            int variadicStart = parameters.Count - 1;
+            var variadicStart = parameters.Count - 1;
             var variadicArguments = new Expr[arguments.Count - variadicStart];
-            for (int i = 0; i < variadicArguments.Length; i++)
+            for (var i = 0; i < variadicArguments.Length; i++)
             {
                 variadicArguments[^(i + 1)] = arguments.Last();
                 arguments.RemoveAt(arguments.Count - 1);

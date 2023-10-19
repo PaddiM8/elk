@@ -146,18 +146,18 @@ public class Lexer
 
     private Token NextPipe()
     {
-        int remainingLength = _source.Length - _index - 1;
+        var remainingLength = _source.Length - _index - 1;
         if (remainingLength < 4)
             return Build(TokenKind.Pipe, Eat());
 
         // Get the next 4 or 5 characters. If there is
         // a 5th one, we want to grab that as well to
         // make sure it's just white space.
-        string substring = _source.Substring(
+        var substring = _source.Substring(
             _index,
             Math.Min(remainingLength, 5)
         );
-        string trimmed = substring.Trim();
+        var trimmed = substring.Trim();
 
         if (trimmed == "|err")
             return Build(TokenKind.PipeErr, Eat(4));
@@ -230,7 +230,7 @@ public class Lexer
             return Build(TokenKind.NewLine, Environment.NewLine);
         }
 
-        int startIndex = _index;
+        var startIndex = _index;
         var value = new StringBuilder();
         while (char.IsWhiteSpace(Current))
             value.Append(Eat());
@@ -244,7 +244,7 @@ public class Lexer
 
     private Token NextComment()
     {
-        int startIndex = _index;
+        var startIndex = _index;
         var value = new StringBuilder();
         while (!ReachedEnd && Current != '\n')
         {
@@ -260,7 +260,7 @@ public class Lexer
 
     private Token NextIdentifier()
     {
-        int startIndex = _index;
+        var startIndex = _index;
         var value = new StringBuilder();
         value.Append(Eat());
 
@@ -317,18 +317,18 @@ public class Lexer
             _ => TokenKind.Identifier,
         };
 
-        string valueString = value.ToString();
-        bool foundDot = false;
+        var valueString = value.ToString();
+        var foundDot = false;
         bool IsValidNumberChar(char c, int i)
         {
-            bool isBaseSpecifier = i == 1 && valueString.StartsWith('0') && c is 'b' or 'o' or 'x';
-            bool isDecimalComma = i != 0 && c == '.' && !foundDot;
+            var isBaseSpecifier = i == 1 && valueString.StartsWith('0') && c is 'b' or 'o' or 'x';
+            var isDecimalComma = i != 0 && c == '.' && !foundDot;
             if (isDecimalComma) foundDot = true;
 
             return isBaseSpecifier || isDecimalComma || char.IsDigit(c);
         }
 
-        bool isNumber = valueString
+        var isNumber = valueString
             .WithIndex()
             .All(x => IsValidNumberChar(x.item, x.index));
         if (isNumber)
@@ -343,7 +343,7 @@ public class Lexer
 
     private Token NextString()
     {
-        int startIndex = _index;
+        var startIndex = _index;
         Eat(); // Initial quote
 
         var value = new StringBuilder();
@@ -360,7 +360,7 @@ public class Lexer
 
             if (_mode != LexerMode.Preserve && AdvanceIf('\\'))
             {
-                char c = Current switch
+                var c = Current switch
                 {
                     'b' => '\b',
                     'f' => '\f',
@@ -382,7 +382,7 @@ public class Lexer
                 if (c == 'x')
                 {
                     var hex = new StringBuilder();
-                    for (int i = 0; i < 4; i++)
+                    for (var i = 0; i < 4; i++)
                     {
                         if (!Current.IsHex())
                             break;
@@ -390,7 +390,7 @@ public class Lexer
                         hex.Append(Eat());
                     }
 
-                    int charValue = int.Parse(hex.ToString(), NumberStyles.HexNumber);
+                    var charValue = int.Parse(hex.ToString(), NumberStyles.HexNumber);
                     value.Append(Convert.ToChar(charValue));
                     continue;
                 }
@@ -401,8 +401,8 @@ public class Lexer
             {
                 value.Append(Eat());
                 value.Append(Eat());
-                int openBraces = 1;
-                bool inString = false;
+                var openBraces = 1;
+                var inString = false;
 
                 // This is necessary to handle string literals inside interpolation environments
                 while (!ReachedEnd && (Current != '"' || openBraces > 0))
@@ -442,7 +442,7 @@ public class Lexer
 
     private Token NextSingleQuoteString()
     {
-        int startIndex = _index;
+        var startIndex = _index;
         Eat(); // Quote
 
         var value = new StringBuilder();
@@ -525,7 +525,7 @@ public class Lexer
     private string Eat(int count)
     {
         var result = "";
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
             result += Eat();
 
         return result;
@@ -533,7 +533,7 @@ public class Lexer
 
     private char Eat()
     {
-        char toReturn = Current;
+        var toReturn = Current;
         _index++;
         if (toReturn == '\n')
         {

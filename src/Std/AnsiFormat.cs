@@ -85,7 +85,7 @@ static class Ansi
 
     public static string Color(string value, string colorName)
     {
-        return _colors.TryGetValue(colorName, out int colorCode)
+        return _colors.TryGetValue(colorName, out var colorCode)
             ? Escape(value, colorCode, 39)
             : value;
     }

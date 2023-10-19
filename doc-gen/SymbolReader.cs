@@ -35,7 +35,7 @@ public class SymbolReader
                 if (attribute == null)
                     continue;
 
-                string fullName = $"{methodInfo.DeclaringType}.{methodInfo.Name}";
+                var fullName = $"{methodInfo.DeclaringType}.{methodInfo.Name}";
                 _docs.TryGetValue(fullName, out var functionDocs);
 
                 var parameters = new List<ParameterInfo>();
@@ -44,7 +44,7 @@ public class SymbolReader
                 {
                     // Need to do a string comparison here since ShellEnvironment
                     // is internal.
-                    string typeName = parameter.ParameterType.Name;
+                    var typeName = parameter.ParameterType.Name;
                     if (typeName == "ShellEnvironment")
                         continue;
 
@@ -55,7 +55,7 @@ public class SymbolReader
                     }
 
                     var parameterDocs = functionDocs?.Parameters.ElementAtOrDefault(i);
-                    string description = parameterDocs?.descrption ?? "";
+                    var description = parameterDocs?.descrption ?? "";
 
                     ValueInfo valueInfo;
                     if (parameterDocs?.types != null)
@@ -67,7 +67,7 @@ public class SymbolReader
                     else
                         valueInfo = new ValueInfo(parameter.ParameterType, description);
 
-                    bool isVariadic = parameter.GetCustomAttribute<ElkVariadicAttribute>() != null;
+                    var isVariadic = parameter.GetCustomAttribute<ElkVariadicAttribute>() != null;
                     var parameterInfo = new ParameterInfo(
                         parameter.Name!,
                         valueInfo,

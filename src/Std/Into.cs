@@ -30,14 +30,14 @@ public class Into
     public static RuntimeString Csv(IEnumerable<RuntimeObject> rows, RuntimeString? separator = null)
     {
         var builder = new StringBuilder();
-        char separatorChar = separator?.Value.FirstOrDefault() ?? ',';
+        var separatorChar = separator?.Value.FirstOrDefault() ?? ',';
 
         void BuildRow(IEnumerable<string> cells)
         {
             foreach (var cell in cells)
             {
                 var escaped = cell.Replace("\"", "\"\"");
-                bool needsQuotes = escaped.Any(x => x is '"' or ',' or '\n');
+                var needsQuotes = escaped.Any(x => x is '"' or ',' or '\n');
                 builder.Append(
                     needsQuotes
                         ? $"\"{escaped}\""

@@ -8,7 +8,7 @@ public interface IAutoCompleteHandler
 
     public int GetCompletionStart(string text, int cursorPos)
     {
-        int start = text.LastIndexOfAny(Separators);
+        var start = text.LastIndexOfAny(Separators);
 
         return start == -1
             ? 0

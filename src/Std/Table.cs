@@ -16,7 +16,7 @@ public class Table
     [ElkFunction("column")]
     public static RuntimeList Column(RuntimeTable table, RuntimeString name)
     {
-        int index = table.Header.IndexOf(name.Value);
+        var index = table.Header.IndexOf(name.Value);
 
         return new(table.Rows.Select(x => x.ElementAtOrDefault(index) ?? RuntimeNil.Value));
     }
