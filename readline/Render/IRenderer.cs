@@ -48,4 +48,8 @@ internal interface IRenderer
 
     void WriteLinesOutside(string value, int rowCount, int lastLineLength);
 
+    void WriteRaw(params string[] value);
+
+    void WriteRaw(string value);
+
 }

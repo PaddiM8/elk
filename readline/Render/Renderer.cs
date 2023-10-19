@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Text;
+using Elk.ReadLine.Render.Formatting;
 using Wcwidth;
 
 namespace Elk.ReadLine.Render;
@@ -15,7 +15,7 @@ internal class Renderer : IRenderer
 
     public int BufferHeight => Console.BufferHeight;
 
-    public int InputStart { get; }
+    public int InputStart { get; } = Console.CursorLeft;
 
     public int Caret
     {
@@ -38,9 +38,9 @@ internal class Renderer : IRenderer
         set
         {
             if (_caretVisible && !value)
-                WriteRaw("\x1b[?25l");
+                WriteRaw(Ansi.HideCursor());
             if (!_caretVisible && value)
-                WriteRaw("\x1b[?25h");
+                WriteRaw(Ansi.ShowCursor());
 
             _caretVisible = value;
         }
@@ -86,11 +86,6 @@ internal class Renderer : IRenderer
     private readonly StringBuilder _text = new();
     private Func<string, string>? _highlighter;
     private Func<string, string?>? _retrieveHint;
-
-    public Renderer()
-    {
-        InputStart = Console.CursorLeft;
-    }
 
     public void OnHighlight(Func<string, string>? callback)
         => _highlighter = callback;
@@ -241,57 +236,60 @@ internal class Renderer : IRenderer
         {
             var (hintTop, _) = IndexToTopLeft(_text.Length + HintText.Length, Text + HintText);
             hintHeight = hintTop - top;
-            var upMovement = hintTop == top
-                ? ""
-                : $"\x1b[{hintHeight}A";
-            hintMovement = $"{upMovement}\x1b[{left + 1}G";
-            formattedHint = Indent($"\x1b[37m{HintText}\x1b[0m");
+            hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
+            formattedHint = Indent(Ansi.Color(HintText, AnsiForeground.Gray));
         }
 
         // Write
-        WriteRaw($"\x1b[?25l{movementToStart}{formattedText}{newLine}{formattedHint}\x1b[?25h\x1b[K{hintMovement}");
+        WriteRaw(
+            Ansi.HideCursor(),
+            movementToStart,
+            formattedText,
+            newLine,
+            formattedHint,
+            Ansi.ShowCursor(),
+            Ansi.ClearToEndOfLine(),
+            hintMovement
+        );
         SetPositionWithoutMoving(_text.Length);
 
         // If there are leftover lines under, clear them.
         var newTop = _top + hintHeight;
         if (_previousRenderTop > newTop)
-        {
-            var diff = _previousRenderTop - newTop;
-            var clearLines = string.Join(
-                "",
-                Enumerable.Repeat("\x1b[B\x1b[G\x1b[K", diff)
-            );
-            WriteRaw($"{clearLines}\x1b[{diff}A\x1b[{_left}C");
-        }
+            WriteRaw(Ansi.ClearToEndOfScreen());
 
         _previousRenderTop = newTop;
     }
 
     private string Indent(string text)
-        => text.Replace("\n", $"\x1b[K\n{new string(' ', InputStart)}");
+        => text.Replace("\n", Ansi.ClearToEndOfLine() + "\n" + new string(' ', InputStart));
 
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {
-        var offset = lastLineLength - _left;
-        var horizontalMovement = "";
-        if (offset < 0)
-            horizontalMovement = $"\x1b[{Math.Abs(offset)}C";
-        else if (offset > 0)
-            horizontalMovement = $"\x1b[{offset}D";
-
-        CaretVisible = false;
-        WriteRaw($"\n\x1b[K{value}{horizontalMovement}\x1b[{rowCount}A");
-        CaretVisible = true;
+        WriteRaw(
+            Ansi.HideCursor(),
+            "\n",
+            Ansi.ClearToEndOfLine(),
+            value,
+            Ansi.MoveHorizontal(_left - lastLineLength),
+            Ansi.Up(rowCount),
+            Ansi.ShowCursor()
+        );
     }
 
-    private void WriteRaw(string value)
+    public void WriteRaw(params string[] values)
+    {
+        WriteRaw(string.Join("", values));
+    }
+
+    public void WriteRaw(string value)
     {
         Console.Write(value);
     }
 
     private void SetPositionWithoutMoving(int index)
     {
-        (var top, var left) = IndexToTopLeft(index);
+        var (top, left) = IndexToTopLeft(index);
         _top = top;
         _left = left;
         _caret = index;
@@ -327,7 +325,7 @@ internal class Renderer : IRenderer
     }
 
     private string IndexToMovement(int index)
-        => IndexToMovement(index, _top, out var _, out var _);
+        => IndexToMovement(index, _top, out _, out _);
 
     private string IndexToMovement(int index, out int newTop, out int newLeft)
     {
@@ -343,16 +341,6 @@ internal class Renderer : IRenderer
         index = Math.Max(Math.Min(_text.Length, index), 0);
         (newTop, newLeft) = IndexToTopLeft(index);
 
-        var topDiff = newTop - originalTop;
-        var verticalMovement = "";
-        if (topDiff != 0)
-        {
-            verticalMovement = topDiff > 0
-                ? $"\x1b[{topDiff}B"
-                : $"\x1b[{Math.Abs(topDiff)}A";
-        }
-
-
-        return $"{verticalMovement}\x1b[{newLeft + 1}G";
+        return Ansi.MoveVertical(newTop - originalTop) + Ansi.MoveToColumn(newLeft + 1);
     }
 }

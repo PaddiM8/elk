@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
@@ -30,17 +31,7 @@ class SelectionListing
         _items = Array.Empty<string>();
         _maxLength = 0;
         SelectedIndex = 0;
-
-        var diff = _lastBottomRowIndex -_renderer.CursorTop;
-        if (diff > 0)
-        {
-            var clearLines = string.Join(
-                "\n",
-                Enumerable.Repeat("\x1b[K", diff)
-            );
-            _renderer.WriteLinesOutside(clearLines, diff, 0);
-        }
-
+        _renderer.WriteRaw(Ansi.ClearToEndOfScreen());
         _lastBottomRowIndex = 0;
     }
 
@@ -97,9 +88,9 @@ class SelectionListing
                 var content = _items[i * columnCount + j].WcTruncate(_renderer.BufferWidth);
                 var padding = new string(' ', columnWidths[j] - content.GetWcLength());
                 if (index == SelectedIndex)
-                    content = $"\x1b[107m\x1b[30m{content}\x1b[0m";
+                    content = Ansi.Color(content, AnsiForeground.Black, AnsiBackground.White);
 
-                output.Append($"{content}{padding}\x1b[K");
+                output.Append(content + padding + Ansi.ClearToEndOfLine());
             }
 
             if (i < endRow - 1)
@@ -114,8 +105,11 @@ class SelectionListing
         if (_lastBottomRowIndex > bottomRowIndex)
         {
             var difference = _lastBottomRowIndex - bottomRowIndex;
-            var clearLines = string.Join("\n", Enumerable.Repeat("\x1b[K", difference));
-            output.Append($"\n{clearLines}");
+            var clearLines = string.Join(
+                "",
+                Enumerable.Repeat("\n" + Ansi.ClearToEndOfLine(), difference)
+            );
+            output.Append(clearLines);
             rowCount += difference;
             lineLength = 0;
         }
