@@ -143,13 +143,13 @@ public class ShellSession
         Console.Write(" >> ");
     }
 
-    public void RunCommand(string command)
+    public void RunCommand(string command, bool ownScope = false)
     {
         var textWriter = Console.Out;
         string result;
         try
         {
-            var resultObject = _interpreter.Interpret(command);
+            var resultObject = _interpreter.Interpret(command, ownScope);
             if (resultObject is RuntimeNil)
                 return;
 

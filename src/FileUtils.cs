@@ -94,27 +94,31 @@ public static class FileUtils
     }
 
     public static IList<Completion> GetPathCompletions(
-        string pathToComplete,
+        string path,
         string workingDirectory,
         FileType fileType)
     {
-        var lastSlashIndex = pathToComplete
+        var lastSlashIndex = path
             .WithIndex()
-            .LastOrDefault(x => x.item == '/' && pathToComplete.ElementAtOrDefault(x.index - 1) != '\\')
+            .LastOrDefault(x => x.item == '/' && path.ElementAtOrDefault(x.index - 1) != '\\')
             .index;
         // Get the full path of the folder, without the part that is being completed
         var fullPath = Path.Combine(
             workingDirectory,
-            pathToComplete[..lastSlashIndex]
+            path[..lastSlashIndex]
         );
+        var completionTarget = lastSlashIndex < path.Length - 1
+            ? path[lastSlashIndex..]
+            : "";
+
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
 
-        var includeHidden = pathToComplete.StartsWith(".");
+        var includeHidden = path.StartsWith(".");
         var directories = Directory.GetDirectories(fullPath)
             .Select(Path.GetFileName)
             .Where(x => includeHidden || !x!.StartsWith("."))
-            .Where(x => x!.StartsWith(pathToComplete))
+            .Where(x => x!.StartsWith(completionTarget))
             .Order()
             .Select(x => FormatSuggestion(x!))
             .Select(x => new Completion(x, $"{x}/"))
@@ -127,7 +131,7 @@ public static class FileUtils
                 .Where(x => fileType != FileType.Executable || IsExecutable(x))
                 .Select(Path.GetFileName)
                 .Where(x => includeHidden || !x!.StartsWith("."))
-                .Where(x => x!.StartsWith(pathToComplete))
+                .Where(x => x!.StartsWith(completionTarget))
                 .Order()
                 .Select(x => FormatSuggestion(x!))
                 .Select(x => new Completion(x));
@@ -138,19 +142,22 @@ public static class FileUtils
             const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
             directories = Directory.GetDirectories(fullPath)
                 .Select(Path.GetFileName)
-                .Where(x => x!.Contains(pathToComplete, comparison))
+                .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
                 .Select(x => FormatSuggestion(x!))
                 .Select(x => new Completion(x, $"{x}/"))
                 .ToList();
 
-            files = Directory.GetFiles(fullPath)
-                .Where(x => fileType != FileType.Executable || IsExecutable(x))
-                .Select(Path.GetFileName)
-                .Where(x => x!.Contains(pathToComplete, comparison))
-                .Order()
-                .Select(x => FormatSuggestion(x!))
-                .Select(x => new Completion(x));
+            if (fileType != FileType.Directory)
+            {
+                files = Directory.GetFiles(fullPath)
+                    .Where(x => fileType != FileType.Executable || IsExecutable(x))
+                    .Select(Path.GetFileName)
+                    .Where(x => x!.Contains(completionTarget, comparison))
+                    .Order()
+                    .Select(x => FormatSuggestion(x!))
+                    .Select(x => new Completion(x));
+            }
         }
 
         // Add a trailing slash if it's the only one, since
@@ -165,10 +172,10 @@ public static class FileUtils
         }
 
         var completions = directories.Concat(files).ToList();
-        if (completions.Count > 1 && pathToComplete.Length > 0 &&
-            !"./~".Contains(pathToComplete.Last()))
+        if (completions.Count > 1 && path.Length > 0 &&
+            !"./~".Contains(path.Last()))
         {
-            completions.Insert(0, new Completion(pathToComplete));
+            completions.Insert(0, new Completion(path));
         }
 
         return completions;

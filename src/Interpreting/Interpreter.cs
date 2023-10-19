@@ -91,7 +91,7 @@ partial class Interpreter
         return lastResult;
     }
 
-    public RuntimeObject Interpret(string input)
+    public RuntimeObject Interpret(string input, bool ownScope = false)
     {
         try
         {
@@ -101,6 +101,17 @@ partial class Interpreter
             );
             if (lexError != null)
                 throw new RuntimeException(lexError.Message, lexError.Position);
+
+            if (ownScope)
+            {
+                var block = new BlockExpr(
+                    ast,
+                    StructureKind.Other,
+                    ast.FirstOrDefault()?.Position ?? TextPos.Default,
+                    new LocalScope(_scope)
+                );
+                ast = new List<Expr> { block };
+            }
 
             return Interpret(ast);
         }

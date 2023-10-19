@@ -1,0 +1,7 @@
+cli::create cd
+    | cli::addArgument({
+        "identifier": "path",
+        "expectsValue": true,
+        "valueKind": "directory",
+    })
+    | cli::registerForCompletion cd

@@ -19,6 +19,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
     private readonly ShellSession _shell;
     private readonly HighlightHandler _highlightHandler;
+    private readonly CustomCompletionProvider _customCompletionProvider;
     private ShellStyleInvocationInfo? _currentInvocationInfo;
 
     public AutoCompleteHandler(ShellSession shell, char[] separators, HighlightHandler highlightHandler)
@@ -26,6 +27,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         Separators = separators;
         _shell = shell;
         _highlightHandler = highlightHandler;
+        _customCompletionProvider = new CustomCompletionProvider(_shell);
     }
 
     public int GetCompletionStart(string text, int cursorPos)
@@ -47,7 +49,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (_currentInvocationInfo == null)
             return Array.Empty<Completion>();
 
-        if (ParserStorage.CompletionParsers.TryGetValue(_currentInvocationInfo.Name, out var completionParser))
+        var completionParser = _customCompletionProvider.Get(_currentInvocationInfo.Name);
+        if (completionParser != null)
         {
             try
             {
