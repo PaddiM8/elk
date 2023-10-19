@@ -40,7 +40,7 @@ public class RuntimeCliParser : RuntimeObject
             _ when toType == typeof(RuntimeCliParser)
                 => this,
             _ when toType == typeof(RuntimeString)
-                => new RuntimeString("CliParser"),
+                => new RuntimeString(ToString()),
             _
                 => throw new RuntimeCastException<RuntimeDictionary>(toType),
         };

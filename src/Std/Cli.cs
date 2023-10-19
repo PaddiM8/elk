@@ -45,8 +45,14 @@ static class Cli
         {
             completionHandler = result =>
             {
+                var args = new List<RuntimeObject>
+                {
+                    new RuntimeString(result.GetRequiredString("identifier")),
+                    result.ToRuntimeDictionary(),
+                };
+
                 return runtimeCompletionHandler
-                    .Invoker(new List<RuntimeObject> { result.ToRuntimeDictionary() }, false)
+                    .Invoker(args, false)
                     .As<RuntimeList>()
                     .Select(x => x.As<RuntimeString>().Value);
             };
@@ -91,17 +97,28 @@ static class Cli
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
     {
         Func<CliResult, IEnumerable<string>>? completionHandler = null;
+        var identifier = argument.GetExpectedValue<RuntimeString>("identifier").Value;
         var runtimeCompletionHandler = argument.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
         {
-            completionHandler = result => runtimeCompletionHandler
-                .Invoker(new List<RuntimeObject> { result.ToRuntimeDictionary() }, false)
-                .As<RuntimeList>().Select(x => x.As<RuntimeString>().Value);
+            completionHandler = result =>
+            {
+                var args = new List<RuntimeObject>
+                {
+                    new RuntimeString(result.GetRequiredString("identifier")),
+                    result.ToRuntimeDictionary(),
+                };
+
+                return runtimeCompletionHandler
+                    .Invoker(args, false)
+                    .As<RuntimeList>()
+                    .Select(x => x.As<RuntimeString>().Value);
+            };
         }
 
         var typedArgument = new CliArgument
         {
-            Identifier = argument.GetExpectedValue<RuntimeString>("identifier").Value,
+            Identifier = identifier,
             Description = argument.GetValue<RuntimeString>("description")?.Value,
             IsRequired = argument.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
             ValueKind = argument.GetValue<RuntimeString>("valueKind")?.Value switch
