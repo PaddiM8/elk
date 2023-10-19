@@ -107,9 +107,9 @@ public static class FileUtils
             workingDirectory,
             path[..lastSlashIndex]
         );
-        var completionTarget = lastSlashIndex < path.Length - 1
-            ? path[lastSlashIndex..]
-            : "";
+        var completionTarget = path.EndsWith("/")
+            ? ""
+            : path[lastSlashIndex..].TrimStart('/');
 
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
