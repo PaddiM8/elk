@@ -8,7 +8,6 @@ using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
-using Elk.Resources;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
@@ -25,7 +24,7 @@ public class ShellSession
     {
         get
         {
-            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
             return WorkingDirectory.StartsWith(homePath)
                 ? "~" + WorkingDirectory[homePath.Length..]
@@ -43,16 +42,18 @@ public class ShellSession
     private void Init()
     {
         LoadPaths();
-        RunCommand(Defaults.init_file);
+
+        var initFile = EmbeddedResourceProvider.ReadAllText("init.elk")!;
+        RunCommand(initFile);
 
         if (File.Exists(CommonPaths.InitFile))
         {
             RunFile(_interpreter, CommonPaths.InitFile);
         }
-        else
+        else if (initFile != null)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
-            File.WriteAllText(CommonPaths.InitFile, Defaults.init_file.Trim());
+            File.WriteAllText(CommonPaths.InitFile, initFile.Trim());
         }
     }
 
@@ -61,8 +62,8 @@ public class ShellSession
         if (!File.Exists(CommonPaths.PathFile))
             return;
 
-        string pathValue = Environment.GetEnvironmentVariable("PATH") ?? "";
-        string initialColon = pathValue == "" ? "" : ":";
+        var pathValue = Environment.GetEnvironmentVariable("PATH") ?? "";
+        var initialColon = pathValue == "" ? "" : ":";
         var pathFileContent = File.ReadAllLines(CommonPaths.PathFile);
         if (pathFileContent.Length == 0)
             return;
@@ -209,7 +210,7 @@ public class ShellSession
 
         try
         {
-            interpreter.InterpretModule(File.ReadAllText(filePath));
+            interpreter.Interpret(File.ReadAllText(filePath));
         }
         catch (RuntimeException e)
         {

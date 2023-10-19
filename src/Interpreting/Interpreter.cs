@@ -42,19 +42,7 @@ partial class Interpreter
         _scope = _rootModule;
     }
 
-    public RuntimeObject InterpretModule(IList<Expr> ast)
-        => Interpret(ast, null, isEntireModule: true);
-
-    public RuntimeObject InterpretModule(string input)
-        => InterpretText(input, isEntireModule: true);
-
-    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope = null)
-        => Interpret(ast, scope, isEntireModule: false);
-
-    public RuntimeObject Interpret(string input)
-        => InterpretText(input, isEntireModule: false);
-
-    private RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope, bool isEntireModule)
+    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope = null, bool isEntireModule = false)
     {
         if (scope != null)
             _scope = scope;
@@ -103,7 +91,7 @@ partial class Interpreter
         return lastResult;
     }
 
-    private RuntimeObject InterpretText(string input, bool isEntireModule)
+    public RuntimeObject Interpret(string input)
     {
         try
         {
@@ -114,7 +102,7 @@ partial class Interpreter
             if (lexError != null)
                 throw new RuntimeException(lexError.Message, lexError.Position);
 
-            return Interpret(ast, null, isEntireModule);
+            return Interpret(ast);
         }
         catch (RuntimeException e)
         {
@@ -144,7 +132,8 @@ partial class Interpreter
             ? _scope.ModuleScope
             : _scope.ModuleScope.FindModule(modulePath, true);
 
-        return module?.FindFunction(name, true) != null;
+        return module?.FindFunction(name, true)?.Expr.AnalysisStatus
+            is not (null or AnalysisStatus.Failed);
     }
 
     public bool VariableExists(string name)
@@ -1023,7 +1012,7 @@ partial class Interpreter
             var arguments = new List<RuntimeObject>
             {
                 new RuntimeString("-c"),
-                new RuntimeString(expr.Value.Value[2..])
+                new RuntimeString(expr.Value.Value[2..]),
             };
             EvaluateProgramCall(
                 "bash",

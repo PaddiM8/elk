@@ -41,28 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\Defaults.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Defaults.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Defaults.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Defaults.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Resources/*" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Resources\Defaults.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Defaults.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\Defaults.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Defaults.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
 
 </Project>

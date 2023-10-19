@@ -1,0 +1,19 @@
+alias ls = "ls --color"
+let gitExists = file::executableExists git
+
+fn elkPrompt() {
+    let branch = if gitExists {
+        git branch
+            |all where => &str::startsWith("* ")
+            | map => x: x[2..]
+            | iter::first
+    }
+
+    let pwd = env::prettyPwd | ansi::color blue
+    if branch {
+        let formattedBranch = " ${branch}" | ansi::color magenta
+        print(pwd, formattedBranch, "❯ ")
+    } else {
+        print(pwd, "❯ ")
+    }
+}
