@@ -26,12 +26,19 @@ class SelectionListing
     public void LoadItems(IList<Completion> items)
     {
         _items = items;
-        _maxLength = items.Max(x =>
-            x.Description == null
-                ? x.DisplayText.GetWcLength()
-                : x.DisplayText.GetWcLength() + DescriptionMargin.Length + x.Description.GetWcLength()
-        );
         _hasDescriptions = items.Any(x => x.Description != null);
+        _maxLength = items.Max(x =>
+        {
+            var length = x.Description == null
+                ? x.DisplayText.GetWcLength()
+                : x.DisplayText.GetWcLength() + DescriptionMargin.Length + x.Description.GetWcLength();
+
+            // Limit columns to 20 characters if there are no descriptions
+            // since a multi-column view is preferable in that case.
+            return !_hasDescriptions
+                ? Math.Min(20, length)
+                : length;
+        });
     }
 
     public void Clear()
@@ -59,7 +66,7 @@ class SelectionListing
             columnCount = 1;
 
         var maxRowCount = columnCount == 1
-            ? _renderer.BufferHeight - _renderer.CursorTop
+            ? Math.Max(3, _renderer.BufferHeight - _renderer.CursorTop - 1)
             : 5;
         var startRow = (int)((float)SelectedIndex / columnCount / maxRowCount) * maxRowCount;
         var rowCount = Math.Min(
@@ -116,7 +123,7 @@ class SelectionListing
             ? ItemMargin
             : "";
         var item = _items[rowIndex * columnCount + columnIndex];
-        var content = item.DisplayText.WcTruncate(_renderer.BufferWidth);
+        var content = item.DisplayText.WcTruncate(columnWidths[columnIndex]);
 
         // Description
         var truncatedDescription = item.Description?.WcTruncate(
@@ -158,7 +165,7 @@ class SelectionListing
                     continue;
 
                 var item = _items[index];
-                var length = item.DisplayText.GetWcLength();
+                var length = Math.Min(_maxLength, item.DisplayText.GetWcLength());
                 if (item.Description != null)
                     length += item.Description.GetWcLength() + DescriptionMargin.Length;
 
