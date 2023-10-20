@@ -175,7 +175,7 @@ public static class FileUtils
         if (completions.Count > 1 && path.Length > 0 &&
             !"./~".Contains(path.Last()))
         {
-            completions.Insert(0, new Completion(path));
+            completions.Insert(0, new Completion(completionTarget, "..."));
         }
 
         return completions;
