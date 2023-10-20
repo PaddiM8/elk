@@ -7,7 +7,6 @@ using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.ReadLine;
 using Elk.Std.Bindings;
-using Elk.Std.DataTypes.Serialization.CommandLine;
 
 #endregion
 

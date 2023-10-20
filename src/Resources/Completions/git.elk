@@ -1,0 +1,30 @@
+cli::create git
+    | cli::registerForCompletion
+    | cli::addVerb help => &handleHelp
+    | cli::addFlag({ "short": "v", "long": "version", "description": "display git version" })
+    | cli::addFlag({ "short": "C", "valueKind": "directory", "description": "run as if started in dir" })
+    | cli::addFlag({ "short": "c", "valueKind": "text", "description": "set config option" })
+    | cli::addFlag({ "long": "config-env", "valueKind": "text", "description": "like -c but environment var" })
+    | cli::addFlag({ "long": "exec-path", "valueKind": "directory", "description": "get or set the path to git" })
+    | cli::addFlag({ "long": "html-path", "description": "print html docs path" })
+    | cli::addFlag({ "long": "man-path", "description": "print man pages path" })
+    | cli::addFlag({ "long": "info-path", "description": "print info docs path" })
+    | cli::addFlag({ "short": "p", "long": "paginate", "description": "print output into pager" })
+    | cli::addFlag({ "short": "P", "long": "no-pager", "description": "don't pipe output into pager" })
+    | cli::addFlag({ "long": "git-dir", "valueKind": "text", "description": "set path to the repo" })
+    | cli::addFlag({ "long": "work-tree", "valueKind": "text", "description": "set path to the working tree" })
+    | cli::addFlag({ "long": "namespace", "description": "set Git namespace" })
+    | cli::addFlag({ "long": "bare", "description": "treat the repo as bare" })
+    | cli::addFlag({ "long": "no-replace-objects", "description": "disable replacement references" })
+    | cli::addFlag({ "long": "literal-pathspecs", "description": "treat pathspecs literally" })
+    | cli::addFlag({ "long": "glob-pathspecs", "description": "treat pathspecs as globs" })
+    | cli::addFlag({ "long": "noglob-pathspecs", "description": "don't treat pathspecs as globs" })
+    | cli::addFlag({ "long": "icase-pathspecs",  "description": "match pathspecs case-insensitively" })
+    | cli::addFlag({ "long": "no-optional-locks", "description": "skip optional operations requiring locks" })
+    | cli::addFlag({ "long": "list-cmds", "valueKind": "text", "description": "list commands by group" })
+
+fn handleHelp(parser) {
+    parser
+        | cli::setDescription "Display manual of a Git command"
+        | cli::addArgument({ "identifier": "verb", "valueKind": "text" })
+}

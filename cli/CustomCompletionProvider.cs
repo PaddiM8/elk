@@ -18,7 +18,7 @@ class CustomCompletionProvider
 
         var embedded = EmbeddedResourceProvider.ReadAllText($"Completions.{identifier}.elk");
         if (embedded != null)
-            _shellSession.RunCommand(embedded, ownScope: true);
+            _shellSession.RunCommand(embedded, ownScope: true, printReturnedValue: false);
 
         ParserStorage.CompletionParsers.TryGetValue(identifier, out parser);
 

@@ -143,7 +143,7 @@ public class ShellSession
         Console.Write(" >> ");
     }
 
-    public void RunCommand(string command, bool ownScope = false)
+    public void RunCommand(string command, bool ownScope = false, bool printReturnedValue = true)
     {
         var textWriter = Console.Out;
         string result;
@@ -170,6 +170,12 @@ public class ShellSession
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
             result = $"{_interpreter.Position} {e.Message}";
+        }
+
+        if (!printReturnedValue)
+        {
+            Console.ResetColor();
+            return;
         }
 
         if (result == "" || result.EndsWith('\n'))
