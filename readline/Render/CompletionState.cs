@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
@@ -79,8 +78,7 @@ class CompletionState
 
     private void InsertCompletion()
     {
-        _renderer.WriteRaw(Ansi.HideCursor());
-        _renderer.RemoveLeft(_renderer.Caret - _completionStart);
+        _renderer.RemoveLeft(_renderer.Caret - _completionStart, render: false);
         _renderer.Insert(_completions[_listing.SelectedIndex].CompletionText, includeHint: false);
     }
 }

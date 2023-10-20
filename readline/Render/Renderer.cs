@@ -171,7 +171,7 @@ internal class Renderer : IRenderer
         }
     }
 
-    public void RemoveLeft(int count)
+    public void RemoveLeft(int count, bool render = true)
     {
         if (Caret - count < 0)
             count = Caret;
@@ -180,11 +180,15 @@ internal class Renderer : IRenderer
 
         var newPos = Caret - count;
         _text.Remove(newPos, count);
-        RenderText(includeHint: _text.Length > 0);
-        Caret = newPos;
+
+        if (render)
+        {
+            RenderText(includeHint: _text.Length > 0);
+            Caret = newPos;
+        }
     }
 
-    public void RemoveRight(int count)
+    public void RemoveRight(int count, bool render = true)
     {
         if (Caret + count >= _text.Length)
             count = _text.Length - Caret;
@@ -193,8 +197,12 @@ internal class Renderer : IRenderer
 
         var newPos = Caret;
         _text.Remove(Caret, count);
-        RenderText(includeHint: _text.Length > 0);
-        Caret = newPos;
+
+        if (render)
+        {
+            RenderText(includeHint: _text.Length > 0);
+            Caret = newPos;
+        }
     }
 
     public void RenderText(bool includeHint = false)

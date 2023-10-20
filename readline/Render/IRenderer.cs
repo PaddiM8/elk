@@ -36,9 +36,9 @@ internal interface IRenderer
 
     void ClearLineRight(int? fromIndex = null);
 
-    void RemoveLeft(int count);
+    void RemoveLeft(int count, bool render = true);
 
-    void RemoveRight(int count);
+    void RemoveRight(int count, bool render = true);
 
     void Insert(string input, bool includeHint);
 
