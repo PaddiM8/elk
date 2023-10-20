@@ -121,19 +121,28 @@ public class RuntimeCliParser : RuntimeObject
 
     private IEnumerable<Completion> GetCompletions(IEnumerable<string> tokens, CliResult? cliResult)
     {
-        var flagNames = _flags
+        var flagCompletions = _flags
             .Select(x =>
-                x.ShortName == null
+            {
+                var completionText = x.ShortName == null
                     ? "--" + x.LongName
-                    : "-" + x.ShortName
-            );
+                    : "-" + x.ShortName;
+                var displayText = "";
+                if (x.ShortName != null)
+                    displayText = $"-{x.ShortName}  ";
+
+                if (x.LongName != null)
+                    displayText = displayText + "--" + x.LongName;
+
+                return new Completion(completionText, displayText.Trim(), x.Description);
+            });
 
         // If there are no existing tokens, return all the verbs and flags
         if (!tokens.Any())
         {
-            return _verbs.Keys
-                .Concat(flagNames)
-                .Select(x => new Completion(x));
+            return _verbs
+                .Select(x => new Completion(x.Key, x.Key, x.Value._description))
+                .Concat(flagCompletions);
         }
 
         // If the first argument is a verb, let the verb's parser deal with the rest
@@ -145,17 +154,16 @@ public class RuntimeCliParser : RuntimeObject
         // the token could be a verb. If these things are true,
         // and it isn't a flag, return the matched verbs.
         var last = tokens.Last();
-        var matchedFlags = flagNames
-            .Where(x => x.StartsWith(last))
-            .Select(x => new Completion(x));
+        var matchedFlags = flagCompletions
+            .Where(x => x.CompletionText.StartsWith(last));
         var collectedTokens = tokens.ToList();
         if (collectedTokens.Count == 1 && _verbs.Any() && !last.StartsWith("-"))
         {
             // Also include matchedFlags, in case the token is empty,
             // which would mean it could either be a verb or a flag.
-            return _verbs.Keys
-                .Where(x => x.StartsWith(collectedTokens.First()))
-                .Select(x => new Completion(x))
+            return _verbs
+                .Where(x => x.Key.StartsWith(collectedTokens.First()))
+                .Select(x => new Completion(x.Key, x.Key, x.Value._description))
                 .Concat(matchedFlags);
         }
 
@@ -175,11 +183,7 @@ public class RuntimeCliParser : RuntimeObject
             }
 
             if (flag is { ExpectsValue: true, CompletionHandler: not null } && cliResult != null)
-            {
-                return flag
-                    .CompletionHandler(cliResult)
-                    .Select(x => new Completion(x));
-            }
+                return flag.CompletionHandler(cliResult);
 
             if (flag is { ExpectsValue: true, ValueKind: CliValueKind.Path or CliValueKind.Directory })
             {
@@ -206,11 +210,7 @@ public class RuntimeCliParser : RuntimeObject
             ? _arguments.ElementAtOrDefault(argumentCount - 1)
             : null;
         if (currentArgument?.CompletionHandler != null && cliResult != null)
-        {
-            return currentArgument
-                .CompletionHandler(cliResult)
-                .Select(x => new Completion(x));
-        }
+            return currentArgument.CompletionHandler(cliResult);
 
         if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
         {

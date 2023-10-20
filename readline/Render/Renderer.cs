@@ -31,21 +31,6 @@ internal class Renderer : IRenderer
         }
     }
 
-    public bool CaretVisible
-    {
-        get => _caretVisible;
-
-        set
-        {
-            if (_caretVisible && !value)
-                WriteRaw(Ansi.HideCursor());
-            if (!_caretVisible && value)
-                WriteRaw(Ansi.ShowCursor());
-
-            _caretVisible = value;
-        }
-    }
-
     public string Text
     {
         get => _text.ToString();
@@ -81,7 +66,6 @@ internal class Renderer : IRenderer
     private int _top;
     private int _left = Console.CursorLeft;
     private int _caret;
-    private bool _caretVisible = true;
     private int _previousRenderTop;
     private readonly StringBuilder _text = new();
     private Func<string, string>? _highlighter;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Wcwidth;
 
@@ -17,9 +18,9 @@ static class Extensions
         for (var i = 0; i < input.Length; i++)
         {
             width += UnicodeCalculator.GetWidth(input[i]);
-            if (width == maxLength)
+            if (width == maxLength - 2)
                 return AppendEllipsis(input[..i]);
-            if (width > maxLength)
+            if (width > maxLength - 2)
                 return AppendEllipsis(input[..(i - 1)]);
         }
 
@@ -30,4 +31,7 @@ static class Extensions
         => input.EndsWith(".")
             ? input + ".."
             : input + "...";
+
+    public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> self)
+        => self.Select((item, index) => (item, index));
 }

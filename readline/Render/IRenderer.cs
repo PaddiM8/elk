@@ -16,8 +16,6 @@ internal interface IRenderer
 
     int Caret { get; set; }
 
-    bool CaretVisible { get; set; }
-
     string Text { get; set; }
 
     string? HintText { get; }

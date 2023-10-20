@@ -8,10 +8,13 @@ public class Completion
 
     public string DisplayText { get; }
 
-    public Completion(string completionText, string? displayText = null)
+    public string? Description { get; }
+
+    public Completion(string completionText, string? displayText = null, string? description = null)
     {
         const int maxLength = 20;
         CompletionText = completionText;
         DisplayText = (displayText ?? completionText).WcTruncate(maxLength);
+        Description = description;
     }
 }

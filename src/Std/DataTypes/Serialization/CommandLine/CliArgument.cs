@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Elk.ReadLine;
 
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
@@ -15,5 +16,5 @@ public class CliArgument
 
     public bool IsVariadic { get; init; }
 
-    public Func<CliResult, IEnumerable<string>>? CompletionHandler { get; init; }
+    public Func<CliResult, IEnumerable<Completion>>? CompletionHandler { get; init; }
 }

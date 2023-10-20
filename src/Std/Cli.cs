@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting;
+using Elk.ReadLine;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Std.DataTypes.Serialization.CommandLine;
@@ -39,7 +40,7 @@ static class Cli
     [ElkFunction("addFlag")]
     public static RuntimeObject AddFlag(RuntimeCliParser parser, RuntimeDictionary flag)
     {
-        Func<CliResult, IEnumerable<string>>? completionHandler = null;
+        Func<CliResult, IEnumerable<Completion>>? completionHandler = null;
         var runtimeCompletionHandler = flag.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
         {
@@ -54,7 +55,18 @@ static class Cli
                 return runtimeCompletionHandler
                     .Invoker(args, false)
                     .As<RuntimeList>()
-                    .Select(x => x.As<RuntimeString>().Value);
+                    .Select(x =>
+                    {
+                        if (x is RuntimeTuple tuple)
+                        {
+                            var displayText = tuple.Values[0].As<RuntimeString>().Value;
+                            var description = tuple.Values[1].As<RuntimeString>().Value;
+
+                            return new Completion(displayText, displayText, description);
+                        }
+
+                        return new Completion(x.As<RuntimeString>().Value);
+                    });
             };
         }
 
@@ -96,7 +108,7 @@ static class Cli
     [ElkFunction("addArgument")]
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
     {
-        Func<CliResult, IEnumerable<string>>? completionHandler = null;
+        Func<CliResult, IEnumerable<Completion>>? completionHandler = null;
         var identifier = argument.GetExpectedValue<RuntimeString>("identifier").Value;
         var runtimeCompletionHandler = argument.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
@@ -112,7 +124,18 @@ static class Cli
                 return runtimeCompletionHandler
                     .Invoker(args, false)
                     .As<RuntimeList>()
-                    .Select(x => x.As<RuntimeString>().Value);
+                    .Select(x =>
+                    {
+                        if (x is RuntimeTuple tuple)
+                        {
+                            var displayText = tuple.Values[0].As<RuntimeString>().Value;
+                            var description = tuple.Values[1].As<RuntimeString>().Value;
+
+                            return new Completion(displayText, displayText, description);
+                        }
+
+                        return new Completion(x.As<RuntimeString>().Value);
+                    });
             };
         }
 

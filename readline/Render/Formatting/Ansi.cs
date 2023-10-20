@@ -5,13 +5,19 @@ namespace Elk.ReadLine.Render.Formatting;
 static class Ansi
 {
     public static string Color(string text, AnsiForeground foreground)
-        => $"\x1b[{(int)foreground}m{text}\x1b[0m";
+        => text.Length == 0
+            ? ""
+            : $"\x1b[{(int)foreground}m{text}\x1b[0m";
 
     public static string Color(string text, AnsiBackground background)
-        => $"\x1b[{(int)background}m{text}\x1b[0m";
+        => text.Length == 0
+            ? ""
+            : $"\x1b[{(int)background}m{text}\x1b[0m";
 
     public static string Color(string text, AnsiForeground foreground, AnsiBackground background)
-        => $"\x1b[{(int)foreground}m\x1b[{(int)background}m{text}\x1b[0m";
+        => text.Length == 0
+            ? ""
+            : $"\x1b[{(int)foreground}m\x1b[{(int)background}m{text}\x1b[0m";
 
     public static string Left(int n)
         => n < 1 ? "" : $"\x1b[{n}D";
