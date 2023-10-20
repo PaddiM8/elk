@@ -6,7 +6,7 @@ namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
 public class CliFlag
 {
-    public required string Identifier { get; init; }
+    public string? Identifier { get; init; }
 
     public string? LongName { get; init; }
 
@@ -15,8 +15,6 @@ public class CliFlag
     public string? Description { get; init; }
 
     public string? Format { get; init; }
-
-    public bool ExpectsValue { get; init; }
 
     public CliValueKind ValueKind { get; init; }
 

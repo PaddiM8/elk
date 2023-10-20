@@ -19,7 +19,8 @@ public static class ParserStorage
 [ElkType("CliParser")]
 public class RuntimeCliParser : RuntimeObject
 {
-    private readonly string _name;
+    public string Name { get; }
+
     private string? _description;
     private bool _ignoreFlagsAfterArguments;
     private RuntimeCliParser? _parent;
@@ -31,7 +32,7 @@ public class RuntimeCliParser : RuntimeObject
 
     public RuntimeCliParser(string name)
     {
-        _name = name;
+        Name = name;
     }
 
     public override RuntimeObject As(Type toType)
@@ -76,7 +77,7 @@ public class RuntimeCliParser : RuntimeObject
     public RuntimeCliParser AddFlag(CliFlag flag)
     {
         _flags.Add(flag);
-        if (flag.IsRequired)
+        if (flag is { IsRequired: true, Identifier: not null })
             _requiredFlags.Add(flag.Identifier);
 
         return this;
@@ -85,7 +86,7 @@ public class RuntimeCliParser : RuntimeObject
     public RuntimeCliParser AddArgument(CliArgument argument)
     {
         _arguments.Add(argument);
-        if (argument.IsRequired)
+        if (argument is { IsRequired: true, Identifier: not null })
             _requiredArguments.Add(argument.Identifier);
 
         return this;
@@ -182,10 +183,10 @@ public class RuntimeCliParser : RuntimeObject
                 flag = _flags.FirstOrDefault(x => x.ShortName == secondLast[1..]);
             }
 
-            if (flag is { ExpectsValue: true, CompletionHandler: not null } && cliResult != null)
+            if (flag is { CompletionHandler: not null } && cliResult != null)
                 return flag.CompletionHandler(cliResult);
 
-            if (flag is { ExpectsValue: true, ValueKind: CliValueKind.Path or CliValueKind.Directory })
+            if (flag is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
             {
                 return FileUtils.GetPathCompletions(
                     last,
@@ -196,7 +197,7 @@ public class RuntimeCliParser : RuntimeObject
                 );
             }
 
-            if (flag?.ExpectsValue is true)
+            if (flag is { ValueKind: not CliValueKind.None })
                 return Array.Empty<Completion>();
         }
 
@@ -264,11 +265,15 @@ public class RuntimeCliParser : RuntimeObject
 
                 if (!parsedFlag.Value.isFlag)
                 {
-                    variadicArgumentTokens.Add(parsedFlag.Value.identifier);
+                    if (parsedFlag.Value.identifier != null)
+                        variadicArgumentTokens.Add(parsedFlag.Value.identifier);
+
                     continue;
                 }
 
-                values[parsedFlag.Value.identifier] = parsedFlag.Value.value;
+                if (parsedFlag.Value.identifier != null)
+                    values[parsedFlag.Value.identifier] = parsedFlag.Value.value;
+
                 continue;
             }
 
@@ -289,14 +294,21 @@ public class RuntimeCliParser : RuntimeObject
                 return null;
             }
 
-            values[_arguments[argumentIndex].Identifier] = token;
+            var identifier = _arguments[argumentIndex].Identifier;
+            if (identifier != null)
+                values[identifier] = token;
+
             hasParsedArgument = true;
             argumentIndices.Add(enumerator.Current.index);
             argumentIndex++;
         }
 
         if (variadicArgumentTokens.Any())
-            values[_arguments.Last().Identifier] = variadicArgumentTokens;
+        {
+            var lastIdentifier = _arguments.Last().Identifier;
+            if (lastIdentifier != null)
+                values[lastIdentifier] = variadicArgumentTokens;
+        }
 
         if (ignoreErrors)
             return new CliResult(values, argumentIndices);
@@ -328,7 +340,7 @@ public class RuntimeCliParser : RuntimeObject
         return new CliResult(values, argumentIndices);
     }
 
-    private (string identifier, string? value, bool isFlag)? ParseFlag(
+    private (string? identifier, string? value, bool isFlag)? ParseFlag(
         IEnumerator<(string item, int index)> enumerator,
         bool ignoreErrors)
     {
@@ -356,7 +368,7 @@ public class RuntimeCliParser : RuntimeObject
             return null;
         }
 
-        if (!flag.ExpectsValue)
+        if (flag.ValueKind == CliValueKind.None)
             return (flag.Identifier, null, true);
 
         if (!enumerator.MoveNext() || enumerator.Current.item.StartsWith("-"))
@@ -423,13 +435,13 @@ public class RuntimeCliParser : RuntimeObject
         var builder = new StringBuilder();
         var ancestors = new List<string>
         {
-            _name,
+            Name,
         };
         var selectedParser = this;
         while (selectedParser._parent != null)
         {
             selectedParser = selectedParser._parent;
-            ancestors.Add(selectedParser._name);
+            ancestors.Add(selectedParser.Name);
         }
 
         ancestors[^1] = Ansi.Bold(ancestors[^1]);
@@ -439,7 +451,8 @@ public class RuntimeCliParser : RuntimeObject
 
         foreach (var argument in _arguments)
         {
-            builder.Append($" [{argument.Identifier.ToUpper()}]");
+            builder.Append($" [{argument.Identifier?.ToUpper()}]");
+
             if (argument.IsVariadic)
                 builder.Append("...");
         }
@@ -453,7 +466,7 @@ public class RuntimeCliParser : RuntimeObject
         var variadic = argument.IsVariadic
             ? "..."
             : "";
-        builder.AppendLine($"  [{argument.Identifier.ToUpper()}]{variadic}");
+        builder.AppendLine($"  [{argument.Identifier?.ToUpper()}]{variadic}");
 
         if (argument.Description == null)
             return builder.ToString();

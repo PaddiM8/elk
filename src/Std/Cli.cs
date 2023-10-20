@@ -29,8 +29,8 @@ static class Cli
     /// <example>
     /// parser | cli::addFlag({
     ///     "identifier": "test-flag",  # Identifier used to later get the value of the flag (default: nil)
-    ///     "shortName": "t",           # A short version of the flag (a single letter) (default: nil)
-    ///     "longName": "test-flag",    # A long version of the flag (default: nil)
+    ///     "short": "t",           # A short version of the flag (a single letter) (default: nil)
+    ///     "long": "test-flag",    # A long version of the flag (default: nil)
     ///     "description": "Test flag", # A description of the flag (default: nil)
     ///     "format": "hh:mm",          # An example of how to format the value given to the flag (default: nil)
     ///     "expects-value": true,      # Whether or not the flag expects a value (default: false)
@@ -72,17 +72,17 @@ static class Cli
 
         parser.AddFlag(new CliFlag
         {
-            Identifier = flag.GetExpectedValue<RuntimeString>("identifier").Value,
-            ShortName = flag.GetValue<RuntimeString>("shortName")?.Value,
-            LongName = flag.GetValue<RuntimeString>("longName")?.Value,
+            Identifier = flag.GetValue<RuntimeString>("identifier")?.Value,
+            ShortName = flag.GetValue<RuntimeString>("short")?.Value,
+            LongName = flag.GetValue<RuntimeString>("long")?.Value,
             Description = flag.GetValue<RuntimeString>("description")?.Value,
             Format = flag.GetValue<RuntimeString>("format")?.Value,
-            ExpectsValue = flag.GetValue<RuntimeBoolean>("expectsValue")?.IsTrue ?? false,
             ValueKind = flag.GetValue<RuntimeString>("valueKind")?.Value switch
             {
+                "path" => CliValueKind.Path,
                 "directory" => CliValueKind.Directory,
                 "text" => CliValueKind.Text,
-                _ => CliValueKind.Path,
+                _ => CliValueKind.None,
             },
             IsRequired = flag.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
             CompletionHandler = completionHandler,
@@ -109,7 +109,7 @@ static class Cli
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
     {
         Func<CliResult, IEnumerable<Completion>>? completionHandler = null;
-        var identifier = argument.GetExpectedValue<RuntimeString>("identifier").Value;
+        var identifier = argument.GetValue<RuntimeString>("identifier")?.Value;
         var runtimeCompletionHandler = argument.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
         {
@@ -146,9 +146,10 @@ static class Cli
             IsRequired = argument.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
             ValueKind = argument.GetValue<RuntimeString>("valueKind")?.Value switch
             {
+                "path" => CliValueKind.Path,
                 "directory" => CliValueKind.Directory,
                 "text" => CliValueKind.Text,
-                _ => CliValueKind.Path,
+                _ => CliValueKind.None,
             },
             IsVariadic = argument.GetValue<RuntimeBoolean>("variadic")?.IsTrue ?? false,
             CompletionHandler = completionHandler,
@@ -171,11 +172,11 @@ static class Cli
     ///     someVerbParser
     ///         | cli::addFlag({
     ///             "identifier": "some-flag",
-    ///             "shortName": "s",
+    ///             "short": "s",
     ///         })
     ///         | cli::addFlag({
     ///             "identifier": "another-flag",
-    ///             "shortName": "a",
+    ///             "short": "a",
     ///         })
     /// }
     /// </example>
@@ -245,8 +246,10 @@ static class Cli
         );
 
     [ElkFunction("registerForCompletion")]
-    public static void RegisterForCompletion(RuntimeCliParser parser, RuntimeString name)
+    public static RuntimeCliParser RegisterForCompletion(RuntimeCliParser parser, RuntimeString? name = null)
     {
-        ParserStorage.CompletionParsers[name.Value] = parser;
+        ParserStorage.CompletionParsers[name?.Value ?? parser.Name] = parser;
+
+        return parser;
     }
 }
