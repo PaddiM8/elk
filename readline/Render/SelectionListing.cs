@@ -35,9 +35,9 @@ class SelectionListing
 
             // Limit columns to 20 characters if there are no descriptions
             // since a multi-column view is preferable in that case.
-            return !_hasDescriptions
-                ? Math.Min(20, length)
-                : length;
+            return _hasDescriptions
+                ? length
+                : Math.Min(20, length);
         });
     }
 
