@@ -1,17 +1,8 @@
 namespace Elk.ReadLine;
-
-public class Completion
+public record Completion(string CompletionText, string DisplayText, string? Description = null)
 {
-    public string CompletionText { get; }
-
-    public string DisplayText { get; }
-
-    public string? Description { get; }
-
-    public Completion(string completionText, string? displayText = null, string? description = null)
+    public Completion(string completionText)
+        : this(completionText, completionText)
     {
-        CompletionText = completionText;
-        DisplayText = displayText ?? completionText;
-        Description = description;
     }
 }

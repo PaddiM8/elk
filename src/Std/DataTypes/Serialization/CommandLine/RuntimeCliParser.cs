@@ -125,17 +125,22 @@ public class RuntimeCliParser : RuntimeObject
         var flagCompletions = _flags
             .Select(x =>
             {
-                var completionText = x.ShortName == null
-                    ? "--" + x.LongName
+                var shortName = x.ShortName == null
+                    ? ""
                     : "-" + x.ShortName;
-                var displayText = "";
-                if (x.ShortName != null)
-                    displayText = $"-{x.ShortName}  ";
+                var longName = x.LongName == null
+                    ? ""
+                    : "--" + x.LongName;
+                var completionText = shortName == ""
+                    ? longName
+                    : shortName;
+                var displayText = string.Join(", ", shortName, longName);
 
-                if (x.LongName != null)
-                    displayText = displayText + "--" + x.LongName;
-
-                return new Completion(completionText, displayText.Trim(), x.Description);
+                return (
+                    shortName,
+                    longName,
+                    completion: new Completion(completionText, displayText, x.Description)
+                );
             });
 
         // If there are no existing tokens, return all the verbs and flags
@@ -143,7 +148,7 @@ public class RuntimeCliParser : RuntimeObject
         {
             return _verbs
                 .Select(x => new Completion(x.Key, x.Key, x.Value._description))
-                .Concat(flagCompletions);
+                .Concat(flagCompletions.Select(x => x.completion));
         }
 
         // If the first argument is a verb, let the verb's parser deal with the rest
@@ -156,7 +161,16 @@ public class RuntimeCliParser : RuntimeObject
         // and it isn't a flag, return the matched verbs.
         var last = tokens.Last();
         var matchedFlags = flagCompletions
-            .Where(x => x.CompletionText.StartsWith(last));
+            .Where(x => x.shortName.StartsWith(last) || x.longName.StartsWith(last))
+            .Select(x =>
+                // If the long name matches a completion, return that
+                // completion but with CompletionText set to the long
+                // name instead of the short name. Otherwise return
+                // it as it is.
+                !x.shortName.StartsWith(last) && x.longName.StartsWith(last)
+                    ? x.completion with { CompletionText = x.longName }
+                    : x.completion
+            );
         var collectedTokens = tokens.ToList();
         if (collectedTokens.Count == 1 && _verbs.Any() && !last.StartsWith("-"))
         {
@@ -208,7 +222,7 @@ public class RuntimeCliParser : RuntimeObject
             .Count() ?? 0;
         var lastIsArgument = cliResult?.ArgumentIndices.Contains(tokens.Count() - 1) is true;
         var currentArgument = lastIsArgument
-            ? _arguments.ElementAtOrDefault(argumentCount - 1)
+            ? _arguments.ElementAtOrDefault(argumentCount - 1) ?? _arguments.Last()
             : null;
         if (currentArgument?.CompletionHandler != null && cliResult != null)
             return currentArgument.CompletionHandler(cliResult);
@@ -280,6 +294,7 @@ public class RuntimeCliParser : RuntimeObject
             if (argumentIndex == _arguments.Count - 1 && _arguments.Last().IsVariadic)
             {
                 variadicArgumentTokens.Add(token);
+                argumentIndices.Add(enumerator.Current.index);
                 hasParsedArgument = true;
                 continue;
             }

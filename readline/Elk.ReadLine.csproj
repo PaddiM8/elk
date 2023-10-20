@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Elk.ReadLine</AssemblyTitle>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <DebugType>portable</DebugType>
     <PackageId>Elk.ReadLine</PackageId>
     <PackageVersion>$(AssemblyVersion)</PackageVersion>
