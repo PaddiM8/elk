@@ -27,18 +27,18 @@ class SelectionListing
     {
         _items = items;
         _hasDescriptions = items.Any(x => x.Description != null);
-        _maxLength = items.Max(x =>
-        {
-            var length = x.Description == null
-                ? x.DisplayText.GetWcLength()
-                : x.DisplayText.GetWcLength() + DescriptionMargin.Length + x.Description.GetWcLength();
-
-            // Limit columns to 20 characters if there are no descriptions
-            // since a multi-column view is preferable in that case.
-            return _hasDescriptions
-                ? length
-                : Math.Min(20, length);
-        });
+        var allLengths = items
+            .Select(x =>
+                x.Description == null
+                    ? x.DisplayText.GetWcLength()
+                    : x.DisplayText.GetWcLength() + DescriptionMargin.Length + x.Description.GetWcLength()
+            )
+            .Order()
+            .ToList();
+        var typicalLength = allLengths[(int)(allLengths.Count * 0.75)];
+        _maxLength = typicalLength < 20
+            ? allLengths.Max()
+            : typicalLength;
     }
 
     public void Clear()
@@ -62,8 +62,12 @@ class SelectionListing
             _renderer.BufferWidth / (currentMaxLength + ItemMargin.Length)
         );
         columnCount = Math.Max(1, Math.Min(5, columnCount));
+
         if (_hasDescriptions)
             columnCount = 1;
+
+        if (columnCount == 1)
+            currentMaxLength = _renderer.BufferWidth;
 
         var maxRowCount = columnCount == 1
             ? Math.Max(3, _renderer.BufferHeight - _renderer.CursorTop - 1)
@@ -74,7 +78,7 @@ class SelectionListing
             (int)Math.Ceiling((float)_items.Count / columnCount - startRow)
         );
         var endRow = startRow + rowCount;
-        var columnWidths = GetColumnWidths(columnCount, startRow, endRow);
+        var columnWidths = GetColumnWidths(columnCount, startRow, endRow, currentMaxLength);
 
         var output = new StringBuilder();
         for (var rowIndex = startRow; rowIndex < endRow; rowIndex++)
@@ -153,7 +157,7 @@ class SelectionListing
         return margin + content + formattedDescription + padding + Ansi.ClearToEndOfLine();
     }
 
-    private int[] GetColumnWidths(int columnCount, int startRow, int endRow)
+    private int[] GetColumnWidths(int columnCount, int startRow, int endRow, int maxLength)
     {
         var columnWidths = new int[columnCount];
         for (var i = startRow; i < endRow; i++)
@@ -165,7 +169,7 @@ class SelectionListing
                     continue;
 
                 var item = _items[index];
-                var length = Math.Min(_maxLength, item.DisplayText.GetWcLength());
+                var length = Math.Min(maxLength, item.DisplayText.GetWcLength());
                 if (item.Description != null)
                     length += item.Description.GetWcLength() + DescriptionMargin.Length;
 
