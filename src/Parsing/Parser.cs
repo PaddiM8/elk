@@ -1032,7 +1032,7 @@ internal class Parser
                 return ContinueParseAsDictionary(expressions.First());
         }
 
-        if (expressions.Count == 0)
+        if (expressions.Count == 0 && parentStructureKind == StructureKind.Other)
             return new DictionaryExpr(new List<(Expr, Expr)>(), pos);
 
         _scope = _scope.Parent!;
