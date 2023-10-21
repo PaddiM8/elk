@@ -155,6 +155,8 @@ internal class Renderer : IRenderer
 
     public void Insert(string input, bool includeHint)
     {
+        input = input.Replace("\t", "  ");
+
         var hasHint = includeHint && _text.Length + input.Length > 0;
         if (IsEndOfLine)
         {

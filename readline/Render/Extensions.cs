@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Wcwidth;
@@ -12,6 +11,7 @@ static class Extensions
 
     public static string WcTruncate(this string input, int maxLength)
     {
+        input = input.Replace("\t", "  ");
         if (input.Length <= 3)
             return input;
 
