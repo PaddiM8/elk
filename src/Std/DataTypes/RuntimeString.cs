@@ -57,6 +57,10 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
+    public override bool Equals(object? obj)
+        => obj is RuntimeObject runtimeObject &&
+            Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

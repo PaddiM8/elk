@@ -22,6 +22,10 @@ public class RuntimeBoolean : RuntimeObject
         IsTrue = isTrue;
     }
 
+    public override bool Equals(object? obj)
+        => obj is RuntimeObject runtimeObject &&
+            Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {
