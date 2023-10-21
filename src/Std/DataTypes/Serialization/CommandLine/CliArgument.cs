@@ -16,5 +16,5 @@ public class CliArgument
 
     public bool IsVariadic { get; init; }
 
-    public Func<CliResult, IEnumerable<Completion>>? CompletionHandler { get; init; }
+    public Func<string, CliResult, IEnumerable<Completion>>? CompletionHandler { get; init; }
 }

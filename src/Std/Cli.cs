@@ -40,15 +40,15 @@ static class Cli
     [ElkFunction("addFlag")]
     public static RuntimeObject AddFlag(RuntimeCliParser parser, RuntimeDictionary flag)
     {
-        Func<CliResult, IEnumerable<Completion>>? completionHandler = null;
+        Func<string, CliResult, IEnumerable<Completion>>? completionHandler = null;
         var runtimeCompletionHandler = flag.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
         {
-            completionHandler = result =>
+            completionHandler = (value, result) =>
             {
                 var args = new List<RuntimeObject>
                 {
-                    new RuntimeString(result.GetRequiredString("identifier")),
+                    new RuntimeString(value),
                     result.ToRuntimeDictionary(),
                 };
 
@@ -108,16 +108,16 @@ static class Cli
     [ElkFunction("addArgument")]
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
     {
-        Func<CliResult, IEnumerable<Completion>>? completionHandler = null;
+        Func<string, CliResult, IEnumerable<Completion>>? completionHandler = null;
         var identifier = argument.GetValue<RuntimeString>("identifier")?.Value;
         var runtimeCompletionHandler = argument.GetValue<RuntimeFunction>("completionHandler");
         if (runtimeCompletionHandler != null)
         {
-            completionHandler = result =>
+            completionHandler = (value, result) =>
             {
                 var args = new List<RuntimeObject>
                 {
-                    new RuntimeString(result.GetRequiredString("identifier")),
+                    new RuntimeString(value),
                     result.ToRuntimeDictionary(),
                 };
 

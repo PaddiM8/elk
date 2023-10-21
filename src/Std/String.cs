@@ -203,3 +203,11 @@ static class String
     public static RuntimeString Upper(RuntimeString input)
         => new(input.Value.ToUpper());
 }
+
+[ElkModule("str::path")]
+static class StringPath
+{
+    [ElkFunction("fileName")]
+    public static RuntimeString FileName(RuntimeString path)
+        => new(System.IO.Path.GetFileName(path.Value));
+}

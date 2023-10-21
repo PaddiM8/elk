@@ -197,8 +197,8 @@ public class RuntimeCliParser : RuntimeObject
                 flag = _flags.FirstOrDefault(x => x.ShortName == secondLast[1..]);
             }
 
-            if (flag is { CompletionHandler: not null } && cliResult != null)
-                return flag.CompletionHandler(cliResult);
+            if (flag?.CompletionHandler != null && cliResult != null)
+                return flag.CompletionHandler(last, cliResult);
 
             if (flag is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
             {
@@ -225,7 +225,7 @@ public class RuntimeCliParser : RuntimeObject
             ? _arguments.ElementAtOrDefault(argumentCount - 1) ?? _arguments.Last()
             : null;
         if (currentArgument?.CompletionHandler != null && cliResult != null)
-            return currentArgument.CompletionHandler(cliResult);
+            return currentArgument.CompletionHandler(last, cliResult);
 
         if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
         {

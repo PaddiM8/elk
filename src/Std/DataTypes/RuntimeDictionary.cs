@@ -85,6 +85,13 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         return stringBuilder.ToString();
     }
 
+    public RuntimeObject? GetValue(string key)
+    {
+        return Entries.TryGetValue(key.GetHashCode(), out var value)
+            ? value.Item2
+            : default;
+    }
+
     public T? GetValue<T>(string key)
         where T : RuntimeObject
     {
