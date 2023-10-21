@@ -802,12 +802,9 @@ class Analyser
 
     private StdFunction? ResolveStdFunction(string name, IList<Token> modulePath)
     {
-        if (modulePath.Count > 1)
-            return null;
-
-        var moduleName = modulePath.FirstOrDefault()?.Value;
-        var function = StdBindings.GetFunction(name, moduleName);
-        if (function == null && moduleName != null && StdBindings.HasModule(moduleName))
+        var module = modulePath.Select(x => x.Value);
+        var function = StdBindings.GetFunction(name, module);
+        if (function == null && StdBindings.HasModule(module))
             throw new RuntimeNotFoundException(name);
 
         return function;

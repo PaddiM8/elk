@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -268,7 +269,7 @@ class HighlightHandler : IHighlightHandler
         }
 
         var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
-        var isCallable = isFunctionCall || _shell.ProgramExists(identifier);
+        var isCallable = isFunctionCall || modulePath.Count == 0 && _shell.ProgramExists(identifier);
         var colorCode = isCallable ? 95 : 91;
 
         var nextBuilder = new StringBuilder();

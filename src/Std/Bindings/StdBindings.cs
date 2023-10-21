@@ -14,8 +14,12 @@ public static partial class StdBindings
 {
     public static IEnumerable<string> FullSymbolNames
         => _modules.Keys.Select(x => $"{x}::").Concat(_functions.Keys);
+
     public static bool HasModule(string moduleName)
         => _modules.ContainsKey(moduleName);
+
+    public static bool HasModule(IEnumerable<string> modulePath)
+        => _modules.ContainsKey(string.Join("::", modulePath));
 
     public static StdStruct? GetStruct(string structName, string moduleName)
     {
@@ -24,11 +28,11 @@ public static partial class StdBindings
         return result;
     }
 
-    public static StdFunction? GetFunction(string functionName, string? moduleName)
+    public static StdFunction? GetFunction(string functionName, IEnumerable<string>? modulePath)
     {
-        var fullName = moduleName == null
-            ? functionName
-            : $"{moduleName}::{functionName}";
+        var fullName = modulePath?.Any() is true
+            ? $"{string.Join("::", modulePath)}::{functionName}"
+            : functionName;
         _functions.TryGetValue(fullName, out var result);
 
         return result;
@@ -37,13 +41,19 @@ public static partial class StdBindings
     public static bool HasStruct(string structName, string moduleName)
         => _structs.ContainsKey($"{moduleName}::{structName}");
 
-    public static bool HasFunction(string functionName, string? moduleName)
-    {
-        var fullName = moduleName == null
-            ? functionName
-            : $"{moduleName}::{functionName}";
 
-        return _functions.ContainsKey(fullName);
+    public static bool HasFunction(string functionName, string? moduleName)
+        => moduleName == null
+            ? _functions.ContainsKey(functionName)
+            : _functions.ContainsKey($"{moduleName}::{functionName}");
+
+    public static bool HasFunction(string functionName, IEnumerable<string>? modulePath)
+    {
+        var moduleName = modulePath?.Any() is true
+            ? string.Join("::", modulePath)
+            : null;
+
+        return HasFunction(functionName, moduleName);
     }
 
     public static bool GetModuleSymbolNames(

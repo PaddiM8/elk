@@ -383,6 +383,8 @@ partial class Interpreter
             {
                 if (returnValue != null)
                     lastValue = returnValue;
+
+                break;
             }
 
             // If last

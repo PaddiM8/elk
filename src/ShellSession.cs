@@ -74,10 +74,8 @@ public class ShellSession
 
     public bool ModuleExists(ICollection<string> modulePath)
     {
-        if (_interpreter.ModuleExists(modulePath))
-            return true;
-
-        return modulePath.Count == 1 && StdBindings.HasModule(modulePath.Single());
+        return _interpreter.ModuleExists(modulePath) ||
+            StdBindings.HasModule(modulePath);
     }
 
     public bool StructExists(string name)
@@ -88,10 +86,7 @@ public class ShellSession
         if (_interpreter.FunctionExists(name, modulePath))
             return true;
 
-        if (modulePath is { Count: > 1 })
-            return false;
-
-        return StdBindings.HasFunction(name, modulePath?.SingleOrDefault()) ||
+        return StdBindings.HasFunction(name, modulePath) ||
             _interpreter.CurrentModule.FindImportedStdFunctionModule(name) != null;
     }
 
