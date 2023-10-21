@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -14,12 +15,12 @@ namespace Elk.Tests;
 
 internal class ParserTests
 {
-    private static RootModuleScope _scope = new(null);
+    private static RootModuleScope _scope = new(null, Array.Empty<Expr>());
 
     [SetUp]
     public void SetUp()
     {
-        _scope = new RootModuleScope(null);
+        _scope = new RootModuleScope(null, Array.Empty<Expr>());
     }
 
     private List<Expr> Parse(List<Token> tokens)

@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Lexing;
@@ -36,7 +35,7 @@ class ModuleScope : Scope
 
     public string? FilePath { get; }
 
-    public IList<Expr> Ast { get; set; } = Array.Empty<Expr>();
+    public IList<Expr> Ast { get; set; }
 
     public AnalysisStatus AnalysisStatus { get; set; }
 
@@ -52,29 +51,32 @@ class ModuleScope : Scope
     private readonly Dictionary<string, string> _importedStdStructs = new();
     private readonly Dictionary<string, string> _importedStdFunctions = new();
 
-    public ModuleScope(string? name, Scope? parent, string? filePath)
+    public ModuleScope(string? name, Scope? parent, string? filePath, IList<Expr> ast)
         : base(parent)
     {
         ModuleScope = this;
         Name = name;
         RootModule = parent?.ModuleScope.RootModule ?? (RootModuleScope)this;
         FilePath = filePath;
+        Ast = ast;
     }
 
-    private ModuleScope(string name, RootModuleScope rootModule, string filePath)
+    private ModuleScope(string name, RootModuleScope rootModule, string filePath, IList<Expr> ast)
         : base(null)
     {
         ModuleScope = this;
         Name = name;
         RootModule = rootModule;
         FilePath = filePath;
+        Ast = ast;
     }
 
     public static ModuleScope CreateAsImported(
         string name,
         RootModuleScope rootModule,
-        string filePath)
-        => new(name, rootModule, filePath);
+        string filePath,
+        IList<Expr> ast)
+        => new(name, rootModule, filePath, ast);
 
     public void AddAlias(string name, LiteralExpr expansion)
     {

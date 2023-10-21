@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
@@ -7,8 +8,8 @@ class RootModuleScope : ModuleScope
 {
     private readonly Dictionary<string, ModuleScope> _allModules = new();
 
-    public RootModuleScope(string? filePath)
-        : base(Path.GetFileNameWithoutExtension(filePath), null, filePath)
+    public RootModuleScope(string? filePath, IList<Expr> ast)
+        : base(Path.GetFileNameWithoutExtension(filePath), null, filePath, ast)
     {
         if (filePath != null)
             _allModules[filePath] = this;

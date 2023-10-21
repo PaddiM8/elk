@@ -214,8 +214,10 @@ internal class Parser
             importScope = ModuleScope.CreateAsImported(
                 moduleName,
                 _scope.ModuleScope.RootModule,
-                absolutePath
+                absolutePath,
+                Array.Empty<Expr>()
             );
+            _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
 
             importScope.Ast = Parse(
                 Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
@@ -223,8 +225,6 @@ internal class Parser
             );
             if (lexError != null)
                 throw new ParseException(lexError.Position, lexError.Message);
-
-            _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
         }
 
         _scope.ModuleScope.ImportModule(moduleName, importScope);
@@ -254,9 +254,10 @@ internal class Parser
     {
         EatExpected(TokenKind.Module);
         var identifier = EatExpected(TokenKind.Identifier);
-        var moduleScope = new ModuleScope(identifier.Value, _scope, _scope.ModuleScope.FilePath);
+        var moduleScope = new ModuleScope(identifier.Value, _scope, _scope.ModuleScope.FilePath, Array.Empty<Expr>());
         _scope.ModuleScope.AddModule(identifier.Value, moduleScope);
         var block = ParseBlock(StructureKind.Module, moduleScope);
+        moduleScope.Ast = block.Expressions;
 
         return new ModuleExpr(identifier, block);
     }

@@ -38,14 +38,19 @@ partial class Interpreter
     public Interpreter(string? filePath)
     {
         ShellEnvironment = new ShellEnvironment();
-        _rootModule = new(filePath);
+        _rootModule = new(filePath, Array.Empty<Expr>());
         _scope = _rootModule;
     }
 
-    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope = null, bool isEntireModule = false)
+    public RuntimeObject Interpret(IList<Expr> ast, bool isEntireModule)
+        => Interpret(ast, null, isEntireModule);
+
+    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope, bool isEntireModule)
     {
         if (scope != null)
             _scope = scope;
+
+        Debug.Assert(scope is not { Ast: null });
 
         var previousScope = _scope;
         foreach (var module in _scope.ModuleScope.Modules
@@ -99,6 +104,8 @@ partial class Interpreter
                 Lexer.Lex(input, _rootModule.FilePath, out var lexError),
                 _scope
             );
+            _rootModule.Ast = ast;
+
             if (lexError != null)
                 throw new RuntimeException(lexError.Message, lexError.Position);
 
@@ -113,7 +120,7 @@ partial class Interpreter
                 ast = new List<Expr> { block };
             }
 
-            return Interpret(ast);
+            return Interpret(ast, isEntireModule: false);
         }
         catch (RuntimeException e)
         {
