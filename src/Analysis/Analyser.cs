@@ -14,6 +14,7 @@ class Analyser
 {
     private Scope _scope;
     private Expr? _enclosingFunction;
+    private Expr? _currentExpr;
 
     private Analyser(RootModuleScope rootModule)
     {
@@ -32,18 +33,28 @@ class Analyser
 
         module.AnalysisStatus = AnalysisStatus.Analysed;
 
-        var analysedAst = ast
-            .Select(expr => analyser.Next(expr))
-            .ToList();
-        if (isEntireModule)
-            module.Ast = analysedAst;
+        try
+        {
+            var analysedAst = ast
+                .Select(expr => analyser.Next(expr))
+                .ToList();
 
-        return analysedAst;
+            if (isEntireModule)
+                module.Ast = analysedAst;
+
+            return analysedAst;
+        }
+        catch (RuntimeException ex)
+        {
+            ex.Position = analyser._currentExpr?.Position;
+            throw;
+        }
     }
 
     private Expr Next(Expr expr)
     {
         expr.EnclosingFunction = _enclosingFunction;
+        _currentExpr = expr;
 
         var analysedExpr = expr switch
         {
