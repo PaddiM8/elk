@@ -612,7 +612,7 @@ internal class Parser
     private Expr ParseIndexer()
     {
         var expr = ParseFieldAccess();
-        while (AdvanceIf(TokenKind.OpenSquareBracket))
+        while (!MatchInclWhiteSpace(TokenKind.NewLine) && AdvanceIf(TokenKind.OpenSquareBracket))
         {
             var index = ParseExpr();
             EatExpected(TokenKind.ClosedSquareBracket);
@@ -1152,7 +1152,7 @@ internal class Parser
                 IsReference = isReference,
             };
 
-            return Match(TokenKind.EqualsGreater)
+            return MatchIgnoreWhiteSpace(TokenKind.EqualsGreater)
                 ? ParseClosure(call)
                 : call;
         }
@@ -1403,6 +1403,15 @@ internal class Parser
         return MatchInclWhiteSpace(kinds);
     }
 
+    private bool MatchIgnoreWhiteSpace(params TokenKind[] kinds)
+    {
+        var index = _index;
+        while (IsWhiteSpace(_tokens.ElementAtOrDefault(index)?.Kind))
+            index++;
+
+        return kinds.Any(x => x == _tokens.ElementAtOrDefault(index)?.Kind);
+    }
+
     private bool MatchIdentifier(string value)
         => Match(TokenKind.Identifier) && Current?.Value == value;
 
@@ -1431,7 +1440,10 @@ internal class Parser
 
     private void SkipWhiteSpace()
     {
-        while (Current?.Kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment)
+        while (IsWhiteSpace(Current?.Kind))
             Eat();
     }
+
+    private bool IsWhiteSpace(TokenKind? kind)
+        => kind is TokenKind.WhiteSpace or TokenKind.NewLine or TokenKind.Comment;
 }
