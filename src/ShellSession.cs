@@ -117,7 +117,7 @@ public class ShellSession
 
             try
             {
-                _interpreter.Interpret(new List<Expr> { call });
+                _interpreter.Interpret(new List<Expr> { call }, isEntireModule: false);
             }
             catch (RuntimeException e)
             {

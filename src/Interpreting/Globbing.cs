@@ -11,7 +11,7 @@ public static class Globbing
 
         return GlobExpressions.Glob.FilesAndDirectories(
             prefix == "/" ? "/" : workingDirectory,
-            pattern.TrimCharStart('/')
+            pattern.TrimStart('/')
         )
         .Select(x => prefix + x);
     }

@@ -1,6 +1,10 @@
 cli::create git
     | cli::registerForCompletion
     | cli::addVerb help => &handleHelp
+    | cli::addVerb add => &handleAdd
+    | cli::addVerb rebase => &handleRebase
+    | cli::addVerb reset => &handleReset
+    | cli::addArgument({ "valueKind": "path", "variadic": true })
     | cli::addFlag({ "short": "v", "long": "version", "description": "display git version" })
     | cli::addFlag({ "short": "C", "valueKind": "directory", "description": "run as if started in dir" })
     | cli::addFlag({ "short": "c", "valueKind": "text", "description": "set config option" })
@@ -27,4 +31,50 @@ fn handleHelp(parser) {
     parser
         | cli::setDescription "Display manual of a Git command"
         | cli::addArgument({ "identifier": "verb", "valueKind": "text" })
+}
+
+fn handleAdd(parser) {
+    parser
+        | cli::addArgument({ "identifier": "file", "completionHandler": &unstagedFilesHandler, "variadic": true })
+}
+
+fn handleRebase(parser) {
+    parser
+        | cli::addFlag({ "short": "i", "completionHandler": &reflogHandler })
+}
+
+fn handleReset(parser) {
+    parser
+        | cli::addArgument({ "identifier": "file", "completionHandler": &stagedFilesHandler, "variadic": true })
+        | cli::addFlag({ "long": "soft", "completionHandler": &reflogHandler })
+        | cli::addFlag({ "long": "hard", "completionHandler": &reflogHandler })
+        | cli::addFlag({ "long": "merge", "completionHandler": &reflogHandler })
+        | cli::addFlag({ "short": "q", "completionHandler": &reflogHandler })
+}
+
+fn unstagedFilesHandler(value, state) {
+    let repoPath = git rev-parse --show-toplevel
+    git ls-files ${repoPath} --exclude-standard --others --modified | str::path::fuzzyFind(value)
+}
+
+fn stagedFilesHandler(value, state) {
+    let workingDirectory = pwd
+    let repoPath = git rev-parse --show-toplevel
+    git diff --name-only --cached
+        | map => x {
+            repoPath
+                | str::path::relative(workingDirectory)
+                | str::path::join(x)
+        }
+}
+
+fn reflogHandler(value, state) {
+    let result = git reflog --no-decorate | map => line {
+        let (identifiers, description) = line | split(": ", 2)
+        let head = identifiers | split | iter::at 1
+
+        (head, description)
+    }
+
+    result
 }

@@ -70,7 +70,7 @@ class SelectionListing
             currentMaxLength = _renderer.BufferWidth;
 
         var maxRowCount = columnCount == 1
-            ? Math.Max(3, _renderer.BufferHeight - _renderer.CursorTop - 1)
+            ? Math.Max(5, _renderer.BufferHeight - _renderer.CursorTop - 1)
             : 5;
         var startRow = (int)((float)SelectedIndex / columnCount / maxRowCount) * maxRowCount;
         var rowCount = Math.Min(

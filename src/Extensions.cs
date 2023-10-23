@@ -41,26 +41,4 @@ public static class Extensions
 
     public static string[] ToLines(this string input)
         => input.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-    public static string TrimCharStart(this string input, char target)
-    {
-        for (var i = 0; i < input.Length; i++)
-        {
-            if (input[i] != target)
-                return input[i..];
-        }
-
-        return "";
-    }
-
-    public static string TrimCharEnd(this string input, char target)
-    {
-        for (var i = input.Length - 1; i >= 0; i--)
-        {
-            if (input[i] != target)
-                return input[..(i + 1)];
-        }
-
-        return "";
-    }
 }
