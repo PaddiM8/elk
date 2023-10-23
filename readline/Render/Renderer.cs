@@ -230,6 +230,12 @@ internal class Renderer : IRenderer
         {
             var (hintTop, _) = IndexToTopLeft(_text.Length + HintText.Length, Text + HintText);
             hintHeight = hintTop - top;
+
+            // For some reason, it the cursor doesn't move to the next line
+            // when the hint fills the line completely.
+            if (InputStart + _text.Length + HintText.Length == BufferWidth)
+                hintHeight = 0;
+
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
             formattedHint = Indent(Ansi.Color(HintText, AnsiForeground.Gray));
         }
