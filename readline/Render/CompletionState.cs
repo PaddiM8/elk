@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Elk.ReadLine.Render;
 
@@ -8,6 +9,7 @@ class CompletionState
 {
     public bool IsActive => _completions.Count > 0;
 
+    private static readonly Regex _formattingRegex = new("[{}()|$ ]");
     private readonly IRenderer _renderer;
     private readonly SelectionListing _listing;
     private IList<Completion> _completions = Array.Empty<Completion>();
@@ -79,6 +81,13 @@ class CompletionState
     private void InsertCompletion()
     {
         _renderer.RemoveLeft(_renderer.Caret - _completionStart, render: false);
-        _renderer.Insert(_completions[_listing.SelectedIndex].CompletionText, includeHint: false);
+        _renderer.Insert(
+            FormatCompletionText(_completions[_listing.SelectedIndex].CompletionText),
+            includeHint: false
+        );
     }
+
+    private static string FormatCompletionText(string completionText)
+        => _formattingRegex.Replace(completionText, m => $"\\{m.Value}");
+
 }

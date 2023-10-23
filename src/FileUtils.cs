@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Elk.ReadLine;
 using Mono.Unix;
 
@@ -17,8 +16,6 @@ public enum FileType
 
 public static class FileUtils
 {
-    private static readonly Regex _formattingRegex = new("[{}()|$ ]");
-
     public static bool FileIsExecutable(string filePath)
     {
         var fileInfo = new UnixFileInfo(filePath);
@@ -120,8 +117,7 @@ public static class FileUtils
             .Where(x => includeHidden || !x!.StartsWith("."))
             .Where(x => x!.StartsWith(completionTarget))
             .Order()
-            .Select(x => FormatSuggestion(x!))
-            .Select(x => new Completion(x, $"{x}/"))
+            .Select(x => new Completion(x!, $"{x}/"))
             .ToList();
 
         IEnumerable<Completion> files = Array.Empty<Completion>();
@@ -133,8 +129,7 @@ public static class FileUtils
                 .Where(x => includeHidden || !x!.StartsWith("."))
                 .Where(x => x!.StartsWith(completionTarget))
                 .Order()
-                .Select(x => FormatSuggestion(x!))
-                .Select(x => new Completion(x));
+                .Select(x => new Completion(x!));
         }
 
         if (!directories.Any() && !files.Any())
@@ -144,8 +139,7 @@ public static class FileUtils
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
-                .Select(x => FormatSuggestion(x!))
-                .Select(x => new Completion(x, $"{x}/"))
+                .Select(x => new Completion(x!, $"{x}/"))
                 .ToList();
 
             if (fileType != FileType.Directory)
@@ -155,8 +149,7 @@ public static class FileUtils
                     .Select(Path.GetFileName)
                     .Where(x => x!.Contains(completionTarget, comparison))
                     .Order()
-                    .Select(x => FormatSuggestion(x!))
-                    .Select(x => new Completion(x));
+                    .Select(x => new Completion(x!));
             }
         }
 
@@ -193,7 +186,4 @@ public static class FileUtils
             or UnixFileMode.GroupExecute
             or UnixFileMode.UserExecute;
     }
-
-    private static string FormatSuggestion(string completion)
-        => _formattingRegex.Replace(completion, m => $"\\{m.Value}");
 }
