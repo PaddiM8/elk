@@ -3,6 +3,7 @@
 
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -210,4 +211,21 @@ static class StringPath
     [ElkFunction("fileName")]
     public static RuntimeString FileName(RuntimeString path)
         => new(System.IO.Path.GetFileName(path.Value));
+
+    [ElkFunction("fuzzyFind")]
+    public static RuntimeList FuzzyFind(IEnumerable<RuntimeObject> paths, RuntimeString query)
+    {
+        var pathStrings = paths.Select(x => x.As<RuntimeString>());
+        var exactStart = pathStrings.Where(x =>
+            x.Value.StartsWith(query.Value)
+        );
+        var exactContains = pathStrings.Where(x =>
+            x.Value.Contains(query.Value)
+        );
+        var insensitiveContains = pathStrings.Where(x =>
+            x.Value.Contains(query.Value, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return new(exactStart.Union(exactContains).Union(insensitiveContains));
+    }
 }

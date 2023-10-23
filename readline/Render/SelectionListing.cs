@@ -118,20 +118,24 @@ class SelectionListing
     private string RenderColumn(int[] columnWidths, int rowIndex, int columnIndex)
     {
         var columnCount = columnWidths.Length;
+        var columnWidth = Math.Min(
+            _renderer.BufferWidth,
+            columnWidths[columnIndex]
+        );
         var index = rowIndex * columnCount + columnIndex;
         if (index >= _items.Count)
-            return new string(' ', columnWidths[columnIndex]) + ItemMargin;
+            return new string(' ', columnWidth) + ItemMargin;
 
         // Main text
         var margin = columnIndex != 0 && columnCount > 1
             ? ItemMargin
             : "";
         var item = _items[rowIndex * columnCount + columnIndex];
-        var content = item.DisplayText.WcTruncate(columnWidths[columnIndex]);
+        var content = item.DisplayText.WcTruncate(columnWidth);
 
         // Description
         var truncatedDescription = item.Description?.WcTruncate(
-            _renderer.BufferWidth - content.GetWcLength() - DescriptionMargin.Length
+            columnWidth - content.GetWcLength() - DescriptionMargin.Length
         );
         var formattedDescription = "";
         if (truncatedDescription != null)
@@ -142,7 +146,7 @@ class SelectionListing
 
         // Padding
         var itemLength = content.GetWcLength() + (truncatedDescription?.GetWcLength() ?? 0);
-        var padding = new string(' ', columnWidths[columnIndex] - itemLength);
+        var padding = new string(' ', columnWidth - itemLength);
         if (itemLength == _renderer.BufferWidth)
             padding = "";
 

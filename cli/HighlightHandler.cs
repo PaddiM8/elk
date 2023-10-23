@@ -1,6 +1,5 @@
 #region
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -239,7 +238,7 @@ class HighlightHandler : IHighlightHandler
             return identifier;
 
         var plurality = identifier.EndsWith("!") ? "!" : "";
-        identifier = identifier.TrimCharEnd('!');
+        identifier = identifier.TrimEnd('!');
 
         modulePath ??= new List<string>();
         modulePath.Add(identifier);

@@ -30,7 +30,7 @@ static class Extensions
 
     private static string AppendEllipsis(string input)
     {
-        var result = input[..^3] + "...";
+        var result = input[..^2] + "...";
 
         return result.EndsWith("....")
             ? result[..^1]

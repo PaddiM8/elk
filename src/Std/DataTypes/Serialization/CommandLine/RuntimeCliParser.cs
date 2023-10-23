@@ -126,19 +126,17 @@ public class RuntimeCliParser : RuntimeObject
             .Select(x =>
             {
                 var shortName = x.ShortName == null
-                    ? ""
+                    ? null
                     : "-" + x.ShortName;
                 var longName = x.LongName == null
-                    ? ""
+                    ? null
                     : "--" + x.LongName;
-                var completionText = shortName == ""
-                    ? longName
-                    : shortName;
+                var completionText = shortName ?? longName ?? "";
                 var displayText = string.Join(", ", shortName, longName);
 
                 return (
-                    shortName,
-                    longName,
+                    shortName: shortName ?? "",
+                    longName: longName ?? "",
                     completion: new Completion(completionText, displayText, x.Description)
                 );
             });
