@@ -818,6 +818,9 @@ internal class Parser
                         textPos, "Expected exactly one expression in the string interpolation block"
                     );
 
+                foreach (var expr in ast)
+                    expr.IsRoot = false;
+
                 parsedParts.Add(ast.First());
             }
 
