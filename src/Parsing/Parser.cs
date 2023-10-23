@@ -94,7 +94,7 @@ internal class Parser
         SkipWhiteSpace();
         var prevIndex = _index;
         var hasFrom = Eat().Kind == TokenKind.Identifier &&
-                       (Match(TokenKind.Comma) || MatchIdentifier("from"));
+            (Match(TokenKind.Comma) || MatchIdentifier("from"));
         _index = prevIndex;
 
         // Avoid reserving the keyword
@@ -104,7 +104,8 @@ internal class Parser
             do
             {
                 symbolImportTokens.Add(EatExpected(TokenKind.Identifier));
-            } while (AdvanceIf(TokenKind.Comma));
+            }
+            while (AdvanceIf(TokenKind.Comma));
 
             if (!MatchIdentifier("from"))
                 throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'from'");
@@ -420,6 +421,39 @@ internal class Parser
         {
             var op = Eat();
             var right = ParseOr();
+
+            // Eg. ENV_VAR=1: program-call
+            if (MatchIgnoreWhiteSpace(TokenKind.Colon, TokenKind.Comma))
+            {
+                var identifierExpr = Eat().Kind == TokenKind.Comma
+                    ? ParseAssignment()
+                    : ParseIdentifier();
+                if (identifierExpr is not CallExpr callExpr)
+                    throw Error("Expected call to the right of colon after environment variable assignment");
+
+                var variableName = left switch
+                {
+                    CallExpr expr => expr.Identifier.Value,
+                    VariableExpr expr => expr.Identifier.Value,
+                    _ => throw Error(
+                        "Expected variable name to the left of equal sign in environment variable assignment"
+                    ),
+                };
+                var variableValue = right switch
+                {
+                    CallExpr expr => new LiteralExpr(
+                        expr.Identifier with { Kind = TokenKind.StringLiteral }
+                    ),
+                    VariableExpr expr => new LiteralExpr(
+                        expr.Identifier with { Kind = TokenKind.StringLiteral}
+                    ),
+                    _ => right,
+                };
+
+                callExpr.EnvironmentVariables.Add(variableName, variableValue);
+
+                return callExpr;
+            }
 
             return op.Kind switch
             {

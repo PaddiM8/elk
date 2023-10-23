@@ -96,6 +96,7 @@ class Analyser
     private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure, bool validateParameters = true)
     {
         expr.EnclosingFunction = _enclosingFunction;
+        _currentExpr = expr;
 
         var analysedExpr = expr switch
         {
@@ -649,6 +650,12 @@ class Analyser
                 stdFunction?.ConsumesPipe is true;
         }
 
+        var environmentVariables = new Dictionary<string, Expr>();
+        foreach (var (key, value) in expr.EnvironmentVariables)
+        {
+            environmentVariables.Add(key, Next(value));
+        }
+
         return new CallExpr(
             expr.Identifier,
             expr.ModulePath,
@@ -667,6 +674,7 @@ class Analyser
             RedirectionKind = expr.RedirectionKind,
             DisableRedirectionBuffering = expr.DisableRedirectionBuffering,
             IsReference = expr.IsReference,
+            EnvironmentVariables = environmentVariables,
         };
     }
 

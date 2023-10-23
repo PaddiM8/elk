@@ -124,7 +124,7 @@ partial class Interpreter
         }
         catch (RuntimeException e)
         {
-            e.Position = Position;
+            e.Position ??= Position;
             _lastExpr = null;
             _scope = _rootModule;
             throw;
@@ -717,7 +717,8 @@ partial class Interpreter
                     piped,
                     expr.RedirectionKind,
                     expr.DisableRedirectionBuffering,
-                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments
+                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
+                    expr.EnvironmentVariables.Select(x => (x.Key, Next(x.Value)))
                 ),
                 CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
                 CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, runtimeClosure),
@@ -954,7 +955,8 @@ partial class Interpreter
         RuntimeObject? pipedValue,
         RedirectionKind redirectionKind,
         bool disableRedirectionBuffering,
-        bool globbingEnabled)
+        bool globbingEnabled,
+        IEnumerable<(string, RuntimeObject)>? environmentVariables)
     {
         var newArguments = new List<string>();
         foreach (var argument in arguments)
@@ -1009,6 +1011,12 @@ partial class Interpreter
             WorkingDirectory = ShellEnvironment.WorkingDirectory,
         };
 
+        if (environmentVariables != null)
+        {
+            foreach (var (key, value) in environmentVariables)
+                process.StartInfo.EnvironmentVariables.Add(key, value.ToString());
+        }
+
         foreach (var arg in newArguments)
             process.StartInfo.ArgumentList.Add(arg);
 
@@ -1040,7 +1048,8 @@ partial class Interpreter
                 null,
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
-                globbingEnabled: false
+                globbingEnabled: false,
+                environmentVariables: null
             );
 
             return RuntimeNil.Value;

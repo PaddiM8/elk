@@ -489,6 +489,8 @@ class CallExpr : Expr
 
     public bool IsReference { get; set; }
 
+    public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();
+
     public CallExpr(
         Token identifier,
         IList<Token> modulePath,

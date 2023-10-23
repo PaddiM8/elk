@@ -237,6 +237,16 @@ class HighlightHandler : IHighlightHandler
         if (identifier.StartsWith('$'))
             return identifier;
 
+        if (Current?.Kind == TokenKind.Equals)
+        {
+            Eat(); // =
+            var assignmentValue = Current?.Kind is TokenKind.Identifier or null
+                ? Eat()?.Value ?? ""
+                : Next();
+
+            return $"{Color(identifier, 36)}={Color(assignmentValue, 36)}";
+        }
+
         var plurality = identifier.EndsWith("!") ? "!" : "";
         identifier = identifier.TrimEnd('!');
 
@@ -484,9 +494,14 @@ class HighlightHandler : IHighlightHandler
     }
 
     private static string Color(string text, int color, int? endColor = 0)
-        => endColor == null
+    {
+        if (text.Length == 0)
+            return "";
+
+        return endColor == null
             ? $"\x1b[{color}m{text}"
             : $"\x1b[{color}m{text}\x1b[{endColor}m";
+    }
 
     private static string Underline(string text)
         => $"\x1b[4m{text}\x1b[24m";

@@ -56,7 +56,8 @@ partial class Interpreter
             pipedValue: null,
             redirectionKind,
             disableRedirectionBuffering,
-            globbingEnabled
+            globbingEnabled,
+            environmentVariables: null
         );
     }
 
@@ -123,7 +124,8 @@ partial class Interpreter
                 pipedValue: null,
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
-                globbingEnabled: false
+                globbingEnabled: false,
+                environmentVariables: null
             ),
         };
 
