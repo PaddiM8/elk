@@ -199,14 +199,13 @@ internal class Parser
 
     private ModuleScope ImportUserModule(string path, string moduleName, TextPos pos)
     {
-        var directoryPath = Path.GetDirectoryName(
-            _scope.ModuleScope.FilePath ?? ShellEnvironment.WorkingDirectory
-        )!;
+        var directoryPath = _scope.ModuleScope.FilePath == null
+            ? ShellEnvironment.WorkingDirectory
+            : Path.GetDirectoryName(_scope.ModuleScope.FilePath)!;
         var absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
+
         if (!File.Exists(absolutePath))
-        {
             throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
-        }
 
         var importScope = _scope.ModuleScope.RootModule.FindRegisteredModule(absolutePath);
         if (importScope == null)
