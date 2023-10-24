@@ -8,10 +8,10 @@ using Elk.Std.DataTypes;
 
 #endregion
 
-namespace Elk.Std;
+namespace Elk.Std.Environment;
 
 [ElkModule("env")]
-public class Environment
+public static class Environment
 {
     /// <summary>
     /// Exits the program.

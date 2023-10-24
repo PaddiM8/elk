@@ -478,10 +478,16 @@ public class StdBindingsGenerator : ISourceGenerator
             out var variadicStart
         );
 
+        var namespacePath = compilation
+            .GetSemanticModel(methodSyntax.SyntaxTree)
+            .GetDeclaredSymbol(methodSyntax)!
+            .ContainingNamespace
+            .ToDisplayString();
+
         return new StdFunctionInfo(
             reachableEverywhere ? null : module.Name,
             name,
-            $"{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
+            $"{namespacePath}.{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
             minArgumentCount,
             maxArgumentCount,
             hasClosure,

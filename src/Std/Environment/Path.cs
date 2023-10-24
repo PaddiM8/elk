@@ -11,9 +11,9 @@ using Elk.Std.DataTypes;
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 
-namespace Elk.Std;
+namespace Elk.Std.Environment;
 
-[ElkModule("path")]
+[ElkModule("env::path")]
 public static class Path
 {
     /// <summary>
