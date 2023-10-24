@@ -69,12 +69,10 @@ fn stagedFilesHandler(value, state) {
 }
 
 fn reflogHandler(value, state) {
-    let result = git reflog --no-decorate | map => line {
+    git reflog --no-decorate | map => line {
         let (identifiers, description) = line | split(": ", 2)
         let head = identifiers | split | iter::at 1
 
         (head, description)
     }
-
-    result
 }

@@ -23,6 +23,8 @@ public class RuntimeNil : RuntimeObject
         {
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.False,
+            _ when toType == typeof(RuntimeString)
+                => new RuntimeString("nil"),
             _
                 => throw new RuntimeCastException<RuntimeNil>(toType),
         };
