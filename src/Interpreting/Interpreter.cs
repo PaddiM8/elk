@@ -484,9 +484,9 @@ partial class Interpreter
         var left = Next(expr.Left);
         if (expr.Operator == OperationKind.Coalescing)
         {
-            return left.As<RuntimeBoolean>().IsTrue
-                ? left
-                : Next(expr.Right);
+            return left is RuntimeNil
+                ? Next(expr.Right)
+                : left;
         }
 
         if (expr.Operator == OperationKind.And)
