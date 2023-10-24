@@ -25,3 +25,12 @@ fn rec(x) {
 }
 
 assert(rec(10) == 0)
+
+# does it return?
+fn ret() {
+    return 1
+    assert(false)
+    return 2
+}
+
+assert(ret() == 1)
