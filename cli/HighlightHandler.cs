@@ -84,6 +84,7 @@ class HighlightHandler : IHighlightHandler
             TokenKind.StringLiteral => NextStringLiteral(),
             TokenKind.Identifier => NextIdentifier(),
             TokenKind.Arrow => NextFieldAccess(),
+            TokenKind.EqualsGreater => NextClosure(),
             _ => Eat()!.Value,
         };
     }
@@ -280,15 +281,11 @@ class HighlightHandler : IHighlightHandler
         if (_shell.ModuleExists(modulePath))
             return NextModule(modulePath);
 
-        //modulePath.RemoveAt(modulePath.Count - 1);
+        modulePath.RemoveAt(modulePath.Count - 1);
 
         var nextBuilder = new StringBuilder();
         if (Current?.Kind == TokenKind.WhiteSpace)
             nextBuilder.Append(Eat()!.Value);
-
-        // Keep track of closure parameters
-        if (isFunctionCall && Current?.Kind == TokenKind.EqualsGreater)
-            nextBuilder.Append(NextClosure());
 
         return textArguments.Length > 0
             ? Color(identifier, colorCode, null) + plurality + textArguments + nextBuilder
