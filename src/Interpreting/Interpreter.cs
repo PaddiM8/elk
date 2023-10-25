@@ -717,6 +717,7 @@ partial class Interpreter
                     piped,
                     expr.RedirectionKind,
                     expr.DisableRedirectionBuffering,
+                    expr.AutomaticStart,
                     globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                     expr.EnvironmentVariables.Select(x => (x.Key, Next(x.Value)))
                 ),
@@ -955,6 +956,7 @@ partial class Interpreter
         RuntimeObject? pipedValue,
         RedirectionKind redirectionKind,
         bool disableRedirectionBuffering,
+        bool automaticStart,
         bool globbingEnabled,
         IEnumerable<(string, RuntimeObject)>? environmentVariables)
     {
@@ -1030,7 +1032,7 @@ partial class Interpreter
                 : throw new RuntimeException("");
         }
 
-        return new RuntimePipe(processContext, disableRedirectionBuffering);
+        return new RuntimePipe(processContext, disableRedirectionBuffering, automaticStart);
     }
 
     private RuntimeObject Visit(LiteralExpr expr)
@@ -1048,6 +1050,7 @@ partial class Interpreter
                 null,
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
+                automaticStart: true,
                 globbingEnabled: false,
                 environmentVariables: null
             );

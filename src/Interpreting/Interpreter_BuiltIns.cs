@@ -56,6 +56,7 @@ partial class Interpreter
             pipedValue: null,
             redirectionKind,
             disableRedirectionBuffering,
+            automaticStart: true,
             globbingEnabled,
             environmentVariables: null
         );
@@ -124,6 +125,7 @@ partial class Interpreter
                 pipedValue: null,
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
+                automaticStart: true,
                 globbingEnabled: false,
                 environmentVariables: null
             ),

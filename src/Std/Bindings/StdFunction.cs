@@ -21,6 +21,7 @@ public record StdFunction(
     bool HasClosure,
     int? VariadicStart,
     bool ConsumesPipe,
+    bool StartsPipeManually,
     ImmutableArray<StdFunctionParameter> Parameters,
     Func<List<object?>, RuntimeObject> Invoke)
 {

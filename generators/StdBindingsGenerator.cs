@@ -27,6 +27,7 @@ record StdFunctionInfo(
     bool HasClosure,
     int? VariadicStart,
     bool ConsumesPipe,
+    bool StartsPipeManually,
     List<(string type, string name)> Parameters,
     MethodDeclarationSyntax Syntax);
 
@@ -220,9 +221,13 @@ public class StdBindingsGenerator : ISourceGenerator
             var consumesPipe = function.ConsumesPipe
                 ? "true"
                 : "false";
+            var startsPipeManually = function.StartsPipeManually
+                ? "true"
+                : "false";
             sourceBuilder.Append($"{hasClosure}, ");
             sourceBuilder.Append($"{variadicStart}, ");
             sourceBuilder.Append($"{consumesPipe}, ");
+            sourceBuilder.Append($"{startsPipeManually}, ");
 
             // Parameter list
             GenerateParameterList(sourceBuilder, function.Parameters);
@@ -456,6 +461,7 @@ public class StdBindingsGenerator : ISourceGenerator
         var attributeArguments = attribute.ArgumentList!.Arguments;
         var reachableEverywhere = false;
         var consumesPipe = false;
+        var startsPipeManually = false;
         if (attributeArguments.Count > 1)
         {
             var reachabilityExpr = (MemberAccessExpressionSyntax)attributeArguments[1].Expression;
@@ -463,6 +469,11 @@ public class StdBindingsGenerator : ISourceGenerator
             reachableEverywhere = reachability == "Everywhere";
             consumesPipe = attributeArguments
                 .FirstOrDefault(x => x.NameEquals?.Name.Identifier.Text == "ConsumesPipe")?
+                .Expression
+                .GetText()
+                .ToString() == "true";
+            startsPipeManually = attributeArguments
+                .FirstOrDefault(x => x.NameEquals?.Name.Identifier.Text == "StartsPipeManually")?
                 .Expression
                 .GetText()
                 .ToString() == "true";
@@ -493,6 +504,7 @@ public class StdBindingsGenerator : ISourceGenerator
             hasClosure,
             variadicStart,
             consumesPipe,
+            startsPipeManually,
             parameters,
             methodSyntax
         );

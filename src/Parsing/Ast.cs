@@ -487,6 +487,8 @@ class CallExpr : Expr
 
     public bool DisableRedirectionBuffering { get; set; }
 
+    public bool AutomaticStart { get; set; } = true;
+
     public bool IsReference { get; set; }
 
     public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();

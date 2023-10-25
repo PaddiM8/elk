@@ -33,7 +33,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public int Count
         => Values?.Count ?? 0;
 
-    public IEnumerator<string> StreamEnumerator { get; }
+    public IEnumerator<string> StreamEnumerator { get; private set; } = GetNullEnumerator();
 
     public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimePipeEnumerator(StreamEnumerator, Values);
@@ -41,12 +41,17 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public RuntimePipe(ProcessContext process, bool disableRedirectionBuffering)
+    private readonly ProcessContext _processContext;
+
+    public RuntimePipe(ProcessContext process, bool disableRedirectionBuffering, bool automaticStart)
     {
+        _processContext = process;
+
         if (!disableRedirectionBuffering)
             Values = new List<string>();
 
-        StreamEnumerator = new RuntimePipeStreamEnumerator(process, Values);
+        if (automaticStart)
+            Start();
     }
 
     public RuntimeObject this[RuntimeObject index]
@@ -143,9 +148,24 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public override string ToDisplayString()
         => $"\"{StringValue.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
 
+    public void Start()
+    {
+        StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
+    }
+
     public void Stop()
     {
-        ((RuntimePipeStreamEnumerator)StreamEnumerator).Stop();
+        ((RuntimePipeStreamEnumerator?)StreamEnumerator)?.Stop();
+    }
+
+    public void EnableDisposeOutput()
+    {
+        _processContext.EnableDisposeOutput();
+    }
+
+    public void EnableDisposeError()
+    {
+        _processContext.EnableDisposeError();
     }
 
     private void Collect()
@@ -154,6 +174,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         {
             // The stream enumerator adds to _values itself
         }
+    }
+
+    private static IEnumerator<string> GetNullEnumerator()
+    {
+        yield break;
     }
 }
 

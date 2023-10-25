@@ -650,6 +650,15 @@ class Analyser
                 stdFunction?.ConsumesPipe is true;
         }
 
+        if (stdFunction?.StartsPipeManually is true)
+        {
+            foreach (var argument in evaluatedArguments)
+            {
+                if (argument is CallExpr call)
+                    call.AutomaticStart = false;
+            }
+        }
+
         var environmentVariables = new Dictionary<string, Expr>();
         foreach (var (key, value) in expr.EnvironmentVariables)
         {

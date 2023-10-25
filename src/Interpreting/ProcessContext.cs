@@ -22,6 +22,8 @@ public class ProcessContext : IEnumerable<string>
     private bool _allowNonZeroExit;
     private int _exitCode;
     private int _openPipeCount;
+    private bool _disposeOutput;
+    private bool _disposeError;
 
     public ProcessContext(Process process, RuntimeObject? pipedValue)
     {
@@ -59,10 +61,22 @@ public class ProcessContext : IEnumerable<string>
 
     public void StartWithRedirect()
     {
-        _process!.OutputDataReceived += Process_DataReceived;
-        _process.ErrorDataReceived += Process_DataReceived;
-        _process.Exited += (_, _)
+        if (!_disposeOutput)
+        {
+            _process!.OutputDataReceived += Process_DataReceived;
+        }
+
+        if (!_disposeError)
+            _process!.ErrorDataReceived += Process_DataReceived;
+
+        _process!.Exited += (_, _)
             => CloseProcess();
+
+        if (_disposeOutput)
+            _process.StartInfo.RedirectStandardOutput = true;
+
+        if (_disposeError)
+            _process.StartInfo.RedirectStandardError = true;
 
         _allowNonZeroExit = _process.StartInfo.RedirectStandardError;
         _process.EnableRaisingEvents = true;
@@ -76,17 +90,20 @@ public class ProcessContext : IEnumerable<string>
             throw new RuntimeNotFoundException(_process.StartInfo.FileName);
         }
 
-        if (_process?.StartInfo.RedirectStandardOutput is true)
+        if (_process?.StartInfo.RedirectStandardOutput is true && !_disposeOutput)
         {
-            _process.BeginOutputReadLine();
+            _process?.BeginOutputReadLine();
             _openPipeCount++;
         }
 
-        if (_process?.StartInfo.RedirectStandardError is true)
+        if (_process?.StartInfo.RedirectStandardError is true && !_disposeError)
         {
-            _process.BeginErrorReadLine();
+            _process?.BeginErrorReadLine();
             _openPipeCount++;
         }
+
+        if (_openPipeCount == 0)
+            _buffer.CompleteAdding();
 
         if (_pipedValue != null)
             Read(_pipedValue);
@@ -95,6 +112,16 @@ public class ProcessContext : IEnumerable<string>
     public void Stop()
     {
         _process?.Kill();
+    }
+
+    public void EnableDisposeOutput()
+    {
+        _disposeOutput = true;
+    }
+
+    public void EnableDisposeError()
+    {
+        _disposeError = true;
     }
 
     private void Process_DataReceived(object sender, DataReceivedEventArgs eventArgs)
