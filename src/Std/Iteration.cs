@@ -32,7 +32,7 @@ static class Iteration
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
-    /// <returns>A new list with the given item append to the given collection.</returns>
+    /// <returns>A new list with the given item append to the given Iterable.</returns>
     [ElkFunction("append")]
     public static RuntimeList Append(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Append(item));
@@ -50,29 +50,7 @@ static class Iteration
     /// <returns>A list of chunks where each chunk is a list of items of the given size.</returns>
     [ElkFunction("chunks")]
     public static RuntimeList Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
-    {
-        if (size.Value == 0)
-            return new RuntimeList(new List<RuntimeObject>());
-
-        var chunks = new List<RuntimeList>
-        {
-            new(new List<RuntimeObject>()),
-        };
-
-        foreach (var item in items)
-        {
-            if (chunks.Last().Values.Count < size.Value)
-            {
-                chunks.Last().Values.Add(item);
-            }
-            else
-            {
-                chunks.Add(new(new List<RuntimeObject> { item }));
-            }
-        }
-
-        return new RuntimeList(chunks);
-    }
+        => new(items.Chunk((int)size.Value).Select(x => new RuntimeList(x)));
 
     /// <param name="first">The first Iterable.</param>
     /// <param name="second">The second Iterable.</param>
@@ -88,6 +66,16 @@ static class Iteration
     public static RuntimeInteger Count(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Count(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
+    /// <returns>A list of the distinct items in the given Iterable.</returns>
+    [ElkFunction("distinct")]
+    public static RuntimeList Distinct(IEnumerable<RuntimeObject> items)
+        => new(items.Distinct());
+
+    /// <returns>A list of the distinct items in the given Iterable where the closure determines the keys.</returns>
+    [ElkFunction("distinctBy")]
+    public static RuntimeList DistinctBy(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.DistinctBy(closure));
+
     /// <summary>
     /// Invokes the given closure on each item in the given container.
     /// </summary>
@@ -99,6 +87,26 @@ static class Iteration
         foreach (var item in items)
             closure(item);
     }
+
+    /// <returns>
+    /// The set difference of the given Iterables,
+    /// i.e. the items in the first Iterable that don't appear in the second one.
+    /// </returns>
+    [ElkFunction("except")]
+    public static RuntimeList Except(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+        => new(first.Except(second));
+
+    /// <returns>
+    /// The set difference of the given Iterables,
+    /// i.e. the items in the first Iterable that don't appear in the second one.
+    /// The closure is used to determine the keys.
+    /// </returns>
+    [ElkFunction("exceptBy")]
+    public static RuntimeList ExceptBy(
+        IEnumerable<RuntimeObject> first,
+        IEnumerable<RuntimeObject> second,
+        Func<RuntimeObject, RuntimeObject> closure)
+        => new(first.ExceptBy(second, closure));
 
     /// <param name="items"></param>
     /// <param name="closure"></param>
@@ -132,6 +140,19 @@ static class Iteration
             .Select(closure)
         );
     }
+
+    /// <returns>The intersect of the given Iterables.</returns>
+    [ElkFunction("intersect")]
+    public static RuntimeList Intersect(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+        => new(first.Intersect(second));
+
+    /// <returns>The intersect of the given Iterables where the closure determines the keys.</returns>
+    [ElkFunction("intersectBy")]
+    public static RuntimeList IntersectBy(
+        IEnumerable<RuntimeObject> first,
+        IEnumerable<RuntimeObject> second,
+        Func<RuntimeObject, RuntimeObject> closure)
+        => new(first.IntersectBy(second, closure));
 
     /// <param name="input"></param>
     /// <returns>The last element of the given indexable object.</returns>
@@ -173,7 +194,7 @@ static class Iteration
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
 
-    /// <returns>A new list with the given item prepended to the given collection.</returns>
+    /// <returns>A new list with the given item prepended to the given Iterable.</returns>
     [ElkFunction("prepend")]
     public static RuntimeList Prepend(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Prepend(item));
@@ -344,18 +365,18 @@ static class Iteration
     public static RuntimeList TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.TakeWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
-    /// <param name="first">The first collection</param>
-    /// <param name="second">The second collection</param>
-    /// <returns>A new list with the items from the given collections combined, excluding duplicates.</returns>
+    /// <param name="first">The first Iterable</param>
+    /// <param name="second">The second Iterable</param>
+    /// <returns>A new list with the items from the given Iterables combined, excluding duplicates.</returns>
     [ElkFunction("union")]
     public static RuntimeList Union(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Union(second));
 
-    /// <param name="first">The first collection</param>
-    /// <param name="second">The second collection</param>
+    /// <param name="first">The first Iterable</param>
+    /// <param name="second">The second Iterable</param>
     /// <param name="closure"></param>
     /// <returns>
-    /// A new list with the items from the given collections combined, excluding duplicates.
+    /// A new list with the items from the given Iterables combined, excluding duplicates.
     /// The closure selects the key of each item.
     /// </returns>
     [ElkFunction("unionBy")]
