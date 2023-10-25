@@ -32,6 +32,11 @@ static class Iteration
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
 
+    /// <returns>A new list with the given item append to the given collection.</returns>
+    [ElkFunction("append")]
+    public static RuntimeList Append(IEnumerable<RuntimeObject> items, RuntimeObject item)
+        => new(items.Append(item));
+
     /// <summary>
     /// Equivalent to x[y].
     /// </summary>
@@ -167,6 +172,11 @@ static class Iteration
     [ElkFunction("join", Reachability.Everywhere)]
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
+
+    /// <returns>A new list with the given item prepended to the given collection.</returns>
+    [ElkFunction("prepend")]
+    public static RuntimeList Prepend(IEnumerable<RuntimeObject> items, RuntimeObject item)
+        => new(items.Prepend(item));
 
     /// <summary>
     /// Pushes the given value to the container.
