@@ -9,6 +9,8 @@ using Elk.Std.DataTypes.Serialization.CommandLine;
 
 namespace Elk.Std;
 
+#pragma warning disable CS1573
+
 [ElkModule("cli")]
 static class Cli
 {
@@ -228,7 +230,6 @@ static class Cli
     /// Parses the contents of the `argv` list using the given parser.
     /// </summary>
     /// <param name="parser">The parser to modify</param>
-    /// <param name="env"></param>
     /// <returns>
     /// A dictionary containing the parsed values, where the identifiers given to flags
     /// and arguments are used as keys.

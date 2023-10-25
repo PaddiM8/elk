@@ -855,7 +855,7 @@ partial class Interpreter
         var additionalsIndex = allArguments.Count;
         foreach (var parameter in stdFunction.Parameters.Reverse())
         {
-            if (parameter.IsNullable)
+            if (parameter.IsNullable && allArguments.Count < stdFunction.Parameters.Length)
                 allArguments.Insert(additionalsIndex, null);
             else if (parameter.Type == typeof(ShellEnvironment))
                 allArguments.Insert(additionalsIndex, ShellEnvironment);

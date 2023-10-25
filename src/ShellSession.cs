@@ -197,7 +197,6 @@ public class ShellSession
         var argumentValues = arguments.Prepend(filePath)
             .Select(literal => new RuntimeString(literal));
         var argv = new RuntimeList(argumentValues);
-        interpreter.AddGlobalVariable("argv", argv);
         interpreter.ShellEnvironment.Argv = argv;
 
         if (!File.Exists(filePath))

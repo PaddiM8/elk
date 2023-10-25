@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -10,13 +11,26 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std.Environment;
 
+#pragma warning disable CS1573
+
 [ElkModule("env")]
-public static class Environment
+static class Environment
 {
+    /// <param name="index">The index of the argument to get</param>
+    /// <returns>The list of command line arguments passed to the program, or a specific one if an index was specified</returns>
+    [ElkFunction("getArgv", Reachability.Everywhere)]
+    public static RuntimeObject Argv(RuntimeInteger? index = null, ShellEnvironment env = null!)
+    {
+        if (index != null)
+            return env.Argv.ElementAtOrDefault((int)index.Value) ?? RuntimeNil.Value;
+
+        return new RuntimeList(env.Argv);
+    }
+    
     /// <summary>
     /// Exits the program.
-    /// <param name="exitCode">The exit code (default: 0)</param>
     /// </summary>
+    /// <param name="exitCode">The exit code (default: 0)</param>
     [ElkFunction("exit", Reachability.Everywhere)]
     public static void Exit(RuntimeInteger? exitCode = null)
     {
