@@ -26,7 +26,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
 
             return Values == null
                 ? ""
-                : string.Join("", Values);
+                : string.Concat(Values);
         }
     }
 

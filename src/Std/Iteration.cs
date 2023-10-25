@@ -108,6 +108,26 @@ static class Iteration
     public static RuntimeObject First(IEnumerable<RuntimeObject> items)
         => items.FirstOrDefault() ?? RuntimeNil.Value;
 
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of flattened values where the closure has been called on each value.</returns>
+    /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
+    [ElkFunction("flatMap", Reachability.Everywhere)]
+    public static RuntimeList FlatMap(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    {
+        return new(
+            items.Select(x =>
+            {
+                if (x is not IEnumerable<RuntimeObject> enumerable)
+                    throw new RuntimeCastException(x.GetType(), "Iterable");
+
+                return enumerable;
+            })
+            .SelectMany(x => x)
+            .Select(closure)
+        );
+    }
+
     /// <param name="input"></param>
     /// <returns>The last element of the given indexable object.</returns>
     [ElkFunction("last")]
@@ -132,6 +152,14 @@ static class Iteration
             RuntimeTable table => new(table.Rows.Count),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
+
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>A list of values where the closure has been called on each value.</returns>
+    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
+    [ElkFunction("map", Reachability.Everywhere)]
+    public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => new(items.Select(closure));
 
     /// <param name="items">A list of values that will be stringified.</param>
     /// <param name="separator">Character sequence that should be put between each value.</param>
@@ -223,6 +251,13 @@ static class Iteration
         return container;
     }
 
+    /// <param name="item">The object to repeat</param>
+    /// <param name="n">The amount of times it should be repeated</param>
+    /// <returns>A list containing n instances of the given item.</returns>
+    [ElkFunction("repeat")]
+    public static RuntimeList Repeat(RuntimeObject item, RuntimeInteger n)
+        => new(Enumerable.Repeat(item, (int)n.Value));
+
     [ElkFunction("reverse")]
     public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
         => new(items.Reverse().ToList());
@@ -285,34 +320,6 @@ static class Iteration
         return range;
     }
 
-    /// <param name="items"></param>
-    /// <param name="closure"></param>
-    /// <returns>A list of values where the closure has been called on each value.</returns>
-    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
-    [ElkFunction("map", Reachability.Everywhere)]
-    public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => new(items.Select(closure));
-
-    /// <param name="items"></param>
-    /// <param name="closure"></param>
-    /// <returns>A list of flattened values where the closure has been called on each value.</returns>
-    /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
-    [ElkFunction("flatMap", Reachability.Everywhere)]
-    public static RuntimeList FlatMap(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-    {
-        return new(
-            items.Select(x =>
-            {
-                if (x is not IEnumerable<RuntimeObject> enumerable)
-                    throw new RuntimeCastException(x.GetType(), "Iterable");
-
-                return enumerable;
-            })
-            .SelectMany(x => x)
-            .Select(closure)
-        );
-    }
-
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to take from the left</param>
     /// <returns>A new list with the specified amount of items.</returns>
@@ -327,9 +334,30 @@ static class Iteration
     public static RuntimeList TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.TakeWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
+    /// <param name="first">The first collection</param>
+    /// <param name="second">The second collection</param>
+    /// <returns>A new list with the items from the given collections combined, excluding duplicates.</returns>
+    [ElkFunction("union")]
+    public static RuntimeList Union(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+        => new(first.Union(second));
+
+    /// <param name="first">The first collection</param>
+    /// <param name="second">The second collection</param>
+    /// <param name="closure"></param>
+    /// <returns>
+    /// A new list with the items from the given collections combined, excluding duplicates.
+    /// The closure selects the key of each item.
+    /// </returns>
+    [ElkFunction("unionBy")]
+    public static RuntimeList UnionBy(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second, Func<RuntimeObject, RuntimeObject> closure)
+        => new(first.UnionBy(second, closure));
+
     /// <param name="values" types="Iterable"></param>
-    /// <returns>A list containing a tuple for each item in the original container.
-    /// The first item of the tuple is the item from the original container, while the second item is the index of that item.</returns>
+    /// <returns>
+    /// A list containing a tuple for each item in the original container.
+    /// The first item of the tuple is the item from the original container,
+    /// while the second item is the index of that item.
+    /// </returns>
     /// <example>for item, i in values: echo("{i}: {item}")</example>
     [ElkFunction("withIndex", Reachability.Everywhere)]
     public static RuntimeList WithIndex(RuntimeObject values)

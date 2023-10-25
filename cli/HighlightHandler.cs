@@ -431,7 +431,7 @@ class HighlightHandler : IHighlightHandler
                 : x
         );
 
-        return Color(string.Join("", highlightedTextArguments), 36);
+        return Color(string.Concat(highlightedTextArguments), 36);
     }
 
     private string NextInterpolation(int endColor = 0)

@@ -279,7 +279,7 @@ internal class Renderer : IRenderer
 
     public void WriteRaw(params string[] values)
     {
-        WriteRaw(string.Join("", values));
+        WriteRaw(string.Concat(values));
     }
 
     public void WriteRaw(string value)

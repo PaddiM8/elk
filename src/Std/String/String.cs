@@ -129,6 +129,13 @@ static class String
     public static RuntimeString Lower(RuntimeString input)
         => new(input.Value.ToLower());
 
+    /// <summary>Repeats a string.</summary>
+    /// <param name="item">The string to repeat</param>
+    /// <param name="n">The amount of times it should be repeated</param>
+    [ElkFunction("repeat")]
+    public static RuntimeString Repeat(RuntimeString item, RuntimeInteger n)
+        => new(string.Concat(Enumerable.Repeat(item, (int)n.Value)));
+
     /// <param name="str">The string to look in.</param>
     /// <param name="index">The index of the line to find.</param>
     /// <returns>The line at the given index or nil.</returns>
