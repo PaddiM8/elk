@@ -249,19 +249,14 @@ class HighlightHandler : IHighlightHandler
 
         var plurality = identifier.EndsWith("!") ? "!" : "";
         identifier = identifier.TrimEnd('!');
-
         modulePath ??= new List<string>();
-        modulePath.Add(identifier);
-
-        if (_shell.ModuleExists(modulePath))
-            return NextModule(modulePath);
-
-        modulePath.RemoveAt(modulePath.Count - 1);
 
         if (_shell.StructExists(identifier))
             return Color(identifier + plurality, 96);
 
-        if (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier))
+        if (!modulePath.Any() &&
+            Current?.Kind != TokenKind.ColonColon &&
+            (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier)))
             return identifier + plurality;
 
         var textArguments = NextTextArguments();
@@ -280,6 +275,12 @@ class HighlightHandler : IHighlightHandler
         var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
         var isCallable = isFunctionCall || modulePath.Count == 0 && _shell.ProgramExists(identifier);
         var colorCode = isCallable ? 95 : 91;
+
+        modulePath.Add(identifier);
+        if (_shell.ModuleExists(modulePath))
+            return NextModule(modulePath);
+
+        //modulePath.RemoveAt(modulePath.Count - 1);
 
         var nextBuilder = new StringBuilder();
         if (Current?.Kind == TokenKind.WhiteSpace)
