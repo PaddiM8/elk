@@ -57,7 +57,12 @@ class Repl
                 });
             }
 
-            shell.RunCommand(input);
+            shell.RunCommand(
+                input,
+                ownScope: false,
+                printReturnedValue: true,
+                printErrorLineNumbers: false
+            );
         }
     }
 }

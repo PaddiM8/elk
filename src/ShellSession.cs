@@ -138,7 +138,11 @@ public class ShellSession
         Console.Write(" >> ");
     }
 
-    public void RunCommand(string command, bool ownScope = false, bool printReturnedValue = true)
+    public void RunCommand(
+        string command,
+        bool ownScope = false,
+        bool printReturnedValue = true,
+        bool printErrorLineNumbers = true)
     {
         var textWriter = Console.Out;
         string result;
@@ -154,7 +158,12 @@ public class ShellSession
         {
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
-            result = $"{e.Position ?? _interpreter.Position} {e.Message}";
+            var position = printErrorLineNumbers
+                ? e.Position ?? _interpreter.Position
+                : null;
+            result = $"{position} {e.Message}".Trim();
+            if (result == "")
+                return;
         }
         catch (InvalidOperationException e)
         {
@@ -164,7 +173,12 @@ public class ShellSession
             // compared with each other.
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
-            result = $"{_interpreter.Position} {e.Message}";
+            var position = printErrorLineNumbers
+                ? _interpreter.Position
+                : null;
+            result = $"{position} {e.Message}".Trim();
+            if (result == "")
+                return;
         }
 
         if (!printReturnedValue)
