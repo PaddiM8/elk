@@ -13,7 +13,7 @@ namespace Elk.Std.Bindings;
 public static partial class StdBindings
 {
     public static IEnumerable<string> FullSymbolNames
-        => _modules.Keys.Select(x => $"{x}::").Concat(_functions.Keys);
+        => _modules.Keys.Concat(_functions.Keys);
 
     public static bool HasModule(string moduleName)
         => _modules.ContainsKey(moduleName);

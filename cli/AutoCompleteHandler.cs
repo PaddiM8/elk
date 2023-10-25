@@ -45,16 +45,19 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
     public IList<Completion> GetSuggestions(string text, int startPos, int endPos)
     {
-        if (_currentInvocationInfo == null)
+        var isColonColon = endPos > 2 && text[(endPos - 2)..endPos] == "::";
+        if (_currentInvocationInfo == null && !isColonColon)
             return Array.Empty<Completion>();
 
-        var completionParser = _customCompletionProvider.Get(_currentInvocationInfo.Name);
+        var completionParser = _currentInvocationInfo == null
+            ? null
+            : _customCompletionProvider.Get(_currentInvocationInfo.Name);
         if (completionParser != null)
         {
             try
             {
                 var textArgumentStartIndex = Math.Min(
-                    _currentInvocationInfo.TextArgumentStartIndex,
+                    _currentInvocationInfo!.TextArgumentStartIndex,
                     text.Length
                 );
 
@@ -68,9 +71,9 @@ class AutoCompleteHandler : IAutoCompleteHandler
             }
         }
 
-        var isRelativeIdentifier = _currentInvocationInfo.Name.First() is '.' or '/' or '~';
-        if (!isRelativeIdentifier && endPos < _currentInvocationInfo.TextArgumentStartIndex)
-            return GetIdentifierSuggestions(_currentInvocationInfo.Name);
+        var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
+        if (isColonColon || (!isRelativeIdentifier && endPos < _currentInvocationInfo?.TextArgumentStartIndex))
+            return GetIdentifierSuggestions(_currentInvocationInfo?.Name ?? text[startPos..endPos]);
 
         // `startPos` is only the index of the start of the file name in the path.
         // At this stage, we want the entire path instead.
