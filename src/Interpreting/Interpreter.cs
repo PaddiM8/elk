@@ -1022,7 +1022,11 @@ partial class Interpreter
         foreach (var arg in newArguments)
             process.StartInfo.ArgumentList.Add(arg);
 
-        var processContext = new ProcessContext(process, pipedValue);
+        var processContext = new ProcessContext(
+            process,
+            pipedValue,
+            waitForExit: !disableRedirectionBuffering
+        );
         if (redirectionKind == RedirectionKind.None)
         {
             var exitCode = processContext.Start();

@@ -646,7 +646,7 @@ class Analyser
             // or piped to an std function that expects a Pipe. Std functions that
             // explicitly expect Pipes will handle them properly and not pass them
             // around more.
-            pipedCall.DisableRedirectionBuffering = expr.CallType == CallType.Program ||
+            pipedCall.DisableRedirectionBuffering = callType == CallType.Program ||
                 stdFunction?.ConsumesPipe is true;
         }
 

@@ -153,6 +153,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
     }
 
+    public void MakeBackground()
+    {
+        _processContext.MakeBackground();
+    }
+
     public void Stop()
     {
         ((RuntimePipeStreamEnumerator?)StreamEnumerator)?.Stop();
@@ -167,6 +172,9 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     {
         _processContext.EnableDisposeError();
     }
+
+    public int Wait()
+        => _processContext.Wait();
 
     private void Collect()
     {

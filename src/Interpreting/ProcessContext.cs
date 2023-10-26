@@ -16,19 +16,23 @@ public class ProcessContext : IEnumerable<string>
     public bool Success
         => _exitCode == 0 || _allowNonZeroExit;
 
+
     private Process? _process;
     private readonly RuntimeObject? _pipedValue;
+    private bool _waitForExit;
     private readonly BlockingCollection<string> _buffer = new(new ConcurrentQueue<string>());
     private bool _allowNonZeroExit;
     private int _exitCode;
     private int _openPipeCount;
     private bool _disposeOutput;
     private bool _disposeError;
+    private object _closeProcessLock = new();
 
-    public ProcessContext(Process process, RuntimeObject? pipedValue)
+    public ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
     {
         _process = process;
         _pipedValue = pipedValue;
+        _waitForExit = waitForExit;
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -59,6 +63,13 @@ public class ProcessContext : IEnumerable<string>
         return exitCode;
     }
 
+    public void MakeBackground()
+    {
+        _waitForExit = false;
+        _process!.StartInfo.RedirectStandardOutput = false;
+        _process!.StartInfo.RedirectStandardError = false;
+    }
+
     public void StartWithRedirect()
     {
         if (!_disposeOutput)
@@ -69,16 +80,19 @@ public class ProcessContext : IEnumerable<string>
         if (!_disposeError)
             _process!.ErrorDataReceived += Process_DataReceived;
 
-        _process!.Exited += (_, _)
-            => CloseProcess();
+        if (!_waitForExit)
+        {
+            _process!.Exited += (_, _)
+                => CloseProcess();
+        }
 
         if (_disposeOutput)
-            _process.StartInfo.RedirectStandardOutput = true;
+            _process!.StartInfo.RedirectStandardOutput = true;
 
         if (_disposeError)
-            _process.StartInfo.RedirectStandardError = true;
+            _process!.StartInfo.RedirectStandardError = true;
 
-        _allowNonZeroExit = _process.StartInfo.RedirectStandardError;
+        _allowNonZeroExit = _process!.StartInfo.RedirectStandardError;
         _process.EnableRaisingEvents = true;
 
         try
@@ -107,6 +121,9 @@ public class ProcessContext : IEnumerable<string>
 
         if (_pipedValue != null)
             Read(_pipedValue);
+
+        if (_waitForExit)
+            CloseProcess();
     }
 
     public void Stop()
@@ -122,6 +139,13 @@ public class ProcessContext : IEnumerable<string>
     public void EnableDisposeError()
     {
         _disposeError = true;
+    }
+
+    public int Wait()
+    {
+        CloseProcess();
+
+        return _exitCode;
     }
 
     private void Process_DataReceived(object sender, DataReceivedEventArgs eventArgs)
@@ -170,10 +194,21 @@ public class ProcessContext : IEnumerable<string>
             return;
 
         _process.WaitForExit();
-        _exitCode = _process.ExitCode;
-        _process.Dispose();
-        _process = null;
 
-        Environment.SetEnvironmentVariable("?", _exitCode.ToString());
+        // Sometimes the CloseProcess method is called several times,
+        // which means that two threads could be waiting for exit at
+        // the same time. Only one needs to dispose the process and
+        // save the exit code. The other(s) should just return.
+        lock (_closeProcessLock)
+        {
+            if (_process == null)
+                return;
+
+            _exitCode = _process.ExitCode;
+            _process.Dispose();
+            _process = null;
+
+            Environment.SetEnvironmentVariable("?", _exitCode.ToString());
+        }
     }
 }
