@@ -25,6 +25,7 @@ static class AstBuilder
         ModuleScope module,
         bool hasClosure)
         => new(
+            AccessLevel.Public,
             Token(TokenKind.Identifier, identifier),
             parameters.Select(x => new Parameter(Token(TokenKind.Identifier, x), null, false)).ToList(),
             block,

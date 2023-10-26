@@ -3,7 +3,7 @@ with decrement from ./util2
 using ./submodule/collection
 
 module internal {
-    fn hello2() {
+    pub fn hello2() {
         assert(hello() == "hello")
         assert(util::increment(2) == 3)
         assert(sub::division(4, 2) == 2)
@@ -11,10 +11,10 @@ module internal {
     }
 }
 
-fn hello(): "hello"
+pub fn hello(): "hello"
 fn x(): assert(internal::hello2() == "hello2")
 
-assert((new sub::Ting(2, 3))->b == 3)
+assert((new sub::PublicStruct(2, 3))->b == 3)
 assert((new util::Ting2(2, 3))->field2 == 3)
 
 assert(util::increment(2) == 3)

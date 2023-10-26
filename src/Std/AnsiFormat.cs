@@ -43,6 +43,11 @@ public class AnsiFormat
         => new(Ansi.Reset());
 
     /// <returns>A string containing ansi escape codes that result in the cursor being shown.</returns>
+    [ElkFunction("setCursor")]
+    public static RuntimeString SetCursor(RuntimeInteger row, RuntimeInteger column)
+        => new($"\x1b[{row.Value}:{column.Value}H");
+
+    /// <returns>A string containing ansi escape codes that result in the cursor being shown.</returns>
     [ElkFunction("showCursor")]
     public static RuntimeString ShowCUrsor()
         => new("\x1b[?25h");

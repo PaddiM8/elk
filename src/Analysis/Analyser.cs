@@ -115,12 +115,13 @@ class Analyser
         var block = (BlockExpr)Next(expr.Body);
         block.IsRoot = true;
 
-        return new ModuleExpr(expr.Identifier, block);
+        return new ModuleExpr(expr.AccessLevel, expr.Identifier, block);
     }
 
     private StructExpr Visit(StructExpr expr)
     {
         var newStruct = new StructExpr(
+            expr.AccessLevel,
             expr.Identifier,
             AnalyseParameters(expr.Parameters),
             expr.Module
@@ -148,6 +149,7 @@ class Analyser
         }
 
         var newFunction = new FunctionExpr(
+            expr.AccessLevel,
             expr.Identifier,
             parameters,
             expr.Block,
@@ -258,6 +260,9 @@ class Analyser
         var symbol = module.FindStruct(expr.Identifier.Value, lookInImports: true);
         if (symbol?.Expr == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
+
+        if (module != _scope.ModuleScope && symbol.Expr.AccessLevel != AccessLevel.Public)
+            throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, expr.Identifier.Value);
 
         ValidateArguments(
             expr.Arguments,
@@ -844,6 +849,13 @@ class Analyser
         if (module == null)
             throw new RuntimeModuleNotFoundException(modulePath);
 
-        return module.FindFunction(name, lookInImports: true);
+        var symbol = module.FindFunction(name, lookInImports: true);
+        if (symbol == null)
+            return null;
+
+        if (module != _scope.ModuleScope && symbol.Expr.AccessLevel != AccessLevel.Public)
+            throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, name);
+
+        return symbol;
     }
 }

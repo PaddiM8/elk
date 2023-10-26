@@ -2,16 +2,16 @@ struct Board(maxBounds, playerPos, storageBlocks, storedCrates, blocks)
 struct Block(type, x, y)
 
 module block {
-    fn toKey(block):
+    pub fn toKey(block):
         coordinatesToKey(block->x, block->y)
 
-    fn getPos(block):
+    pub fn getPos(block):
         (block->x, block->y)
 
-    fn getType(block):
+    pub fn getType(block):
         block->type if block
 
-    fn getAdjacentBlockPos(byBlock, direction) {
+    pub fn getAdjacentBlockPos(byBlock, direction) {
         let (x, y) = byBlock | getPos
         if direction == "up" {
             y -= 1
@@ -27,7 +27,7 @@ module block {
     }
 }
 
-fn createBoard() {
+pub fn createBoard() {
     new Board(
         (0, 0),
         (0, 0),
@@ -37,14 +37,14 @@ fn createBoard() {
     )
 }
 
-fn getBoardMaxBounds(board):
+pub fn getBoardMaxBounds(board):
     board->maxBounds
 
-fn setBoardMaxBounds(board, x, y) {
+pub fn setBoardMaxBounds(board, x, y) {
     board->maxBounds = (x, y)
 }
 
-fn getPlayer(board) {
+pub fn getPlayer(board) {
     let pos = board->playerPos
 
     board | getBlock(pos[0], pos[1])
@@ -56,7 +56,7 @@ fn getBoardBlocks(board):
 fn getBoardStorageBlocks(board):
     board->storageBlocks
 
-fn getBlock(board, x, y) {
+pub fn getBlock(board, x, y) {
     let key = coordinatesToKey(x, y)
     let blocks = board | getBoardBlocks
     let storages = board | getBoardStorageBlocks
@@ -70,28 +70,28 @@ fn getBlock(board, x, y) {
     }
 }
 
-fn getPoints(board):
+pub fn getPoints(board):
     board->storedCrates
 
 fn coordinatesToKey(x, y):
     "${x}:${y}"
 
-fn addWall(board, x, y):
+pub fn addWall(board, x, y):
     board | addBlock(new Block("wall", x, y))
 
-fn addCrate(board, x, y):
+pub fn addCrate(board, x, y):
     board | addBlock(new Block("crate", x, y))
 
-fn addStorage(board, x, y):
+pub fn addStorage(board, x, y):
     board | addBlock(new Block("storage", x, y))
 
-fn addStoredCrate(board, x, y) {
+pub fn addStoredCrate(board, x, y) {
     board | addBlock(new Block("crate", x, y))
     board | addBlock(new Block("storage", x, y))
     board->storedCrates += 1
 }
 
-fn removeBlock(board, block):
+pub fn removeBlock(board, block):
     board | getBoardBlocks | remove(block::toKey(block))
 
 fn moveBlock(board, block, toX, toY) {
@@ -109,13 +109,13 @@ fn moveBlock(board, block, toX, toY) {
     board | addBlock(new Block(block::getType(block), toX, toY))
 }
 
-fn hasWon(board):
+pub fn hasWon(board):
     board->storedCrates == len(board->storageBlocks)
 
-fn blockIsOnStorage(board, block):
+pub fn blockIsOnStorage(board, block):
     block and block::toKey(block) in board->storageBlocks
 
-fn addBlock(board, block) {
+pub fn addBlock(board, block) {
     let blocks = board | getBoardBlocks
     let key = block | block::toKey
     if block->type == "storage" {
@@ -132,12 +132,12 @@ fn addBlock(board, block) {
     }
 }
 
-fn addPlayer(board, x, y) {
+pub fn addPlayer(board, x, y) {
     board | addBlock(new Block("player", x, y))
     board->playerPos = (x, y)
 }
 
-fn movePlayer(board, direction) {
+pub fn movePlayer(board, direction) {
     let player = board | getPlayer
     if board | playerCanMove(direction) {
         let (playerTargetX, playerTargetY) = player | block::getAdjacentBlockPos(direction)

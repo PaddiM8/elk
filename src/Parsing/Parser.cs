@@ -136,6 +136,14 @@ internal class Parser
             var importedFunction = importScope.FindFunction(symbolImportToken.Value, lookInImports: false);
             if (importedFunction != null)
             {
+                if (importedFunction.Expr.AccessLevel != AccessLevel.Public)
+                {
+                    throw new ParseException(
+                        pos,
+                        $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'"
+                    );
+                }
+
                 _scope.ModuleScope.ImportFunction(importedFunction);
                 continue;
             }
@@ -143,6 +151,14 @@ internal class Parser
             var importedStruct = importScope.FindStruct(symbolImportToken.Value, lookInImports: false);
             if (importedStruct != null)
             {
+                if (importedStruct.Expr?.AccessLevel is not (AccessLevel.Public or null))
+                {
+                    throw new ParseException(
+                        pos,
+                        $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'"
+                    );
+                }
+
                 _scope.ModuleScope.ImportStruct(importedStruct);
                 continue;
             }
@@ -150,6 +166,14 @@ internal class Parser
             var importedModule = importScope.FindModule(new[] { symbolImportToken }, lookInImports: false);
             if (importedModule != null)
             {
+                if (importedModule.AccessLevel != AccessLevel.Public)
+                {
+                    throw new ParseException(
+                        pos,
+                        $"Cannot import private symbol '{importedModule.Name}'"
+                    );
+                }
+
                 _scope.ModuleScope.ImportModule(symbolImportToken.Value, importedModule);
                 continue;
             }
@@ -188,13 +212,13 @@ internal class Parser
         }
 
         var importScope = ImportUserModule(relativePath, moduleName, pos);
-        foreach (var symbol in importScope.Functions)
+        foreach (var symbol in importScope.Functions.Where(x => x.Expr.AccessLevel == AccessLevel.Public))
             _scope.ModuleScope.ImportFunction(symbol);
 
-        foreach (var symbol in importScope.Structs)
+        foreach (var symbol in importScope.Structs.Where(x => x.Expr?.AccessLevel == AccessLevel.Public))
             _scope.ModuleScope.ImportStruct(symbol);
 
-        foreach (var module in importScope.Modules.Where(x => x.Name != null))
+        foreach (var module in importScope.Modules.Where(x => x is { Name: not null, AccessLevel: AccessLevel.Public }))
             _scope.ModuleScope.ImportModule(module.Name!, module);
     }
 
@@ -212,6 +236,7 @@ internal class Parser
         if (importScope == null)
         {
             importScope = ModuleScope.CreateAsImported(
+                AccessLevel.Public,
                 moduleName,
                 _scope.ModuleScope.RootModule,
                 absolutePath,
@@ -239,6 +264,22 @@ internal class Parser
         while (AdvanceIf(TokenKind.Semicolon))
             SkipWhiteSpace();
 
+        if (AdvanceIf(TokenKind.Pub))
+        {
+            SkipWhiteSpace();
+
+            return Current?.Kind switch
+            {
+                TokenKind.Module => ParseModule(AccessLevel.Public),
+                TokenKind.Struct => ParseStruct(AccessLevel.Public),
+                TokenKind.Fn => ParseFn(AccessLevel.Public),
+                _ => throw new ParseException(
+                    Current!.Position,
+                    "Expected declaration after 'pub'"
+                ),
+            };
+        }
+
         return Current?.Kind switch
         {
             TokenKind.Module => ParseModule(),
@@ -250,35 +291,44 @@ internal class Parser
         };
     }
 
-    private Expr ParseModule()
+    private Expr ParseModule(AccessLevel accessLevel = AccessLevel.Private)
     {
         EatExpected(TokenKind.Module);
         var identifier = EatExpected(TokenKind.Identifier);
-        var moduleScope = new ModuleScope(identifier.Value, _scope, _scope.ModuleScope.FilePath, Array.Empty<Expr>());
+        var moduleScope = new ModuleScope(
+            accessLevel,
+            identifier.Value,
+            _scope,
+            _scope.ModuleScope.FilePath,
+            Array.Empty<Expr>()
+        );
         _scope.ModuleScope.AddModule(identifier.Value, moduleScope);
         var block = ParseBlock(StructureKind.Module, moduleScope);
         moduleScope.Ast = block.Expressions;
 
-        return new ModuleExpr(identifier, block);
+        return new ModuleExpr(accessLevel, identifier, block);
     }
 
-    private Expr ParseStruct()
+    private Expr ParseStruct(AccessLevel accessLevel = AccessLevel.Private)
     {
         EatExpected(TokenKind.Struct);
         var identifier = EatExpected(TokenKind.Identifier);
         var parameters = ParseParameterList();
-
-        var structExpr = new StructExpr(identifier, parameters, _scope.ModuleScope);
+        var structExpr = new StructExpr(
+            accessLevel,
+            identifier,
+            parameters,
+            _scope.ModuleScope
+        );
         _scope.ModuleScope.AddStruct(structExpr);
 
         return structExpr;
     }
 
-    private Expr ParseFn()
+    private Expr ParseFn(AccessLevel accessLevel = AccessLevel.Private)
     {
         EatExpected(TokenKind.Fn);
         var identifier = EatExpected(TokenKind.Identifier);
-
         var parameters = ParseParameterList();
         var functionScope = new LocalScope(_scope);
         foreach (var parameter in parameters)
@@ -303,6 +353,7 @@ internal class Parser
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
         var function = new FunctionExpr(
+            accessLevel,
             identifier,
             parameters,
             block,

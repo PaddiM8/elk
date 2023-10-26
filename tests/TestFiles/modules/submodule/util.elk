@@ -1,10 +1,10 @@
 with ../main
 using ./collection
 
-fn increment(x): someLocalFunction(addition(x, 1))
+pub fn increment(x): someLocalFunction(addition(x, 1))
 fn someLocalFunction(x): x
 
-struct Ting2(field1, field2);
+pub struct Ting2(field1, field2);
 
 assert(main::hello() == "hello")
 assert(main::internal::hello2() == "hello2")

@@ -9,7 +9,13 @@ class RootModuleScope : ModuleScope
     private readonly Dictionary<string, ModuleScope> _allModules = new();
 
     public RootModuleScope(string? filePath, IList<Expr> ast)
-        : base(Path.GetFileNameWithoutExtension(filePath), null, filePath, ast)
+        : base(
+            AccessLevel.Public,
+            Path.GetFileNameWithoutExtension(filePath),
+            null,
+            filePath,
+            ast
+        )
     {
         if (filePath != null)
             _allModules[filePath] = this;

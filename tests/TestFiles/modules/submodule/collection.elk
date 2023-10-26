@@ -1,9 +1,14 @@
-fn addition(x, y): x + y
-fn subtraction(x, y): x - y
-fn multiplication(x, y): x * y
+pub fn addition(x, y): x + y
+pub fn subtraction(x, y): x - y
+pub fn multiplication(x, y): x * y
 
-module sub {
-    struct Ting(a, b);
+pub module sub {
+    pub struct PublicStruct(a, b);
+    struct PrivateStruct(a, b);
 
-    fn division(x, y): x / y
+    pub fn division(x, y): x / y
+
+    new sub::PrivateStruct(1, 2)
 }
+
+new sub::PublicStruct(1, 2)

@@ -314,6 +314,7 @@ public class Lexer
             "try" => TokenKind.Try,
             "catch" => TokenKind.Catch,
             "throw" => TokenKind.Throw,
+            "pub" => TokenKind.Pub,
             _ => TokenKind.Identifier,
         };
 

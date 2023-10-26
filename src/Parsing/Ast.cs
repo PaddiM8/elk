@@ -80,13 +80,16 @@ record Parameter(Token Identifier, Expr? DefaultValue, bool IsVariadic);
 
 class ModuleExpr : Expr
 {
+    public AccessLevel AccessLevel { get; }
+
     public Token Identifier { get; }
 
     public BlockExpr Body { get; }
 
-    public ModuleExpr(Token identifier, BlockExpr body)
+    public ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body)
         : base(identifier.Position)
     {
+        AccessLevel = accessLevel;
         Identifier = identifier;
         Body = body;
     }
@@ -94,6 +97,8 @@ class ModuleExpr : Expr
 
 class StructExpr : Expr
 {
+    public AccessLevel AccessLevel { get; }
+
     public Token Identifier { get; }
 
     public IList<Parameter> Parameters { get; }
@@ -101,11 +106,13 @@ class StructExpr : Expr
     public ModuleScope Module { get; }
 
     public StructExpr(
+        AccessLevel accessLevel,
         Token identifier,
         IList<Parameter> parameters,
         ModuleScope module)
         : base(identifier.Position)
     {
+        AccessLevel = accessLevel;
         Identifier = identifier;
         Parameters = parameters;
         Module = module;
@@ -120,8 +127,16 @@ enum AnalysisStatus
     Evaluated,
 }
 
+enum AccessLevel
+{
+    Private,
+    Public,
+}
+
 class FunctionExpr : Expr
 {
+    public AccessLevel AccessLevel { get; }
+
     public Token Identifier { get; }
 
     public List<Parameter> Parameters { get; }
@@ -137,6 +152,7 @@ class FunctionExpr : Expr
     public AnalysisStatus AnalysisStatus { get; set; }
 
     public FunctionExpr(
+        AccessLevel accessLevel,
         Token identifier,
         List<Parameter> parameters,
         BlockExpr block,
@@ -144,6 +160,7 @@ class FunctionExpr : Expr
         bool hasClosure)
         : base(identifier.Position)
     {
+        AccessLevel = accessLevel;
         Identifier = identifier;
         Parameters = parameters;
         Block = block;

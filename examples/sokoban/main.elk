@@ -67,6 +67,7 @@ fn loadBoard(filePath) {
 }
 
 fn startGame(mapPath) {
+    clear()
     println(ansi::hideCursor)
 
     let board = loadBoard(mapPath)
@@ -98,7 +99,7 @@ fn startGame(mapPath) {
 
 fn updateScreen(board) {
     let boardString = board | getBoardString
-    clear()
+    println(ansi::setCursor(0, 0))
     println("Points:", board | sokoban::getPoints)
     println(boardString)
 }

@@ -31,6 +31,8 @@ class ModuleScope : Scope
     public IEnumerable<FunctionSymbol> ImportedFunctions
         => _importedFunctions.Values;
 
+    public AccessLevel AccessLevel { get; }
+
     public string? Name { get; }
 
     public string? FilePath { get; }
@@ -51,9 +53,15 @@ class ModuleScope : Scope
     private readonly Dictionary<string, string> _importedStdStructs = new();
     private readonly Dictionary<string, string> _importedStdFunctions = new();
 
-    public ModuleScope(string? name, Scope? parent, string? filePath, IList<Expr> ast)
+    public ModuleScope(
+        AccessLevel accessLevel,
+        string? name,
+        Scope? parent,
+        string? filePath,
+        IList<Expr> ast)
         : base(parent)
     {
+        AccessLevel = accessLevel;
         ModuleScope = this;
         Name = name;
         RootModule = parent?.ModuleScope.RootModule ?? (RootModuleScope)this;
@@ -61,9 +69,15 @@ class ModuleScope : Scope
         Ast = ast;
     }
 
-    private ModuleScope(string name, RootModuleScope rootModule, string filePath, IList<Expr> ast)
+    private ModuleScope(
+        AccessLevel accessLevel,
+        string name,
+        RootModuleScope rootModule,
+        string filePath,
+        IList<Expr> ast)
         : base(null)
     {
+        AccessLevel = accessLevel;
         ModuleScope = this;
         Name = name;
         RootModule = rootModule;
@@ -72,11 +86,12 @@ class ModuleScope : Scope
     }
 
     public static ModuleScope CreateAsImported(
+        AccessLevel accessLevel,
         string name,
         RootModuleScope rootModule,
         string filePath,
         IList<Expr> ast)
-        => new(name, rootModule, filePath, ast);
+        => new(accessLevel, name, rootModule, filePath, ast);
 
     public void AddAlias(string name, LiteralExpr expansion)
     {
@@ -147,7 +162,11 @@ class ModuleScope : Scope
             return module;
 
         if (lookInImports && _importedModules.TryGetValue(moduleName, out var moduleImport))
-            return moduleImport;
+        {
+            return moduleImport.AccessLevel != AccessLevel.Public
+                ? null
+                : moduleImport;
+        }
 
         return lookInParents
             ? Parent?.ModuleScope.FindModule(moduleName, lookInImports, lookInParents)
@@ -174,7 +193,11 @@ class ModuleScope : Scope
             return result;
 
         if (lookInImports && _importedStructs.TryGetValue(name, out var resultImport))
-            return resultImport;
+        {
+            return resultImport.Expr?.AccessLevel is not (AccessLevel.Public or null)
+                ? null
+                : resultImport;
+        }
 
         return result ?? Parent?.ModuleScope.FindStruct(name, lookInImports);
     }
@@ -185,7 +208,11 @@ class ModuleScope : Scope
             return result;
 
         if (lookInImports && _importedFunctions.TryGetValue(name, out var resultImport))
-            return resultImport;
+        {
+            return resultImport.Expr.AccessLevel != AccessLevel.Public
+                ? null
+                : resultImport;
+        }
 
         return result ?? Parent?.ModuleScope.FindFunction(name, lookInImports);
     }
