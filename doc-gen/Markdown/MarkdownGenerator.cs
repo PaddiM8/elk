@@ -79,6 +79,10 @@ public class MarkdownGenerator
             Path.Combine(outDirectory, "entries.json"),
             JsonConvert.SerializeObject(sidebar)
         );
+        File.WriteAllText(
+            Path.Combine(outDirectory, "index.md"),
+            "# Standard Library"
+        );
     }
 
     private static string GenerateFunction(FunctionInfo functionInfo, string? moduleName)
