@@ -32,14 +32,21 @@ public class MarkdownGenerator
                 : $"({module.Name})";
             var folderPath = TitleToFolderName(title);
             Directory.CreateDirectory(Path.Combine(outDirectory, folderPath));
+            File.WriteAllText(
+                Path.Combine(outDirectory, folderPath, "index.md"),
+                $"# {module.Name}"
+            );
 
             foreach (var function in module.Functions.OrderBy(x => x.Name))
             {
                 var functionModule = isBuiltIn
                     ? null
                     : module.Name;
+                var functionName = function.Name == "index"
+                    ? "_index"
+                    : function.Name;
                 File.WriteAllText(
-                    Path.Combine(outDirectory, folderPath, function.Name) + ".md",
+                    Path.Combine(outDirectory, folderPath, functionName) + ".md",
                     GenerateFunction(function, functionModule)
                 );
             }
@@ -54,7 +61,9 @@ public class MarkdownGenerator
                     .OrderBy(x => x.Name)
                     .Select(function => new
                     {
-                        text = function.Name,
+                        text = function.Name == "index"
+                            ? "_index"
+                            : function.Name,
                         link = $"/std/{module.Name}/{function.Name}",
                     });
 
