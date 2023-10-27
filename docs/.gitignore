@@ -1,3 +1,4 @@
 .vitepress/cache/
 node_modules/
 std/*
+!std/index.md

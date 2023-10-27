@@ -74,11 +74,11 @@ export default defineConfig({
         },
         {
           items: [
-            { text: "Standard Library", link: "/std" }
+            { text: "Standard Library", link: "/std/" }
           ]
         }
       ],
-      "/std/": stdEntries.load(),
+      "/std/": stdEntries.load()
     },
 
     socialLinks: [
