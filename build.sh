@@ -1,5 +1,6 @@
 #!/bin/sh
 
-dotnet publish cli/Elk.Cli.csproj -r linux-x64 -c Release --no-self-contained
+dotnet publish cli/Elk.Cli.csproj -r linux-x64 -c Release
 mkdir -p build
-cp -r cli/bin/Release/*/linux-x64/publish/Elk build/elk
+cp cli/bin/Release/*/linux-x64/publish/Elk.Cli build/elk
+cp cli/bin/Release/*/linux-x64/publish/*.so build/
