@@ -64,13 +64,13 @@ public static class FileUtils
 
     public static bool IsValidStartOfPath(string path, string workingDirectory)
     {
-        if (!path.StartsWith("./") && !path.StartsWith("~/") && !path.StartsWith("/"))
+        if (!path.StartsWith("./") && !path.StartsWith("~/") && !path.StartsWith('/'))
             return false;
 
-        if (path.StartsWith("~"))
+        if (path.StartsWith('~'))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
-        var absolutePath = path.StartsWith("/")
+        var absolutePath = path.StartsWith('/')
             ? path
             : Path.Combine(workingDirectory, path);
         if (absolutePath == "/")
@@ -104,52 +104,59 @@ public static class FileUtils
             workingDirectory,
             path[..lastSlashIndex]
         );
-        var completionTarget = path.EndsWith("/")
+        var completionTarget = path.EndsWith('/')
             ? ""
             : path[lastSlashIndex..].TrimStart('/');
 
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
 
-        var includeHidden = path.StartsWith(".");
-        var directories = Directory.GetDirectories(fullPath)
-            .Select(Path.GetFileName)
-            .Where(x => includeHidden || !x!.StartsWith("."))
-            .Where(x => x!.StartsWith(completionTarget))
-            .Order()
-            .Select(x => new Completion(x!, $"{x}/"))
-            .ToList();
+        var includeHidden = path.StartsWith('.');
+        IList<Completion> directories = Array.Empty<Completion>();
+        if (fileType != FileType.Executable)
+        {
+            directories = Directory.GetDirectories(fullPath)
+                .Select(Path.GetFileName)
+                .Where(x => includeHidden || !x!.StartsWith('.'))
+                .Where(x => x!.StartsWith(completionTarget))
+                .Order()
+                .Select(x => new Completion(x!, $"{x}/"))
+                .ToList();
+        }
 
         IEnumerable<Completion> files = Array.Empty<Completion>();
         if (fileType != FileType.Directory)
         {
             files = Directory.GetFiles(fullPath)
-                .Where(x => fileType != FileType.Executable || IsExecutable(x))
-                .Select(Path.GetFileName)
-                .Where(x => includeHidden || !x!.StartsWith("."))
-                .Where(x => x!.StartsWith(completionTarget))
+                .Select(x => (path: x, name: Path.GetFileName(x)))
+                .Where(x => includeHidden || !x.name.StartsWith('.'))
+                .Where(x => x.name.StartsWith(completionTarget))
+                .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                 .Order()
-                .Select(x => new Completion(x!));
+                .Select(x => new Completion(x.name));
         }
 
         if (!directories.Any() && !files.Any())
         {
             const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-            directories = Directory.GetDirectories(fullPath)
-                .Select(Path.GetFileName)
-                .Where(x => x!.Contains(completionTarget, comparison))
-                .Order()
-                .Select(x => new Completion(x!, $"{x}/"))
-                .ToList();
+            if (fileType != FileType.Executable)
+            {
+                directories = Directory.GetDirectories(fullPath)
+                    .Select(Path.GetFileName)
+                    .Where(x => x!.Contains(completionTarget, comparison))
+                    .Order()
+                    .Select(x => new Completion(x!, $"{x}/"))
+                    .ToList();
+            }
 
             if (fileType != FileType.Directory)
             {
                 files = Directory.GetFiles(fullPath)
-                    .Where(x => fileType != FileType.Executable || IsExecutable(x))
-                    .Select(Path.GetFileName)
-                    .Where(x => x!.Contains(completionTarget, comparison))
+                    .Select(x => (path: x, name: Path.GetFileName(x)))
+                    .Where(x => x.name.Contains(completionTarget, comparison))
+                    .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                     .Order()
-                    .Select(x => new Completion(x!));
+                    .Select(x => new Completion(x.name));
             }
         }
 
@@ -172,18 +179,5 @@ public static class FileUtils
         }
 
         return completions;
-    }
-
-    private static bool IsExecutable(string filePath)
-    {
-        if (OperatingSystem.IsWindows())
-            return true;
-
-        var handle = File.OpenHandle(filePath);
-
-        return File.GetUnixFileMode(handle)
-            is UnixFileMode.OtherExecute
-            or UnixFileMode.GroupExecute
-            or UnixFileMode.UserExecute;
     }
 }

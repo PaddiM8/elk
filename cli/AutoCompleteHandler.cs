@@ -73,14 +73,14 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
         if (isColonColon || (!isRelativeIdentifier && endPos < _currentInvocationInfo?.TextArgumentStartIndex))
-            return GetIdentifierSuggestions(_currentInvocationInfo?.Name ?? text[startPos..endPos]);
+            return GetProgramCompletions(_currentInvocationInfo?.Name ?? text[startPos..endPos]);
 
         // `startPos` is only the index of the start of the file name in the path.
         // At this stage, we want the entire path instead.
         // ./program some/directory/and.file
         //           ^^^^^^^^^^^^^^^^^^^^^^^
         var path = FindPathBefore(text, endPos);
-        if (path.StartsWith("~"))
+        if (path.StartsWith('~'))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
         return FileUtils.GetPathCompletions(
@@ -90,7 +90,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         );
     }
 
-    private IList<Completion> GetIdentifierSuggestions(string name)
+    private IList<Completion> GetProgramCompletions(string name)
     {
         var path = Environment.GetEnvironmentVariable("PATH");
         if (path == null)
@@ -100,7 +100,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Split(":")
             .Where(Directory.Exists)
             .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
-            .Select<string, (string name, string? documentation)>(x => (Path.GetFileName(x), ""))
+            .Select<string, (string name, string? documentation)>(x => (Path.GetFileName(x), null))
             .Concat(StdBindings.FullSymbolNamesWithDocumentation)
             .Where(x => x.name.StartsWith(name))
             .DistinctBy(x => x.name)
