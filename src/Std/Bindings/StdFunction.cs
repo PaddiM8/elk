@@ -16,6 +16,7 @@ public record StdFunctionParameter(
 public record StdFunction(
     string? ModuleName,
     string Name,
+    string? Documentation,
     int MinArgumentCount,
     int MaxArgumentCount,
     bool HasClosure,

@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -9,6 +11,7 @@ namespace Elk.Generators;
 
 record StdModuleInfo(string Name, ClassDeclarationSyntax Syntax);
 
+// ReSharper disable once NotAccessedPositionalProperty.Global
 record StdStructInfo(
     string? ModuleName,
     string StructName,
@@ -22,6 +25,7 @@ record StdFunctionInfo(
     string? ModuleName,
     string FunctionName,
     string CallingName,
+    string? Documentation,
     int MinArgumentCount,
     int MaxArgumentCount,
     bool HasClosure,
@@ -209,6 +213,14 @@ public class StdBindingsGenerator : ISourceGenerator
             sourceBuilder.Append("\", new(");
             sourceBuilder.Append($"{moduleName}, ");
             sourceBuilder.Append($"\"{function.FunctionName}\", ");
+            var documentation = function.Documentation?
+                .Replace("\"", "\\\"")
+                .Replace("\n", " ")
+                .Replace("\\", @"\\");
+            var documentationLiteral = documentation == null
+                ? "null"
+                : $"\"{documentation}\"";
+            sourceBuilder.Append($"{documentationLiteral}, ");
             sourceBuilder.Append($"{function.MinArgumentCount}, ");
             sourceBuilder.Append($"{function.MaxArgumentCount}, ");
 
@@ -436,7 +448,7 @@ public class StdBindingsGenerator : ISourceGenerator
             methodSyntax.ParameterList.Parameters,
             out var minArgumentCount,
             out var maxArgumentCount,
-            out var _,
+            out _,
             out var variadicStart
         );
 
@@ -491,14 +503,36 @@ public class StdBindingsGenerator : ISourceGenerator
 
         var namespacePath = compilation
             .GetSemanticModel(methodSyntax.SyntaxTree)
-            .GetDeclaredSymbol(methodSyntax)!
+            .GetDeclaredSymbol(methodSyntax)?
             .ContainingNamespace
             .ToDisplayString();
+
+        var documentationXml = compilation
+            .GetSemanticModel(methodSyntax.SyntaxTree)
+            .GetDeclaredSymbol(methodSyntax)!
+            .GetDocumentationCommentXml();
+        var documentation = "";
+        if (!string.IsNullOrEmpty(documentationXml))
+        {
+            var document = new XmlDocument();
+            document.LoadXml(documentationXml);
+            var summary = document.DocumentElement?
+                .SelectSingleNode("/member/summary")?
+                .InnerText;
+            var returns = document.DocumentElement?
+                .SelectSingleNode("/member/returns")?
+                .InnerText;
+            if (summary?.EndsWith('.') is false)
+                summary += ".";
+
+            documentation = $"{summary} returns: {returns}".Trim();
+        }
 
         return new StdFunctionInfo(
             reachableEverywhere ? null : module.Name,
             name,
             $"{namespacePath}.{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
+            documentation,
             minArgumentCount,
             maxArgumentCount,
             hasClosure,

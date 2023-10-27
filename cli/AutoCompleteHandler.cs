@@ -100,12 +100,12 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Split(":")
             .Where(Directory.Exists)
             .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
-            .Select(Path.GetFileName)
-            .Concat(StdBindings.FullSymbolNames)
-            .Where(x => x != null && x.StartsWith(name))
-            .Distinct()
-            .OrderBy(x => x)
-            .Select(x => new Completion(x!))
+            .Select<string, (string name, string? documentation)>(x => (Path.GetFileName(x), ""))
+            .Concat(StdBindings.FullSymbolNamesWithDocumentation)
+            .Where(x => x.name.StartsWith(name))
+            .DistinctBy(x => x.name)
+            .OrderBy(x => x.name)
+            .Select(x => new Completion(x.name, x.name, x.documentation))
             .ToList();
     }
 
