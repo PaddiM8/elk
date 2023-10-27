@@ -2,19 +2,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace Elk.DocGen.Markdown;
 
 public class MarkdownGenerator
 {
-    public static void Generate(StdInfo stdInfo)
+    public static void Generate(StdInfo stdInfo, string outDirectory)
     {
-        const string outDir = "out";
-        const string dir = $"{outDir}/standard-library";
-        if (Directory.Exists(outDir))
-            Directory.Delete(outDir, true);
+        if (Directory.Exists(outDirectory))
+            Directory.Delete(outDirectory, true);
 
-        Directory.CreateDirectory(dir);
+        Directory.CreateDirectory(outDirectory);
 
         var modules = new List<ModuleInfo>
         {
@@ -22,7 +21,6 @@ public class MarkdownGenerator
         };
         modules.AddRange(stdInfo.Modules);
 
-        var summary = new StringBuilder();
         foreach (var module in modules)
         {
             if (!module.Functions.Any())
@@ -31,30 +29,50 @@ public class MarkdownGenerator
             var isBuiltIn = module.DisplayName == "Built-in";
             var title = isBuiltIn
                 ? "Built-in"
-                : $"{module.DisplayName} ({module.Name})";
-            var description = isBuiltIn
-                ? "# Built-in\nThese functions do not belong to a module and are always available."
-                : $"# {title}\nFunctions in this module can be accessed by with the syntax {module.Name}::functionName or by importing the function from the {module.Name} module.";
+                : $"({module.Name})";
             var folderPath = TitleToFolderName(title);
-
-            Directory.CreateDirectory(Path.Combine(dir, folderPath));
-            File.WriteAllText(Path.Combine(dir, $"{folderPath}/README.md"), description);
-            summary.AppendLine($"* [{title}](standard-library/{folderPath}/README.md)");
+            Directory.CreateDirectory(Path.Combine(outDirectory, folderPath));
 
             foreach (var function in module.Functions.OrderBy(x => x.Name))
             {
+                var functionModule = isBuiltIn
+                    ? null
+                    : module.Name;
                 File.WriteAllText(
-                    Path.Combine(dir, folderPath, function.Name) + ".md",
-                    GenerateFunction(function)
+                    Path.Combine(outDirectory, folderPath, function.Name) + ".md",
+                    GenerateFunction(function, functionModule)
                 );
-                summary.AppendLine($"  * [{function.Name}](standard-library/{folderPath}/{function.Name}.md)");
             }
         }
 
-        File.WriteAllText(Path.Combine(outDir, "SUMMARY.md"), summary.ToString());
+        var sidebar = modules
+            .Where(module => module.Functions.Any())
+            .OrderBy(x => x.Name == "built-in" ? "AAA" : x.Name)
+            .Select(module =>
+            {
+                var items = module.Functions
+                    .OrderBy(x => x.Name)
+                    .Select(function => new
+                    {
+                        text = function.Name,
+                        link = $"/std/{module.Name}/{function.Name}",
+                    });
+
+                return new
+                {
+                    text = module.Name,
+                    collapsed = true,
+                    items,
+                };
+            });
+
+        File.WriteAllText(
+            Path.Combine(outDirectory, "entries.json"),
+            JsonConvert.SerializeObject(sidebar)
+        );
     }
 
-    private static string GenerateFunction(FunctionInfo functionInfo)
+    private static string GenerateFunction(FunctionInfo functionInfo, string? moduleName)
     {
         var parameters = functionInfo.Parameters;
 
@@ -97,7 +115,9 @@ public class MarkdownGenerator
             titleString.Append($" => {string.Join(", ", alphabet[..functionInfo.Closure.ParameterCount])}");
 
         var functionString = new StringBuilder();
-        functionString.AppendLine($"# {functionInfo.Name}");
+        if (moduleName != null)
+            moduleName += "::";
+        functionString.AppendLine($"# {moduleName}{functionInfo.Name}");
         functionString.AppendLine($"## {titleString}\n\n");
 
         // Parameter table
@@ -153,10 +173,7 @@ public class MarkdownGenerator
         if (functionInfo.Example != null)
         {
             functionString.AppendLine("\n## Example\n");
-            var lang = functionInfo.Example.Contains('#')
-                ? "nim"
-                : "rust";
-            functionString.AppendLine($"```{lang}");
+            functionString.AppendLine("```elk");
             functionString.AppendLine(functionInfo.Example);
             functionString.AppendLine("```");
         }

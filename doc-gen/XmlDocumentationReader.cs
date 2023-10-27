@@ -84,8 +84,25 @@ class XmlDocumentationReader : IDisposable
     }
 
     private string ReadWithoutIndentation()
-        => RemoveIndentation(_reader.ReadInnerXml());
+    {
+        var raw = _reader.ReadInnerXml().Trim();
+        var lines = raw.Split('\n');
+        if (lines.Length == 0)
+            return "";
 
-    private static string RemoveIndentation(string value)
-        => string.Join('\n', value.Split('\n').Select(x => x.Trim())).Trim();
+        var indentations = lines
+            .Skip(1)
+            .Select(line => line.TakeWhile(char.IsWhiteSpace).Count());
+        var indentationSize = indentations.Any()
+            ? indentations.Min()
+            : 0;
+
+        return string.Join(
+            '\n',
+            lines
+                .Skip(1)
+                .Select(x => x[indentationSize..])
+                .Prepend(lines.First())
+        );
+    }
 }

@@ -23,7 +23,7 @@ public class SymbolReader
             .GetAssemblies()
             .First(x => x.GetName().Name == "Elk")
             .GetTypes()
-            .Where(x => x.Namespace == "Elk.Std");
+            .Where(x => x.Namespace?.StartsWith("Elk.Std") is true);
         var modules = new List<ModuleInfo>();
         var globalFunctions = new List<FunctionInfo>();
         foreach (var classInfo in stdClasses)
