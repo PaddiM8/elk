@@ -18,8 +18,9 @@ cd elk
 Compile and install the program:
 
 ```shell
-./build.sh
-install -D build/elk /usr/bin/elk
+mkdir /usr/share/elk
+install -D ./build/* /usr/share/elk/
+ln -s /usr/share/elk/elk /usr/bin/elk
 ```
 
 Elk is now installed and can be accessed in the terminal using the `elk` 

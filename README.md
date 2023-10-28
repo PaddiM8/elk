@@ -7,7 +7,12 @@
 ## Installation
 
 Installation steps:
-* Install `.NET 7 SDK`
+* Install `.NET 8 SDK`
 * Build the program `./build.sh`
-* Install the program `install -D ./build/elk /usr/bin/elk`
+* Install the program
+  ```sh
+  mkdir /usr/share/elk
+  install -D ./build/* /usr/share/elk/
+  ln -s /usr/share/elk/elk /usr/bin/elk
+  ```
 * Run the program `elk`
