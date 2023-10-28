@@ -29,7 +29,7 @@ export default defineConfig({
 
     nav: [
       { text: "Reference", link: "/" },
-      { text: "Standard Library", link: "/std" },
+      { text: "Standard Library", link: "/std/" },
     ],
 
     sidebar: {
