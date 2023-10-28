@@ -8,6 +8,8 @@ A general-purpose shell language
 
 [GitHub Repository](https://github.com/PaddiM8/elk)
 
+<img src="/preview.png" width=500 alt="preview">
+
 ## What is Elk?
 
 Elk is an experimental shell language that aims to seamlessly combine the 
@@ -40,6 +42,11 @@ invocations are simply function calls.
 # invocation syntax
 let imageFiles = ls images/*.png | str::upper
 echo(imageFiles[0])
+
+# clean syntax
+if len(imageFiles) > 1 {
+    imageFiles | len | println
+}
 
 # the elk shell can even be used as a calculator
 # since arithmetic operations can be done anywhere

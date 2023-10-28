@@ -64,3 +64,11 @@ VAR1=value1, VAR2="another value": ./some-script.sh
     ["8.0K", "./.git/objects/02"],
 ]
 ```
+
+## Misc
+
+```elk
+let sizes = du | column 0 | int!
+echo Sizes:
+echo(sizes | select => x: x / 1000 | join ", ")
+```
