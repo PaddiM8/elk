@@ -7,7 +7,7 @@ path to the current directory. Further more, `cd -` changes to the previous dire
 ```elk
 cd directory
 echo($PWD)
-cd ..a
+cd ..
 ```
 
 ## Script Path
