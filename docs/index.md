@@ -53,7 +53,7 @@ if len(imageFiles) > 1 {
 5 + 3
 ```
 
-## Features
+## Language Features
 
 * Variables of different data types _without_ a prefix (like `$`)
 * User-defined functions
@@ -64,6 +64,13 @@ if len(imageFiles) > 1 {
 * Control flow (if, for, while, etc.) with familiar syntax
 * Common operations (like arithmetic operations) that can be done anywhere, 
 unlike in bash
-* Commands preceded by `$:` are evaluated as bash, making it easy to paste bash 
-commands into the shell when necessary
+* ...more
+
+## UX Features
+
+* Commands preceded by `$:` are evaluated as bash, making it easy to paste bash
+  commands into the shell when necessary
+* Custom completions
+* Semantic highlighting
+* History hints
 * ...more

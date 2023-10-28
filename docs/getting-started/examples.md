@@ -1,5 +1,7 @@
 # Examples
 
+* [A sokoban game](https://github.com/PaddiM8/elk/tree/main/examples/sokoban)
+
 ## Hello World
 
 There are a few ways to write a hello world program:
