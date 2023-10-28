@@ -1,5 +1,7 @@
 # Data Types
 
+The following page describes the most important data types. Some types may not be described here.
+
 ## Boolean
 
 Booleans are expressed using the `true` and `false` keywords.
@@ -103,9 +105,9 @@ for item in items: echo(item)
 
 ### Conversions
 
-| Target type | Resulting value                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Boolean     | `true`if the list is non-empty                                  |
+| Target type | Resulting value                                                                                                    |
+| ----------- |--------------------------------------------------------------------------------------------------------------------|
+| Boolean     | `true`if the list is non-empty                                                                                     |
 | String      | A string containing the string representations of the values separated by commas and surrounded by square brackets |
 
 ## Nil
@@ -124,12 +126,9 @@ Nil values are represented by the `nil` keyword.
 
 Pipe objects are returned by program invocations and let you iterate over the 
 program's stdout/stderr (depending on if it was piped with `|`, `|err` or 
-`|all`).. When iterating over a Pipe, the output stream is consumed line by 
+`|all`). When iterating over a Pipe, the output stream is consumed line by 
 line, but also buffered inside the object itself in order to make it possible 
-to access these values later. Other than this, Pipe objects can be used very 
-similarly to strings (even indexing), and are implicitly converted to strings 
-when an operation does not support pipes. In these situations, the 
-stdout/stderr data will all be collected before proceeding.
+to access these values later. Pipes can be implicitly converted to strings.
 
 ::: into
 Normally, the content of a Pipe is kept in memory for as long as the Pipe 
@@ -143,15 +142,30 @@ cases.
 
 ```elk
 # `cat` returns a Pipe
-# `select` will iterate over the file content line by line 
-cat file.txt | select => x: x + "!"
+# `map` will iterate over the file content line by line 
+cat file.txt | map => x: x + "!"
 
-# consumes the output stream and then does the indexing
+# gets the 6th file
 cat("file.txt")[5] | println
 
 # converts the Pipe into a string and then applies str::upper
 cat file.txt | str::upper
 ```
+
+### Conversions
+
+| Target type | Resulting value                                                                                                         |
+|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| String      | The output lines concatenated                                                                                           |
+| List        | A list of lines                                                                                                         |
+| Boolean     | `true` for non-empty Pipes                                                                                              |
+| Integer     | An integer value of the number represented in the output. A runtime error is thrown if the string is not a valid number. |
+| Float       | A float value of the number represented in the output. A runtime error is thrown if the string is not a valid number.   |
+| Regex       | A Regex object                                                                                                          |
+
+### Iteration
+
+Iterating over a Pipe yields the individual lines.
 
 ## Range
 
@@ -196,13 +210,20 @@ Functions from the regex module and others can then be used together with the
 regex value.
 
 ```elk
-regex('[abc]') | regex::findAll "abcdabdeghab"
+# the regex functions take a Regex object, but
+# will also implicitly convert strings to Regex
+"abcdabdeghab" | re::findAll '[abc]'
+
+# if you're going to use a pattern several times,
+# it's better to create the Regex object immediately
+let pattern = into::regex('[abc]')
+"abcdabdeghab" | re::findAll(pattern)
 ```
 
 ### Conversions
 
-| Target type | Resulting value                                                 |
-| ----------- | --------------------------------------------------------------------- |
+| Target type | Resulting value                                                       |
+| ----------- |-----------------------------------------------------------------------|
 | String      | The string representation of the regex pattern including the slashes. |
 
 ## Set
@@ -225,11 +246,12 @@ in mutation.
 
 ### Conversions
 
-| Target type | Resulting value                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Boolean     | `true` for non-empty strings                                    |
+| Target type | Resulting value                                                                                                          |
+|-------------|--------------------------------------------------------------------------------------------------------------------------|
+| Boolean     | `true` for non-empty strings                                                                                             |
 | Integer     | An integer value of the number represented in the string. A runtime error is thrown if the string is not a valid number. |
 | Float       | A float value of the number represented in the string. A runtime error is thrown if the string is not a valid number.    |
+| Regex       | A Regex object |                                                                                                          |
 
 ### Escape Sequences
 
@@ -265,10 +287,10 @@ let a, b = (1, 2)
 
 ### Conversions
 
-| Target type | Resulting value                                                 |
-| ----------- | -------------------------------------------------------------------------------------------------------------- |
-| Boolean     | `true`if the tuple is non-empty                                 |
-| List        | A list containing the same values                               |
+| Target type | Resulting value                                                                                                |
+| ----------- |----------------------------------------------------------------------------------------------------------------|
+| Boolean     | `true`if the tuple is non-empty                                                                                |
+| List        | A list containing the same values                                                                              |
 | String      | A string containing the string representations of the values separated by commas and surrounded by parentheses |
 
 ## Type

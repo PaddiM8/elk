@@ -61,10 +61,9 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             if (Values == null)
                 return new RuntimeString("");
 
+            Collect();
             if (index is RuntimeRange range)
             {
-                Collect();
-
                 var length = (range.To ?? Values.Count) - (range.From ?? 0);
                 if (range.From < 0 || range.From >= Values.Count || range.To < 0 || range.To > Values.Count)
                     throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");

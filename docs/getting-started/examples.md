@@ -19,8 +19,8 @@ println("hello world")
 ## Pipes
 
 ```elk
-let hidLines = dmesg | grep HID | lines
-for line in hidLines: echo(line | ansi::color blue)
+let hid = dmesg | grep HID
+for line in hid: echo(line | ansi::color blue)
 ```
 
 ## String Interpolation
@@ -36,8 +36,8 @@ echo Kernel: ${kernel}
 ```elk
 using ansi
 
-let name = input("Name (${$USER}): " | color green) ?? $USER
-let createFolder = input("Create folder? (y/N) " | color green) ?? "n"
+let name = io::input("Name ${$USER}: " | color green) or $USER
+let createFolder = io::input("Create folder? (y/N) " | color green) or "n"
     | str::trim
     | str::lower
 ```

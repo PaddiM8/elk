@@ -26,7 +26,7 @@ public class ProcessContext : IEnumerable<string>
     private int _openPipeCount;
     private bool _disposeOutput;
     private bool _disposeError;
-    private object _closeProcessLock = new();
+    private readonly object _closeProcessLock = new();
 
     public ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
     {
@@ -55,12 +55,12 @@ public class ProcessContext : IEnumerable<string>
         if (_pipedValue != null)
             Read(_pipedValue);
 
-        _process.WaitForExit();
-        var exitCode = _process.ExitCode;
-        CloseProcess();
-        Environment.SetEnvironmentVariable("?", exitCode.ToString());
+        //_process.WaitForExit();
+        //var exitCode = _process.ExitCode;
+        CloseProcess(messageOnError: false);
+        //Environment.SetEnvironmentVariable("?", exitCode.ToString());
 
-        return exitCode;
+        return _exitCode;
     }
 
     public void MakeBackground()
@@ -83,7 +83,7 @@ public class ProcessContext : IEnumerable<string>
         if (!_waitForExit)
         {
             _process!.Exited += (_, _)
-                => CloseProcess();
+                => CloseProcess(messageOnError: true);
         }
 
         if (_disposeOutput)
@@ -123,7 +123,7 @@ public class ProcessContext : IEnumerable<string>
             Read(_pipedValue);
 
         if (_waitForExit)
-            CloseProcess();
+            CloseProcess(messageOnError: true);
     }
 
     public void Stop()
@@ -143,7 +143,7 @@ public class ProcessContext : IEnumerable<string>
 
     public int Wait()
     {
-        CloseProcess();
+        CloseProcess(messageOnError: true);
 
         return _exitCode;
     }
@@ -188,7 +188,7 @@ public class ProcessContext : IEnumerable<string>
         }
     }
 
-    private void CloseProcess()
+    private void CloseProcess(bool messageOnError)
     {
         if (_process == null)
             return;
@@ -209,6 +209,15 @@ public class ProcessContext : IEnumerable<string>
             _process = null;
 
             Environment.SetEnvironmentVariable("?", _exitCode.ToString());
+
+            if (_exitCode != 0)
+            {
+                throw new RuntimeUserException(
+                    messageOnError
+                        ? new RuntimeString("Program returned a non-zero exit code.")
+                        : RuntimeNil.Value
+                );
+            }
         }
     }
 }

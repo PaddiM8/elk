@@ -8,6 +8,11 @@ amount of parameters. With the former, the return value is either the value of
 the block or a value passed to a `return` expression. With the latter, the 
 return value is simply the value of the expression after the colon.
 
+::: info
+Functions that are going to be imported by other modules need to be
+preceded by the `pub` keyword.
+:::
+
 ```elk
 fn add(x, y) {
     x + y
@@ -90,6 +95,7 @@ following tokens:
 * `&&`
 * `||`
 * `;`
+* `=>`
 * New line
 * `->` (incl. surrounding spaces)
 
@@ -111,4 +117,17 @@ let $VALUE = "yes"
 echo hello "world" #=> hello world
 echo hello ${x}    #=> hello 5
 echo hello $VAR    #=> hello yes
+```
+
+# Structs
+
+A struct is a dictionary-like container with pre-defined keys. A struct
+is guaranteed to only consist of the fields it was defined with.
+
+```elk
+struct Person(name, age)
+
+let person = new Person("John", 35)
+println(person->name)
+println(person->age)
 ```

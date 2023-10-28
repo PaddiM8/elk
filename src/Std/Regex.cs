@@ -5,7 +5,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Std;
 
-[ElkModule("regex")]
+[ElkModule("re")]
 public class Regex
 {
     /// <param name="pattern"></param>

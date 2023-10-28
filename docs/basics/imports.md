@@ -4,7 +4,8 @@ The import system makes it possible to split up code into multiple files. One
 can either import a file as a module, import all the functions of a file or 
 import some specific functions. When a file is imported as a module, all the 
 functions are available through the syntax `moduleName::functionName` where 
-`moduleName`is simply the file name without the extension.
+`moduleName`is simply the file name without the extension. Note that only
+public symbols can be imported.
 
 The `with` keyword followed by a file path (excl. the extension) is used to 
 import a file as a module, while the `using` keyword is used in the same way to 

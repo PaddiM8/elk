@@ -2,7 +2,7 @@
 
 The current directory can be changed using the built-in `cd` command, just like 
 with other shells. The `$PWD` environment variable can be accessed to get the 
-path to the current directory.
+path to the current directory. Further more, `cd -` changes to the previous directory.
 
 ```elk
 cd directory

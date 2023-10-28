@@ -491,18 +491,16 @@ partial class Interpreter
 
         if (expr.Operator == OperationKind.And)
         {
-            var result = left.As<RuntimeBoolean>().IsTrue &&
-                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
-
-            return RuntimeBoolean.From(result);
+            return !left.As<RuntimeBoolean>().IsTrue
+                ? left
+                : Next(expr.Right);
         }
 
         if (expr.Operator == OperationKind.Or)
         {
-            var result = left.As<RuntimeBoolean>().IsTrue ||
-                Next(expr.Right).As<RuntimeBoolean>().IsTrue;
-
-            return RuntimeBoolean.From(result);
+            return left.As<RuntimeBoolean>().IsTrue
+                ? left
+                : Next(expr.Right);
         }
 
         var right = Next(expr.Right);
@@ -1029,11 +1027,9 @@ partial class Interpreter
         );
         if (redirectionKind == RedirectionKind.None)
         {
-            var exitCode = processContext.Start();
+            processContext.Start();
 
-            return exitCode == 0
-                ? RuntimeNil.Value
-                : throw new RuntimeException("");
+            return RuntimeNil.Value;
         }
 
         return new RuntimePipe(processContext, disableRedirectionBuffering, automaticStart);

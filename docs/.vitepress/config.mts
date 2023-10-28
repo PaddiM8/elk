@@ -13,23 +13,23 @@ export default defineConfig({
   title: "Elk",
   description: "A more programmatic shell language",
   head: [
-    ["link", { rel: "icon", href: "/favicon.png" }]
+    ["link", { rel: "icon", href: "/favicon.png" }],
   ],
   markdown: {
     languages: [
-        elkLanguage
-    ]
+        elkLanguage,
+    ],
   },
   // https://vitepress.dev/reference/default-theme-config
   themeConfig: {
     logo: "/favicon.png",
     search: {
-      provider: "local"
+      provider: "local",
     },
 
     nav: [
       { text: "Reference", link: "/" },
-      { text: "Standard Library", link: "/std" }
+      { text: "Standard Library", link: "/std" },
     ],
 
     sidebar: {
@@ -41,8 +41,7 @@ export default defineConfig({
             { text: "Usage", link: "/getting-started/usage" },
             { text: "Examples", link: "/getting-started/examples" },
             { text: "Comparisons with Bash", link: "/getting-started/comparisons-with-bash" },
-            { text: "Command Line", link: "/getting-started/command-line" },
-          ]
+          ],
         },
         {
           text: "Basics",
@@ -50,11 +49,12 @@ export default defineConfig({
             { text: "Current Directory", link: "/basics/current-directory" },
             { text: "Fundamental Expressions", link: "/basics/fundamental-expressions" },
             { text: "Variables", link: "/basics/variables" },
-            { text: "Functions", link: "/basics/functions" },
+            { text: "Functions & Structs", link: "/basics/functions-and-structs" },
             { text: "Program Invocation", link: "/basics/program-invocation" },
             { text: "Control Flow", link: "/basics/control-flow" },
             { text: "Data Types", link: "/basics/data-types" },
             { text: "Imports", link: "/basics/imports" },
+            { text: "Error Handling", link: "/basics/error-handling" },
           ]
         },
         {
@@ -62,7 +62,7 @@ export default defineConfig({
           items: [
             { text: "Bash Literals", link: "/other/bash-literals" },
             { text: "Casting", link: "/other/casting" },
-            { text: "Command Line Arguments", link: "/other/command-line-arguments" },
+            { text: "CLI Parsing", link: "/other/cli-parsing" },
             { text: "Shell Customisation", link: "/other/shell-customisation" },
             { text: "Pattern Matching", link: "/other/pattern-matching" },
             { text: "Conventions", link: "/other/conventions" },
@@ -70,19 +70,19 @@ export default defineConfig({
             { text: "Plurality", link: "/other/plurality" },
             { text: "Function References", link: "/other/function-references" },
             { text: "Closures", link: "/other/closures" },
-          ]
+          ],
         },
         {
           items: [
-            { text: "Standard Library", link: "/std/" }
-          ]
-        }
+            { text: "Standard Library", link: "/std/" },
+          ],
+        },
       ],
-      "/std/": stdEntries.load()
+      "/std/": stdEntries.load(),
     },
 
     socialLinks: [
-      { icon: "github", link: "https://github.com/PaddiM8/elk" }
-    ]
-  }
+      { icon: "github", link: "https://github.com/PaddiM8/elk" },
+    ],
+  },
 })

@@ -6,10 +6,14 @@
 # bash
 echo hello world > file.txt
 echo appended line >> file.txt
+some-program &> errors.txt
+echo This won't be visible > /dev/null
 
 # elk
 "hello world" | write file.txt
 "appended line" | append file.txt
+some-program |err write errors.txt
+echo This won't be visible | dispose # disposeErr for errors
 ```
 
 ### Conditionals
@@ -44,7 +48,7 @@ done
 
 # elk
 # option 1
-cat lines.txt | select => x: echo Line: ${line}
+cat lines.txt | map => line: echo Line: ${line}
 
 # otion 2
 for line in cat("lines.txt"):

@@ -3,11 +3,11 @@
 The syntax for starting a program is the same as the syntax for function calls. 
 In Elk, function calls and program invocations are the exact same thing 
 syntactically. Read more about how this works in 
-[Functions](functions.md#usage). It is also possible to specify a path in order 
+[Functions](functions-and-structs#usage). It is also possible to specify a path in order 
 to run a program. Characters in paths can be escaped using a backslash.
 
-Program invocations always return a [pipe](data-types.md#pipe) 
-object.
+Program invocations always return a [pipe](data-types#pipe) 
+object. Iterating over a Pipe yields one line at a time.
 
 ```elk
 echo("hello world")

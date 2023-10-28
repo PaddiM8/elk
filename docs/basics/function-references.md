@@ -4,8 +4,20 @@ Function references are made using the `&` symbol. This can be done on both
 regular functions and programs. In order to call a function using a function 
 reference, the `call` function is used.
 
-<pre class="language-nim"><code class="lang-nim"><strong>let f = &#x26;len
-</strong><strong>f | call abc #=> 3
-</strong><strong>
-</strong><strong>let output = if useEcho: &#x26;echo else &#x26;println
-</strong>output | call hello world #=> hello world</code></pre>
+```elk
+let f = &len
+f | call abc #=> 3
+
+let ouput = if userEcho: $echo else $println
+output | call hello world #=> hello world
+```
+
+It is also possible to get references of partial functions calls.
+```elk
+let f = &math::add(3)
+f | call(4) | println #=> 7
+
+[1, 2, 3]
+    | map => &math::mul(2)
+    | println #=> [2, 4, 6]
+```

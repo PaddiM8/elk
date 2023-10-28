@@ -25,6 +25,17 @@ syntax for this is `expression if condition.`
 echo(x) if x > 0
 ```
 
+### Nil Coalescing
+
+With the nil coalescing operator, the right hand side is used if the left hand
+side is nil.
+
+```elk
+nil ?? 5     #=> 5
+"hello" ?? 5 #=> "hello"
+"" ?? 5      #=> ""
+```
+
 ## Loops
 
 ### While

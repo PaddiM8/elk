@@ -15,6 +15,12 @@ Types](data-types.md).
 | Power          | `^`    |
 | Modulo         | `%`    |
 
+:::info
+These operators need to be surrounded by whitespace in order
+to be parsed correctly. This is because identifiers can contain
+these kind of symbols in shell languages.
+:::
+
 ## Boolean Operations
 
 | Operation                       | Symbol |
@@ -69,6 +75,10 @@ is the value that should be sent to the `receiver` function or program. The
 behaviour is different depending on whether the receiving side is a function 
 call or a program invocation.
 
+For program invocations, it is also possible to specify which output stream
+should be redirected, using `|err` to only redirect stderr or `|all` to
+redirect both stdout and stderr.
+
 ### With Function Calls
 
 When the receiving side is a function call, the pipe expression's `value` is 
@@ -93,4 +103,6 @@ behaviour can be compared to how pipes work in Bash.
 
 ```elk
 cat file.txt | grep line
+some-program |err write errors.txt
+another-program |all write all-output.txt
 ```

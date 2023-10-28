@@ -52,3 +52,8 @@ let $ENV_VAR = "hello"
 echo($ENV_VAR)
 $ENV_VAR += " world"
 ```
+
+:::tip
+The $? variable is automatically set to the exit code of the last
+executed program.
+:::
