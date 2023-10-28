@@ -31,7 +31,14 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     }
 
     public int Count
-        => Values?.Count ?? 0;
+    {
+        get
+        {
+            Collect();
+
+            return Values?.Count ?? 0;
+        }
+    }
 
     public IEnumerator<string> StreamEnumerator { get; private set; } = GetNullEnumerator();
 
@@ -87,6 +94,10 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             throw new RuntimeException("Cannot modify immutable value");
         }
     }
+
+    public override bool Equals(object? obj)
+        => obj is RuntimeObject runtimeObject &&
+            Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
 
     public override RuntimeObject As(Type toType)
         => toType switch

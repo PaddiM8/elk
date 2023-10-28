@@ -28,25 +28,11 @@ static class Maths
             _ => new RuntimeFloat(Math.Abs(x.As<RuntimeFloat>().Value)),
         };
 
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns>The result of adding the two given numbers.</returns>
-    [ElkFunction("add")]
-    public static RuntimeObject Add(RuntimeObject x, RuntimeObject y)
-        => x.Operation(OperationKind.Addition, y);
-
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded up.</returns>
     [ElkFunction("ceil", Reachability.Everywhere)]
     public static RuntimeFloat Ceil(RuntimeObject x)
         => new(Math.Ceiling(x.As<RuntimeFloat>().Value));
-
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns>The result of dividing the two given numbers.</returns>
-    [ElkFunction("div")]
-    public static RuntimeObject Div(RuntimeObject x, RuntimeObject y)
-        => x.Operation(OperationKind.Division, y);
 
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded down.</returns>
@@ -96,27 +82,6 @@ static class Maths
     [ElkFunction("minOf", Reachability.Everywhere)]
     public static RuntimeObject MinOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => items.Min(closure) ?? RuntimeNil.Value;
-
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns>The result of multiplying the two given numbers.</returns>
-    [ElkFunction("mul")]
-    public static RuntimeObject Mul(RuntimeObject x, RuntimeObject y)
-        => x.Operation(OperationKind.Multiplication, y);
-
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns>The result of raising x to the power of y.</returns>
-    [ElkFunction("pow")]
-    public static RuntimeObject Pow(RuntimeObject x, RuntimeObject y)
-        => x.Operation(OperationKind.Power, y);
-
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <returns>The result of subtracting the two given numbers.</returns>
-    [ElkFunction("sub")]
-    public static RuntimeObject Sub(RuntimeObject x, RuntimeObject y)
-        => x.Operation(OperationKind.Subtraction, y);
 
     /// <param name="items">Items to sum</param>
     /// <returns>An Integer of Float of the sum of the given values.</returns>

@@ -1,6 +1,7 @@
 # Examples
 
 * [A sokoban game](https://github.com/PaddiM8/elk/tree/main/examples/sokoban)
+* [Advent of Code 2022](https://github.com/PaddiM8/elk/tree/main/examples/advent-of-code-2022)
 
 ## Hello World
 
@@ -68,6 +69,11 @@ VAR1=value1, VAR2="another value": ./some-script.sh
 ```
 
 ## Misc
+
+::: info
+Putting a `!` after a function call makes it run for every item of
+the Iterable that was given as an argument. This is called [Plurality](/basics/plurality).
+:::
 
 ```elk
 let sizes = du | column 0 | int!

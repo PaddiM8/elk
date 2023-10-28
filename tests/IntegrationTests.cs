@@ -2,9 +2,12 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
+using Elk.Std.Environment;
 using NUnit.Framework;
+using Path = System.IO.Path;
 
 #endregion
 
@@ -36,7 +39,12 @@ public class IntegrationTests
     public static IEnumerable<string> ElkFiles()
     {
         var dataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles");
+        var examplesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "../../../../examples");
 
-        return Directory.GetFiles(dataPath, "*.elk", SearchOption.AllDirectories);
+        return new[]
+        {
+            Directory.GetFiles(dataPath, "*.elk", SearchOption.AllDirectories),
+            Directory.GetFiles(Path.Combine(examplesPath, "advent-of-code-2022"), "*.elk", SearchOption.AllDirectories),
+        }.SelectMany(x => x);
     }
 }

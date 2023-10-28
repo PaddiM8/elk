@@ -176,6 +176,7 @@ static class Iteration
             RuntimeSet set => new(set.Entries.Count),
             RuntimeDictionary dict => new(dict.Entries.Count),
             RuntimeTable table => new(table.Rows.Count),
+            RuntimePipe pipe => new(pipe.Count),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
 

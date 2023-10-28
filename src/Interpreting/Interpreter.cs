@@ -520,23 +520,11 @@ partial class Interpreter
             return RuntimeBoolean.From(result);
         }
 
-        if (expr.Operator is OperationKind.EqualsEquals or OperationKind.NotEquals)
-        {
-            bool? areEqual = null;
-            if (left is RuntimeNil && right is RuntimeNil)
-                areEqual = true;
-            else if (left is RuntimeNil || right is RuntimeNil)
-                areEqual = false;
-            else if (left is not (RuntimeBoolean or RuntimeInteger or RuntimeFloat or RuntimeString or RuntimePipe))
-                areEqual = left == right;
+        if (expr.Operator is OperationKind.EqualsEquals)
+            return RuntimeBoolean.From(left.Equals(right));
 
-            if (areEqual != null)
-            {
-                return expr.Operator == OperationKind.EqualsEquals
-                    ? RuntimeBoolean.From(areEqual.Value)
-                    : RuntimeBoolean.From(!areEqual.Value);
-            }
-        }
+        if (expr.Operator is OperationKind.NotEquals)
+            return RuntimeBoolean.From(!left.Equals(right));
 
         return expr.Operator switch
         {

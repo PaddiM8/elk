@@ -14,10 +14,10 @@ output | call hello world #=> hello world
 
 It is also possible to get references of partial functions calls.
 ```elk
-let f = &math::add(3)
+let f = &op::add(3)
 f | call(4) | println #=> 7
 
 [1, 2, 3]
-    | map => &math::mul(2)
+    | map => &op::mul(2)
     | println #=> [2, 4, 6]
 ```
