@@ -98,6 +98,7 @@ public class ShellSession
 
     public void PrintPrompt()
     {
+        Console.CursorVisible = false;
         if (Console.CursorLeft != 0)
             Console.WriteLine();
 
@@ -126,6 +127,8 @@ public class ShellSession
                 Console.ResetColor();
             }
 
+            Console.CursorVisible = true;
+
             return;
         }
 
@@ -136,6 +139,7 @@ public class ShellSession
         Console.Write(WorkingDirectoryUnexpanded);
         Console.ResetColor();
         Console.Write(" >> ");
+        Console.CursorVisible = true;
     }
 
     public void RunCommand(
