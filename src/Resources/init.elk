@@ -7,6 +7,7 @@ fn elkPrompt() {
             |all where => &str::startsWith("* ")
             | map => x: x[2..]
             | iter::first
+            || nil
     }
 
     let pwd = env::prettyPwd | ansi::color blue
