@@ -823,11 +823,19 @@ class Analyser
 
     private TryExpr Visit(TryExpr expr)
     {
+        var tryBranch = (BlockExpr)Next(expr.Body);
+        var catchBranch = (BlockExpr)Next(expr.CatchBody);
+        tryBranch.IsRoot = expr.IsRoot;
+        catchBranch.IsRoot = expr.IsRoot;
+
         return new TryExpr(
-            (BlockExpr)Next(expr.Body),
-            (BlockExpr)Next(expr.CatchBody),
+            tryBranch,
+            catchBranch,
             expr.CatchIdentifier
-        );
+        )
+        {
+            IsRoot = expr.IsRoot,
+        };
     }
 
     private ThrowExpr Visit(ThrowExpr expr)
