@@ -303,7 +303,7 @@ internal class Parser
             Array.Empty<Expr>()
         );
         _scope.ModuleScope.AddModule(identifier.Value, moduleScope);
-        var block = ParseBlock(StructureKind.Module, moduleScope);
+        var block = ParseBlock(StructureKind.Module, couldBeDictionary: false, moduleScope);
         moduleScope.Ast = block.Expressions;
 
         return new ModuleExpr(accessLevel, identifier, block);
@@ -774,7 +774,7 @@ internal class Parser
 
         if (Match(TokenKind.OpenBrace))
         {
-            return ParseBlock(StructureKind.Other);
+            return ParseBlock(StructureKind.Other, couldBeDictionary: true);
         }
 
         if (Match(TokenKind.Identifier, TokenKind.Ampersand, TokenKind.Dot, TokenKind.DotDot, TokenKind.Slash, TokenKind.Tilde))
@@ -855,7 +855,7 @@ internal class Parser
         }
         else
         {
-            right = ParseBlock(StructureKind.Other, scope);
+            right = ParseBlock(StructureKind.Other, couldBeDictionary: false, scope);
         }
 
         return new ClosureExpr(left, parameters, right);
@@ -1072,7 +1072,7 @@ internal class Parser
         return new ListExpr(expressions, pos);
     }
 
-    private BlockExpr ParseBlockOrSingle(StructureKind parentStructureKind, LocalScope? scope = null)
+    private BlockExpr ParseBlockOrSingle(StructureKind parentStructureKind, LocalScope? scope = null, bool couldBeDictionary = false)
     {
         if (AdvanceIf(TokenKind.Colon))
         {
@@ -1089,17 +1089,18 @@ internal class Parser
             );
         }
 
-        return ParseBlock(parentStructureKind, scope);
+        return ParseBlock(parentStructureKind, couldBeDictionary, scope);
     }
 
-    private Expr ParseBlock(StructureKind parentStructureKind, bool orAsOtherStructure = true)
-        => ParseBlock(parentStructureKind, orAsOtherStructure, null);
+    private Expr ParseBlock(StructureKind parentStructureKind, bool couldBeDictionary = false, bool orAsOtherStructure = true)
+        => ParseBlock(parentStructureKind, orAsOtherStructure, couldBeDictionary, null);
 
-    private BlockExpr ParseBlock(StructureKind parentStructureKind, Scope? scope)
-        => (BlockExpr)ParseBlock(parentStructureKind, orAsOtherStructure: false, scope);
+    private BlockExpr ParseBlock(StructureKind parentStructureKind, bool couldBeDictionary, Scope? scope)
+        => (BlockExpr)ParseBlock(parentStructureKind, couldBeDictionary, orAsOtherStructure: false, scope);
 
     private Expr ParseBlock(
         StructureKind parentStructureKind,
+        bool couldBeDictionary,
         bool orAsOtherStructure,
         Scope? scope)
     {
@@ -1120,7 +1121,7 @@ internal class Parser
                 return ContinueParseAsDictionary(expressions.First());
         }
 
-        if (expressions.Count == 0 && parentStructureKind == StructureKind.Other)
+        if (expressions.Count == 0 && couldBeDictionary)
             return new DictionaryExpr(new List<(Expr, Expr)>(), pos);
 
         _scope = _scope.Parent!;
