@@ -1,0 +1,7 @@
+cat(scriptPath() + "/input.txt")
+    | map => &re::findAll('\d+')
+    | map! => &into::int
+    | iter::count => x {
+        x[1] >= x[2] and x[0] <= x[3]
+    }
+    | assertEqual(45)

@@ -23,8 +23,7 @@ install -D ./build/* /usr/share/elk/
 ln -s /usr/share/elk/elk /usr/bin/elk
 ```
 
-Elk is now installed and can be accessed in the terminal using the `elk` 
-command.
+Elk is now installed and can be accessed with the `elk` command.
 
 ### Default Shell
 

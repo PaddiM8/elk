@@ -1,0 +1,39 @@
+fn parse(lines) {
+    let stacks = []
+    let end = for (line, lineIndex) in lines | withIndex {
+        break lineIndex if (line | str::startsWith(" 1"))
+
+        let crates = line
+            | str::chunks 4
+            | map => x: x[1]
+        for (crate, stackIndex) in crates | withIndex {
+            stacks | push([]) if len(stacks) <= stackIndex
+            stacks[stackIndex] | insert(0, crate) if crate != " "
+        }
+    }
+
+    parseInstructions(lines, end + 2, stacks)
+}
+
+fn parseInstructions(lines, startIndex, stacks) {
+    for line in lines[startIndex..] {
+        let (count, fromStack, toStack) = line | re::findAll('\d+') | into::int!
+        moveCrates(count, stacks[fromStack - 1], stacks[toStack - 1])
+    }
+
+    stacks
+        | where => x: len(x) > 0
+        | iter::last!
+        | join
+}
+
+fn moveCrates(count, fromStack, toStack) {
+    let index = len(fromStack) - count
+    let crates = fromStack[index..]
+    fromStack | list::removeRange(index..)
+    toStack | list::extend(crates)
+}
+
+cat(scriptPath() + "/input.txt")
+    | parse
+    | assertEqual("SWQFQP")

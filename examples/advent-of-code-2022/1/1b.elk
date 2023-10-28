@@ -1,0 +1,9 @@
+scriptPath() + "/input.txt"
+    | read
+    | split "\n\n"
+    | str::lines!
+    | math::sum!
+    | sort::desc
+    | iter::take 3
+    | math::sum
+    | assertEqual(176119)

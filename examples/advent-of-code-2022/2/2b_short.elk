@@ -1,0 +1,22 @@
+let choices = {
+    "X": {
+        "A": 3,
+        "B": 1,
+        "C": 2,
+    },
+    "Y": {
+        "A": 4,
+        "B": 5,
+        "C": 6,
+    },
+    "Z": {
+        "A": 8,
+        "B": 9,
+        "C": 7,
+    },
+}
+
+cat(scriptPath() + "/input.txt")
+    | map => x: choices[x[2]][x[0]]
+    | math::sum
+    | assertEqual(316)

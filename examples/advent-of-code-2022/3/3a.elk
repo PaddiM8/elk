@@ -1,0 +1,21 @@
+fn getItemPriority(letter) {
+    if letter < "a" {
+        into::charCode(letter) - into::charCode("A") + 27
+    } else {
+        into::charCode(letter) - into::charCode("a") + 1
+    }
+}
+
+fn getMisplacedPriority(rucksack) {
+    let middle = len(rucksack) / 2
+    let secondHalf = rucksack[middle..] | into::set
+    rucksack[..middle]
+        | where => x: x in secondHalf
+        | iter::first
+        | getItemPriority
+}
+
+cat(scriptPath() + "/input.txt")
+    | getMisplacedPriority!
+    | math::sum
+    | assertEqual(856)

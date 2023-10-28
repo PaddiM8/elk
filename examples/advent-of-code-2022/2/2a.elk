@@ -1,0 +1,26 @@
+let drawCombos = ["AX", "BY", "CZ"]
+let winningCombos = ["AY", "BZ", "CX"]
+let shapeScores = {
+    "X": 1,
+    "Y": 2,
+    "Z": 3,
+}
+
+fn score(opponentChoice, choice) {
+    let winScore = if opponentChoice + choice in drawCombos {
+        3
+    } else if opponentChoice + choice in winningCombos {
+        6
+    } else {
+        0
+    }
+
+    winScore + shapeScores[choice]
+}
+
+cat(scriptPath() + "/input.txt")
+    | where => x: x
+    | map => x: score(x[0], x[2])
+    | math::sum
+    | assertEqual(212)
+

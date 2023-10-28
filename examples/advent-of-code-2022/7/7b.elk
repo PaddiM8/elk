@@ -1,0 +1,83 @@
+struct Context(lines, index);
+
+struct Node(name, size, children);
+
+fn evaluate(lines) {
+    let context = new Context(lines, 0)
+    let (identifier, args) = context | parseCommand
+
+    context | handleCommand(identifier, args)
+}
+
+fn parseCommand(context) {
+    let captures = context | current | re::groups('(\$\s)(\w+)\s?(.+)?')
+    context | advance
+
+    (captures[2], captures[3])
+}
+
+fn handleCommand(context, identifier, args) {
+    if identifier == "cd" {
+        context | handleCd(args)
+    } else if identifier == "ls" {
+         context | handleLs
+    }
+}
+
+fn handleCd(context, args) {
+    let size = 0
+    let children = []
+    while not isAtEnd(context) and (args == "/" or current(context) != "cd /") {
+        let (identifier, childArgs) = context | parseCommand
+        break if childArgs == ".."
+
+        let result = context | handleCommand(identifier, childArgs)
+        if result | isType(Node) {
+            children | push(result)
+            size += result->size
+        } else {
+            size += result
+        }
+    }
+
+    new Node(args, size, children)
+}
+
+fn handleLs(context) {
+    let size = 0
+    while not isAtEnd(context) and not (current(context) | str::startsWith("$")) {
+        let (info, _) = context | current | split
+        size += into::int(info) if info != "dir"
+        context | advance
+    }
+
+    size
+}
+
+fn findWithMinSize(node, minSize, found=[]) {
+    found | push(node) if minSize < node->size
+
+    for node in node->children:
+        node | findWithMinSize(minSize, found)
+
+    found
+}
+
+fn current(context):
+    context->lines[context->index]
+
+fn advance(context):
+    context->index += 1
+
+fn isAtEnd(context):
+    context->index >= len(context->lines)
+
+let root = cat(scriptPath() + "/input.txt") | evaluate
+let availableSpace = 70000000
+let requiredSpace = 30000000
+let minSizeToDelete = root->size - (availableSpace - requiredSpace)
+root
+    | findWithMinSize(minSizeToDelete)
+    | map => x: x->size
+    | iter::min
+    | assertEqual(24933642)

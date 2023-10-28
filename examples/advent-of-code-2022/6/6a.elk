@@ -1,0 +1,8 @@
+# 1235
+let input = scriptPath() + "/input.txt" | read
+input
+    | withIndex
+    | iter::find => x: (input[x[1]..x[1] + 4] | into::set | len) == 4
+    | iter::at 1
+    | op::add 4
+    | assertEqual(1235)

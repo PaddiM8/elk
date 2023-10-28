@@ -1,0 +1,33 @@
+using iter
+
+fn toScenicScores(lines) {
+    let scores = []
+    for y in 1..(len(lines) - 1) {
+        for x in 1..(len(lines | iter::first) - 1) {
+            scores | push(lines | getScenicScore(x, y))
+        }
+    }
+
+    scores
+}
+
+fn getScenicScore(lines, x, y) {
+    [
+        lines | at(y) | take(x) | reverse,
+        lines | at(y) | skip(x + 1),
+        lines | list::column(x) | take(y) | reverse,
+        lines | list::column(x) | skip(y + 1),
+    ]
+    | map => side {
+        let c = for (tree, i) in side | withIndex:
+            break i + 1 if tree >= lines[y][x]
+
+        c ?? len(side)
+    }
+    | iter::reduce => &op::mul
+}
+
+cat(scriptPath() + "/input.txt")
+    | toScenicScores
+    | iter::max
+    | assertEqual(134232)

@@ -1,0 +1,22 @@
+fn getItemPriority(letter) {
+    if letter < "a" {
+        into::charCode(letter) - into::charCode("A") + 27
+    } else {
+        into::charCode(letter) - into::charCode("a") + 1
+    }
+}
+
+fn getBadgePriority(group) {
+    let rucksacks = group | into::set!
+    rucksacks[0]
+        | iter::intersect(rucksacks[1])
+        | iter::intersect(rucksacks[2])
+        | iter::first
+        | getItemPriority
+}
+
+cat(scriptPath() + "/input.txt")
+    | iter::chunks 3
+    | getBadgePriority!
+    | math::sum
+    | assertEqual(232)
