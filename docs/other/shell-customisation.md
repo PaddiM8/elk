@@ -53,6 +53,7 @@ program, it can be added to the `~/.config/elk/completions` directory.
 The completions will then automatically be loaded when a program with the
 same name as the file is used. In order for this to work,
 `cli::registerForCompletion` needs to be invoked in the file as well.
+The built-in completions can be found [in the repository](https://github.com/PaddiM8/elk/tree/main/src/Resources/Completions).
 
 Below is a trimmed down example of the custom completions for `git`:
 
