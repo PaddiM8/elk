@@ -81,7 +81,7 @@ class HighlightHandler : IHighlightHandler
             >= TokenKind.Not and <= TokenKind.Catch => NextKeyword(),
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => NextNumberLiteral(),
             TokenKind.Comment => NextComment(),
-            TokenKind.StringLiteral => NextStringLiteral(),
+            TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => NextStringLiteral(),
             TokenKind.Identifier => NextIdentifier(),
             TokenKind.Arrow => NextFieldAccess(),
             TokenKind.EqualsGreater => NextClosure(),
@@ -179,12 +179,13 @@ class HighlightHandler : IHighlightHandler
 
     private string NextStringLiteral(int endColor = 0)
     {
-        var value = Eat()!.Value;
+        var (tokenKind, value, _) = Eat()!;
         var builder = new StringBuilder();
         for (var i = 0; i < value.Length; i++)
         {
             char? c = value[i];
-            if (value.ElementAtOrDefault(i - 1) != '\\' &&
+            if (tokenKind == TokenKind.DoubleQuoteStringLiteral &&
+                value.ElementAtOrDefault(i - 1) != '\\' &&
                 c == '$' &&
                 value.ElementAtOrDefault(i + 1) == '{')
             {
@@ -395,7 +396,7 @@ class HighlightHandler : IHighlightHandler
         var textArgumentBuilder = new StringBuilder();
         while (!ReachedTextEnd())
         {
-            if (Current!.Kind is TokenKind.StringLiteral)
+            if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
             {
                 textArgumentBuilder.Append(NextStringLiteral(endColor: 36));
             }

@@ -34,7 +34,7 @@ public enum TokenKind
     EqualsGreater,
 
     // Other
-    IntegerLiteral, FloatLiteral, StringLiteral, BashLiteral,
+    IntegerLiteral, FloatLiteral, DoubleQuoteStringLiteral, SingleQuoteStringLiteral, BashLiteral,
     NewLine, WhiteSpace,
     Comment,
     Identifier,

@@ -187,6 +187,27 @@ static class Iteration
     public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
 
+    /// <returns>The lowest value in the Iterable.</returns>
+    /// <example>[1, 2, 3] | max #=> [2, 3, 4]</example>
+    [ElkFunction("max")]
+    public static RuntimeObject Max(IEnumerable<RuntimeObject> items)
+        => items.Max() ?? RuntimeNil.Value;
+
+    /// <returns>The lowest value in the Iterable with the closure applied.</returns>
+    [ElkFunction("maxOf")]
+    public static RuntimeObject MaxOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => items.Max(closure) ?? RuntimeNil.Value;
+
+    /// <returns>The lowest value in the Iterable.</returns>
+    [ElkFunction("min")]
+    public static RuntimeObject Min(IEnumerable<RuntimeObject> items)
+        => items.Min() ?? RuntimeNil.Value;
+
+    /// <returns>The lowest value in the Iterable with the closure applied.</returns>
+    [ElkFunction("minOf")]
+    public static RuntimeObject MinOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => items.Min(closure) ?? RuntimeNil.Value;
+
     /// <param name="items">A list of values that will be stringified.</param>
     /// <param name="separator">Character sequence that should be put between each value.</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>

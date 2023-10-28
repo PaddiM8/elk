@@ -435,7 +435,7 @@ public class Lexer
         }
 
         return Build(
-            TokenKind.StringLiteral,
+            TokenKind.DoubleQuoteStringLiteral,
             value.ToString(),
             new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );
@@ -478,7 +478,7 @@ public class Lexer
         }
 
         return Build(
-            TokenKind.StringLiteral,
+            TokenKind.SingleQuoteStringLiteral,
             value.ToString(),
             new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
         );

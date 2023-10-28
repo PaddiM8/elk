@@ -73,11 +73,6 @@ static class Maths
             : y;
     }
 
-    /// <returns>The lowest value in the Iterable with the closure applied.</returns>
-    [ElkFunction("maxOf", Reachability.Everywhere)]
-    public static RuntimeObject MaxOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => items.Max(closure) ?? RuntimeNil.Value;
-
     /// <param name="x" types="Integer, Float"></param>
     /// <param name="y" types="Integer, Float"></param>
     /// <returns>The lowest of the two input numbers.</returns>

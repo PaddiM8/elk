@@ -371,7 +371,7 @@ internal class Parser
         var pos = EatExpected(TokenKind.Alias).Position;
         var name = EatExpected(TokenKind.Identifier).Value;
         EatExpected(TokenKind.Equals);
-        var value = EatExpected(TokenKind.StringLiteral);
+        var value = EatExpected(TokenKind.DoubleQuoteStringLiteral, TokenKind.SingleQuoteStringLiteral);
 
         _scope.ModuleScope.AddAlias(name, new LiteralExpr(value));
 
@@ -493,10 +493,10 @@ internal class Parser
                 var variableValue = right switch
                 {
                     CallExpr expr => new LiteralExpr(
-                        expr.Identifier with { Kind = TokenKind.StringLiteral }
+                        expr.Identifier with { Kind = TokenKind.DoubleQuoteStringLiteral }
                     ),
                     VariableExpr expr => new LiteralExpr(
-                        expr.Identifier with { Kind = TokenKind.StringLiteral}
+                        expr.Identifier with { Kind = TokenKind.DoubleQuoteStringLiteral }
                     ),
                     _ => right,
                 };
@@ -867,14 +867,15 @@ internal class Parser
         return Current!.Kind switch
         {
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => new LiteralExpr(Eat()),
-            TokenKind.StringLiteral => ParseStringLiteral(),
+            TokenKind.SingleQuoteStringLiteral => new LiteralExpr(Eat()),
+            TokenKind.DoubleQuoteStringLiteral => ParseDoubleQuoteStringLiteral(),
             _ => new LiteralExpr(Eat()),
         };
     }
 
-    private Expr ParseStringLiteral()
+    private Expr ParseDoubleQuoteStringLiteral()
     {
-        var stringLiteral = EatExpected(TokenKind.StringLiteral);
+        var stringLiteral = EatExpected(TokenKind.DoubleQuoteStringLiteral);
         var parts = StringInterpolationParser.Parse(stringLiteral);
         var parsedParts = new List<Expr>();
         var column = stringLiteral.Position.Column;
@@ -884,7 +885,7 @@ internal class Parser
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(
-                    TokenKind.StringLiteral,
+                    TokenKind.DoubleQuoteStringLiteral,
                     part.Value,
                     textPos
                 );
@@ -1311,7 +1312,7 @@ internal class Parser
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
-                    TokenKind.StringLiteral,
+                    TokenKind.DoubleQuoteStringLiteral,
                     currentText.ToString(),
                     pos
                 );
@@ -1327,7 +1328,8 @@ internal class Parser
             }
 
             var next = Peek();
-            var isStringLiteral = MatchInclWhiteSpace(TokenKind.StringLiteral);
+            var isSingleQuoteStringLiteral = MatchInclWhiteSpace(TokenKind.SingleQuoteStringLiteral);
+            var isDoubleQuoteStringLiteral = MatchInclWhiteSpace(TokenKind.DoubleQuoteStringLiteral);
             var isDollar = MatchInclWhiteSpace(TokenKind.Identifier) &&
                 Current!.Value.StartsWith('$') &&
                 Previous?.Value != "\\";
@@ -1337,19 +1339,21 @@ internal class Parser
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             }
-            else if (isStringLiteral || isDollar)
+            else if (isSingleQuoteStringLiteral || isDoubleQuoteStringLiteral || isDollar)
             {
                 var stringToken = new Token(
-                    TokenKind.StringLiteral,
+                    isSingleQuoteStringLiteral
+                        ? TokenKind.SingleQuoteStringLiteral
+                        : TokenKind.DoubleQuoteStringLiteral,
                     currentText.ToString(),
                     pos
                 );
                 interpolationParts.Add(new LiteralExpr(stringToken));
                 currentText.Clear();
 
-                if (isStringLiteral)
+                if (isDoubleQuoteStringLiteral)
                 {
-                    interpolationParts.Add(ParseStringLiteral());
+                    interpolationParts.Add(ParseDoubleQuoteStringLiteral());
                 }
                 else if (isDollar && Current!.Value.Length > 1)
                 {
@@ -1374,7 +1378,7 @@ internal class Parser
         if (currentText.Length > 0)
         {
             var finalToken = new Token(
-                TokenKind.StringLiteral,
+                TokenKind.DoubleQuoteStringLiteral,
                 currentText.ToString(),
                 pos
             );
@@ -1504,7 +1508,8 @@ internal class Parser
         => kind is
             TokenKind.IntegerLiteral or
             TokenKind.FloatLiteral or
-            TokenKind.StringLiteral or
+            TokenKind.SingleQuoteStringLiteral or
+            TokenKind.DoubleQuoteStringLiteral or
             TokenKind.BashLiteral or
             TokenKind.Nil or
             TokenKind.True or

@@ -72,7 +72,7 @@ static class AstBuilder
             false => new(Token(TokenKind.False, "false")),
             int x => new LiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
             double x => new LiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
-            string x => new(Token(TokenKind.StringLiteral, x)),
+            string x => new(Token(TokenKind.DoubleQuoteStringLiteral, x)),
             _ => new(Token(TokenKind.Unknown, value.ToString() ?? "")),
         };
 }

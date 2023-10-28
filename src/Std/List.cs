@@ -73,7 +73,7 @@ public class List
     /// <param name="list"></param>
     /// <param name="range"></param>
     /// <returns>The same container.</returns>
-    [ElkFunction("removeRange", Reachability.Everywhere)]
+    [ElkFunction("removeRange")]
     public static RuntimeObject RemoveRange(RuntimeList list, RuntimeRange range)
     {
         var from = range.From ?? 0;
