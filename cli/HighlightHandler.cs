@@ -1,5 +1,6 @@
 #region
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -249,7 +250,7 @@ class HighlightHandler : IHighlightHandler
             return $"{Color(identifier, 36)}={Color(assignmentValue, 36)}";
         }
 
-        var plurality = identifier.EndsWith("!") ? "!" : "";
+        var plurality = identifier.EndsWith('!') ? "!" : "";
         identifier = identifier.TrimEnd('!');
         modulePath ??= new List<string>();
 
@@ -260,6 +261,12 @@ class HighlightHandler : IHighlightHandler
             Current?.Kind != TokenKind.ColonColon &&
             (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier)))
             return identifier + plurality;
+
+        modulePath.Add(identifier);
+        if (_shell.ModuleExists(modulePath))
+            return NextModule(modulePath);
+
+        modulePath.RemoveAt(modulePath.Count - 1);
 
         var textArguments = NextTextArguments();
         if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
@@ -277,12 +284,6 @@ class HighlightHandler : IHighlightHandler
         var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
         var isCallable = isFunctionCall || modulePath.Count == 0 && _shell.ProgramExists(identifier);
         var colorCode = isCallable ? 95 : 91;
-
-        modulePath.Add(identifier);
-        if (_shell.ModuleExists(modulePath))
-            return NextModule(modulePath);
-
-        modulePath.RemoveAt(modulePath.Count - 1);
 
         var nextBuilder = new StringBuilder();
         if (Current?.Kind == TokenKind.WhiteSpace)
