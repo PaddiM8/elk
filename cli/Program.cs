@@ -18,20 +18,20 @@ var cliParser = new RuntimeCliParser("elk")
         Identifier = "arguments",
         Description = "Arguments for the script.",
         IsVariadic = true,
+    })
+    .SetAction(result =>
+    {
+        var filePath = result.GetString("file_path");
+        if (filePath == null)
+        {
+            Repl.Run();
+            return;
+        }
+
+        ShellSession.RunFile(
+            filePath,
+            result.GetList("arguments")
+        );
     });
 
-var options = cliParser.Parse(args);
-if (options == null)
-    return;
-
-var filePath = options.GetString("file_path");
-if (filePath == null)
-{
-    Repl.Run();
-    return;
-}
-
-ShellSession.RunFile(
-    filePath,
-    options.GetList("arguments")
-);
+cliParser.Parse(args);

@@ -17,9 +17,15 @@ static class Cli
     /// <param name="name">The name of the program/script/etc.</param>
     /// <returns>An empty CliParser that can be configured using other functions in this module. Has a --help flag by default.</returns>
     [ElkFunction("create")]
-    public static RuntimeObject Create(RuntimeString name)
+    public static RuntimeCliParser Create(RuntimeString name)
+        => new(name.Value);
+
+    [ElkFunction("setAction")]
+    public static RuntimeCliParser SetAction(RuntimeCliParser parser, Action<RuntimeObject> closure)
     {
-        return new RuntimeCliParser(name.Value);
+        parser.SetAction(result => closure(result.ToRuntimeDictionary()));
+
+        return parser;
     }
 
     /// <summary>
@@ -221,10 +227,10 @@ static class Cli
     /// and arguments are used as keys.
     /// </returns>
     [ElkFunction("parse")]
-    public static RuntimeObject Parse(RuntimeCliParser parser, IEnumerable<RuntimeObject> args)
-        => parser
-            .Parse(args.Select(x => x.As<RuntimeString>().Value))?
-            .ToRuntimeDictionary() ?? (RuntimeObject)RuntimeNil.Value;
+    public static void Parse(RuntimeCliParser parser, IEnumerable<RuntimeObject> args)
+    {
+        parser.Parse(args.Select(x => x.As<RuntimeString>().Value));
+    }
 
     /// <summary>
     /// Parses the contents of the `argv` list using the given parser.
@@ -235,8 +241,10 @@ static class Cli
     /// and arguments are used as keys.
     /// </returns>
     [ElkFunction("parseArgv")]
-    public static RuntimeObject ParseArgv(RuntimeCliParser parser, ShellEnvironment env)
-        => Parse(parser, env.Argv.Skip(1));
+    public static void ParseArgv(RuntimeCliParser parser, ShellEnvironment env)
+    {
+        Parse(parser, env.Argv.Skip(1));
+    }
 
     [ElkFunction("getCompletions")]
     public static RuntimeList GetCompletions(RuntimeCliParser parser, RuntimeString partialCommand)

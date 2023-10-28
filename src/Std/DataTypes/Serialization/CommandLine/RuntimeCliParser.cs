@@ -24,6 +24,7 @@ public class RuntimeCliParser : RuntimeObject
     private string? _description;
     private bool _ignoreFlagsAfterArguments;
     private RuntimeCliParser? _parent;
+    private Action<CliResult>? _action;
     private readonly Dictionary<string, RuntimeCliParser> _verbs = new();
     private readonly List<CliFlag> _flags = new();
     private readonly List<string> _requiredFlags = new();
@@ -59,6 +60,13 @@ public class RuntimeCliParser : RuntimeObject
         ParserStorage.InternalParser[name] = newParser;
 
         return newParser;
+    }
+
+    public RuntimeCliParser SetAction(Action<CliResult> action)
+    {
+        _action = action;
+
+        return this;
     }
 
     public RuntimeCliParser AddVerb(string name, Action<RuntimeCliParser> setup)
@@ -323,22 +331,18 @@ public class RuntimeCliParser : RuntimeObject
                 values[lastIdentifier] = variadicArgumentTokens;
         }
 
+        var result = new CliResult(values, argumentIndices);
         if (ignoreErrors)
-            return new CliResult(values, argumentIndices);
-
-        // Error handling
-        if (_verbs.Any())
         {
-            Console.Error.WriteLine($"Expected one of: {string.Join(", ", _verbs.Keys)}");
-
-            return null;
+            _action?.Invoke(result);
+            return result;
         }
 
+        // Error handling
         var missingRequiredFlags = _requiredFlags.Where(x => !values.ContainsKey(x));
         if (missingRequiredFlags.Any())
         {
             Console.Error.WriteLine($"Missing required flags: {string.Join(", ", missingRequiredFlags)}");
-
             return null;
         }
 
@@ -346,11 +350,12 @@ public class RuntimeCliParser : RuntimeObject
         if (missingRequiredArguments.Any())
         {
             Console.Error.WriteLine($"Missing required argument: {string.Join(", ", missingRequiredArguments)}");
-
             return null;
         }
 
-        return new CliResult(values, argumentIndices);
+        _action?.Invoke(result);
+
+        return result;
     }
 
     private (string? identifier, string? value, bool isFlag)? ParseFlag(
