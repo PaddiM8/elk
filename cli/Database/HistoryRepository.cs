@@ -50,7 +50,7 @@ class HistoryRepository : IDisposable
         command.CommandText = """
             SELECT path, content, time
             FROM HistoryEntry
-            ORDER BY time ASC
+            ORDER BY time DESC
             LIMIT 250;
         """;
 
@@ -66,6 +66,8 @@ class HistoryRepository : IDisposable
             };
             entries.Add(entry);
         }
+
+        entries.Reverse();
 
         return entries;
     }
@@ -105,7 +107,7 @@ class HistoryRepository : IDisposable
             SELECT path, content, time
             FROM HistoryEntry
             WHERE content LIKE $start || '%'
-            ORDER BY time ASC
+            ORDER BY time DESC
             LIMIT 50;
         """;
         command.Parameters.AddWithValue("$start", start);
@@ -122,6 +124,8 @@ class HistoryRepository : IDisposable
             };
             entries.Add(entry);
         }
+
+        entries.Reverse();
 
         return entries;
     }
