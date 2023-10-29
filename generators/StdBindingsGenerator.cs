@@ -214,9 +214,9 @@ public class StdBindingsGenerator : ISourceGenerator
             sourceBuilder.Append($"{moduleName}, ");
             sourceBuilder.Append($"\"{function.FunctionName}\", ");
             var documentation = function.Documentation?
+                .Replace("\\", @"\\")
                 .Replace("\"", "\\\"")
-                .Replace("\n", " ")
-                .Replace("\\", @"\\");
+                .Replace("\n", " ");
             var documentationLiteral = documentation == null
                 ? "null"
                 : $"\"{documentation}\"";

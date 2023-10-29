@@ -48,6 +48,15 @@ static class Environment
             : new RuntimeInteger(int.Parse(exitCode));
     }
 
+    /// <param name="pattern">The glob pattern to expand</param>
+    /// <returns>Expands a glob string, eg. "**/*.elk"</returns>
+    [ElkFunction("expand")]
+    public static RuntimeList Expand(RuntimeString pattern)
+        => new(
+            Globbing.Glob(ShellEnvironment.WorkingDirectory, pattern.Value)
+                .Select(x => new RuntimeString(x))
+        );
+
     /// <returns>A string containing a modified version of the path to the current directory (the value of $PWD). The names of all the directories in the path except for the last one are replaced with their first letter, and '/home/user' is replaced with a tilde.</returns>
     /// <example>assert(prettyPwd() == "~/P/e/src")</example>
     [ElkFunction("prettyPwd")]
