@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Microsoft.VisualBasic.FileIO;
 
 namespace Elk.Std.String;
 
@@ -20,15 +23,22 @@ public static class StringPath
     public static RuntimeString FileName(RuntimeString path)
         => new(System.IO.Path.GetFileName(path.Value));
 
-    /// <returns>A relative version of 'entirePath' without the base path</returns>
-    /// <example>
-    /// str::path::relative("/a/b", "a/b/c") #=> "c"
-    /// </example>
-    [ElkFunction("relative")]
-    public static RuntimeString Relative(RuntimeString basePath, RuntimeString entirePath)
-        => entirePath.Value.StartsWith(basePath.Value)
-            ? new(entirePath.Value[basePath.Value.Length..].TrimStart('/'))
-            : entirePath;
+    /// <returns>The absolute path for the given path string.</returns>
+    [ElkFunction("full")]
+    public static RuntimeString Full(RuntimeString path)
+    {
+        var absolute = path.Value.FirstOrDefault() switch
+        {
+            '/' => path.Value,
+            '~' => Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                path.Value[2..]
+            ),
+            _ => Path.Combine(ShellEnvironment.WorkingDirectory, path.Value),
+        };
+
+        return new(new Uri(absolute).LocalPath);
+    }
 
     [ElkFunction("fuzzyFind")]
     public static RuntimeList FuzzyFind(IEnumerable<RuntimeObject> paths, RuntimeString query)
@@ -46,4 +56,14 @@ public static class StringPath
 
         return new(exactStart.Union(exactContains).Union(insensitiveContains));
     }
+
+    /// <returns>A relative version of 'entirePath' without the base path</returns>
+    /// <example>
+    /// str::path::relative("/a/b", "a/b/c") #=> "c"
+    /// </example>
+    [ElkFunction("relative")]
+    public static RuntimeString Relative(RuntimeString basePath, RuntimeString entirePath)
+        => entirePath.Value.StartsWith(basePath.Value)
+            ? new(entirePath.Value[basePath.Value.Length..].TrimStart('/'))
+            : entirePath;
 }
