@@ -282,7 +282,8 @@ class HighlightHandler : IHighlightHandler
         }
 
         var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
-        var isCallable = isFunctionCall || modulePath.Count == 0 && _shell.ProgramExists(identifier);
+        var isCallable = isFunctionCall ||
+            modulePath.Count == 0 && (_shell.ProgramExists(identifier) || _shell.AliasExists(identifier));
         var colorCode = isCallable ? 95 : 91;
 
         var nextBuilder = new StringBuilder();

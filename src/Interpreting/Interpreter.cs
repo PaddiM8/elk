@@ -157,8 +157,8 @@ partial class Interpreter
     public bool VariableExists(string name)
         => _scope.ModuleScope.FindVariable(name) != null;
 
-    public void AddGlobalVariable(string name, RuntimeObject value)
-        => _scope.ModuleScope.AddVariable(name, value);
+    public bool AliasExists(string name)
+        => _scope.ModuleScope.FindAlias(name) != null;
 
     private RuntimeObject Next(Expr expr)
     {

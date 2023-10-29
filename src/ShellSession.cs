@@ -96,6 +96,9 @@ public class ShellSession
     public bool ProgramExists(string name)
         => FileUtils.ExecutableExists(name, WorkingDirectory);
 
+    public bool AliasExists(string name)
+        => _interpreter.AliasExists(name);
+
     public void PrintPrompt()
     {
         Console.CursorVisible = false;
