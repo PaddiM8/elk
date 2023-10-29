@@ -1,6 +1,7 @@
 #region
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Elk.Lexing;
 using Elk.Parsing;
@@ -65,7 +66,9 @@ class ModuleScope : Scope
         ModuleScope = this;
         Name = name;
         RootModule = parent?.ModuleScope.RootModule ?? (RootModuleScope)this;
-        FilePath = filePath;
+        FilePath = filePath == null
+            ? null
+            : Path.GetFullPath(filePath);
         Ast = ast;
     }
 

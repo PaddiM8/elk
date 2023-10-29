@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Elk.Parsing;
@@ -17,8 +18,8 @@ class RootModuleScope : ModuleScope
             ast
         )
     {
-        if (filePath != null)
-            _allModules[filePath] = this;
+        if (FilePath != null)
+            _allModules[FilePath] = this;
     }
 
     public void RegisterModule(string filePath, ModuleScope module)
