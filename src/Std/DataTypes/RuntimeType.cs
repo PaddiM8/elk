@@ -20,7 +20,7 @@ public class RuntimeType : RuntimeObject
 
     internal Type? Type { get; }
 
-   internal StructSymbol? StructSymbol { get; }
+    internal StructSymbol? StructSymbol { get; }
 
     internal RuntimeType(Type type)
     {
@@ -36,6 +36,10 @@ public class RuntimeType : RuntimeObject
         => Type?.IsInstanceOfType(value) is true ||
                value is RuntimeStruct valueStruct && valueStruct.Symbol == StructSymbol;
 
+    public override bool Equals(object? obj)
+        => obj is RuntimeObject runtimeObject &&
+            Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {
@@ -48,6 +52,24 @@ public class RuntimeType : RuntimeObject
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
+
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
+    {
+        var otherType = other.As<RuntimeType>();
+
+        return kind switch
+        {
+            OperationKind.EqualsEquals => RuntimeBoolean.From(
+                Type == null && StructSymbol == otherType.StructSymbol ||
+                    Type == otherType.Type
+            ),
+            OperationKind.NotEquals => RuntimeBoolean.From(
+                Type == null && StructSymbol != otherType.StructSymbol ||
+                    Type != otherType.Type
+            ),
+            _ => throw InvalidOperation(kind),
+        };
+    }
 
     public override int GetHashCode()
         => Type?.GetHashCode() ?? StructSymbol!.GetHashCode();
