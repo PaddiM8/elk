@@ -32,6 +32,7 @@ command line arguments. The following shortcuts are available:
 | Ctrl+Backspace, Ctrl+W | Remove the word to the left                                                      |
 | Ctrl+L                 | Clear the console                                                                |
 | Ctrl+U                 | Remove everything to the left                                                    |
+| Ctrl+R                 | Search in history                                                                |
 | Tab                    | Next tab completion                                                              |
 | Shift+Tab              | Previous tab completion                                                          |
 

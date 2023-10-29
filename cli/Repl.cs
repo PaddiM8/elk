@@ -30,10 +30,11 @@ class Repl
         var readLine = new ReadLinePrompt
         {
             HistoryHandler = historyHandler,
-            AutoCompletionHandler = new AutoCompleteHandler(shell, new[]{ ' ', '/' }, highlightHandler),
+            AutoCompletionHandler = new AutoCompleteHandler(shell, new[] { ' ', '/' }, highlightHandler),
             HighlightHandler = highlightHandler,
             HintHandler = new HintHandler(historyRepository, shell),
             EnterHandler = new EnterHandler(),
+            SearchHandler = new SearchHandler(historyRepository),
             WordSeparators = new[] { ' ', '/', ':' },
         };
 

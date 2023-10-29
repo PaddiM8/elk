@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Elk.ReadLine.Render;
 
@@ -24,15 +25,16 @@ public readonly struct KeyPress
     }
 }
 
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public class KeyHandler
 {
     public string Text => _renderer.Text;
 
     public char[] WordSeparators = { ' ' };
 
-    internal IHistoryHandler? HistoryHandler { get; set; }
+    internal IHistoryHandler? HistoryHandler { get; init; }
 
-    internal IAutoCompleteHandler? AutoCompleteHandler { get; set; }
+    internal IAutoCompleteHandler? AutoCompleteHandler { get; init; }
 
     internal IHintHandler? HintHandler
     {
@@ -68,17 +70,32 @@ public class KeyHandler
         }
     }
 
-    internal IEnterHandler? EnterHandler { get; set; }
+    internal IEnterHandler? EnterHandler { get; init; }
 
-    internal Action? OnEnter { get; set; }
+    internal ISearchHandler? SearchHandler
+    {
+        get => _searchHandler;
+
+        set
+        {
+            if (value != null)
+                _searchState = new SearchState(_renderer, value, _highlightHandler);
+
+            _searchHandler = value;
+        }
+    }
+
+    internal Action? OnEnter { get; init; }
 
     private IHighlightHandler? _highlightHandler;
     private IHintHandler? _hintHandler;
+    private ISearchHandler? _searchHandler;
     private bool _wasEdited;
     private readonly Dictionary<KeyPress, Action> _defaultShortcuts;
     private readonly ShortcutBag? _shortcuts;
     private readonly IRenderer _renderer;
     private readonly CompletionState _completionState;
+    private SearchState? _searchState;
 
     internal KeyHandler(IRenderer renderer, ShortcutBag? shortcuts)
     {
@@ -110,6 +127,7 @@ public class KeyHandler
             [new(ConsoleModifiers.Control, ConsoleKey.L)] = ClearConsole,
             [new(ConsoleModifiers.Control, ConsoleKey.N)] = DownArrow,
             [new(ConsoleModifiers.Control, ConsoleKey.P)] = UpArrow,
+            [new(ConsoleModifiers.Control, ConsoleKey.R)] = Search,
             [new(ConsoleModifiers.Control, ConsoleKey.T)] = TransposeChars,
             [new(ConsoleModifiers.Control, ConsoleKey.U)] = RemoveToHome,
             [new(ConsoleModifiers.Control, ConsoleKey.W)] = RemoveWordLeft,
@@ -162,13 +180,11 @@ public class KeyHandler
 
         _wasEdited = true;
 
-        if (firstKey.KeyChar != '\0')
+        if (firstKey.KeyChar != '\0' && firstKey.Key != ConsoleKey.Escape)
             WriteChar(firstKey.KeyChar);
 
         if (remaining != null)
-        {
             _renderer.Insert(remaining, includeHint: false);
-        }
     }
 
     public void Backspace()
@@ -278,6 +294,13 @@ public class KeyHandler
         _wasEdited = false;
         if (result != null)
             _renderer.Text = result;
+    }
+
+    public void Search()
+    {
+        var enterPressed = _searchState?.Start();
+        if (enterPressed is true && OnEnter != null)
+            OnEnter();
     }
 
     public void DownArrow()

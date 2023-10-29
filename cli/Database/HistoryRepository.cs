@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Data.Sqlite;
 
 namespace Elk.Cli.Database;
@@ -44,32 +45,18 @@ class HistoryRepository : IDisposable
         _db.Dispose();
     }
 
-    public List<HistoryEntry> GetAll()
+    public List<HistoryEntry> GetAll(int limit = 250)
     {
         var command = _db.CreateCommand();
         command.CommandText = """
             SELECT path, content, time
             FROM HistoryEntry
             ORDER BY time DESC
-            LIMIT 250;
+            LIMIT $limit;
         """;
+        command.Parameters.AddWithValue("limit", limit);
 
-        var entries = new List<HistoryEntry>();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            var entry = new HistoryEntry
-            {
-                Path = reader.GetString(0),
-                Content = reader.GetString(1),
-                Time = reader.GetDateTime(2),
-            };
-            entries.Add(entry);
-        }
-
-        entries.Reverse();
-
-        return entries;
+        return ReadEntries(command).ToList();
     }
 
     public HistoryEntry? GetSingleWithPathAndStart(string path, string start)
@@ -86,18 +73,7 @@ class HistoryRepository : IDisposable
         command.Parameters.AddWithValue("$path", path);
         command.Parameters.AddWithValue("$start", start);
 
-        using var reader = command.ExecuteReader();
-        if (reader.Read())
-        {
-            return new HistoryEntry
-            {
-                Path = reader.GetString(0),
-                Content = reader.GetString(1),
-                Time = reader.GetDateTime(2),
-            };
-        }
-
-        return null;
+        return ReadEntries(command).FirstOrDefault();
     }
 
     public List<HistoryEntry> GetWithStart(string start)
@@ -112,22 +88,22 @@ class HistoryRepository : IDisposable
         """;
         command.Parameters.AddWithValue("$start", start);
 
-        var entries = new List<HistoryEntry>();
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            var entry = new HistoryEntry
-            {
-                Path = reader.GetString(0),
-                Content = reader.GetString(1),
-                Time = reader.GetDateTime(2),
-            };
-            entries.Add(entry);
-        }
+        return ReadEntries(command).ToList();
+    }
 
-        entries.Reverse();
+    public List<HistoryEntry> Search(string query)
+    {
+        var command = _db.CreateCommand();
+        command.CommandText = """
+            SELECT path, content, time
+            FROM HistoryEntry
+            WHERE content LIKE '%' || $query || '%'
+            ORDER BY time DESC
+            LIMIT 50;
+        """;
+        command.Parameters.AddWithValue("$query", query);
 
-        return entries;
+        return ReadEntries(command).ToList();
     }
 
     public void Add(HistoryEntry entry)
@@ -151,5 +127,19 @@ class HistoryRepository : IDisposable
         command.Parameters.AddWithValue("$content", entry.Content);
         command.Parameters.AddWithValue("$time", entry.Time);
         command.ExecuteNonQuery();
+    }
+
+    private IEnumerable<HistoryEntry> ReadEntries(SqliteCommand command)
+    {
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            yield return new HistoryEntry
+            {
+                Path = reader.GetString(0),
+                Content = reader.GetString(1),
+                Time = reader.GetDateTime(2),
+            };
+        }
     }
 }

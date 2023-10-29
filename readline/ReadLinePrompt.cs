@@ -16,6 +16,8 @@ public class ReadLinePrompt
 
     public IEnterHandler? EnterHandler { private get; set; }
 
+    public ISearchHandler? SearchHandler { private get; set; }
+
     public char[]? WordSeparators { get; set; }
 
     private KeyHandler? _keyHandler;
@@ -33,6 +35,7 @@ public class ReadLinePrompt
             HighlightHandler = HighlightHandler,
             HintHandler = HintHandler,
             EnterHandler = EnterHandler,
+            SearchHandler = SearchHandler,
             OnEnter = () => enterPressed = true,
         };
 

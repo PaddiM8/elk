@@ -38,6 +38,7 @@ class HistoryHandler : IHistoryHandler
     public static HistoryHandler Init(int maxEntries, HistoryRepository historyRepository)
     {
         var entries = historyRepository.GetAll();
+        entries.Reverse();
 
         return new HistoryHandler(maxEntries, historyRepository, entries);
     }
@@ -64,7 +65,9 @@ class HistoryHandler : IHistoryHandler
     {
         if (wasEdited && caret != 0)
         {
-            _activeEntries = new Deque<HistoryEntry>(_historyRepository.GetWithStart(promptText));
+            var entries = _historyRepository.GetWithStart(promptText);
+            entries.Reverse();
+            _activeEntries = new Deque<HistoryEntry>(entries);
             _currentIndex = Math.Max(0, _activeEntries.Count - 1);
             _historyMode = HistoryMode.WithStart;
             _promptText = promptText;
