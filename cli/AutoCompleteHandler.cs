@@ -43,7 +43,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         return cursorPos - completionTarget.Length;
     }
 
-    public IList<Completion> GetSuggestions(string text, int startPos, int endPos)
+    public IList<Completion> GetCompletions(string text, int startPos, int endPos)
     {
         var isColonColon = endPos > 2 && text[(endPos - 2)..endPos] == "::";
         if (_currentInvocationInfo == null && !isColonColon)
@@ -54,21 +54,14 @@ class AutoCompleteHandler : IAutoCompleteHandler
             : _customCompletionProvider.Get(_currentInvocationInfo.Name);
         if (completionParser != null)
         {
-            try
-            {
-                var textArgumentStartIndex = Math.Min(
-                    _currentInvocationInfo!.TextArgumentStartIndex,
-                    text.Length
-                );
+            var textArgumentStartIndex = Math.Min(
+                _currentInvocationInfo!.TextArgumentStartIndex,
+                text.Length
+            );
 
-                return completionParser
-                    .GetCompletions(text[textArgumentStartIndex..], endPos - textArgumentStartIndex)
-                    .ToList();
-            }
-            catch (RuntimeException)
-            {
-                // TODO: Handle this
-            }
+            return completionParser
+                .GetCompletions(text[textArgumentStartIndex..], endPos - textArgumentStartIndex)
+                .ToList();
         }
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';

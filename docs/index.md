@@ -72,5 +72,5 @@ unlike in bash
   commands into the shell when necessary
 * Custom completions
 * Semantic highlighting
-* History hints
+* Hints (history, file names)
 * ...more

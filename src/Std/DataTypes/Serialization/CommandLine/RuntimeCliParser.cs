@@ -114,7 +114,10 @@ public class RuntimeCliParser : RuntimeObject
         return this;
     }
 
-    public IEnumerable<Completion> GetCompletions(string args, int? caret = null)
+    public IEnumerable<Completion> GetCompletions(
+        string args,
+        int? caret = null,
+        CompletionKind completionKind = CompletionKind.Normal)
     {
         caret ??= args.Length;
         var whitespaceRegex = new System.Text.RegularExpressions.Regex(@"(?<!\\)\s");
@@ -125,10 +128,25 @@ public class RuntimeCliParser : RuntimeObject
             .Split(args)
             .Select(x => x.Trim());
 
-        return GetCompletions(tokensBeforeCaret, Parse(allTokens, ignoreErrors: true));
+        try
+        {
+            return GetCompletions(
+                tokensBeforeCaret,
+                Parse(allTokens, ignoreErrors: true),
+                completionKind
+            );
+        }
+        catch (RuntimeException)
+        {
+            // TODO: Might want to handle this
+            return Array.Empty<Completion>();
+        }
     }
 
-    private IEnumerable<Completion> GetCompletions(IEnumerable<string> tokens, CliResult? cliResult)
+    private IEnumerable<Completion> GetCompletions(
+        IEnumerable<string> tokens,
+        CliResult? cliResult,
+        CompletionKind completionKind)
     {
         var flagCompletions = _flags
             .Select(x =>
@@ -159,7 +177,7 @@ public class RuntimeCliParser : RuntimeObject
 
         // If the first argument is a verb, let the verb's parser deal with the rest
         if (_verbs.TryGetValue(tokens.First(), out var verbParser))
-            return verbParser.GetCompletions(tokens.Skip(1), cliResult);
+            return verbParser.GetCompletions(tokens.Skip(1), cliResult, completionKind);
 
         // If there is only one token and the parser contains verbs,
         // that means two things: the cursor is at the token, and
@@ -198,12 +216,12 @@ public class RuntimeCliParser : RuntimeObject
             {
                 flag = _flags.FirstOrDefault(x => x.LongName == secondLast[2..]);
             }
-            else if (secondLast.StartsWith("-"))
+            else if (secondLast.StartsWith('-'))
             {
                 flag = _flags.FirstOrDefault(x => x.ShortName == secondLast[1..]);
             }
 
-            if (flag?.CompletionHandler != null && cliResult != null)
+            if (completionKind != CompletionKind.Hint && flag?.CompletionHandler != null && cliResult != null)
                 return flag.CompletionHandler(last, cliResult);
 
             if (flag is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
@@ -213,7 +231,8 @@ public class RuntimeCliParser : RuntimeObject
                     ShellEnvironment.WorkingDirectory,
                     flag.ValueKind == CliValueKind.Directory
                         ? FileType.Directory
-                        : FileType.All
+                        : FileType.All,
+                    completionKind
                 );
             }
 
@@ -230,7 +249,7 @@ public class RuntimeCliParser : RuntimeObject
         var currentArgument = lastIsArgument
             ? _arguments.ElementAtOrDefault(argumentCount - 1) ?? _arguments.Last()
             : null;
-        if (currentArgument?.CompletionHandler != null && cliResult != null)
+        if (completionKind != CompletionKind.Hint && currentArgument?.CompletionHandler != null && cliResult != null)
             return currentArgument.CompletionHandler(last, cliResult);
 
         if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })

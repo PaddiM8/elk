@@ -22,7 +22,7 @@ internal interface IRenderer
 
     bool IsEndOfLine { get; }
 
-    void OnHighlight(Func<string, string>? callback);
+    void OnHighlight(Func<string, int, string>? callback);
 
     void OnHint(Func<string, string?>? callback);
 

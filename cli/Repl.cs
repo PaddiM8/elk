@@ -32,7 +32,12 @@ class Repl
             HistoryHandler = historyHandler,
             AutoCompletionHandler = new AutoCompleteHandler(shell, new[] { ' ', '/' }, highlightHandler),
             HighlightHandler = highlightHandler,
-            HintHandler = new HintHandler(historyRepository, shell),
+            HintHandler = new HintHandler(
+                historyRepository,
+                shell,
+                highlightHandler,
+                new CustomCompletionProvider(shell)
+            ),
             EnterHandler = new EnterHandler(),
             SearchHandler = new SearchHandler(historyRepository),
             WordSeparators = new[] { ' ', '/', ':' },

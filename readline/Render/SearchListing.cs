@@ -58,7 +58,7 @@ class SearchListing
             var truncated = escaped.WcTruncate(_renderer.BufferWidth);
             var highlighted = x.index == _selectedIndex
                 ? Ansi.Color("❯ " + truncated, AnsiForeground.Black, AnsiBackground.White)
-                : "❯ " + (_highlightHandler?.Highlight(truncated) ?? truncated);
+                : "❯ " + (_highlightHandler?.Highlight(truncated, _renderer.Caret) ?? truncated);
 
             return highlighted + Ansi.ClearToEndOfLine();
         });

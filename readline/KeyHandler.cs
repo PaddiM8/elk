@@ -266,7 +266,7 @@ public class KeyHandler
         }
 
         var start = AutoCompleteHandler.GetCompletionStart(_renderer.Text, _renderer.Caret);
-        var completions = AutoCompleteHandler.GetSuggestions(_renderer.Text, start, _renderer.Caret);
+        var completions = AutoCompleteHandler.GetCompletions(_renderer.Text, start, _renderer.Caret);
         if (completions.Count > 0)
         {
             _completionState.StartNew(completions, start);

@@ -68,21 +68,21 @@ internal class Renderer : IRenderer
     private int _caret;
     private int _previousRenderTop;
     private readonly StringBuilder _text = new();
-    private Func<string, string>? _highlighter;
+    private Func<string, int, string>? _highlighter;
     private Func<string, string?>? _retrieveHint;
 
-    public void OnHighlight(Func<string, string>? callback)
+    public void OnHighlight(Func<string, int, string>? callback)
         => _highlighter = callback;
 
     public void OnHint(Func<string, string?>? callback)
         => _retrieveHint = callback;
 
-    private string Highlight(string input)
+    private string Highlight(string input, int caret)
     {
         if (input.Length == 0 || _highlighter == null)
             return input;
 
-        return _highlighter(input);
+        return _highlighter(input, caret);
     }
 
     public void CaretUp()
@@ -209,20 +209,20 @@ internal class Renderer : IRenderer
 
     public void RenderText(bool includeHint = false)
     {
+        var movementToStart = IndexToMovement(0);
+        var (top, left) = IndexToTopLeft(_text.Length);
+        var newLine = top > 0 && left == 0 && _text[^1] != '\n'
+            ? "\n"
+            : "";
+        var formattedText = Indent(Highlight(Text, Caret));
+
+        // Hint
         HintText = includeHint && _retrieveHint != null
             ? _retrieveHint!(Text)
             : null;
         if (HintText?.Length == 0)
             HintText = null;
 
-        var movementToStart = IndexToMovement(0);
-        var (top, left) = IndexToTopLeft(_text.Length);
-        var newLine = top > 0 && left == 0 && _text[^1] != '\n'
-            ? "\n"
-            : "";
-        var formattedText = Indent(Highlight(Text));
-
-        // Hint
         var formattedHint = "";
         var hintMovement = "";
         var hintHeight = 0;

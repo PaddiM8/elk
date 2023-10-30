@@ -18,7 +18,8 @@ cd elk
 Compile and install the program:
 
 ```shell
-mkdir /usr/share/elk
+./build.sh
+mkdir -p /usr/share/elk
 install -D ./build/* /usr/share/elk/
 ln -s /usr/share/elk/elk /usr/bin/elk
 ```

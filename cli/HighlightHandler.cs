@@ -13,13 +13,18 @@ namespace Elk.Cli;
 
 record ShellStyleInvocationInfo(
     string Name,
-    string TextArguments,
+    TextArgumentsInfo TextArgumentsInfo,
     int StartIndex,
     int EndIndex)
 {
     public int TextArgumentStartIndex
         => StartIndex + Name.Length + 1;
 }
+
+record TextArgumentsInfo(
+    IList<string> Arguments,
+    int CaretAtArgumentIndex
+);
 
 class HighlightHandler : IHighlightHandler
 {
@@ -42,6 +47,7 @@ class HighlightHandler : IHighlightHandler
     private List<Token> _tokens = null!;
     private int _index;
     private int _length;
+    private int _caret;
     private HighlightHandler? _innerHighlighter;
     private readonly List<ShellStyleInvocationInfo> _lastShellStyleInvocations = new();
     private readonly HashSet<string> _unevaluatedVariables = new();
@@ -51,11 +57,12 @@ class HighlightHandler : IHighlightHandler
         _shell = shell;
     }
 
-    public string Highlight(string text)
+    public string Highlight(string text, int caret)
     {
         _tokens = Lexer.Lex(text, "", out _, LexerMode.Preserve);
-        _length = text.Length;
         _index = 0;
+        _length = text.Length;
+        _caret = caret;
         _lastShellStyleInvocations.Clear();
         _unevaluatedVariables.Clear();
 
@@ -216,13 +223,21 @@ class HighlightHandler : IHighlightHandler
                 {
                     var interpolationContentEnd = i - 1;
                     builder.Append(
-                        _innerHighlighter.Highlight(value[interpolationContentStart..interpolationContentEnd])
+                        _innerHighlighter.Highlight(
+                            value[interpolationContentStart..interpolationContentEnd],
+                            _caret
+                        )
                     );
                     builder.Append(Color("}", 37, endColor: 93));
                 }
                 else if (i <= value.Length && i != interpolationContentStart)
                 {
-                    builder.Append(_innerHighlighter.Highlight(value[interpolationContentStart..i]));
+                    builder.Append(
+                        _innerHighlighter.Highlight(
+                            value[interpolationContentStart..i],
+                            _caret
+                        )
+                    );
                 }
             }
 
@@ -268,13 +283,13 @@ class HighlightHandler : IHighlightHandler
 
         modulePath.RemoveAt(modulePath.Count - 1);
 
-        var textArguments = NextTextArguments();
-        if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
+        var (highlightedTextArguments, textArgumentsInfo) = NextTextArguments();
+        if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentsInfo.Arguments.Any())
         {
             _lastShellStyleInvocations.Add(
                 new(
                     string.Join("::", modulePath.Append(identifier)),
-                    textArguments,
+                    textArgumentsInfo,
                     startIndex,
                     Current?.Position.Index ?? _length
                 )
@@ -290,8 +305,8 @@ class HighlightHandler : IHighlightHandler
         if (Current?.Kind == TokenKind.WhiteSpace)
             nextBuilder.Append(Eat()!.Value);
 
-        return textArguments.Length > 0
-            ? Color(identifier, colorCode, null) + plurality + textArguments + nextBuilder
+        return highlightedTextArguments.Length > 0
+            ? Color(identifier, colorCode, null) + plurality + highlightedTextArguments + nextBuilder
             : Color(identifier, colorCode) + plurality + nextBuilder;
     }
 
@@ -335,7 +350,7 @@ class HighlightHandler : IHighlightHandler
         _lastShellStyleInvocations.Add(
             new(
                 textForCompletion,
-                "",
+                new(Array.Empty<string>(), -1),
                 pos - textForCompletion.Length,
                 pos
             )
@@ -369,13 +384,13 @@ class HighlightHandler : IHighlightHandler
         }
 
         var identifier = builder.ToString();
-        var textArguments = NextTextArguments();
-        if (Current?.Kind != TokenKind.OpenParenthesis || textArguments.Length > 0)
+        var (highlightedTextArguments, textArgumentsInfo) = NextTextArguments();
+        if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentsInfo.Arguments.Any())
         {
             _lastShellStyleInvocations.Add(
                 new(
                     identifier,
-                    textArguments,
+                    textArgumentsInfo,
                     startIndex,
                     Current?.Position.Index ?? _length
                 )
@@ -384,18 +399,20 @@ class HighlightHandler : IHighlightHandler
 
         var colorCode = _shell.ProgramExists(identifier) ? 95 : 91;
 
-        return textArguments.Length > 0
-            ? Color(identifier, colorCode, null) + textArguments
+        return highlightedTextArguments.Length > 0
+            ? Color(identifier, colorCode, null) + highlightedTextArguments
             : Color(identifier, colorCode);
     }
 
-    private string NextTextArguments()
+    private (string highlighted, TextArgumentsInfo argumentsInfo) NextTextArguments()
     {
         if (Current?.Kind != TokenKind.WhiteSpace)
-            return "";
+            return ("", new(Array.Empty<string>(), -1));
 
         var textArguments = new List<string>();
         var textArgumentBuilder = new StringBuilder();
+        var caretAtArgumentIndex = -1;
+        var startIndex = Current.Position.Index;
         while (!ReachedTextEnd())
         {
             if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
@@ -418,6 +435,11 @@ class HighlightHandler : IHighlightHandler
                 textArguments.Add(textArgumentBuilder.ToString());
                 textArguments.Add(whiteSpace);
                 textArgumentBuilder.Clear();
+
+                // If the caret is within this text argument,
+                // save the index of the argument.
+                if (_caret >= startIndex && _caret <= Previous?.Position.Index + Previous?.Value.Length)
+                    caretAtArgumentIndex = textArguments.Count - 1;
             }
             else
             {
@@ -428,13 +450,19 @@ class HighlightHandler : IHighlightHandler
         textArguments.Add(textArgumentBuilder.ToString());
         textArgumentBuilder.Clear();
 
+        if (_caret >= startIndex && _caret <= Previous?.Position.Index + Previous?.Value.Length)
+            caretAtArgumentIndex = textArguments.Count - 1;
+
         var highlightedTextArguments = textArguments.Select(x =>
             FileUtils.IsValidStartOfPath(x, _shell.WorkingDirectory)
                 ? Underline(x)
                 : x
         );
 
-        return Color(string.Concat(highlightedTextArguments), 36);
+        return (
+            Color(string.Concat(highlightedTextArguments), 36),
+            new(textArguments, caretAtArgumentIndex)
+        );
     }
 
     private string NextInterpolation(int endColor = 0)

@@ -15,5 +15,5 @@ public interface IAutoCompleteHandler
             : start + 1;
     }
 
-    IList<Completion> GetSuggestions(string text, int completionStart, int completionEnd);
+    IList<Completion> GetCompletions(string text, int completionStart, int completionEnd);
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.ReadLine;
+using Elk.Std.DataTypes.Serialization.CommandLine;
 using Mono.Unix;
 
 namespace Elk;
@@ -64,9 +65,6 @@ public static class FileUtils
 
     public static bool IsValidStartOfPath(string path, string workingDirectory)
     {
-        if (!path.StartsWith("./") && !path.StartsWith("~/") && !path.StartsWith('/'))
-            return false;
-
         if (path.StartsWith('~'))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
@@ -93,7 +91,8 @@ public static class FileUtils
     public static IList<Completion> GetPathCompletions(
         string path,
         string workingDirectory,
-        FileType fileType)
+        FileType fileType,
+        CompletionKind completionKind = CompletionKind.Normal)
     {
         var lastSlashIndex = path
             .WithIndex()
@@ -136,7 +135,7 @@ public static class FileUtils
                 .Select(x => new Completion(x.name));
         }
 
-        if (!directories.Any() && !files.Any())
+        if (completionKind != CompletionKind.Hint && !directories.Any() && !files.Any())
         {
             const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
             if (fileType != FileType.Executable)
