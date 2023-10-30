@@ -67,6 +67,7 @@ internal class Renderer : IRenderer
     private int _left = Console.CursorLeft;
     private int _caret;
     private int _previousRenderTop;
+    private bool _lastWasBackspace;
     private readonly StringBuilder _text = new();
     private Func<string, int, string>? _highlighter;
     private Func<string, string?>? _retrieveHint;
@@ -155,6 +156,7 @@ internal class Renderer : IRenderer
 
     public void Insert(string input, bool includeHint)
     {
+        _lastWasBackspace = false;
         input = input.Replace("\t", "  ");
 
         var hasHint = includeHint && _text.Length + input.Length > 0;
@@ -175,6 +177,8 @@ internal class Renderer : IRenderer
 
     public void RemoveLeft(int count, bool render = true)
     {
+        _lastWasBackspace = true;
+
         if (Caret - count < 0)
             count = Caret;
         if (count == 0)
@@ -217,7 +221,7 @@ internal class Renderer : IRenderer
         var formattedText = Indent(Highlight(Text, Caret));
 
         // Hint
-        HintText = includeHint && _retrieveHint != null
+        HintText = !_lastWasBackspace && includeHint && _retrieveHint != null
             ? _retrieveHint!(Text)
             : null;
         if (HintText?.Length == 0)
