@@ -105,6 +105,12 @@ public class ShellSession
         if (Console.CursorLeft != 0)
             Console.WriteLine();
 
+        #if DEBUG
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("\u25cf ");
+        #endif
+
+        Console.ResetColor();
         if (_interpreter.FunctionExists("elkPrompt"))
         {
             var call = new CallExpr(
