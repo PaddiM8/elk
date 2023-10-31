@@ -11,11 +11,14 @@ assert(b[1] == "world")
 let c = values "hello world"
 assert(c[0] == "hello world")
 
-let x = 5
-let d = values hello "${x}"
-assert(d[0] == "hello")
-assert(d[1] == "5")
+let d = values 'hello world'
+assert(d[0] == "hello world")
 
-let e = values hello ${x}
+let x = 5
+let e = values hello "${x}"
 assert(e[0] == "hello")
 assert(e[1] == "5")
+
+let f = values hello ${x}
+assert(f[0] == "hello")
+assert(f[1] == "5")

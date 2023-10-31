@@ -1351,7 +1351,11 @@ internal class Parser
                 interpolationParts.Add(new LiteralExpr(stringToken));
                 currentText.Clear();
 
-                if (isDoubleQuoteStringLiteral)
+                if (isSingleQuoteStringLiteral)
+                {
+                    interpolationParts.Add(new LiteralExpr(Eat()));
+                }
+                else if (isDoubleQuoteStringLiteral)
                 {
                     interpolationParts.Add(ParseDoubleQuoteStringLiteral());
                 }

@@ -77,13 +77,22 @@
 			]
 		},
 		"strings": {
-			"name": "string.quoted.double.elk",
-			"begin": "\"",
-			"end": "\"",
 			"patterns": [
 				{
-					"name": "constant.character.escape.elk",
-					"match": "\\\\."
+					"name": "string.quoted.double.elk",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape.elk",
+							"match": "\\\\."
+						}
+					]
+				},
+				{
+					"name": "string.quoted.single.elk",
+					"begin": "'",
+					"end": "'"
 				}
 			]
 		}

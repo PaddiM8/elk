@@ -2,6 +2,7 @@ cli::create git
     | cli::registerForCompletion
     | cli::addVerb help => &handleHelp
     | cli::addVerb add => &handleAdd
+    | cli::addVerb checkout => &handleCheckout
     | cli::addVerb rebase => &handleRebase
     | cli::addVerb reset => &handleReset
     | cli::addArgument({ "valueKind": "path", "variadic": true })
@@ -38,6 +39,11 @@ fn handleAdd(parser) {
         | cli::addArgument({ "identifier": "file", "completionHandler": &unstagedFilesHandler, "variadic": true })
 }
 
+fn handleCheckout(parser) {
+    parser
+        | cli::addArgument({ "completionHandler": &branchHandler })
+}
+
 fn handleRebase(parser) {
     parser
         | cli::addFlag({ "short": "i", "completionHandler": &reflogHandler })
@@ -66,6 +72,18 @@ fn stagedFilesHandler(value, state) {
                 | str::path::relative(workingDirectory)
                 | str::path::join(x)
         }
+}
+
+fn branchHandler(value, state) {
+    let localBranches = git for-each-ref \
+        --format='%(refname:strip=2)%Local Branch' \
+        --sort=-committerdate refs/heads
+        | disposeErr
+    let remoteBranches = git for-each-ref \
+        --format='%(refname:strip=2)%Remote Branch'
+        | disposeErr
+
+    localBranches | iter::concat(remoteBranches)
 }
 
 fn reflogHandler(value, state) {
