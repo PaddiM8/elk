@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Analysis;
@@ -966,27 +965,6 @@ partial class Interpreter
             }
 
             newArguments.Add(value);
-        }
-
-        // Read potential shebang
-        var hasShebang = false;
-        if (File.Exists(ShellEnvironment.GetAbsolutePath(fileName)))
-        {
-            using var streamReader = new StreamReader(ShellEnvironment.GetAbsolutePath(fileName));
-            var firstChars = new char[2];
-            streamReader.ReadBlock(firstChars, 0, 2);
-
-            if (firstChars[0] == '#' && firstChars[1] == '!')
-            {
-                newArguments.Insert(0, fileName);
-                fileName = streamReader.ReadLine() ?? "";
-                hasShebang = true;
-            }
-        }
-
-        if (!hasShebang && fileName.StartsWith("./"))
-        {
-            fileName = Path.Combine(ShellEnvironment.WorkingDirectory, fileName[2..]);
         }
 
         var process = new Process();

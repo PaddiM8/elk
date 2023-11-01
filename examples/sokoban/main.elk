@@ -1,3 +1,5 @@
+#!/usr/bin/env elk
+
 with ./sokoban
 
 fn getBoardString(board) {
