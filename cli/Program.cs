@@ -7,6 +7,8 @@ using Elk.Std.DataTypes.Serialization.CommandLine;
 
 #endregion
 
+Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "../lib/elk");
+
 var cliParser = new RuntimeCliParser("elk")
     .IgnoreFlagsAfterArguments()
     .AddArgument(new CliArgument

@@ -14,6 +14,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+    Set the rpath to the location of the shared libraries that the program depends on.
+    It's set to ../lib/elk, since this would mean ./usr/lib/elk if the executable is
+    in ./usr/bin. This makes it work in local folder structures.
+    -->
+    <LinkerArg Include="-Wl,-rpath,'../lib/elk'" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0-rc.2.23480.1" />
     <PackageReference Include="Nito.Collections.Deque" Version="1.1.1" />
     <ProjectReference Include="../readline/Elk.ReadLine.csproj" />

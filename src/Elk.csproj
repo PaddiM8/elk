@@ -41,7 +41,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources/**/*" />
+    <Content Include="Resources/**/*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

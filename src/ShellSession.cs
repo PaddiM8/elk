@@ -44,18 +44,18 @@ public class ShellSession
         LoadPaths();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
 
-        var initFile = EmbeddedResourceProvider.ReadAllText("init.elk")!;
+        var initFile = ResourceProvider.ReadFile("init.elk");
         RunCommand(initFile);
 
         if (File.Exists(CommonPaths.InitFile))
         {
             RunFile(_interpreter, CommonPaths.InitFile);
+
+            return;
         }
-        else if (initFile != null)
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
-            File.WriteAllText(CommonPaths.InitFile, initFile.Trim());
-        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
+        File.WriteAllText(CommonPaths.InitFile, initFile.Trim());
     }
 
     private void LoadPaths()
