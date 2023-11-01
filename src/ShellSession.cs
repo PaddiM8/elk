@@ -42,6 +42,7 @@ public class ShellSession
     private void Init()
     {
         LoadPaths();
+        Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
 
         var initFile = EmbeddedResourceProvider.ReadAllText("init.elk")!;
         RunCommand(initFile);
