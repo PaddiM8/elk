@@ -2,7 +2,9 @@ cli::create git
     | cli::registerForCompletion
     | cli::addVerb help => &handleHelp
     | cli::addVerb add => &handleAdd
+    | cli::addVerb branch => &handleBranch
     | cli::addVerb checkout => &handleCheckout
+    | cli::addVerb switch => &handleSwitch
     | cli::addVerb rebase => &handleRebase
     | cli::addVerb reset => &handleReset
     | cli::addArgument({ "valueKind": "path", "variadic": true })
@@ -39,9 +41,28 @@ fn handleAdd(parser) {
         | cli::addArgument({ "identifier": "file", "completionHandler": &unstagedFilesHandler, "variadic": true })
 }
 
+fn handleBranch(parser) {
+    parser
+        | cli::addArgument({ "completionHandler": &branchHandler })
+        | cli::addFlag({ "short": "u", "valueKind": "text" })
+        | cli::addFlag({ "long": "unset-upstream" })
+        | cli::addFlag({ "short": "d" })
+        | cli::addFlag({ "short": "D" })
+        | cli::addFlag({ "short": "r" })
+        | cli::addFlag({ "short": "m" })
+        | cli::addFlag({ "short": "M" })
+        | cli::addFlag({ "short": "c" })
+        | cli::addFlag({ "short": "C" })
+}
+
 fn handleCheckout(parser) {
     parser
         | cli::addArgument({ "completionHandler": &branchHandler })
+}
+
+fn handleSwitch(parser) {
+    parser
+        | cli::addFlag({ "short": "c", "completionHandler": &branchHandler })
 }
 
 fn handleRebase(parser) {
@@ -76,12 +97,16 @@ fn stagedFilesHandler(value, state) {
 
 fn branchHandler(value, state) {
     let localBranches = git for-each-ref \
-        --format='%(refname:strip=2)%Local Branch' \
+        --format='%(refname:strip=2)%09Local Branch' \
         --sort=-committerdate refs/heads
         | disposeErr
+        | map => &split "\t"
+        | map => &iter::first
     let remoteBranches = git for-each-ref \
-        --format='%(refname:strip=2)%Remote Branch'
+        --format='%(refname:strip=2)%09Remote Branch'
         | disposeErr
+        | map => &split "\t"
+        | map => &iter::first
 
     localBranches | iter::concat(remoteBranches)
 }

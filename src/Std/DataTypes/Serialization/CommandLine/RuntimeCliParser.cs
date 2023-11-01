@@ -148,6 +148,9 @@ public class RuntimeCliParser : RuntimeObject
         CliResult? cliResult,
         CompletionKind completionKind)
     {
+        if (!tokens.Any())
+            return Array.Empty<Completion>();
+
         var flagCompletions = _flags
             .Select(x =>
             {
@@ -158,7 +161,9 @@ public class RuntimeCliParser : RuntimeObject
                     ? null
                     : "--" + x.LongName;
                 var completionText = shortName ?? longName ?? "";
-                var displayText = string.Join(", ", shortName, longName);
+                var displayText = shortName != null && longName != null
+                    ? string.Join(", ", shortName, longName)
+                    : shortName + longName;
 
                 return (
                     shortName: shortName ?? "",

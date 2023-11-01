@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
@@ -61,6 +62,12 @@ class HintHandler : IHintHandler
 
         var completionStart = activeTextArgument.LastIndexOf('/') + 1;
         var fileNameLength = activeTextArgument.Length - completionStart;
+        if (fileNameLength >= fullPathCompletion.Length)
+        {
+            Debug.Assert(false);
+
+            return "";
+        }
 
         return fullPathCompletion[fileNameLength..];
     }
