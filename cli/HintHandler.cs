@@ -64,7 +64,7 @@ class HintHandler : IHintHandler
         var fileNameLength = activeTextArgument.Length - completionStart;
         if (fileNameLength >= fullPathCompletion.Length)
         {
-            Debug.Assert(false);
+            Debug.Assert(fileNameLength == fullPathCompletion.Length);
 
             return "";
         }

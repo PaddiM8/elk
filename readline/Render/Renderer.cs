@@ -232,16 +232,21 @@ internal class Renderer : IRenderer
         var hintHeight = 0;
         if (HintText != null)
         {
-            var (hintTop, _) = IndexToTopLeft(_text.Length + HintText.Length, Text + HintText);
+            var maxIndex = Console.WindowWidth * Console.WindowHeight;
+            var caretIndexRelativeToWindow = Console.WindowWidth * Console.CursorTop + Console.CursorLeft;
+            var remainingLength = Math.Max(3, maxIndex - caretIndexRelativeToWindow);
+            var truncatedHint = HintText.WcTruncate(remainingLength - 1);
+
+            var (hintTop, _) = IndexToTopLeft(_text.Length + truncatedHint.Length, Text + truncatedHint);
             hintHeight = hintTop - top;
 
             // For some reason, it the cursor doesn't move to the next line
             // when the hint fills the line completely.
-            if (InputStart + _text.Length + HintText.Length == BufferWidth)
+            if (InputStart + _text.Length + truncatedHint.Length == BufferWidth)
                 hintHeight = 0;
 
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
-            formattedHint = Indent(Ansi.Color(HintText, AnsiForeground.Gray));
+            formattedHint = Indent(Ansi.Color(truncatedHint, AnsiForeground.Gray));
         }
 
         // Write

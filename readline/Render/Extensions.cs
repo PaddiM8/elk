@@ -30,10 +30,10 @@ static class Extensions
 
     private static string AppendEllipsis(string input)
     {
-        var result = input[..^2] + "...";
+        var result = input.TrimEnd() + "…";
 
-        return result.EndsWith("....")
-            ? result[..^1]
+        return result.EndsWith(".…")
+            ? result[..^2] + "…"
             : result;
     }
 
