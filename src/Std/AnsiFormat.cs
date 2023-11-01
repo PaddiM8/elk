@@ -13,18 +13,30 @@ namespace Elk.Std;
 [ElkModule("ansi")]
 public class AnsiFormat
 {
+    /// <param name="input">Text that should be made bold</param>
+    /// <returns>A string containing ansi escape codes that result in bold text in the terminal.</returns>
+    [ElkFunction("bold")]
+    public static RuntimeString Bold(RuntimeString input)
+        => new(Ansi.Bold(input.Value));
+
+    [ElkFunction("clearLine")]
+    public static RuntimeString ClearLine()
+        => new("\x1b[2K");
+
+    [ElkFunction("clearToLeft")]
+    public static RuntimeString ClearToLeft()
+        => new("\x1b[1K");
+
+    [ElkFunction("clearToRight")]
+    public static RuntimeString ClearToRight()
+        => new("\x1b[K");
+
     /// <param name="input">Text that should be colored</param>
     /// <param name="colorName">Color name. One of: default, black, red, green, yellow, blue, magenta, cyan, white, brightBlack, brightRed, etc.</param>
     /// <returns>A string containing ansi escape codes that result in colored text in the terminal.</returns>
     [ElkFunction("color")]
     public static RuntimeString Color(RuntimeString input, RuntimeString colorName)
         => new(Ansi.Color(input.Value, colorName.Value));
-
-    /// <param name="input">Text that should be made bold</param>
-    /// <returns>A string containing ansi escape codes that result in bold text in the terminal.</returns>
-    [ElkFunction("bold")]
-    public static RuntimeString Bold(RuntimeString input)
-        => new(Ansi.Bold(input.Value));
 
     /// <returns>A string containing ansi escape codes that result in the cursor being hidden.</returns>
     [ElkFunction("hideCursor")]

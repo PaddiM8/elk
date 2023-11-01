@@ -69,8 +69,7 @@ fn loadBoard(filePath) {
 }
 
 fn startGame(mapPath) {
-    clear()
-    println(ansi::hideCursor)
+    print(ansi::hideCursor)
 
     let board = loadBoard(mapPath)
     let gameDone = false
@@ -100,15 +99,20 @@ fn startGame(mapPath) {
 }
 
 fn updateScreen(board) {
-    let boardString = board | getBoardString
-    println(ansi::setCursor(0, 0))
-    println("Points:", board | sokoban::getPoints)
+    let boardString = board
+        | getBoardString
+        | str::lines
+        | map => &op::add(ansi::clearToRight())
+        | join "\n"
+    print(ansi::setCursor(0, 0))
+    println("Points:", board | sokoban::getPoints, ansi::clearToRight())
     println(boardString)
 }
 
 let runGame = true
 while runGame {
-    println(ansi::showCursor)
+    clear()
+    print(ansi::showCursor)
     println Welcome to Sokoban, please choose a level:
 
     # get levels
