@@ -44,7 +44,7 @@ public class ShellSession
         LoadPaths();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
 
-        var initFile = ResourceProvider.ReadFile("init.elk");
+        var initFile = ResourceProvider.ReadFile("init.elk")!;
         RunCommand(initFile);
 
         if (File.Exists(CommonPaths.InitFile))

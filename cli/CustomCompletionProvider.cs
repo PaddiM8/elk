@@ -20,7 +20,8 @@ class CustomCompletionProvider
 
         // Look for completions in `/Resources/completions`
         var embedded = ResourceProvider.ReadFile($"completions/{identifier}.elk");
-        _shellSession.RunCommand(embedded, ownScope: true, printReturnedValue: false);
+        if (embedded != null)
+            _shellSession.RunCommand(embedded, ownScope: true, printReturnedValue: false);
 
         if (ParserStorage.CompletionParsers.TryGetValue(identifier, out parser))
             return parser;

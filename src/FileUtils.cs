@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Std.DataTypes.Serialization.CommandLine;
-using Mono.Unix;
 
 namespace Elk;
 
@@ -19,27 +18,17 @@ public static class FileUtils
 {
     public static bool FileIsExecutable(string filePath)
     {
-        var fileInfo = new UnixFileInfo(filePath);
-        if (!fileInfo.Exists || fileInfo.IsDirectory)
+        if (!File.Exists(filePath))
             return false;
 
-        var permissions = fileInfo.FileAccessPermissions;
-        if (permissions.HasFlag(FileAccessPermissions.OtherExecute))
-            return true;
+        if (OperatingSystem.IsWindows())
+            return false;
 
-        if (permissions.HasFlag(FileAccessPermissions.UserExecute) &&
-            UnixUserInfo.GetRealUserId() == fileInfo.OwnerUserId)
-        {
-            return true;
-        }
+        var fileMode = File.GetUnixFileMode(filePath);
 
-        if (permissions.HasFlag(FileAccessPermissions.GroupExecute) &&
-            UnixUserInfo.GetRealUser().GroupId == fileInfo.OwnerGroupId)
-        {
-            return true;
-        }
-
-        return false;
+        return (
+            fileMode & (UnixFileMode.OtherExecute | UnixFileMode.GroupExecute | UnixFileMode.UserExecute)
+        ) != 0;
     }
 
     public static bool ExecutableExists(string name, string workingDirectory)

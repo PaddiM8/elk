@@ -25,10 +25,12 @@ public static class ResourceProvider
         }
     }
 
-    public static string ReadFile(string relativePath)
+    public static string? ReadFile(string relativePath)
     {
         var absolutePath = Path.Combine(_resourcePath, relativePath);
 
-        return File.ReadAllText(absolutePath);
+        return !File.Exists(absolutePath)
+            ? null
+            : File.ReadAllText(absolutePath);
     }
 }
