@@ -10,9 +10,19 @@ public static class ResourceProvider
     static ResourceProvider()
     {
         var adjacentDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
-        _resourcePath = Directory.Exists(adjacentDirectory)
-            ? adjacentDirectory
-            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../share/elk");
+        var systemDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../share/elk");
+        if (Directory.Exists(adjacentDirectory))
+        {
+            _resourcePath = adjacentDirectory;
+        }
+        else if (Directory.Exists(systemDirectory))
+        {
+            _resourcePath = systemDirectory;
+        }
+        else
+        {
+            _resourcePath = AppDomain.CurrentDomain.BaseDirectory;
+        }
     }
 
     public static string ReadFile(string relativePath)
