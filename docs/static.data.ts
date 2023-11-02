@@ -11,11 +11,3 @@ export const stdEntries = {
         return JSON.parse(readFileSync("std/entries.json"))
     }
 }
-
-export const plausibleSnippet = {
-    async load() {
-        const response = await fetch("https://plausible.kalker.xyz/js/script.js");
-
-        return (await response.text()) as string;
-    }
-}

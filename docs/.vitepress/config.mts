@@ -1,5 +1,5 @@
 import { defineConfig } from "vitepress"
-import { elkGrammar, stdEntries, plausibleSnippet } from "../static.data"
+import { elkGrammar, stdEntries } from "../static.data"
 
 const elkLanguage = {
   id: "elk",
@@ -14,7 +14,7 @@ export default defineConfig({
   description: "A more programmatic shell language",
   head: [
     ["link", { rel: "icon", href: "/favicon.png" }],
-    ["script", { defer: "", "data-domain": "elk.strct.net" }, await plausibleSnippet.load()],
+    ["script", { "data-domain": "elk.strct.net", src: "/stats.js" }],
   ],
   markdown: {
     languages: [
