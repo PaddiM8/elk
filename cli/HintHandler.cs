@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -52,16 +51,21 @@ class HintHandler : IHintHandler
         var invocationInfo = _highlightHandler.LastShellStyleInvocations.LastOrDefault();
         var activeTextArgument = invocationInfo?.TextArgumentsInfo.Arguments
             .ElementAtOrDefault(invocationInfo.TextArgumentsInfo.CaretAtArgumentIndex);
-        if (string.IsNullOrEmpty(activeTextArgument))
+        if (activeTextArgument == "" || invocationInfo == null)
             return "";
 
-        var completions = GetCompletions(activeTextArgument, invocationInfo);
+        var completionTarget = activeTextArgument ?? invocationInfo.Name;
+        var completions = GetCompletions(
+            completionTarget,
+            invocationInfo,
+            isTextArgument: activeTextArgument != null
+        );
         var fullPathCompletion = completions.FirstOrDefault();
         if (fullPathCompletion == null)
             return "";
 
-        var completionStart = activeTextArgument.LastIndexOf('/') + 1;
-        var fileNameLength = activeTextArgument.Length - completionStart;
+        var completionStart = completionTarget.LastIndexOf('/') + 1;
+        var fileNameLength = completionTarget.Length - completionStart;
         if (fileNameLength >= fullPathCompletion.Length)
         {
             Debug.Assert(fileNameLength == fullPathCompletion.Length);
@@ -72,22 +76,27 @@ class HintHandler : IHintHandler
         return fullPathCompletion[fileNameLength..];
     }
 
-    private IEnumerable<string> GetCompletions(string activeTextArgument, ShellStyleInvocationInfo? invocationInfo)
+    private IEnumerable<string> GetCompletions(
+        string completionTarget,
+        ShellStyleInvocationInfo? invocationInfo,
+        bool isTextArgument)
     {
-        var completionParser = invocationInfo == null
+        var completionParser = invocationInfo == null || !isTextArgument
             ? null
             : _customCompletionProvider.Get(invocationInfo.Name);
         if (completionParser != null)
         {
             return completionParser
-                .GetCompletions(activeTextArgument, null, CompletionKind.Hint)
+                .GetCompletions(completionTarget, null, CompletionKind.Hint)
                 .Select(x => x.CompletionText);
         }
 
         var fileCompletions = FileUtils.GetPathCompletions(
-            activeTextArgument,
+            completionTarget,
             _shell.WorkingDirectory,
-            FileType.All,
+            isTextArgument
+                ? FileType.All
+                : FileType.Executable,
             CompletionKind.Hint
         );
 
