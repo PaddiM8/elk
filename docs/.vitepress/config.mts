@@ -10,7 +10,7 @@ const elkLanguage = {
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "Elk",
+  title: "elk",
   description: "A more programmatic shell language",
   head: [
     ["link", { rel: "icon", href: "/favicon.png" }],
@@ -23,7 +23,10 @@ export default defineConfig({
   },
   // https://vitepress.dev/reference/default-theme-config
   themeConfig: {
-    logo: "/favicon.png",
+    logo: {
+      light: "/favicon-light.png",
+      dark: "/favicon.png",
+    },
     search: {
       provider: "local",
     },
