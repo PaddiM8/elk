@@ -21,24 +21,35 @@ class SearchState
         _renderer = renderer;
         _searchHandler = searchHandler;
         _highlightHandler = highlightHandler;
+        _listing = new SearchListing(_renderer, _highlightHandler);
+        //renderer.Add(_listing);
     }
 
     public bool Start()
     {
         IsActive = true;
-        _listing = new SearchListing(_renderer, _highlightHandler);
         _listing?.LoadItems(
             _searchHandler.Search(string.Empty).ToList()
         );
         _renderer.WriteRaw("\n");
         Render();
 
+        if (_listing != null)
+            _listing.IsActive = true;
+
         while (IsActive)
         {
             var enterPressed = HandleKey(Console.ReadKey(true));
             if (enterPressed)
+            {
+                IsActive = false;
+
                 return true;
+            }
         }
+
+        if (_listing != null)
+            _listing.IsActive = false;
 
         return false;
     }

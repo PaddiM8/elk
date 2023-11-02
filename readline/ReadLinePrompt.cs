@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Elk.ReadLine.Render;
 
 namespace Elk.ReadLine;
@@ -21,14 +22,27 @@ public class ReadLinePrompt
     public char[]? WordSeparators { get; set; }
 
     private KeyHandler? _keyHandler;
-
     private readonly ShortcutBag _shortcuts = new();
+    private readonly object _resizeLock = new();
 
     public string Read(string prompt = "", string @default = "")
     {
         Console.Write(prompt);
         var enterPressed = false;
-        _keyHandler = new KeyHandler(new Renderer(), _shortcuts)
+        var renderer = new Renderer();
+        if (!OperatingSystem.IsWindows())
+        {
+            PosixSignalRegistration.Create(
+                PosixSignal.SIGWINCH,
+                _ =>
+                {
+                    lock (_resizeLock)
+                        renderer.Render();
+                }
+            );
+        }
+
+        _keyHandler = new KeyHandler(renderer, _shortcuts)
         {
             HistoryHandler = HistoryHandler,
             AutoCompleteHandler = AutoCompletionHandler,

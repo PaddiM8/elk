@@ -2,15 +2,15 @@ using System;
 
 namespace Elk.ReadLine.Render;
 
-internal interface IRenderer
+internal interface IRenderer : IRenderable
 {
     int CursorLeft { get; }
 
     int CursorTop { get; }
 
-    int BufferWidth { get; }
-
     int BufferHeight { get; }
+
+    int WindowHeight { get; }
 
     int InputStart { get; }
 
@@ -21,6 +21,8 @@ internal interface IRenderer
     string? HintText { get; }
 
     bool IsEndOfLine { get; }
+
+    void Add(IRenderable renderable);
 
     void OnHighlight(Func<string, int, string>? callback);
 

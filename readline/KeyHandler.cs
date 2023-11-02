@@ -262,6 +262,7 @@ public class KeyHandler
         if (_completionState.IsActive)
         {
             _completionState.Next();
+
             return;
         }
 

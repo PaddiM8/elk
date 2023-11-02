@@ -7,7 +7,8 @@ namespace Elk.ReadLine.Render;
 
 class CompletionState
 {
-    public bool IsActive => _completions.Count > 0;
+    public bool IsActive
+        => _completions.Count > 0;
 
     private static readonly Regex _formattingRegex = new("[{}()|$ ]");
     private readonly IRenderer _renderer;
@@ -19,6 +20,7 @@ class CompletionState
     {
         _renderer = renderer;
         _listing = new SelectionListing(renderer);
+        renderer.Add(_listing);
     }
 
     public void StartNew(IList<Completion> completions, int completionStart)
@@ -28,6 +30,7 @@ class CompletionState
         _listing.Clear();
         _listing.LoadItems(completions.ToList());
         _listing.SelectedIndex = 0;
+        _listing.IsActive = completions.Count > 0;
         InsertCompletion();
 
         if (completions.Count == 1)
@@ -44,6 +47,7 @@ class CompletionState
     {
         _completions = Array.Empty<Completion>();
         _listing.Clear();
+        _listing.IsActive = false;
     }
 
     public void Next()

@@ -5,8 +5,10 @@ using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
-class SearchListing
+class SearchListing : IRenderable
 {
+    public bool IsActive { get; set; }
+
     public string SelectedItem
         => _items[_selectedIndex];
 
@@ -49,13 +51,16 @@ class SearchListing
 
     public void Render()
     {
+        if (!IsActive)
+            return;
+
         var formattedItems = _items.WithIndex().Select(x =>
         {
             var escaped = x.item
                 .Replace("\t", "  ")
                 .Replace("\n", " ")
                 .Replace("\x1b", "");
-            var truncated = escaped.WcTruncate(_renderer.BufferWidth);
+            var truncated = escaped.WcTruncate(_renderer.BufferHeight);
             var highlighted = x.index == _selectedIndex
                 ? Ansi.Color("❯ " + truncated, AnsiForeground.Black, AnsiBackground.White)
                 : "❯ " + (_highlightHandler?.Highlight(truncated, _renderer.Caret) ?? truncated);
@@ -64,8 +69,8 @@ class SearchListing
         });
         var minShownItems = Math.Min(12, _items.Count);
         var height = Math.Max(
-            _renderer.BufferHeight - _renderer.CursorTop - 1,
-            Math.Min(minShownItems, _renderer.BufferHeight - 2)
+            _renderer.WindowHeight - _renderer.CursorTop - 1,
+            Math.Min(minShownItems, _renderer.WindowHeight - 2)
         );
         var chunkIndex = _selectedIndex / height;
         IList<string>? renderedItems = formattedItems

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Elk.ReadLine.Render.Formatting;
 using Wcwidth;
@@ -7,13 +9,19 @@ namespace Elk.ReadLine.Render;
 
 internal class Renderer : IRenderer
 {
-    public int CursorLeft => Console.CursorLeft;
+    public bool IsActive { get; set; } = true;
 
-    public int CursorTop => Console.CursorTop;
+    public int CursorLeft
+        => _left;
 
-    public int BufferWidth => Console.BufferWidth;
+    public int CursorTop
+        => _top;
 
-    public int BufferHeight => Console.BufferHeight;
+    public int BufferHeight
+        => Console.WindowWidth;
+
+    public int WindowHeight
+        => Console.WindowHeight;
 
     public int InputStart { get; } = Console.CursorLeft;
 
@@ -69,8 +77,26 @@ internal class Renderer : IRenderer
     private int _previousRenderTop;
     private bool _lastWasBackspace;
     private readonly StringBuilder _text = new();
+    private readonly List<IRenderable> _renderables = new();
     private Func<string, int, string>? _highlighter;
     private Func<string, string?>? _retrieveHint;
+
+    public void Render()
+    {
+        var promptPlaceholder = new string(' ', Math.Max(2, InputStart) - 2);
+        WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
+        RenderText();
+
+        foreach (var renderable in _renderables)
+            renderable.Render();
+
+        Console.Out.Flush();
+    }
+
+    public void Add(IRenderable renderable)
+    {
+        _renderables.Add(renderable);
+    }
 
     public void OnHighlight(Func<string, int, string>? callback)
         => _highlighter = callback;
@@ -242,7 +268,7 @@ internal class Renderer : IRenderer
 
             // For some reason, it the cursor doesn't move to the next line
             // when the hint fills the line completely.
-            if (InputStart + _text.Length + truncatedHint.Length == BufferWidth)
+            if (InputStart + _text.Length + truncatedHint.Length == BufferHeight)
                 hintHeight = 0;
 
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
@@ -316,7 +342,7 @@ internal class Renderer : IRenderer
                 top++;
                 left = InputStart;
             }
-            else if (left == BufferWidth - 1 && text.Length > i)
+            else if (left == BufferHeight - 1 && text.Length > i)
             {
                 if (text.Length > i + 1 && text[i + 1] == '\n')
                     continue;
