@@ -19,7 +19,7 @@
     It's set to ../lib/elk, since this would mean ./usr/lib/elk if the executable is
     in ./usr/bin. This makes it work in local folder structures.
     -->
-    <LinkerArg Include="-Wl,-rpath,'../lib/elk'" Condition="$([MSBuild]::IsOSPlatform('macOS')) == 'false'" />
+    <LinkerArg Include="-Wl,-rpath,'$ORIGIN/../lib/elk'" Condition="$([MSBuild]::IsOSPlatform('macOS')) == 'false'" />
   </ItemGroup>
 
   <ItemGroup>

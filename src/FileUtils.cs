@@ -18,16 +18,19 @@ public static class FileUtils
 {
     public static bool FileIsExecutable(string filePath)
     {
-        if (!File.Exists(filePath))
-            return false;
-
         if (OperatingSystem.IsWindows())
             return false;
 
-        var fileMode = File.GetUnixFileMode(filePath);
+        var fileInfo = new FileInfo(filePath);
+        if (!fileInfo.Exists)
+            return false;
 
         return (
-            fileMode & (UnixFileMode.OtherExecute | UnixFileMode.GroupExecute | UnixFileMode.UserExecute)
+            fileInfo.UnixFileMode & (
+                UnixFileMode.OtherExecute |
+                UnixFileMode.GroupExecute |
+                UnixFileMode.UserExecute
+            )
         ) != 0;
     }
 

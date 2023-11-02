@@ -1,23 +1,23 @@
 #!/bin/sh
 
 ARCHITECTURE=x64
-if [ "$(uname -m)" == "arm64" ]; then
+if [ "$(uname -m)" = "arm64" ]; then
     ARCHITECTURE=arm64
-elif [ -z "$1" ]; then
+elif [ -n "$1" ]; then
     ARCHITECTURE=$1
 fi
 
 TARGET=linux-$ARCHITECTURE
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" = "Darwin" ]; then
     TARGET=osx-$ARCHITECTURE
-else
+elif [ -n "$1" ]; then
     TARGET=$2-$ARCHITECTURE
 fi
 
 dotnet publish cli/Elk.Cli.csproj -r $TARGET -c Release
 rm -rf build
 
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" = "Darwin" ]; then
     mkdir -p build/$TARGET
     cp cli/bin/Release/*/$TARGET/publish/Elk.Cli build/$TARGET/elk
     cp -r cli/bin/Release/*/$TARGET/publish/Resources/* build/$TARGET
