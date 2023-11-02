@@ -10,7 +10,7 @@ fi
 TARGET=linux-$ARCHITECTURE
 if [ "$(uname)" = "Darwin" ]; then
     TARGET=osx-$ARCHITECTURE
-elif [ -n "$1" ]; then
+elif [ -n "$2" ]; then
     TARGET=$2-$ARCHITECTURE
 fi
 
