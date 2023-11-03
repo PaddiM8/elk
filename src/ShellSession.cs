@@ -100,56 +100,39 @@ public class ShellSession
     public bool AliasExists(string name)
         => _interpreter.AliasExists(name);
 
-    public void PrintPrompt()
+    public string GetPrompt()
     {
-        Console.CursorVisible = false;
-        if (Console.CursorLeft != 0)
-            Console.WriteLine();
-
-        #if DEBUG
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.Write("\u25cf ");
-        #endif
-
-        Console.ResetColor();
-        if (_interpreter.FunctionExists("elkPrompt"))
-        {
-            var call = new CallExpr(
-                new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
-                Array.Empty<Token>(),
-                Array.Empty<Expr>(),
-                CallStyle.Parenthesized,
-                Plurality.Singular,
-                CallType.Function
-            )
-            {
-                IsRoot = true,
-            };
-
-            try
-            {
-                _interpreter.Interpret(new List<Expr> { call }, isEntireModule: false);
-            }
-            catch (RuntimeException e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"Error evaluating elkPrompt: {e.Position} {e.Message}");
-                Console.ResetColor();
-            }
-
-            Console.CursorVisible = true;
-
-            return;
-        }
-
         // The 'elkPrompt' function should have been created
         // automatically. This is simply a fallback in case
         // something goes wrong.
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write(WorkingDirectoryUnexpanded);
-        Console.ResetColor();
-        Console.Write(" >> ");
-        Console.CursorVisible = true;
+        if (!_interpreter.FunctionExists("elkPrompt"))
+            return $"{WorkingDirectoryUnexpanded} >> ";
+
+        var call = new CallExpr(
+            new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
+            Array.Empty<Token>(),
+            Array.Empty<Expr>(),
+            CallStyle.Parenthesized,
+            Plurality.Singular,
+            CallType.Function
+        )
+        {
+            IsRoot = true,
+        };
+
+        try
+        {
+            return _interpreter.Interpret(new List<Expr> { call }, isEntireModule: false)
+                .ToString() ?? "";
+        }
+        catch (RuntimeException e)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"Error evaluating elkPrompt: {e.Position} {e.Message}");
+            Console.ResetColor();
+
+            return ">> ";
+        }
     }
 
     public void RunCommand(

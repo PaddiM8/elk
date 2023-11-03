@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Elk.ReadLine.Render.Formatting;
 using Wcwidth;
@@ -11,19 +10,26 @@ internal class Renderer : IRenderer
 {
     public bool IsActive { get; set; } = true;
 
+    // For some reason these need to be zero when rendering
+    // as the result of a resize. I guess the coordinates
+    // change somehow?
     public int CursorLeft
-        => _left;
+        => _isResizing
+            ? 0
+            : Console.CursorLeft;
 
     public int CursorTop
-        => _top;
+        => _isResizing
+            ? 0
+            : Console.CursorTop;
 
-    public int BufferHeight
+    public int WindowWidth
         => Console.WindowWidth;
 
     public int WindowHeight
         => Console.WindowHeight;
 
-    public int InputStart { get; } = Console.CursorLeft;
+    public int PromptStartLeft { get; }
 
     public int Caret
     {
@@ -72,24 +78,51 @@ internal class Renderer : IRenderer
     }
 
     private int _top;
-    private int _left = Console.CursorLeft;
+    private int _left;
     private int _caret;
     private int _previousRenderTop;
     private bool _lastWasBackspace;
+    private bool _inTransaction;
+    private bool _isResizing;
+    private readonly string _prompt;
     private readonly StringBuilder _text = new();
     private readonly List<IRenderable> _renderables = new();
     private Func<string, int, string>? _highlighter;
     private Func<string, string?>? _retrieveHint;
 
+    public Renderer(string? prompt = null)
+    {
+        _prompt = prompt ?? "";
+
+        #if DEBUG
+        _prompt = Ansi.Color("\u25cf ", AnsiForeground.Red) + _prompt;
+        #endif
+
+        RenderPrompt();
+        _left = Console.CursorLeft;
+        PromptStartLeft = _left;
+    }
+
+    private void RenderPrompt()
+    {
+        WriteRaw(
+            Ansi.HideCursor(),
+            Ansi.MoveToColumn(0),
+            _prompt,
+            Ansi.ShowCursor()
+        );
+    }
+
     public void Render()
     {
-        var promptPlaceholder = new string(' ', Math.Max(2, InputStart) - 2);
-        WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
+        RenderPrompt();
+        _isResizing = true;
         RenderText();
 
         foreach (var renderable in _renderables)
             renderable.Render();
 
+        _isResizing = false;
         Console.Out.Flush();
     }
 
@@ -110,6 +143,18 @@ internal class Renderer : IRenderer
             return input;
 
         return _highlighter(input, caret);
+    }
+
+    public void StartTransaction()
+    {
+        _inTransaction = true;
+        WriteRaw(Ansi.HideCursor());
+    }
+
+    public void EndTransaction()
+    {
+        _inTransaction = false;
+        WriteRaw(Ansi.ShowCursor());
     }
 
     public void CaretUp()
@@ -268,7 +313,7 @@ internal class Renderer : IRenderer
 
             // For some reason, it the cursor doesn't move to the next line
             // when the hint fills the line completely.
-            if (InputStart + _text.Length + truncatedHint.Length == BufferHeight)
+            if (PromptStartLeft + _text.Length + truncatedHint.Length == WindowWidth)
                 hintHeight = 0;
 
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
@@ -277,12 +322,12 @@ internal class Renderer : IRenderer
 
         // Write
         WriteRaw(
-            Ansi.HideCursor(),
+            Ansi.HideCursorIf(!_inTransaction),
             movementToStart,
             formattedText,
             newLine,
             formattedHint,
-            Ansi.ShowCursor(),
+            Ansi.ShowCursorIf(!_inTransaction),
             Ansi.ClearToEndOfLine(),
             hintMovement
         );
@@ -297,18 +342,18 @@ internal class Renderer : IRenderer
     }
 
     private string Indent(string text)
-        => text.Replace("\n", Ansi.ClearToEndOfLine() + "\n" + new string(' ', InputStart));
+        => text.Replace("\n", Ansi.ClearToEndOfLine() + "\n" + new string(' ', PromptStartLeft));
 
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {
         WriteRaw(
-            Ansi.HideCursor(),
+            Ansi.HideCursorIf(!_inTransaction),
             "\n",
             Ansi.ClearToEndOfLine(),
             value,
             Ansi.MoveHorizontal(_left - lastLineLength),
             Ansi.Up(rowCount),
-            Ansi.ShowCursor()
+            Ansi.ShowCursorIf(!_inTransaction)
         );
     }
 
@@ -334,15 +379,15 @@ internal class Renderer : IRenderer
     {
         var text = content ?? Text;
         var top = 0;
-        var left = InputStart;
+        var left = PromptStartLeft;
         for (var i = 0; i < index; i++)
         {
             if (text.Length > i && text[i] == '\n')
             {
                 top++;
-                left = InputStart;
+                left = PromptStartLeft;
             }
-            else if (left == BufferHeight - 1 && text.Length > i)
+            else if (left == WindowWidth - 1 && text.Length > i)
             {
                 if (text.Length > i + 1 && text[i + 1] == '\n')
                     continue;

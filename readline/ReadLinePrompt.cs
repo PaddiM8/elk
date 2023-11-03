@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Elk.ReadLine.Render;
+using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine;
 
@@ -27,9 +28,11 @@ public class ReadLinePrompt
 
     public string Read(string prompt = "", string @default = "")
     {
-        Console.Write(prompt);
+        if (Console.CursorLeft != 0)
+            Console.WriteLine();
+
         var enterPressed = false;
-        var renderer = new Renderer();
+        var renderer = new Renderer(prompt);
         if (!OperatingSystem.IsWindows())
         {
             PosixSignalRegistration.Create(
@@ -37,7 +40,11 @@ public class ReadLinePrompt
                 _ =>
                 {
                     lock (_resizeLock)
+                    {
+                        var promptPlaceholder = new string(' ', Math.Max(2, renderer.PromptStartLeft) - 2);
+                        renderer.WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
                         renderer.Render();
+                    }
                 }
             );
         }

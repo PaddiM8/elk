@@ -5,37 +5,31 @@ using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
-class SearchState
+class SearchState : IRenderable
 {
-    public bool IsActive { get; private set; }
+    public bool IsActive { get; set; }
 
     private const string Prefix = "search: ";
     private readonly IRenderer _renderer;
     private readonly ISearchHandler _searchHandler;
-    private readonly IHighlightHandler? _highlightHandler;
-    private SearchListing? _listing;
+    private readonly SearchListing _listing;
     private readonly StringBuilder _query = new();
 
     public SearchState(IRenderer renderer, ISearchHandler searchHandler, IHighlightHandler? highlightHandler)
     {
         _renderer = renderer;
         _searchHandler = searchHandler;
-        _highlightHandler = highlightHandler;
-        _listing = new SearchListing(_renderer, _highlightHandler);
-        //renderer.Add(_listing);
+        _listing = new SearchListing(_renderer, highlightHandler);
     }
 
     public bool Start()
     {
         IsActive = true;
-        _listing?.LoadItems(
-            _searchHandler.Search(string.Empty).ToList()
-        );
+        _query.Clear();
+        ReloadQuery();
+
         _renderer.WriteRaw("\n");
         Render();
-
-        if (_listing != null)
-            _listing.IsActive = true;
 
         while (IsActive)
         {
@@ -48,42 +42,51 @@ class SearchState
             }
         }
 
-        if (_listing != null)
-            _listing.IsActive = false;
+        IsActive = false;
 
         return false;
     }
 
-    private void Render()
+    public void Render()
     {
-        _listing?.LoadItems(
-            _searchHandler.Search(_query.ToString()).ToList()
-        );
-        _listing?.Render();
+        if (!IsActive)
+            return;
+
         InsertSelected();
         _renderer.WriteRaw(
-            Ansi.MoveToColumn(0) + Prefix + _query + Ansi.ClearToEndOfLine()
+            Ansi.MoveToColumn(0),
+            Prefix,
+            _query.ToString(),
+            Ansi.ClearToEndOfLine()
+        );
+        _listing.Render();
+        _renderer.WriteRaw(Ansi.MoveToColumn(Prefix.Length + _query.Length + 1));
+    }
+
+    private void ReloadQuery()
+    {
+        _listing.LoadItems(
+            _searchHandler.Search(_query.ToString()).ToList()
         );
     }
 
     private void InsertSelected()
     {
-        if (_listing == null)
-            return;
-
         FocusInputPrompt();
-        _renderer.Text = _listing.SelectedItem.Replace("\x1b", "").Replace("\n", " ");
+        _renderer.StartTransaction();
+        _renderer.Text = _listing.SelectedItem
+            .Replace("\x1b", "")
+            .Replace("\n", " ");
+        _renderer.EndTransaction();
         FocusSearchPrompt();
     }
 
     private void Clear()
     {
         IsActive = false;
-        _listing = null;
         _renderer.WriteRaw(
-            "\n" +
-            Ansi.Up(2) +
-            Ansi.MoveToColumn(_renderer.InputStart + 1) +
+            "\n",
+            Ansi.MoveTo(_renderer.CursorTop, _renderer.PromptStartLeft + 1),
             Ansi.ClearToEndOfScreen()
         );
         _query.Clear();
@@ -92,14 +95,20 @@ class SearchState
     private void FocusInputPrompt()
     {
         _renderer.WriteRaw(
-            Ansi.Up(2) + Ansi.MoveToColumn(_renderer.InputStart + 1)
+            Ansi.MoveTo(
+                _renderer.CursorTop,
+                _renderer.PromptStartLeft + 1
+            )
         );
     }
 
     private void FocusSearchPrompt()
     {
         _renderer.WriteRaw(
-            Ansi.Down(1) + Ansi.MoveToColumn(Prefix.Length + _query.Length + 1)
+            Ansi.MoveTo(
+                _renderer.CursorTop + 2,
+                Prefix.Length + _query.Length + 1
+            )
         );
     }
 
@@ -129,23 +138,25 @@ class SearchState
                 return false;
 
             _query.Remove(_query.Length - 1, 1);
+            ReloadQuery();
             Render();
 
             return false;
         }
 
+        // TODO: Handle shift+tab. Didn't seem to work?
         if (key.Key == ConsoleKey.UpArrow)
         {
-            _listing?.SelectPrevious();
-            InsertSelected();
+            _listing.SelectPrevious();
+            Render();
 
             return false;
         }
 
-        if (key.Key == ConsoleKey.DownArrow)
+        if (key.Key is ConsoleKey.DownArrow or ConsoleKey.Tab)
         {
-            _listing?.SelectNext();
-            InsertSelected();
+            _listing.SelectNext();
+            Render();
 
             return false;
         }
@@ -153,6 +164,7 @@ class SearchState
         if (key.KeyChar != '\0')
         {
             _query.Append(key.KeyChar);
+            ReloadQuery();
             Render();
         }
 

@@ -50,9 +50,7 @@ class Repl
 
         while (true)
         {
-            shell.PrintPrompt();
-
-            var input = readLine.Read();
+            var input = readLine.Read(shell.GetPrompt());
             if (input.Trim().Any())
             {
                 historyHandler.Add(new HistoryEntry

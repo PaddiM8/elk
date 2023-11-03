@@ -5,10 +5,9 @@ using System.Text.RegularExpressions;
 
 namespace Elk.ReadLine.Render;
 
-class CompletionState
+class CompletionState : IRenderable
 {
-    public bool IsActive
-        => _completions.Count > 0;
+    public bool IsActive { get; set; }
 
     private static readonly Regex _formattingRegex = new("[{}()|$ ]");
     private readonly IRenderer _renderer;
@@ -20,17 +19,17 @@ class CompletionState
     {
         _renderer = renderer;
         _listing = new SelectionListing(renderer);
-        renderer.Add(_listing);
     }
 
     public void StartNew(IList<Completion> completions, int completionStart)
     {
         _completions = completions;
         _completionStart = completionStart;
+        IsActive = completions.Count > 0;
+
         _listing.Clear();
         _listing.LoadItems(completions.ToList());
         _listing.SelectedIndex = 0;
-        _listing.IsActive = completions.Count > 0;
         InsertCompletion();
 
         if (completions.Count == 1)
@@ -39,15 +38,23 @@ class CompletionState
         }
         else
         {
-            _listing.Render();
+            Render();
         }
+    }
+
+    public void Render()
+    {
+        if (!IsActive || _completions.Count <= 1)
+            return;
+
+        _listing.Render();
     }
 
     public void Reset()
     {
         _completions = Array.Empty<Completion>();
         _listing.Clear();
-        _listing.IsActive = false;
+        IsActive = false;
     }
 
     public void Next()

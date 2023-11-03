@@ -79,7 +79,10 @@ public class KeyHandler
         set
         {
             if (value != null)
+            {
                 _searchState = new SearchState(_renderer, value, _highlightHandler);
+                _renderer.Add(_searchState);
+            }
 
             _searchHandler = value;
         }
@@ -101,6 +104,7 @@ public class KeyHandler
     {
         _renderer = renderer;
         _completionState = new CompletionState(renderer);
+        _renderer.Add(_completionState);
 
         _shortcuts = shortcuts;
         _defaultShortcuts = new Dictionary<KeyPress, Action>
@@ -156,7 +160,7 @@ public class KeyHandler
                 // Re-render without any potential hints
                 _renderer.RenderText();
                 HintHandler?.Reset();
-                Console.WriteLine();
+                _renderer.WriteRaw("\n");
                 _wasEdited = false;
                 OnEnter();
             }
