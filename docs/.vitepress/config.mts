@@ -59,6 +59,9 @@ export default defineConfig({
             { text: "Data Types", link: "/basics/data-types" },
             { text: "Imports", link: "/basics/imports" },
             { text: "Error Handling", link: "/basics/error-handling" },
+            { text: "Plurality", link: "/basics/plurality" },
+            { text: "Function References", link: "/basics/function-references" },
+            { text: "Closures", link: "/basics/closures" },
           ]
         },
         {
@@ -71,9 +74,6 @@ export default defineConfig({
             { text: "Pattern Matching", link: "/other/pattern-matching" },
             { text: "Conventions", link: "/other/conventions" },
             { text: "Multi-Line Expressions", link: "/other/multi-line-expressions" },
-            { text: "Plurality", link: "/other/plurality" },
-            { text: "Function References", link: "/other/function-references" },
-            { text: "Closures", link: "/other/closures" },
           ],
         },
         {
