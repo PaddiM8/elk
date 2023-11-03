@@ -156,7 +156,7 @@ public class KeyHandler
                 // Re-render without any potential hints
                 _renderer.RenderText();
                 HintHandler?.Reset();
-                Console.WriteLine();
+                _renderer.WriteRaw("\n");
                 _wasEdited = false;
                 OnEnter();
             }

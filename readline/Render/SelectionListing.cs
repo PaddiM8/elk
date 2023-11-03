@@ -61,10 +61,10 @@ class SelectionListing : IRenderable
         if (!IsActive || _items.Count <= 1)
             return;
 
-        var currentMaxLength = Math.Min(_maxLength, _renderer.BufferHeight);
+        var currentMaxLength = Math.Min(_maxLength, _renderer.WindowWidth);
         var columnCount = Math.Min(
             _items.Count,
-            _renderer.BufferHeight / (currentMaxLength + ItemMargin.Length)
+            _renderer.WindowWidth / (currentMaxLength + ItemMargin.Length)
         );
         columnCount = Math.Max(1, Math.Min(5, columnCount));
 
@@ -72,7 +72,7 @@ class SelectionListing : IRenderable
             columnCount = 1;
 
         if (columnCount == 1)
-            currentMaxLength = _renderer.BufferHeight;
+            currentMaxLength = _renderer.WindowWidth;
 
         var maxRowCount = columnCount == 1
             ? Math.Max(5, _renderer.WindowHeight - _renderer.CursorTop - 1)
@@ -100,7 +100,7 @@ class SelectionListing : IRenderable
         }
 
         var lineLength = Math.Min(
-            _renderer.BufferHeight - 1,
+            _renderer.WindowWidth - 1,
             columnWidths.Sum() + (columnCount - 1) * ItemMargin.Length
         );
         var bottomRowIndex = _renderer.CursorTop + rowCount;
@@ -125,7 +125,7 @@ class SelectionListing : IRenderable
     {
         var columnCount = columnWidths.Length;
         var columnWidth = Math.Min(
-            _renderer.BufferHeight,
+            _renderer.WindowWidth,
             columnWidths[columnIndex]
         );
         var index = rowIndex * columnCount + columnIndex;
@@ -153,7 +153,7 @@ class SelectionListing : IRenderable
         // Padding
         var itemLength = content.GetWcLength() + (truncatedDescription?.GetWcLength() ?? 0);
         var padding = new string(' ', columnWidth - itemLength);
-        if (itemLength == _renderer.BufferHeight)
+        if (itemLength == _renderer.WindowWidth)
             padding = "";
 
         // Selection colors

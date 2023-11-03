@@ -10,7 +10,7 @@ class SearchListing : IRenderable
     public bool IsActive { get; set; }
 
     public string SelectedItem
-        => _items[_selectedIndex];
+        => _items.ElementAtOrDefault(_selectedIndex) ?? "";
 
     private readonly IRenderer _renderer;
     private readonly IHighlightHandler? _highlightHandler;
@@ -60,16 +60,17 @@ class SearchListing : IRenderable
                 .Replace("\t", "  ")
                 .Replace("\n", " ")
                 .Replace("\x1b", "");
-            var truncated = escaped.WcTruncate(_renderer.BufferHeight);
+            const string prefix = "❯ ";
+            var truncated = escaped.WcTruncate(_renderer.WindowWidth - prefix.Length);
             var highlighted = x.index == _selectedIndex
-                ? Ansi.Color("❯ " + truncated, AnsiForeground.Black, AnsiBackground.White)
-                : "❯ " + (_highlightHandler?.Highlight(truncated, _renderer.Caret) ?? truncated);
+                ? Ansi.Color(prefix + truncated, AnsiForeground.Black, AnsiBackground.White)
+                : prefix + (_highlightHandler?.Highlight(truncated, _renderer.Caret) ?? truncated);
 
             return highlighted + Ansi.ClearToEndOfLine();
         });
         var minShownItems = Math.Min(12, _items.Count);
         var height = Math.Max(
-            _renderer.WindowHeight - _renderer.CursorTop - 1,
+            _renderer.WindowHeight - _renderer.CursorTop - 2,
             Math.Min(minShownItems, _renderer.WindowHeight - 2)
         );
         var chunkIndex = _selectedIndex / height;

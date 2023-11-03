@@ -56,8 +56,14 @@ static class Ansi
     public static string HideCursor()
         => $"\x1b[25l";
 
+    public static string HideCursorIf(bool condition)
+        => condition ? $"\x1b[25l" : "";
+
     public static string ShowCursor()
         => $"\x1b[25h";
+
+    public static string ShowCursorIf(bool condition)
+        => condition ? $"\x1b[25h" : "";
 
     public static string ClearToEndOfScreen()
         => $"\x1b[J";

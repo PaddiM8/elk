@@ -8,11 +8,11 @@ internal interface IRenderer : IRenderable
 
     int CursorTop { get; }
 
-    int BufferHeight { get; }
+    int WindowWidth { get; }
 
     int WindowHeight { get; }
 
-    int InputStart { get; }
+    int PromptStartLeft { get; }
 
     int Caret { get; set; }
 
@@ -27,6 +27,10 @@ internal interface IRenderer : IRenderable
     void OnHighlight(Func<string, int, string>? callback);
 
     void OnHint(Func<string, string?>? callback);
+
+    void StartTransaction();
+
+    void EndTransaction();
 
     void CaretUp();
 

@@ -12,30 +12,26 @@ class SearchState
     private const string Prefix = "search: ";
     private readonly IRenderer _renderer;
     private readonly ISearchHandler _searchHandler;
-    private readonly IHighlightHandler? _highlightHandler;
-    private SearchListing? _listing;
+    private readonly SearchListing _listing;
     private readonly StringBuilder _query = new();
 
     public SearchState(IRenderer renderer, ISearchHandler searchHandler, IHighlightHandler? highlightHandler)
     {
         _renderer = renderer;
         _searchHandler = searchHandler;
-        _highlightHandler = highlightHandler;
-        _listing = new SearchListing(_renderer, _highlightHandler);
-        //renderer.Add(_listing);
+        _listing = new SearchListing(_renderer, highlightHandler);
+        renderer.Add(_listing);
     }
 
     public bool Start()
     {
         IsActive = true;
-        _listing?.LoadItems(
+        _listing.LoadItems(
             _searchHandler.Search(string.Empty).ToList()
         );
         _renderer.WriteRaw("\n");
         Render();
-
-        if (_listing != null)
-            _listing.IsActive = true;
+        _listing.IsActive = true;
 
         while (IsActive)
         {
@@ -48,42 +44,43 @@ class SearchState
             }
         }
 
-        if (_listing != null)
-            _listing.IsActive = false;
+        _listing.IsActive = false;
 
         return false;
     }
 
     private void Render()
     {
-        _listing?.LoadItems(
+        _listing.LoadItems(
             _searchHandler.Search(_query.ToString()).ToList()
         );
-        _listing?.Render();
+        _listing.Render();
         InsertSelected();
         _renderer.WriteRaw(
-            Ansi.MoveToColumn(0) + Prefix + _query + Ansi.ClearToEndOfLine()
+            Ansi.MoveToColumn(0),
+            Prefix,
+            _query.ToString(),
+            Ansi.ClearToEndOfLine()
         );
     }
 
     private void InsertSelected()
     {
-        if (_listing == null)
-            return;
-
         FocusInputPrompt();
-        _renderer.Text = _listing.SelectedItem.Replace("\x1b", "").Replace("\n", " ");
+        _renderer.StartTransaction();
+        _renderer.Text = _listing.SelectedItem
+            .Replace("\x1b", "")
+            .Replace("\n", " ");
+        _renderer.EndTransaction();
         FocusSearchPrompt();
     }
 
     private void Clear()
     {
         IsActive = false;
-        _listing = null;
         _renderer.WriteRaw(
-            "\n" +
-            Ansi.Up(2) +
-            Ansi.MoveToColumn(_renderer.InputStart + 1) +
+            "\n",
+            Ansi.MoveTo(_renderer.CursorTop, _renderer.PromptStartLeft + 1),
             Ansi.ClearToEndOfScreen()
         );
         _query.Clear();
@@ -92,14 +89,20 @@ class SearchState
     private void FocusInputPrompt()
     {
         _renderer.WriteRaw(
-            Ansi.Up(2) + Ansi.MoveToColumn(_renderer.InputStart + 1)
+            Ansi.MoveTo(
+                _renderer.CursorTop,
+                _renderer.PromptStartLeft + 1
+            )
         );
     }
 
     private void FocusSearchPrompt()
     {
         _renderer.WriteRaw(
-            Ansi.Down(1) + Ansi.MoveToColumn(Prefix.Length + _query.Length + 1)
+            Ansi.MoveTo(
+                _renderer.CursorTop + 2,
+                Prefix.Length + _query.Length + 1
+            )
         );
     }
 
@@ -136,7 +139,7 @@ class SearchState
 
         if (key.Key == ConsoleKey.UpArrow)
         {
-            _listing?.SelectPrevious();
+            _listing.SelectPrevious();
             InsertSelected();
 
             return false;
@@ -144,7 +147,7 @@ class SearchState
 
         if (key.Key == ConsoleKey.DownArrow)
         {
-            _listing?.SelectNext();
+            _listing.SelectNext();
             InsertSelected();
 
             return false;

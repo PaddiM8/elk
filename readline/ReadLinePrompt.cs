@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Elk.ReadLine.Render;
+using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine;
 
@@ -37,7 +38,11 @@ public class ReadLinePrompt
                 _ =>
                 {
                     lock (_resizeLock)
+                    {
+                        var promptPlaceholder = new string(' ', Math.Max(2, renderer.PromptStartLeft) - 2);
+                        renderer.WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
                         renderer.Render();
+                    }
                 }
             );
         }
