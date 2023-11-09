@@ -50,7 +50,7 @@ export default defineConfig({
         {
           text: "Basics",
           items: [
-            { text: "Current Directory", link: "/basics/current-directory" },
+            { text: "Special Functions", link: "/basics/special-functions" },
             { text: "Fundamental Expressions", link: "/basics/fundamental-expressions" },
             { text: "Variables", link: "/basics/variables" },
             { text: "Functions & Structs", link: "/basics/functions-and-structs" },
