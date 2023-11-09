@@ -518,14 +518,16 @@ public class StdBindingsGenerator : ISourceGenerator
             document.LoadXml(documentationXml);
             var summary = document.DocumentElement?
                 .SelectSingleNode("/member/summary")?
-                .InnerText;
+                .InnerText
+                .Trim();
             var returns = document.DocumentElement?
                 .SelectSingleNode("/member/returns")?
-                .InnerText;
+                .InnerText
+                .Trim();
             if (summary?.EndsWith('.') is false)
                 summary += ".";
 
-            documentation = $"{summary} returns: {returns}".Trim();
+            documentation = $"{summary} returns: {returns}";
         }
 
         return new StdFunctionInfo(
