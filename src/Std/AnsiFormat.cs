@@ -31,6 +31,11 @@ public class AnsiFormat
     public static RuntimeString ClearToRight()
         => new("\x1b[K");
 
+    /// <returns>The ANSI escape sequence to clear to the end of the screen.</returns>
+    [ElkFunction("clearToEnd")]
+    public static RuntimeString ClearToEnd()
+        => new("\x1b[J");
+
     /// <param name="input">Text that should be colored</param>
     /// <param name="colorName">Color name. One of: default, black, red, green, yellow, blue, magenta, cyan, white, brightBlack, brightRed, etc.</param>
     /// <returns>A string containing ansi escape codes that result in colored text in the terminal.</returns>

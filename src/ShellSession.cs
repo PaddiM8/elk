@@ -108,31 +108,7 @@ public class ShellSession
         if (!_interpreter.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var call = new CallExpr(
-            new Token(TokenKind.Identifier, "elkPrompt", TextPos.Default),
-            Array.Empty<Token>(),
-            Array.Empty<Expr>(),
-            CallStyle.Parenthesized,
-            Plurality.Singular,
-            CallType.Function
-        )
-        {
-            IsRoot = true,
-        };
-
-        try
-        {
-            return _interpreter.Interpret(new List<Expr> { call }, isEntireModule: false)
-                .ToString() ?? "";
-        }
-        catch (RuntimeException e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Error evaluating elkPrompt: {e.Position} {e.Message}");
-            Console.ResetColor();
-
-            return ">> ";
-        }
+        return CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
     }
 
     public void RunCommand(
@@ -221,7 +197,16 @@ public class ShellSession
 
         try
         {
+            void CallOnExit()
+            {
+                if (interpreter.FunctionExists("__onExit"))
+                    CallFunction(interpreter, "__onExit");
+            }
+
+            Console.CancelKeyPress += (_, _) => CallOnExit();
             interpreter.Interpret(File.ReadAllText(filePath));
+
+            CallOnExit();
         }
         catch (RuntimeException e)
         {
@@ -238,6 +223,34 @@ public class ShellSession
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
             Console.ResetColor();
+        }
+    }
+
+    private static RuntimeObject? CallFunction(Interpreter interpreter, string identifier)
+    {
+        var call = new CallExpr(
+            new Token(TokenKind.Identifier, identifier, TextPos.Default),
+            Array.Empty<Token>(),
+            Array.Empty<Expr>(),
+            CallStyle.Parenthesized,
+            Plurality.Singular,
+            CallType.Function
+        )
+        {
+            IsRoot = true,
+        };
+
+        try
+        {
+            return interpreter.Interpret(new List<Expr> { call }, isEntireModule: false);
+        }
+        catch (RuntimeException e)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"Error evaluating {identifier}: {e.Position} {e.Message}");
+            Console.ResetColor();
+
+            return null;
         }
     }
 }
