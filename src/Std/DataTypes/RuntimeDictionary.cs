@@ -43,6 +43,23 @@ public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IInd
         }
     }
 
+    public RuntimeObject this[string index]
+    {
+        get
+        {
+            if (Entries.TryGetValue(index.GetHashCode(), out var value))
+                return value.Item2;
+
+            throw new RuntimeItemNotFoundException(index);
+        }
+
+        set
+        {
+            var runtimeIndex = new RuntimeString(index);
+            Entries[runtimeIndex.GetHashCode()] = (runtimeIndex, value);
+        }
+    }
+
     public int Count
         => Entries.Count;
 

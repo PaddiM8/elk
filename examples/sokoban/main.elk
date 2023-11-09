@@ -75,14 +75,14 @@ fn startGame(mapPath) {
     let gameDone = false
     while not gameDone {
         updateScreen(board)
-        let inputKey = io::getKey()
-        if (inputKey == "w") {
+        let inputKey = io::readKey()->key
+        if inputKey == "w" or inputKey == "up" {
             board | sokoban::movePlayer("up")
-        } else if inputKey == "a" {
+        } else if inputKey == "a" or inputKey == "left" {
             board | sokoban::movePlayer("left")
-        } else if inputKey == "s" {
+        } else if inputKey == "s" or inputKey == "down" {
             board | sokoban::movePlayer("down")
-        } else if inputKey == "d" {
+        } else if inputKey == "d" or inputKey == "right" {
             board | sokoban::movePlayer("right")
         }
 

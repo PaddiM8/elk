@@ -133,11 +133,54 @@ static class IO
     /// <summary>
     /// Waits until the user presses a key in the terminal.
     /// </summary>
-    /// <returns>The character produced by the key press.</returns>
-    [ElkFunction("getKey")]
-    public static RuntimeString GetKey()
+    /// <param name="intercept">(default: true) Whether or not to prevent the key from being displayed in the terminal</param>
+    /// <returns>
+    /// A dictionary containing information about the pressed character.
+    /// {
+    ///     "key": name of key,
+    ///     "modifiers": [
+    ///         list of modifiers
+    ///     ],
+    /// }
+    /// </returns>
+    [ElkFunction("readKey")]
+    public static RuntimeDictionary ReadKey(RuntimeBoolean? intercept = null)
     {
-        return new RuntimeString(Console.ReadKey(true).KeyChar.ToString());
+        var keyInfo = Console.ReadKey(intercept?.IsTrue ?? true);
+        var key = keyInfo.Key switch
+        {
+            ConsoleKey.Backspace => "backspace",
+            ConsoleKey.Delete => "delete",
+            ConsoleKey.DownArrow => "down",
+            ConsoleKey.End => "end",
+            ConsoleKey.Enter => "enter",
+            ConsoleKey.Escape => "escape",
+            >= ConsoleKey.F1 and <= ConsoleKey.F23 => keyInfo.Key.ToString(),
+            ConsoleKey.Home => "home",
+            ConsoleKey.Insert => "insert",
+            ConsoleKey.LeftArrow => "left",
+            ConsoleKey.RightArrow => "right",
+            ConsoleKey.Spacebar => "space",
+            ConsoleKey.Tab => "tab",
+            ConsoleKey.UpArrow => "up",
+            _ => keyInfo.KeyChar.ToString(),
+        };
+
+        var modifiers = new List<RuntimeString>();
+        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt))
+            modifiers.Add(new RuntimeString("alt"));
+
+        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            modifiers.Add(new RuntimeString("ctrl"));
+
+        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            modifiers.Add(new RuntimeString("shift"));
+
+        return new RuntimeDictionary
+        {
+            ["key"] = new RuntimeString(key),
+            ["modifiers"] = new RuntimeList(modifiers),
+        };
     }
 
     /// <summary>
