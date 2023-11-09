@@ -38,7 +38,7 @@ public static class FileUtils
     {
         var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (name.StartsWith('~'))
-            name = name[1..] + homePath;
+            name = homePath + name[1..];
 
         if (name.StartsWith('.'))
         {
@@ -86,15 +86,21 @@ public static class FileUtils
         FileType fileType,
         CompletionKind completionKind = CompletionKind.Normal)
     {
+        // TODO: Create a method that expands the tilde
+        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (path.StartsWith('~'))
+            path = homePath + path[1..];
         var lastSlashIndex = path
             .WithIndex()
             .LastOrDefault(x => x.item == '/' && path.ElementAtOrDefault(x.index - 1) != '\\')
             .index;
         // Get the full path of the folder, without the part that is being completed
-        var fullPath = Path.Combine(
-            workingDirectory,
-            path[..lastSlashIndex]
-        );
+        var fullPath = path.StartsWith('/')
+            ? path[..lastSlashIndex]
+            : Path.Combine(workingDirectory, path[..lastSlashIndex]);
+        if (path == "/")
+            fullPath = "/";
+
         var completionTarget = path.EndsWith('/')
             ? ""
             : path[lastSlashIndex..].TrimStart('/');
