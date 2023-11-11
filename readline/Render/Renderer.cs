@@ -82,7 +82,8 @@ internal class Renderer : IRenderer
     private int _caret;
     private int _previousRenderTop;
     private bool _lastWasBackspace;
-    private bool _inTransaction;
+    private StringBuilder? _transaction;
+    private int _nestedTransactions;
     private bool _isResizing;
     private readonly string _prompt;
     private readonly StringBuilder _text = new();
@@ -147,14 +148,30 @@ internal class Renderer : IRenderer
 
     public void StartTransaction()
     {
-        _inTransaction = true;
+        if (_transaction != null)
+        {
+            _nestedTransactions++;
+
+            return;
+        }
+
+        _transaction = new StringBuilder();
         WriteRaw(Ansi.HideCursor());
     }
 
     public void EndTransaction()
     {
-        _inTransaction = false;
+        if (_nestedTransactions > 0)
+        {
+            _nestedTransactions--;
+
+            return;
+        }
+
         WriteRaw(Ansi.ShowCursor());
+        var content = _transaction?.ToString() ?? "";
+        _transaction = null;
+        WriteRaw(content);
     }
 
     public void CaretUp()
@@ -202,8 +219,10 @@ internal class Renderer : IRenderer
             start++;
 
         _text.Remove(start, Caret - (fromIndex ?? start));
+        StartTransaction();
         RenderText();
         Caret = start;
+        EndTransaction();
     }
 
     public void ClearLineRight(int? fromIndex = null)
@@ -214,6 +233,7 @@ internal class Renderer : IRenderer
         var end = LineEndIndex;
         var pos = Caret;
         _text.Remove(Caret, end - Caret);
+        StartTransaction();
         RenderText(includeHint: _text.Length > 0);
 
         // Don't bother putting it at the end since
@@ -223,6 +243,8 @@ internal class Renderer : IRenderer
         // the end.
         if (pos != _text.Length)
             Caret = pos;
+
+        EndTransaction();
     }
 
     public void Insert(string input, bool includeHint)
@@ -235,15 +257,17 @@ internal class Renderer : IRenderer
         {
             _text.Append(input);
             RenderText(hasHint);
-        }
-        else
-        {
-            _text.Insert(Caret, input);
 
-            var newPos = Caret + input.Length;
-            RenderText(hasHint);
-            Caret = newPos;
+            return;
         }
+
+        _text.Insert(Caret, input);
+
+        var newPos = Caret + input.Length;
+        StartTransaction();
+        RenderText(hasHint);
+        Caret = newPos;
+        EndTransaction();
     }
 
     public void RemoveLeft(int count, bool render = true)
@@ -260,8 +284,10 @@ internal class Renderer : IRenderer
 
         if (render)
         {
+            StartTransaction();
             RenderText(includeHint: _text.Length > 0);
             Caret = newPos;
+            EndTransaction();
         }
     }
 
@@ -277,8 +303,10 @@ internal class Renderer : IRenderer
 
         if (render)
         {
+            StartTransaction();
             RenderText(includeHint: _text.Length > 0);
             Caret = newPos;
+            EndTransaction();
         }
     }
 
@@ -308,13 +336,14 @@ internal class Renderer : IRenderer
             var remainingLength = Math.Max(3, maxIndex - caretIndexRelativeToWindow);
             var truncatedHint = HintText.WcTruncate(remainingLength - 1);
 
-            var (hintTop, _) = IndexToTopLeft(_text.Length + truncatedHint.Length, Text + truncatedHint);
+            var (hintTop, hintLeft) = IndexToTopLeft(_text.Length + truncatedHint.Length, Text + truncatedHint);
             hintHeight = hintTop - top;
 
             // For some reason, it the cursor doesn't move to the next line
-            // when the hint fills the line completely.
-            if (PromptStartLeft + _text.Length + truncatedHint.Length == WindowWidth)
-                hintHeight = 0;
+            // when the hint fills the line completely. IndexToTopLeft doesn't
+            // account for this, so we need to correct that.
+            if (hintLeft == 0)
+                hintHeight--;
 
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
             formattedHint = Indent(Ansi.Color(truncatedHint, AnsiForeground.Gray));
@@ -322,12 +351,12 @@ internal class Renderer : IRenderer
 
         // Write
         WriteRaw(
-            Ansi.HideCursorIf(!_inTransaction),
+            Ansi.HideCursorIf(_transaction == null),
             movementToStart,
             formattedText,
             newLine,
             formattedHint,
-            Ansi.ShowCursorIf(!_inTransaction),
+            Ansi.ShowCursorIf(_transaction == null),
             Ansi.ClearToEndOfLine(),
             hintMovement
         );
@@ -347,13 +376,13 @@ internal class Renderer : IRenderer
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {
         WriteRaw(
-            Ansi.HideCursorIf(!_inTransaction),
+            Ansi.HideCursorIf(_transaction == null),
             "\n",
             Ansi.ClearToEndOfLine(),
             value,
             Ansi.MoveHorizontal(_left - lastLineLength),
             Ansi.Up(rowCount),
-            Ansi.ShowCursorIf(!_inTransaction)
+            Ansi.ShowCursorIf(_transaction == null)
         );
     }
 
@@ -364,6 +393,13 @@ internal class Renderer : IRenderer
 
     public void WriteRaw(string value)
     {
+        if (_transaction != null)
+        {
+            _transaction.Append(value);
+
+            return;
+        }
+
         Console.Write(value);
     }
 

@@ -54,26 +54,26 @@ static class Ansi
             : Right(n);
 
     public static string HideCursor()
-        => $"\x1b[25l";
+        => "\x1b[25l";
 
     public static string HideCursorIf(bool condition)
-        => condition ? $"\x1b[25l" : "";
+        => condition ? "\x1b[25l" : "";
 
     public static string ShowCursor()
-        => $"\x1b[25h";
+        => "\x1b[25h";
 
     public static string ShowCursorIf(bool condition)
-        => condition ? $"\x1b[25h" : "";
+        => condition ? "\x1b[25h" : "";
 
     public static string ClearToEndOfScreen()
-        => $"\x1b[J";
+        => "\x1b[J";
 
     public static string ClearToEndOfLine()
-        => $"\x1b[K";
+        => "\x1b[K";
 
     public static string ClearToStartOfLine()
-        => $"\x1b[1K";
+        => "\x1b[1K";
 
     public static string ClearLine()
-        => $"\x1b[2K";
+        => "\x1b[2K";
 }
