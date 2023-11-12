@@ -17,6 +17,8 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
 {
     public string Value { get; }
 
+    public bool IsTextArgument { get; set; }
+
     public RuntimeString(string value)
     {
         Value = value;

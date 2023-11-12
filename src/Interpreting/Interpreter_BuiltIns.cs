@@ -45,8 +45,7 @@ partial class Interpreter
     private RuntimeObject EvaluateBuiltInExec(
         List<RuntimeObject> arguments,
         RedirectionKind redirectionKind,
-        bool disableRedirectionBuffering,
-        bool globbingEnabled)
+        bool disableRedirectionBuffering)
     {
         var programName = arguments[0].As<RuntimeString>().Value;
 
@@ -57,7 +56,6 @@ partial class Interpreter
             redirectionKind,
             disableRedirectionBuffering,
             automaticStart: true,
-            globbingEnabled,
             environmentVariables: null
         );
     }
@@ -126,7 +124,6 @@ partial class Interpreter
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
                 automaticStart: true,
-                globbingEnabled: false,
                 environmentVariables: null
             ),
         };

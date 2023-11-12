@@ -726,6 +726,10 @@ class Analyser
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
             TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
             TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => new RuntimeString(expr.Value.Value),
+            TokenKind.TextArgumentStringLiteral => new RuntimeString(expr.Value.Value)
+            {
+                IsTextArgument = true,
+            },
             TokenKind.True => RuntimeBoolean.True,
             TokenKind.False => RuntimeBoolean.False,
             _ => RuntimeNil.Value,

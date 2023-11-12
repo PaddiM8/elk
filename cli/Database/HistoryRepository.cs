@@ -61,6 +61,9 @@ class HistoryRepository : IDisposable
 
     public HistoryEntry? GetSingleWithPathAndStart(string path, string start)
     {
+        if (start.Length > 1000)
+            return null;
+
         var command = _db.CreateCommand();
         command.CommandText = """
             SELECT path, content, time
@@ -78,6 +81,9 @@ class HistoryRepository : IDisposable
 
     public List<HistoryEntry> GetWithStart(string start)
     {
+        if (start.Length > 1000)
+            return new List<HistoryEntry>();
+
         var command = _db.CreateCommand();
         command.CommandText = """
             SELECT path, content, time
@@ -93,6 +99,9 @@ class HistoryRepository : IDisposable
 
     public List<HistoryEntry> Search(string query)
     {
+        if (query.Length > 1000)
+            return new List<HistoryEntry>();
+
         var command = _db.CreateCommand();
         command.CommandText = """
             SELECT path, content, time

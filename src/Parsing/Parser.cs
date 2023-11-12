@@ -1312,7 +1312,7 @@ internal class Parser
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
-                    TokenKind.DoubleQuoteStringLiteral,
+                    TokenKind.TextArgumentStringLiteral,
                     currentText.ToString(),
                     pos
                 );
@@ -1382,7 +1382,7 @@ internal class Parser
         if (currentText.Length > 0)
         {
             var finalToken = new Token(
-                TokenKind.DoubleQuoteStringLiteral,
+                TokenKind.TextArgumentStringLiteral,
                 currentText.ToString(),
                 pos
             );

@@ -545,10 +545,18 @@ class StringInterpolationExpr : Expr
 {
     public List<Expr> Parts { get; }
 
+    public bool IsTextArgument { get; }
+
     public StringInterpolationExpr(List<Expr> parts, TextPos pos)
         : base(pos)
     {
         Parts = parts;
+        IsTextArgument = parts.Any(x =>
+            x is LiteralExpr
+            {
+                Value.Kind: TokenKind.TextArgumentStringLiteral,
+            }
+        );
     }
 }
 

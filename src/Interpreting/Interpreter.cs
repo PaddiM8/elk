@@ -685,7 +685,33 @@ partial class Interpreter
         if (expr is { IsReference: false, CallType: CallType.BuiltInTime })
             return EvaluateBuiltInTime(expr.Arguments);
 
-        var evaluatedArguments = expr.Arguments.Select(Next).ToList();
+        var partlyEvaluatedArguments = expr.Arguments.Select(Next);
+        List<RuntimeObject> evaluatedArguments;
+        if (expr.CallStyle == CallStyle.TextArguments)
+        {
+            evaluatedArguments = new List<RuntimeObject>();
+            foreach (var argument in partlyEvaluatedArguments.Select(x => x.As<RuntimeString>()))
+            {
+                var matches = argument.IsTextArgument
+                    ? Globbing.Glob(ShellEnvironment.WorkingDirectory, argument.Value)
+                    : Array.Empty<string>();
+                if (matches.Any())
+                {
+                    evaluatedArguments.AddRange(
+                        matches.Select(x => new RuntimeString(x))
+                    );
+
+                    continue;
+                }
+
+                evaluatedArguments.Add(argument);
+            }
+        }
+        else
+        {
+            evaluatedArguments = partlyEvaluatedArguments.ToList();
+        }
+
         RuntimeObject Evaluate(List<RuntimeObject> arguments)
         {
             if (expr is { RedirectionKind: RedirectionKind.None, IsRoot: false })
@@ -704,7 +730,6 @@ partial class Interpreter
                     expr.RedirectionKind,
                     expr.DisableRedirectionBuffering,
                     expr.AutomaticStart,
-                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments,
                     expr.EnvironmentVariables.Select(x => (x.Key, Next(x.Value)))
                 ),
                 CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
@@ -714,8 +739,7 @@ partial class Interpreter
                 CallType.BuiltInExec => EvaluateBuiltInExec(
                     arguments,
                     expr.RedirectionKind,
-                    expr.DisableRedirectionBuffering,
-                    globbingEnabled: expr.CallStyle == CallStyle.TextArguments
+                    expr.DisableRedirectionBuffering
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
                 CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
@@ -943,30 +967,13 @@ partial class Interpreter
         RedirectionKind redirectionKind,
         bool disableRedirectionBuffering,
         bool automaticStart,
-        bool globbingEnabled,
         IEnumerable<(string, RuntimeObject)>? environmentVariables)
     {
-        var newArguments = new List<string>();
-        foreach (var argument in arguments)
-        {
-            var value = argument is RuntimeNil
-                ? string.Empty
-                : argument.As<RuntimeString>().Value;
-            if (!globbingEnabled)
-            {
-                newArguments.Add(value);
-                continue;
-            }
-
-            var matches = Globbing.Glob(ShellEnvironment.WorkingDirectory, value);
-            if (matches.Any())
-            {
-                newArguments.AddRange(matches);
-                continue;
-            }
-
-            newArguments.Add(value);
-        }
+        var newArguments = arguments.Select(argument =>
+                argument is RuntimeNil
+                    ? string.Empty
+                    : argument.As<RuntimeString>().Value
+            );
 
         var process = new Process();
         process.StartInfo = new ProcessStartInfo
@@ -1020,7 +1027,6 @@ partial class Interpreter
                 RedirectionKind.None,
                 disableRedirectionBuffering: false,
                 automaticStart: true,
-                globbingEnabled: false,
                 environmentVariables: null
             );
 
@@ -1036,7 +1042,10 @@ partial class Interpreter
         foreach (var part in expr.Parts)
             result.Append(Next(part).As<RuntimeString>().Value);
 
-        return new RuntimeString(result.ToString());
+        return new RuntimeString(result.ToString())
+        {
+            IsTextArgument = expr.IsTextArgument,
+        };
     }
 
     private RuntimeObject Visit(ClosureExpr expr)
