@@ -58,6 +58,9 @@ class HighlightHandler : IHighlightHandler
     }
 
     public string Highlight(string text, int caret)
+        => Highlight(text, caret, null);
+
+    private string Highlight(string text, int caret, HashSet<string>? unevaluatedVariables)
     {
         _tokens = Lexer.Lex(text, "", out _, LexerMode.Preserve);
         _index = 0;
@@ -65,6 +68,11 @@ class HighlightHandler : IHighlightHandler
         _caret = caret;
         _lastShellStyleInvocations.Clear();
         _unevaluatedVariables.Clear();
+        if (unevaluatedVariables != null)
+        {
+            foreach (var variable in unevaluatedVariables)
+                _unevaluatedVariables.Add(variable);
+        }
 
         var builder = new StringBuilder();
         while (!ReachedEnd)
@@ -225,7 +233,8 @@ class HighlightHandler : IHighlightHandler
                     builder.Append(
                         _innerHighlighter.Highlight(
                             value[interpolationContentStart..interpolationContentEnd],
-                            _caret
+                            _caret,
+                            _unevaluatedVariables
                         )
                     );
                     builder.Append(Color("}", 37, endColor: 93));
@@ -235,7 +244,8 @@ class HighlightHandler : IHighlightHandler
                     builder.Append(
                         _innerHighlighter.Highlight(
                             value[interpolationContentStart..i],
-                            _caret
+                            _caret,
+                            _unevaluatedVariables
                         )
                     );
                 }
