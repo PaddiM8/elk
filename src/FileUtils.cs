@@ -126,7 +126,10 @@ public static class FileUtils
                 .Where(x => x.name.StartsWith(completionTarget))
                 .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                 .Order()
-                .Select(x => new Completion(x.name));
+                .Select(x => new Completion(x.name)
+                {
+                    HasTrailingSpace = true,
+                });
         }
 
         if (completionKind != CompletionKind.Hint && !directories.Any() && !files.Any())
@@ -146,7 +149,10 @@ public static class FileUtils
                     .Where(x => x.name.Contains(completionTarget, comparison))
                     .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                     .Order()
-                    .Select(x => new Completion(x.name));
+                    .Select(x => new Completion(x.name)
+                    {
+                        HasTrailingSpace = true,
+                    });
             }
         }
 

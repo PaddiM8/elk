@@ -91,8 +91,12 @@ class CompletionState : IRenderable
     private void InsertCompletion()
     {
         _renderer.RemoveLeft(_renderer.Caret - _completionStart, render: false);
+        var completion = _completions[_listing.SelectedIndex];
+        var trailingSpace = completion.HasTrailingSpace
+            ? " "
+            : "";
         _renderer.Insert(
-            _completions[_listing.SelectedIndex].CompletionText,
+            completion.CompletionText + trailingSpace,
             includeHint: false
         );
     }

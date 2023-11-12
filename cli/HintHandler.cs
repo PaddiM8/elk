@@ -60,23 +60,27 @@ class HintHandler : IHintHandler
             invocationInfo,
             isTextArgument: activeTextArgument != null
         );
-        var fullPathCompletion = completions.FirstOrDefault();
-        if (fullPathCompletion == null)
+        var completion = completions.FirstOrDefault();
+        if (completion == null)
             return "";
 
         var completionStart = completionTarget.LastIndexOf('/') + 1;
         var fileNameLength = completionTarget.Length - completionStart;
-        if (fileNameLength >= fullPathCompletion.Length)
+        if (fileNameLength >= completion.CompletionText.Length)
         {
-            Debug.Assert(fileNameLength == fullPathCompletion.Length);
+            Debug.Assert(fileNameLength == completion.CompletionText.Length);
 
             return "";
         }
 
-        return Utils.Escape(fullPathCompletion[fileNameLength..]);
+        var trailingSpace = completion.HasTrailingSpace
+            ? " "
+            : "";
+
+        return Utils.Escape(completion.CompletionText[fileNameLength..]) + trailingSpace;
     }
 
-    private IEnumerable<string> GetCompletions(
+    private IEnumerable<Completion> GetCompletions(
         string completionTarget,
         ShellStyleInvocationInfo? invocationInfo,
         bool isTextArgument)
@@ -85,13 +89,9 @@ class HintHandler : IHintHandler
             ? null
             : _customCompletionProvider.Get(invocationInfo.Name);
         if (completionParser != null)
-        {
-            return completionParser
-                .GetCompletions(completionTarget, null, CompletionKind.Hint)
-                .Select(x => x.CompletionText);
-        }
+            return completionParser.GetCompletions(completionTarget, null, CompletionKind.Hint);
 
-        var fileCompletions = FileUtils.GetPathCompletions(
+        return FileUtils.GetPathCompletions(
             Utils.Unescape(completionTarget),
             _shell.WorkingDirectory,
             isTextArgument
@@ -99,8 +99,6 @@ class HintHandler : IHintHandler
                 : FileType.Executable,
             CompletionKind.Hint
         );
-
-        return fileCompletions.Select(x => x.CompletionText);
     }
 
     public void Reset()
