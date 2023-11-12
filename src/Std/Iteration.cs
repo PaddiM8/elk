@@ -141,6 +141,52 @@ static class Iteration
         );
     }
 
+    /// <param name="items">The Iterable to look in</param>
+    /// <param name="target">The value to search for</param>
+    /// <param name="startIndex">Which index to start at</param>
+    /// <returns>The index of the first item with the given value, or -1 if no match was found.</returns>
+    [ElkFunction("indexOf")]
+    public static RuntimeInteger IndexOf(
+        IEnumerable<RuntimeObject> items,
+        RuntimeObject target,
+        RuntimeInteger? startIndex = null)
+    {
+        var i = (int?)startIndex?.Value ?? 0;
+        foreach (var item in items.Skip(i))
+        {
+            if (item.Equals(target))
+                return new RuntimeInteger(i);
+
+            i++;
+        }
+
+        return new RuntimeInteger(-1);
+    }
+
+    /// <param name="items">The Iterable to look in</param>
+    /// <param name="targets">The values to search for</param>
+    /// <param name="startIndex">Which index to start at</param>
+    /// <returns>
+    /// The index of the first item that is equal to one of the given values, or -1 if no match was found.
+    /// </returns>
+    [ElkFunction("indexOfAny")]
+    public static RuntimeInteger IndexOfAny(
+        IEnumerable<RuntimeObject> items,
+        IEnumerable<RuntimeObject> targets,
+        RuntimeInteger? startIndex = null)
+    {
+        var i = (int?)startIndex?.Value ?? 0;
+        foreach (var item in items.Skip(i))
+        {
+            if (targets.Any(x => item.Equals(x)))
+                return new RuntimeInteger(i);
+
+            i++;
+        }
+
+        return new RuntimeInteger(-1);
+    }
+
     /// <returns>The intersect of the given Iterables.</returns>
     [ElkFunction("intersect")]
     public static RuntimeList Intersect(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
@@ -163,6 +209,60 @@ static class Iteration
             throw new RuntimeCastException(input.GetType(), "Indexable");
 
         return indexable[new RuntimeInteger(indexable.Count - 1)];
+    }
+
+    /// <param name="items">The Iterable to look in</param>
+    /// <param name="target">The value to search for</param>
+    /// <param name="startIndex">Which index to start at</param>
+    /// <returns>The index of the last item with the given value, or -1 if no match was found.</returns>
+    [ElkFunction("lastIndexOf")]
+    public static RuntimeInteger LastIndexOf(
+        IEnumerable<RuntimeObject> items,
+        RuntimeObject target,
+        RuntimeInteger? startIndex = null)
+    {
+        var maxIndex = items.Count() - 1;
+        var i = (int?)startIndex?.Value ?? maxIndex;
+        if (i > maxIndex)
+            return new RuntimeInteger(-1);
+
+        foreach (var item in items.Reverse().Skip(maxIndex - i))
+        {
+            if (item.Equals(target))
+                return new RuntimeInteger(i);
+
+            i--;
+        }
+
+        return new RuntimeInteger(-1);
+    }
+
+    /// <param name="items">The Iterable to look in</param>
+    /// <param name="targets">The values to search for</param>
+    /// <param name="startIndex">Which index to start at</param>
+    /// <returns>
+    /// The index of the last item that is equal to one of the values, or -1 if no match was found.
+    /// </returns>
+    [ElkFunction("lastIndexOfAny")]
+    public static RuntimeInteger LastIndexOfAny(
+        IEnumerable<RuntimeObject> items,
+        IEnumerable<RuntimeObject> targets,
+        RuntimeInteger? startIndex = null)
+    {
+        var maxIndex = items.Count() - 1;
+        var i = (int?)startIndex?.Value ?? maxIndex;
+        if (i > maxIndex)
+            return new RuntimeInteger(-1);
+
+        foreach (var item in items.Reverse().Skip(maxIndex - i))
+        {
+            if (targets.Any(x => item.Equals(x)))
+                return new RuntimeInteger(i);
+
+            i--;
+        }
+
+        return new RuntimeInteger(-1);
     }
 
     /// <param name="container" types="Tuple, List, Dictionary"></param>

@@ -690,10 +690,16 @@ partial class Interpreter
         if (expr.CallStyle == CallStyle.TextArguments)
         {
             evaluatedArguments = new List<RuntimeObject>();
-            foreach (var argument in partlyEvaluatedArguments.Select(x => x.As<RuntimeString>()))
+            foreach (var argument in partlyEvaluatedArguments)
             {
-                var matches = argument.IsTextArgument
-                    ? Globbing.Glob(ShellEnvironment.WorkingDirectory, argument.Value)
+                if (argument is not RuntimeString stringArgument)
+                {
+                    evaluatedArguments.Add(argument);
+                    continue;
+                }
+
+                var matches = stringArgument.IsTextArgument
+                    ? Globbing.Glob(ShellEnvironment.WorkingDirectory, stringArgument.Value)
                     : Array.Empty<string>();
                 if (matches.Any())
                 {
