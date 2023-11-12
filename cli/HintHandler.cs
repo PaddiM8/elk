@@ -73,7 +73,7 @@ class HintHandler : IHintHandler
             return "";
         }
 
-        return fullPathCompletion[fileNameLength..];
+        return Utils.Escape(fullPathCompletion[fileNameLength..]);
     }
 
     private IEnumerable<string> GetCompletions(
@@ -92,7 +92,7 @@ class HintHandler : IHintHandler
         }
 
         var fileCompletions = FileUtils.GetPathCompletions(
-            completionTarget,
+            Utils.Unescape(completionTarget),
             _shell.WorkingDirectory,
             isTextArgument
                 ? FileType.All

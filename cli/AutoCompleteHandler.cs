@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Elk.Interpreting.Exceptions;
 using Elk.ReadLine;
 using Elk.Std.Bindings;
 
@@ -61,12 +60,22 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
             return completionParser
                 .GetCompletions(text[textArgumentStartIndex..], endPos - textArgumentStartIndex)
+                .Select(x => x with
+                {
+                    CompletionText = Utils.Escape(x.CompletionText),
+                })
                 .ToList();
         }
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
         if (isColonColon || (!isRelativeIdentifier && endPos < _currentInvocationInfo?.TextArgumentStartIndex))
-            return GetProgramCompletions(_currentInvocationInfo?.Name ?? text[startPos..endPos]);
+        {
+            return GetProgramCompletions(
+                Utils.Unescape(
+                    _currentInvocationInfo?.Name ?? text[startPos..endPos]
+                )
+            );
+        }
 
         // `startPos` is only the index of the start of the file name in the path.
         // At this stage, we want the entire path instead.
@@ -76,11 +85,18 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (path.StartsWith('~'))
             path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
 
-        return FileUtils.GetPathCompletions(
-            path,
+        var completions = FileUtils.GetPathCompletions(
+            Utils.Unescape(path),
             _shell.WorkingDirectory,
             isRelativeIdentifier ? FileType.Executable : FileType.All
         );
+
+        return completions
+            .Select(x => x with
+            {
+                CompletionText = Utils.Escape(x.CompletionText),
+            })
+            .ToList();
     }
 
     private IList<Completion> GetProgramCompletions(string name)
@@ -99,6 +115,10 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .DistinctBy(x => x.name)
             .OrderBy(x => x.name)
             .Select(x => new Completion(x.name, x.name, x.documentation))
+            .Select(x => x with
+            {
+                DisplayText = Utils.Escape(x.CompletionText),
+            })
             .ToList();
     }
 

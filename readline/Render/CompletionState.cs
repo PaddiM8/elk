@@ -9,7 +9,6 @@ class CompletionState : IRenderable
 {
     public bool IsActive { get; set; }
 
-    private static readonly Regex _formattingRegex = new("[{}()|$ ]");
     private readonly IRenderer _renderer;
     private readonly SelectionListing _listing;
     private IList<Completion> _completions = Array.Empty<Completion>();
@@ -93,12 +92,9 @@ class CompletionState : IRenderable
     {
         _renderer.RemoveLeft(_renderer.Caret - _completionStart, render: false);
         _renderer.Insert(
-            FormatCompletionText(_completions[_listing.SelectedIndex].CompletionText),
+            _completions[_listing.SelectedIndex].CompletionText,
             includeHint: false
         );
     }
-
-    private static string FormatCompletionText(string completionText)
-        => _formattingRegex.Replace(completionText, m => $"\\{m.Value}");
 
 }
