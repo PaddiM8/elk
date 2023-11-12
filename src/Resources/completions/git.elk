@@ -38,12 +38,20 @@ fn handleHelp(parser) {
 
 fn handleAdd(parser) {
     parser
-        | cli::addArgument({ "identifier": "file", "completionHandler": &unstagedFilesHandler, "variadic": true })
+        | cli::addArgument({
+            "identifier": "file",
+            "completionHandler": &unstagedFilesHandler,
+            "allowCustomCompletionHints": true,
+            "variadic": true
+        })
 }
 
 fn handleBranch(parser) {
     parser
-        | cli::addArgument({ "completionHandler": &branchHandler })
+        | cli::addArgument({
+            "completionHandler": &branchHandler,
+            "allowCustomCompletionHints": true,
+        })
         | cli::addFlag({ "short": "u", "valueKind": "text" })
         | cli::addFlag({ "long": "unset-upstream" })
         | cli::addFlag({ "short": "d" })

@@ -20,5 +20,7 @@ public class CliFlag
 
     public bool IsRequired { get; init; }
 
+    public bool AllowCustomCompletionHints { get; init; }
+
     public Func<string, CliResult, IEnumerable<Completion>>? CompletionHandler { get; init; }
 }

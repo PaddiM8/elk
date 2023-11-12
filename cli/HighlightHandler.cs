@@ -471,7 +471,7 @@ class HighlightHandler : IHighlightHandler
 
         return (
             Color(string.Concat(highlightedTextArguments), 36),
-            new(textArguments, caretAtArgumentIndex)
+            new TextArgumentsInfo(textArguments, caretAtArgumentIndex)
         );
     }
 

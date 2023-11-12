@@ -201,7 +201,7 @@ public class RuntimeCliParser : RuntimeObject
                     : x.completion
             );
         var collectedTokens = tokens.ToList();
-        if (collectedTokens.Count == 1 && _verbs.Any() && !last.StartsWith("-"))
+        if (collectedTokens.Count == 1 && _verbs.Any() && !last.StartsWith('-'))
         {
             // Also include matchedFlags, in case the token is empty,
             // which would mean it could either be a verb or a flag.
@@ -226,7 +226,8 @@ public class RuntimeCliParser : RuntimeObject
                 flag = _flags.FirstOrDefault(x => x.ShortName == secondLast[1..]);
             }
 
-            if (completionKind != CompletionKind.Hint && flag?.CompletionHandler != null && cliResult != null)
+            var allowCustom = completionKind != CompletionKind.Hint || flag?.AllowCustomCompletionHints is true;
+            if (allowCustom && flag?.CompletionHandler != null && cliResult != null)
                 return flag.CompletionHandler(last, cliResult);
 
             if (flag is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
@@ -254,7 +255,8 @@ public class RuntimeCliParser : RuntimeObject
         var currentArgument = lastIsArgument
             ? _arguments.ElementAtOrDefault(argumentCount - 1) ?? _arguments.Last()
             : null;
-        if (completionKind != CompletionKind.Hint && currentArgument?.CompletionHandler != null && cliResult != null)
+        var allowCustomCompletion = completionKind != CompletionKind.Hint || currentArgument?.AllowCustomCompletionHints is true;
+        if (allowCustomCompletion && currentArgument?.CompletionHandler != null && cliResult != null)
             return currentArgument.CompletionHandler(last, cliResult);
 
         if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })

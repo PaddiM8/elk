@@ -93,6 +93,7 @@ static class Cli
                 _ => CliValueKind.None,
             },
             IsRequired = flag.GetValue<RuntimeBoolean>("required")?.IsTrue ?? false,
+            AllowCustomCompletionHints = flag.GetValue<RuntimeBoolean>("allowCustomCompletionHints")?.IsTrue ?? false,
             CompletionHandler = completionHandler,
         });
 
@@ -160,6 +161,7 @@ static class Cli
                 _ => CliValueKind.None,
             },
             IsVariadic = argument.GetValue<RuntimeBoolean>("variadic")?.IsTrue ?? false,
+            AllowCustomCompletionHints = argument.GetValue<RuntimeBoolean>("allowCustomCompletionHints")?.IsTrue ?? false,
             CompletionHandler = completionHandler,
         };
         parser.AddArgument(typedArgument);

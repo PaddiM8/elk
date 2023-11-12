@@ -55,7 +55,10 @@ class HintHandler : IHintHandler
             return "";
 
         var completionTarget = activeTextArgument ?? invocationInfo.Name;
+        // For some reason TextArgumentsInfo.Arguments contains elements for the spaces
+        // that separate the arguments. This should probably be fixed at some point.
         var completions = GetCompletions(
+            string.Concat(invocationInfo.TextArgumentsInfo.Arguments).TrimStart(),
             completionTarget,
             invocationInfo,
             isTextArgument: activeTextArgument != null
@@ -81,6 +84,7 @@ class HintHandler : IHintHandler
     }
 
     private IEnumerable<Completion> GetCompletions(
+        string allTextArguments,
         string completionTarget,
         ShellStyleInvocationInfo? invocationInfo,
         bool isTextArgument)
@@ -89,7 +93,7 @@ class HintHandler : IHintHandler
             ? null
             : _customCompletionProvider.Get(invocationInfo.Name);
         if (completionParser != null)
-            return completionParser.GetCompletions(completionTarget, null, CompletionKind.Hint);
+            return completionParser.GetCompletions(allTextArguments, null, CompletionKind.Hint);
 
         return FileUtils.GetPathCompletions(
             Utils.Unescape(completionTarget),
