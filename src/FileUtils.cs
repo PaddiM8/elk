@@ -95,12 +95,12 @@ public static class FileUtils
             .LastOrDefault(x => x.item == '/' && path.ElementAtOrDefault(x.index - 1) != '\\')
             .index;
         // Get the full path of the folder, without the part that is being completed
+        var pathWithoutCompletion = lastSlashIndex == 0
+            ? "/"
+            : path[..lastSlashIndex];
         var fullPath = path.StartsWith('/')
-            ? path[..lastSlashIndex]
-            : Path.Combine(workingDirectory, path[..lastSlashIndex]);
-        if (path == "/")
-            fullPath = "/";
-
+            ? pathWithoutCompletion
+            : Path.Combine(workingDirectory, pathWithoutCompletion);
         var completionTarget = path.EndsWith('/')
             ? ""
             : path[lastSlashIndex..].TrimStart('/');
