@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Analysis;
@@ -970,7 +971,9 @@ partial class Interpreter
         var process = new Process();
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = fileName,
+            FileName = fileName.StartsWith("./")
+                ? Path.Combine(ShellEnvironment.WorkingDirectory, fileName)
+                : fileName,
             RedirectStandardOutput = redirectionKind is RedirectionKind.Output or RedirectionKind.All,
             RedirectStandardError = redirectionKind is RedirectionKind.Error or RedirectionKind.All,
             RedirectStandardInput = pipedValue != null,
