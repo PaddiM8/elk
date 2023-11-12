@@ -109,17 +109,13 @@ public static class FileUtils
             return Array.Empty<Completion>();
 
         var includeHidden = path.StartsWith('.');
-        IList<Completion> directories = Array.Empty<Completion>();
-        if (fileType != FileType.Executable)
-        {
-            directories = Directory.GetDirectories(fullPath)
-                .Select(Path.GetFileName)
-                .Where(x => includeHidden || !x!.StartsWith('.'))
-                .Where(x => x!.StartsWith(completionTarget))
-                .Order()
-                .Select(x => new Completion(x!, $"{x}/"))
-                .ToList();
-        }
+        IList<Completion> directories = Directory.GetDirectories(fullPath)
+            .Select(Path.GetFileName)
+            .Where(x => includeHidden || !x!.StartsWith('.'))
+            .Where(x => x!.StartsWith(completionTarget))
+            .Order()
+            .Select(x => new Completion(x!, $"{x}/"))
+            .ToList();
 
         IEnumerable<Completion> files = Array.Empty<Completion>();
         if (fileType != FileType.Directory)
@@ -136,15 +132,12 @@ public static class FileUtils
         if (completionKind != CompletionKind.Hint && !directories.Any() && !files.Any())
         {
             const StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-            if (fileType != FileType.Executable)
-            {
-                directories = Directory.GetDirectories(fullPath)
-                    .Select(Path.GetFileName)
-                    .Where(x => x!.Contains(completionTarget, comparison))
-                    .Order()
-                    .Select(x => new Completion(x!, $"{x}/"))
-                    .ToList();
-            }
+            directories = Directory.GetDirectories(fullPath)
+                .Select(Path.GetFileName)
+                .Where(x => x!.Contains(completionTarget, comparison))
+                .Order()
+                .Select(x => new Completion(x!, $"{x}/"))
+                .ToList();
 
             if (fileType != FileType.Directory)
             {
