@@ -31,14 +31,10 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
     {
         get
         {
-            try
-            {
-                return Values[(int)index.As<RuntimeInteger>().Value];
-            }
-            catch (Exception)
-            {
-                throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
-            }
+            if (index is RuntimeRange range)
+                return new RuntimeTuple(Values.GetRange(range));
+
+            return Values.GetAt(index.As<RuntimeInteger>());
         }
 
         set

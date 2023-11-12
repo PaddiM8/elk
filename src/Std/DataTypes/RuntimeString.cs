@@ -27,19 +27,20 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         get
         {
             if (index is RuntimeRange range)
-            {
-                var length = (range.To ?? Value.Length) - (range.From ?? 0);
-                if (range.From < 0 || range.From >= Value.Length || range.To < 0 || range.To > Value.Length)
-                    throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");
-
-                return new RuntimeString(Value.Substring(range.From ?? 0, length));
-            }
+                return new RuntimeString(Value.Substring(range));
 
             var indexValue = (int)index.As<RuntimeInteger>().Value;
-            if (indexValue < 0 || indexValue >= Value.Length)
-                throw new RuntimeItemNotFoundException(indexValue.ToString());
+            if (indexValue < 0)
+                indexValue = Value.Length + indexValue;
 
-            return new RuntimeString(Value[indexValue].ToString());
+            try
+            {
+                return new RuntimeString(Value[indexValue].ToString());
+            }
+            catch
+            {
+                throw new RuntimeItemNotFoundException(indexValue.ToString());
+            }
         }
 
         set

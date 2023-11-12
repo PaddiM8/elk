@@ -87,7 +87,9 @@ static class String
             select line.Split(divider?.Value ?? "\t")
             into columns
             where index.Value < columns.Length
-            select columns[index.Value]
+            select index.Value < 0
+                ? columns[columns.Length + index.Value]
+                : columns[index.Value]
             into column
             where !string.IsNullOrEmpty(column)
             select new RuntimeString(column);

@@ -1,0 +1,46 @@
+assert("abc"[0] == "a")
+assert("abc"[1] == "b")
+assert("abc"[-1] == "c")
+assert("abc"[-2] == "b")
+assert("abc"[-0] == "a")
+assert("abc"[0..3] == "abc")
+assert("abc"[0..2] == "ab")
+assert("abc"[1..2] == "b")
+assert("abc"[1..-1] == "b")
+assert("abc"[-3..-1] == "ab")
+
+let arr = [1, 2, 3]
+assert(arr[0] == 1)
+assert(arr[1] == 2)
+assert(arr[-1] == 3)
+assert(arr[-2] == 2)
+assert(arr[-0] == 1)
+arr[-1] = 4
+assert(arr[-1] == 4)
+assert(join(arr[0..3], ",") == "1,2,4")
+assert(join(arr[0..2], ",") == "1,2")
+assert(join(arr[1..2], ",") == "2")
+assert(join(arr[1..-1], ",") == "2")
+assert(join(arr[-3..-1], ",") == "1,2")
+
+let tuple = (1, 2, 3)
+assert(tuple[0] == 1)
+assert(tuple[1] == 2)
+assert(tuple[-1] == 3)
+assert(tuple[-2] == 2)
+assert(tuple[-0] == 1)
+assert(join(tuple[0..3], ",") == "1,2,3")
+assert(join(tuple[0..2], ",") == "1,2")
+assert(join(tuple[1..2], ",") == "2")
+assert(join(tuple[1..-1], ",") == "2")
+assert(join(tuple[-3..-1], ",") == "1,2")
+
+let table1 = [
+    ["a", "b", "c"],
+    [1, 2, 3],
+    [4, 5, 6],
+] | into::table
+
+assert(table1[0]["b"] == 2)
+assert(table1[-1]["b"] == 5)
+assert(table1[-1][-1] == 6)

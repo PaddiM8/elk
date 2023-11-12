@@ -267,6 +267,16 @@ static class Iteration
         return container;
     }
 
+    /// <param name="input">An indexable object.</param>
+    /// <param name="startIndex"></param>
+    /// <param name="endIndex"></param>
+    /// <returns>
+    /// The elements between the specified indices.
+    /// </returns>
+    [ElkFunction("range")]
+    public static RuntimeObject Range(IIndexable<RuntimeObject> input, RuntimeInteger startIndex, RuntimeInteger endIndex)
+        => input[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
+
     [ElkFunction("reduce")]
     public static RuntimeObject Reduce(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject, RuntimeObject> closure)
         => items.Aggregate(closure);
@@ -282,7 +292,14 @@ static class Iteration
     {
         if (container is RuntimeList list)
         {
-            list.Values.RemoveAt((int)index.As<RuntimeInteger>().Value);
+            if (index is RuntimeRange range)
+            {
+                list.Values.RemoveRange(range);
+
+                return container;
+            }
+
+            list.Values.RemoveAt(index.As<RuntimeInteger>());
         }
         else if (container is RuntimeSet set)
         {
@@ -294,7 +311,14 @@ static class Iteration
         }
         else if (container is RuntimeTable table)
         {
-            table.Rows.RemoveAt((int)index.As<RuntimeInteger>().Value);
+            if (index is RuntimeRange range)
+            {
+                table.Rows.RemoveRange(range);
+
+                return container;
+            }
+
+            table.Rows.RemoveAt(index.As<RuntimeInteger>());
         }
         else
         {
@@ -314,34 +338,6 @@ static class Iteration
     [ElkFunction("reverse")]
     public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
         => new(items.Reverse().ToList());
-
-    /// <summary>
-    /// Gets the item at the specified index or
-    /// the line at the specified index.
-    /// </summary>
-    /// <param name="input">An indexable object.</param>
-    /// <param name="startIndex"></param>
-    /// <param name="endIndex"></param>
-    /// <returns>
-    /// Given a string: The lines between the specified indices.<br />
-    /// Given any other indexable object: the elements between the specified indices.
-    /// </returns>
-    [ElkFunction("rows")]
-    public static RuntimeObject Rows(IIndexable<RuntimeObject> input, RuntimeInteger startIndex, RuntimeInteger endIndex)
-    {
-        if (input is RuntimeString str)
-        {
-            var lines = str.Value.ToLines();
-            if (lines.Length == 0 || startIndex.Value < 0 || endIndex.Value >= lines.Length)
-                return RuntimeNil.Value;
-
-            var range = lines[(int)startIndex.Value..(int)endIndex.Value];
-
-            return new RuntimeList(range.Select(x => new RuntimeString(x)));
-        }
-
-        return input[new RuntimeRange((int)startIndex.Value, (int)endIndex.Value)];
-    }
 
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>

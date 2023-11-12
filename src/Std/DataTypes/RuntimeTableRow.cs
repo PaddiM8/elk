@@ -36,35 +36,47 @@ public class RuntimeTableRow : RuntimeObject, IEnumerable<RuntimeObject>, IIndex
         get
         {
             if (index is RuntimeRange range)
+                return new RuntimeList(Columns.GetRange(range));
+
+            try
             {
-                var length = (range.To ?? Columns.Count) - (range.From ?? 0);
-
-                return new RuntimeList(Columns.GetRange(range.From ?? 0, length));
+                return Columns[ResolveIndex(index)];
             }
-
-            var numericalIndex = index is RuntimeInteger integer
-                ? (int)integer.Value
-                : _table.Header.IndexOf(index.As<RuntimeString>().Value);
-
-            return Columns.ElementAtOrDefault(numericalIndex) ??
-                   throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            catch
+            {
+                throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            }
         }
 
         set
         {
             try
             {
-                var numericalIndex = index is RuntimeInteger integer
-                    ? (int)integer.Value
-                    : _table.Header.IndexOf(index.As<RuntimeString>().Value);
-
-                Columns[numericalIndex] = value;
+                Columns[ResolveIndex(index)] = value;
             }
-            catch (ArgumentOutOfRangeException)
+            catch
             {
                 throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
             }
         }
+    }
+
+    private int ResolveIndex(RuntimeObject index)
+    {
+        if (index is RuntimeInteger indexInteger)
+        {
+            var indexValue = (int)indexInteger.Value;
+            if (indexValue < 0)
+                indexValue = Columns.Count + indexValue;
+
+            return indexValue;
+        }
+
+        var indexFromHeader = _table.Header.IndexOf(index.As<RuntimeString>().Value);
+        if (indexFromHeader == -1)
+            throw new RuntimeNotFoundException(index.ToString() ?? "?");
+
+        return indexFromHeader;
     }
 
     public int Count

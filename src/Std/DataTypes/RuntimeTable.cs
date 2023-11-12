@@ -58,25 +58,26 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
         {
             if (index is RuntimeRange range)
             {
-                var length = (range.To ?? Rows.Count) - (range.From ?? 0);
-
                 return new RuntimeTable(
                     new RuntimeList(Header.Select(x => new RuntimeString(x))),
-                    Rows.GetRange(range.From ?? 0, length)
+                    Rows.GetRange(range)
                 );
             }
 
-            return Rows.ElementAtOrDefault((int)index.As<RuntimeInteger>().Value) ??
-                   throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            return Rows.GetAt(index.As<RuntimeInteger>());
         }
 
         set
         {
+            var indexValue = (int)index.As<RuntimeInteger>().Value;
+            if (indexValue < 0)
+                indexValue = Rows.Count + indexValue;
+
             try
             {
-                Rows[(int)index.As<RuntimeInteger>().Value] = value.As<RuntimeTableRow>();
+                Rows[indexValue] = value.As<RuntimeTableRow>();
             }
-            catch (ArgumentOutOfRangeException)
+            catch
             {
                 throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
             }

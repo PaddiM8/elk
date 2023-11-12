@@ -48,23 +48,22 @@ public class RuntimeList : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         get
         {
             if (index is RuntimeRange range)
-            {
-                var length = (range.To ?? Values.Count) - (range.From ?? 0);
+                return new RuntimeList(Values.GetRange(range));
 
-                return new RuntimeList(Values.GetRange(range.From ?? 0, length));
-            }
-
-            return Values.ElementAtOrDefault((int)index.As<RuntimeInteger>().Value) ??
-                   throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
+            return Values.GetAt(index.As<RuntimeInteger>());
         }
 
         set
         {
+            var indexValue = (int)index.As<RuntimeInteger>().Value;
+            if (indexValue < 0)
+                indexValue = Values.Count + indexValue;
+
             try
             {
-                Values[(int)index.As<RuntimeInteger>().Value] = value;
+                Values[indexValue] = value;
             }
-            catch (ArgumentOutOfRangeException)
+            catch
             {
                 throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
             }

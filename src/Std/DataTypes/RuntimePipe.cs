@@ -71,22 +71,14 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             Collect();
             if (index is RuntimeRange range)
             {
-                var length = (range.To ?? Values.Count) - (range.From ?? 0);
-                if (range.From < 0 || range.From >= Values.Count || range.To < 0 || range.To > Values.Count)
-                    throw new RuntimeItemNotFoundException($"{range.From}..{range.To}");
-
                 return new RuntimeList(
                     Values
-                        .GetRange(range.From ?? 0, length)
+                        .GetRange(range)
                         .Select(x => new RuntimeString(x))
                 );
             }
 
-            var indexValue = (int)index.As<RuntimeInteger>().Value;
-            if (indexValue < 0 || indexValue >= Values.Count)
-                throw new RuntimeItemNotFoundException(indexValue.ToString());
-
-            return new RuntimeString(Values[indexValue]);
+            return new RuntimeString(Values.GetAt(index.As<RuntimeInteger>()));
         }
 
         set
