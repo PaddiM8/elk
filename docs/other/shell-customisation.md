@@ -10,30 +10,9 @@ starting a new shell session if it exists. The init file can be compared to the
 
 Elk generates the prompt by calling a function called `elkPrompt`. This 
 function can be re-defined in the init file in order to customise the prompt. 
-The default implementation of the `elkPrompt` function is the following:
-
-```elk
-# ~/.config/elk/init.elk
-alias ls = "ls --color"
-let gitExists = file::executableExists git
-
-fn elkPrompt() {
-    let branch = if gitExists {
-        git branch
-            |all where => &str::startsWith("* ")
-            | map => x: x[2..]
-            | iter::first
-    }
-
-    let pwd = env::prettyPwd | ansi::color blue
-    if branch {
-        let formattedBranch = " ${branch}" | ansi::color magenta
-        print(pwd, formattedBranch, "❯ ")
-    } else {
-        print(pwd, "❯ ")
-    }
-}
-```
+The value returned by the function is used as the prompt. The default
+implementation of the `elkPrompt` function can be found in the init file
+at `/usr/share/elk/init.elk`
 
 ### Alias
 
