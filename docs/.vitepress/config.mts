@@ -71,6 +71,7 @@ export default defineConfig({
             { text: "Casting", link: "/other/casting" },
             { text: "CLI Parsing", link: "/other/cli-parsing" },
             { text: "Shell Customisation", link: "/other/shell-customisation" },
+            { text: "Path", link: "/other/path" },
             { text: "Pattern Matching", link: "/other/pattern-matching" },
             { text: "Conventions", link: "/other/conventions" },
             { text: "Multi-Line Expressions", link: "/other/multi-line-expressions" },
