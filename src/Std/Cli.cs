@@ -41,9 +41,21 @@ static class Cli
     ///     "long": "test-flag",    # A long version of the flag (default: nil)
     ///     "description": "Test flag", # A description of the flag (default: nil)
     ///     "format": "hh:mm",          # An example of how to format the value given to the flag (default: nil)
-    ///     "expects-value": true,      # Whether or not the flag expects a value (default: false)
     ///     "required": true,           # Whether or not the flag is required (default: false)
     /// })
+    ///
+    /// # Default values for the flag object
+    /// {
+    ///     "identifier": nil, # Identifier used to later get the value of the flag
+    ///     "short": nil, # A short version of the flag (a single letter)
+    ///     "long": nil, # A long version of the flag
+    ///     "description": nil, # A description of the flag
+    ///     "format": nil, # An example of how to format the value given to the flag
+    ///     "required": false, # Whether or not the flag is required
+    ///     "valueKind": "none", # "none", "path", "directory" or "text"
+    ///     "completionHandler": nil, # A function used for custom completions
+    ///     "allowCustomCompletionHints": false, # Whether or not hints should be displayed for custom completions
+    /// }
     /// </example>
     [ElkFunction("addFlag")]
     public static RuntimeObject AddFlag(RuntimeCliParser parser, RuntimeDictionary flag)
@@ -108,11 +120,22 @@ static class Cli
     /// <returns>The parser that was given.</returns>
     /// <example>
     /// parser | cli::addArgument({
-    ///     "identifier": "test-flag", # Identifier used to later get the value of the flag (default: nil)
-    ///     "description": "Some description", # A description of the flag (default: nil)
-    ///     "required": true, # Whether or not the flag is required (default: false)
-    ///     "variadic": true, # Whether or not the argument may consist of several tokens (default: false)
+    ///     "identifier": "test-argument",
+    ///     "description": "Some description",
+    ///     "required": true,
+    ///     "variadic": true,
     /// })
+    ///
+    /// # Default values for the argument object
+    /// {
+    ///     "identifier": nil, # Identifier used to later get the value of the argument
+    ///     "description": nil, # A description of the argument
+    ///     "required": false, # Whether or not the argument is required
+    ///     "variadic": false, # Whether or not the argument may consist of several tokens
+    ///     "valueKind": "none", # "none", "path", "directory" or "text"
+    ///     "completionHandler": nil, # A function used for custom completions
+    ///     "allowCustomCompletionHints": false, # Whether or not hints should be displayed for custom completions
+    /// }
     /// </example>
     [ElkFunction("addArgument")]
     public static RuntimeObject AddArgument(RuntimeCliParser parser, RuntimeDictionary argument)
