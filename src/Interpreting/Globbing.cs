@@ -10,10 +10,20 @@ public static class Globbing
     {
         var prefix = pattern.StartsWith('/') ? "/" : "";
 
-        return GlobExpressions.Glob.FilesAndDirectories(
-            prefix == "/" ? "/" : workingDirectory,
-            pattern.TrimStart('/')
-        )
-        .Select(x => prefix + x);
+        try
+        {
+            return GlobExpressions.Glob
+                .FilesAndDirectories(
+                    prefix == "/"
+                        ? "/"
+                        : workingDirectory,
+                    pattern.TrimStart('/')
+                )
+                .Select(x => prefix + x);
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
     }
 }
