@@ -12,7 +12,7 @@ public class MarkdownTable
 
     private readonly string[] _headerColumns;
     private readonly int[] _columnWidths;
-    private readonly List<string[]> _rows = new();
+    private readonly List<string[]> _rows = [];
 
     public MarkdownTable(params string[] headerColumns)
     {
@@ -38,7 +38,7 @@ public class MarkdownTable
             builder.Append($"| {column.PadRight(width)} ");
         }
 
-        builder.Append("|");
+        builder.Append('|');
 
         return builder.ToString();
     }

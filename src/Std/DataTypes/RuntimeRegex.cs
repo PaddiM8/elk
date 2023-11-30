@@ -2,7 +2,6 @@
 
 using System;
 using Elk.Interpreting.Exceptions;
-using Elk.Parsing;
 using Elk.Std.Attributes;
 
 #endregion
@@ -10,14 +9,9 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Regex")]
-public class RuntimeRegex : RuntimeObject
+public class RuntimeRegex(System.Text.RegularExpressions.Regex value) : RuntimeObject
 {
-    public System.Text.RegularExpressions.Regex Value { get; }
-
-    public RuntimeRegex(System.Text.RegularExpressions.Regex value)
-    {
-        Value = value;
-    }
+    public System.Text.RegularExpressions.Regex Value { get; } = value;
 
     public override RuntimeObject As(Type toType)
         => toType switch

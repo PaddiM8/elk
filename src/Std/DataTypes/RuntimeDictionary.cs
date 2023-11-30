@@ -13,18 +13,14 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Dictionary")]
-public class RuntimeDictionary : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
+public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> entries)
+    : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; }
+    public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; } = entries;
 
     public RuntimeDictionary()
+        : this(new Dictionary<int, (RuntimeObject, RuntimeObject)>())
     {
-        Entries = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
-    }
-
-    public RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> entries)
-    {
-        Entries = entries;
     }
 
     public RuntimeObject this[RuntimeObject index]
@@ -149,11 +145,11 @@ class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
         var success = _enumerator.MoveNext();
         if (success)
         {
-            Current = new RuntimeTuple(new[]
-            {
+            Current = new RuntimeTuple(
+            [
                 _enumerator.Current.Item1,
                 _enumerator.Current.Item2,
-            });
+            ]);
         }
 
         return success;

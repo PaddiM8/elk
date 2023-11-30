@@ -5,21 +5,13 @@ using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
-class SearchListing
+class SearchListing(IRenderer renderer, IHighlightHandler? highlightHandler)
 {
     public string SelectedItem
         => _items.ElementAtOrDefault(_selectedIndex) ?? "";
 
-    private readonly IRenderer _renderer;
-    private readonly IHighlightHandler? _highlightHandler;
     private IList<string> _items = Array.Empty<string>();
     private int _selectedIndex;
-
-    public SearchListing(IRenderer renderer, IHighlightHandler? highlightHandler)
-    {
-        _renderer = renderer;
-        _highlightHandler = highlightHandler;
-    }
 
     public void LoadItems(IList<string> items)
     {
@@ -50,17 +42,17 @@ class SearchListing
                 .Replace("\n", " ")
                 .Replace("\x1b", "");
             const string prefix = "❯ ";
-            var truncated = escaped.WcTruncate(_renderer.WindowWidth - prefix.Length);
+            var truncated = escaped.WcTruncate(renderer.WindowWidth - prefix.Length);
             var highlighted = x.index == _selectedIndex
                 ? Ansi.Color(prefix + truncated, AnsiForeground.Black, AnsiBackground.White)
-                : prefix + (_highlightHandler?.Highlight(truncated, _renderer.Caret) ?? truncated);
+                : prefix + (highlightHandler?.Highlight(truncated, renderer.Caret) ?? truncated);
 
             return highlighted + Ansi.ClearToEndOfLine();
         });
         var minShownItems = Math.Min(12, _items.Count);
         var height = Math.Max(
-            _renderer.WindowHeight - _renderer.CursorTop - 2,
-            Math.Min(minShownItems, _renderer.WindowHeight - 2)
+            renderer.WindowHeight - renderer.CursorTop - 2,
+            Math.Min(minShownItems, renderer.WindowHeight - 2)
         );
         var chunkIndex = _selectedIndex / height;
         IList<string>? renderedItems = formattedItems
@@ -77,7 +69,7 @@ class SearchListing
             Ansi.ClearToEndOfLine(),
             height - renderedItems.Count
         );
-        _renderer.WriteLinesOutside(
+        renderer.WriteLinesOutside(
             string.Join("\n", renderedItems.Concat(bottomPadding)),
             height,
             length

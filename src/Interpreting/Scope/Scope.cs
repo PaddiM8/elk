@@ -52,9 +52,9 @@ abstract class Scope
 
     public bool UpdateVariable(string name, RuntimeObject value)
     {
-        if (_variables.ContainsKey(name))
+        if (_variables.TryGetValue(name, out var variable))
         {
-            _variables[name].Value = value;
+            variable.Value = value;
         }
         else
         {

@@ -40,5 +40,5 @@ public static class Extensions
     }
 
     public static string[] ToLines(this string input)
-        => input.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+        => input.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
 }

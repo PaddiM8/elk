@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 using Microsoft.CodeAnalysis;
@@ -197,7 +196,7 @@ public class StdBindingsGenerator : ISourceGenerator
             {
                 moduleName = "null";
                 if (!modules.TryGetValue("\"*\"", out var moduleEntries))
-                    modules.Add("\"*\"", new(new List<string>(), new List<string> { function.FunctionName }));
+                    modules.Add("\"*\"", new ModuleEntry([], [function.FunctionName]));
                 else
                     moduleEntries.FunctionNames.Add(function.FunctionName);
             }
@@ -205,7 +204,7 @@ public class StdBindingsGenerator : ISourceGenerator
             {
                 moduleName = $"\"{function.ModuleName}\"";
                 if (!modules.TryGetValue(moduleName, out var moduleEntries))
-                    modules.Add(moduleName, new(new List<string>(), new List<string> { function.FunctionName }));
+                    modules.Add(moduleName, new ModuleEntry([], [function.FunctionName]));
                 else
                     moduleEntries.FunctionNames.Add(function.FunctionName);
             }
@@ -331,7 +330,7 @@ public class StdBindingsGenerator : ISourceGenerator
 
             var moduleName = $"\"{structInfo.ModuleName}\"";
             if (!modules.TryGetValue(moduleName, out var moduleEntries))
-                modules.Add(moduleName, new(new List<string> { structInfo.StructName }, new List<string>()));
+                modules.Add(moduleName, new ModuleEntry([structInfo.StructName], []));
             else
                 moduleEntries.StructNames.Add(structInfo.StructName);
 

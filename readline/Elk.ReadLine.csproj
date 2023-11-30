@@ -9,7 +9,7 @@
     <PackageTags>readline;console;shell;tui</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PaddiM8/elk</RepositoryUrl>
-    <LangVersion>10</LangVersion>
+    <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 

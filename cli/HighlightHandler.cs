@@ -26,7 +26,7 @@ record TextArgumentsInfo(
     int CaretAtArgumentIndex
 );
 
-class HighlightHandler : IHighlightHandler
+class HighlightHandler(ShellSession shell) : IHighlightHandler
 {
     public IEnumerable<ShellStyleInvocationInfo> LastShellStyleInvocations
         => _lastShellStyleInvocations;
@@ -43,19 +43,13 @@ class HighlightHandler : IHighlightHandler
     private bool ReachedEnd
         => _index >= _tokens.Count;
 
-    private readonly ShellSession _shell;
     private List<Token> _tokens = null!;
     private int _index;
     private int _length;
     private int _caret;
     private HighlightHandler? _innerHighlighter;
-    private readonly List<ShellStyleInvocationInfo> _lastShellStyleInvocations = new();
-    private readonly HashSet<string> _unevaluatedVariables = new();
-
-    public HighlightHandler(ShellSession shell)
-    {
-        _shell = shell;
-    }
+    private readonly List<ShellStyleInvocationInfo> _lastShellStyleInvocations = [];
+    private readonly HashSet<string> _unevaluatedVariables = [];
 
     public string Highlight(string text, int caret)
         => Highlight(text, caret, null);
@@ -225,7 +219,7 @@ class HighlightHandler : IHighlightHandler
                     c = value.ElementAtOrDefault(i);
                 }
 
-                _innerHighlighter ??= new HighlightHandler(_shell);
+                _innerHighlighter ??= new HighlightHandler(shell);
 
                 if (value[i - 1] == '}')
                 {
@@ -277,18 +271,18 @@ class HighlightHandler : IHighlightHandler
 
         var plurality = identifier.EndsWith('!') ? "!" : "";
         identifier = identifier.TrimEnd('!');
-        modulePath ??= new List<string>();
+        modulePath ??= [];
 
-        if (_shell.StructExists(identifier))
+        if (shell.StructExists(identifier))
             return Color(identifier + plurality, 96);
 
         if (!modulePath.Any() &&
             Current?.Kind != TokenKind.ColonColon &&
-            (_unevaluatedVariables.Contains(identifier) || _shell.VariableExists(identifier)))
+            (_unevaluatedVariables.Contains(identifier) || shell.VariableExists(identifier)))
             return identifier + plurality;
 
         modulePath.Add(identifier);
-        if (_shell.ModuleExists(modulePath))
+        if (shell.ModuleExists(modulePath))
             return NextModule(modulePath);
 
         modulePath.RemoveAt(modulePath.Count - 1);
@@ -306,9 +300,9 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
-        var isFunctionCall = _shell.FunctionExists(identifier, modulePath);
+        var isFunctionCall = shell.FunctionExists(identifier, modulePath);
         var isCallable = isFunctionCall ||
-            modulePath.Count == 0 && (_shell.ProgramExists(identifier) || _shell.AliasExists(identifier));
+            modulePath.Count == 0 && (shell.ProgramExists(identifier) || shell.AliasExists(identifier));
         var colorCode = isCallable ? 95 : 91;
 
         var nextBuilder = new StringBuilder();
@@ -344,7 +338,7 @@ class HighlightHandler : IHighlightHandler
     {
         var builder = new StringBuilder();
         var name = Previous!.Value;
-        if (!_shell.ModuleExists(modulePath))
+        if (!shell.ModuleExists(modulePath))
         {
             builder.Append(Color(name, 91));
 
@@ -407,7 +401,7 @@ class HighlightHandler : IHighlightHandler
             );
         }
 
-        var colorCode = _shell.ProgramExists(identifier) ? 95 : 91;
+        var colorCode = shell.ProgramExists(identifier) ? 95 : 91;
 
         return highlightedTextArguments.Length > 0
             ? Color(identifier, colorCode, null) + highlightedTextArguments
@@ -464,7 +458,7 @@ class HighlightHandler : IHighlightHandler
             caretAtArgumentIndex = textArguments.Count - 1;
 
         var highlightedTextArguments = textArguments.Select(x =>
-            FileUtils.IsValidStartOfPath(x, _shell.WorkingDirectory)
+            FileUtils.IsValidStartOfPath(x, shell.WorkingDirectory)
                 ? Underline(x)
                 : x
         );

@@ -26,7 +26,7 @@ class HistoryHandler : IHistoryHandler
     private HistoryHandler(
         int maxEntries,
         HistoryRepository historyRepository,
-        List<HistoryEntry> entries)
+        IReadOnlyCollection<HistoryEntry> entries)
     {
         _maxEntries = maxEntries;
         _historyRepository = historyRepository;

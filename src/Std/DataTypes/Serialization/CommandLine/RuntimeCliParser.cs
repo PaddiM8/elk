@@ -17,24 +17,19 @@ public static class ParserStorage
 }
 
 [ElkType("CliParser")]
-public class RuntimeCliParser : RuntimeObject
+public class RuntimeCliParser(string name) : RuntimeObject
 {
-    public string Name { get; }
+    public string Name { get; } = name;
 
     private string? _description;
     private bool _ignoreFlagsAfterArguments;
     private RuntimeCliParser? _parent;
     private Action<CliResult>? _action;
     private readonly Dictionary<string, RuntimeCliParser> _verbs = new();
-    private readonly List<CliFlag> _flags = new();
-    private readonly List<string> _requiredFlags = new();
-    private readonly List<CliArgument> _arguments = new();
-    private readonly List<string> _requiredArguments = new();
-
-    public RuntimeCliParser(string name)
-    {
-        Name = name;
-    }
+    private readonly List<CliFlag> _flags = [];
+    private readonly List<string> _requiredFlags = [];
+    private readonly List<CliArgument> _arguments = [];
+    private readonly List<string> _requiredArguments = [];
 
     public override RuntimeObject As(Type toType)
         => toType switch
@@ -298,7 +293,7 @@ public class RuntimeCliParser : RuntimeObject
 
             isFirst = false;
             var couldBeFlag = !_ignoreFlagsAfterArguments || !hasParsedArgument;
-            if (couldBeFlag && (token.StartsWith("--") || token.StartsWith("-")))
+            if (couldBeFlag && (token.StartsWith("--") || token.StartsWith('-')))
             {
                 var parsedFlag = ParseFlag(enumerator, ignoreErrors);
                 if (parsedFlag == null)

@@ -5,11 +5,11 @@ using System.Xml;
 
 namespace Elk.DocGen;
 
-class FunctionDocumentation
+class FunctionDocumentation(string name)
 {
-    public string Name { get; }
+    public string Name { get; } = name;
 
-    public List<(string descrption, string? types)> Parameters { get; } = new();
+    public List<(string descrption, string? types)> Parameters { get; } = [];
 
     public string? Returns { get; set; }
 
@@ -17,22 +17,12 @@ class FunctionDocumentation
 
     public string? Summary { get; set; }
 
-    public List<string> Errors { get; } = new();
-
-    public FunctionDocumentation(string name)
-    {
-        Name = name;
-    }
+    public List<string> Errors { get; } = [];
 }
 
-class XmlDocumentationReader : IDisposable
+class XmlDocumentationReader(string xmlPath) : IDisposable
 {
-    private readonly XmlReader _reader;
-
-    public XmlDocumentationReader(string xmlPath)
-    {
-        _reader = XmlReader.Create(xmlPath);
-    }
+    private readonly XmlReader _reader = XmlReader.Create(xmlPath);
 
     public void Dispose()
     {

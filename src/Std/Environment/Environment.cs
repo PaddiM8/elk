@@ -92,7 +92,7 @@ static class Environment
     private static List<string> GetDirectoryNames(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
-            return new();
+            return [];
 
         var directoryNames = new List<string>();
         var directoryInfo = new DirectoryInfo(path);

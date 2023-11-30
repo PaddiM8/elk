@@ -163,7 +163,7 @@ internal class Parser
                 continue;
             }
 
-            var importedModule = importScope.FindModule(new[] { symbolImportToken }, lookInImports: false);
+            var importedModule = importScope.FindModule([symbolImportToken], lookInImports: false);
             if (importedModule != null)
             {
                 if (importedModule.AccessLevel != AccessLevel.Public)
@@ -378,7 +378,7 @@ internal class Parser
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
     }
 
-    private Expr ParseUnalias()
+    private LiteralExpr ParseUnalias()
     {
         var pos = EatExpected(TokenKind.Unalias).Position;
         var name = EatExpected(TokenKind.Identifier).Value;
@@ -816,13 +816,13 @@ internal class Parser
             }
 
             var block = new BlockExpr(
-                new List<Expr> { functionReference },
+                [functionReference],
                 StructureKind.Other,
                 Previous!.Position,
                 new LocalScope(_scope)
             );
 
-            return new ClosureExpr(left, new List<Token>(), block);
+            return new ClosureExpr(left, [], block);
         }
 
         var scope = new LocalScope(_scope);
@@ -845,7 +845,7 @@ internal class Parser
 
             var bodyExpr = ParseComparison();
             right = new BlockExpr(
-                new List<Expr> { bodyExpr },
+                [bodyExpr],
                 StructureKind.Other,
                 Previous!.Position,
                 scope
@@ -873,7 +873,7 @@ internal class Parser
         };
     }
 
-    private Expr ParseDoubleQuoteStringLiteral()
+    private StringInterpolationExpr ParseDoubleQuoteStringLiteral()
     {
         var stringLiteral = EatExpected(TokenKind.DoubleQuoteStringLiteral);
         var parts = StringInterpolationParser.Parse(stringLiteral);
@@ -931,7 +931,7 @@ internal class Parser
             : new TupleExpr(expressions, pos);
     }
 
-    private Expr ParseLet()
+    private LetExpr ParseLet()
     {
         EatExpected(TokenKind.Let);
 
@@ -943,7 +943,7 @@ internal class Parser
         return new LetExpr(identifierList, ParseExpr());
     }
 
-    private Expr ParseNew()
+    private NewExpr ParseNew()
     {
         EatExpected(TokenKind.New);
 
@@ -975,7 +975,7 @@ internal class Parser
         return new NewExpr(identifier, modulePath, arguments);
     }
 
-    private Expr ParseIf()
+    private IfExpr ParseIf()
     {
         EatExpected(TokenKind.If);
 
@@ -988,7 +988,7 @@ internal class Parser
         return new IfExpr(condition, thenBranch, elseBranch);
     }
 
-    private Expr ParseFor()
+    private ForExpr ParseFor()
     {
         EatExpected(TokenKind.For);
         var identifierList = ParseIdentifierList();
@@ -1004,7 +1004,7 @@ internal class Parser
         return new ForExpr(identifierList, value, branch);
     }
 
-    private Expr ParseWhile()
+    private WhileExpr ParseWhile()
     {
         EatExpected(TokenKind.While);
         var condition = ParseExpr();
@@ -1013,7 +1013,7 @@ internal class Parser
         return new WhileExpr(condition, branch);
     }
 
-    private Expr ParseTry()
+    private TryExpr ParseTry()
     {
         EatExpected(TokenKind.Try);
         var body = ParseBlockOrSingle(StructureKind.Other);
@@ -1040,7 +1040,7 @@ internal class Parser
     private List<Token> ParseIdentifierList()
     {
         if (Match(TokenKind.Identifier))
-            return new() { Eat() };
+            return [Eat()];
 
         EatExpected(TokenKind.OpenParenthesis);
 
@@ -1055,7 +1055,7 @@ internal class Parser
         return identifiers;
     }
 
-    private Expr ParseList()
+    private ListExpr ParseList()
     {
         var pos = EatExpected(TokenKind.OpenSquareBracket).Position;
 
@@ -1083,7 +1083,7 @@ internal class Parser
             _scope = _scope.Parent!;
 
             return new BlockExpr(
-                new() { expr },
+                [expr],
                 parentStructureKind,
                 expr.Position,
                 blockScope
@@ -1130,7 +1130,7 @@ internal class Parser
         return new BlockExpr(expressions, parentStructureKind, pos, blockScope);
     }
 
-    private Expr ContinueParseAsSet(Expr firstExpression)
+    private SetExpr ContinueParseAsSet(Expr firstExpression)
     {
         _scope = _scope.Parent!;
 

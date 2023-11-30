@@ -48,10 +48,10 @@ public enum OperationKind
     In,
 }
 
-abstract class Expr
+abstract class Expr(TextPos pos)
 {
     [JsonIgnore]
-    public TextPos Position { get; }
+    public TextPos Position { get; } = pos;
 
     public bool IsRoot { get; set; }
 
@@ -61,62 +61,35 @@ abstract class Expr
         => EnclosingFunction is ClosureExpr closureExpr
             ? closureExpr.RuntimeValue
             : null;
-
-    protected Expr(TextPos pos)
-    {
-        Position = pos;
-    }
 }
 
-class EmptyExpr : Expr
-{
-    public EmptyExpr()
-        : base(TextPos.Default)
-    {
-    }
-}
+class EmptyExpr() : Expr(TextPos.Default);
 
 record Parameter(Token Identifier, Expr? DefaultValue, bool IsVariadic);
 
-class ModuleExpr : Expr
+class ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body) : Expr(identifier.Position)
 {
-    public AccessLevel AccessLevel { get; }
+    public AccessLevel AccessLevel { get; } = accessLevel;
 
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
-    public BlockExpr Body { get; }
-
-    public ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body)
-        : base(identifier.Position)
-    {
-        AccessLevel = accessLevel;
-        Identifier = identifier;
-        Body = body;
-    }
+    public BlockExpr Body { get; } = body;
 }
 
-class StructExpr : Expr
+class StructExpr(
+    AccessLevel accessLevel,
+    Token identifier,
+    IList<Parameter> parameters,
+    ModuleScope module)
+    : Expr(identifier.Position)
 {
-    public AccessLevel AccessLevel { get; }
+    public AccessLevel AccessLevel { get; } = accessLevel;
 
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
-    public IList<Parameter> Parameters { get; }
+    public IList<Parameter> Parameters { get; } = parameters;
 
-    public ModuleScope Module { get; }
-
-    public StructExpr(
-        AccessLevel accessLevel,
-        Token identifier,
-        IList<Parameter> parameters,
-        ModuleScope module)
-        : base(identifier.Position)
-    {
-        AccessLevel = accessLevel;
-        Identifier = identifier;
-        Parameters = parameters;
-        Module = module;
-    }
+    public ModuleScope Module { get; } = module;
 }
 
 enum AnalysisStatus
@@ -133,200 +106,115 @@ enum AccessLevel
     Public,
 }
 
-class FunctionExpr : Expr
+class FunctionExpr(
+    AccessLevel accessLevel,
+    Token identifier,
+    List<Parameter> parameters,
+    BlockExpr block,
+    ModuleScope module,
+    bool hasClosure)
+    : Expr(identifier.Position)
 {
-    public AccessLevel AccessLevel { get; }
+    public AccessLevel AccessLevel { get; } = accessLevel;
 
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
-    public List<Parameter> Parameters { get; }
+    public List<Parameter> Parameters { get; } = parameters;
 
-    public BlockExpr Block { get; set; }
+    public BlockExpr Block { get; set; } = block;
 
-    public ModuleScope Module { get; }
+    public ModuleScope Module { get; } = module;
 
-    public bool HasClosure { get; }
+    public bool HasClosure { get; } = hasClosure;
 
     public RuntimeClosureFunction? GivenClosure { get; set; }
 
     public AnalysisStatus AnalysisStatus { get; set; }
-
-    public FunctionExpr(
-        AccessLevel accessLevel,
-        Token identifier,
-        List<Parameter> parameters,
-        BlockExpr block,
-        ModuleScope module,
-        bool hasClosure)
-        : base(identifier.Position)
-    {
-        AccessLevel = accessLevel;
-        Identifier = identifier;
-        Parameters = parameters;
-        Block = block;
-        Module = module;
-        HasClosure = hasClosure;
-    }
 }
 
-class LetExpr : Expr
+class LetExpr(List<Token> identifierList, Expr value) : Expr(identifierList.First().Position)
 {
-    public List<Token> IdentifierList { get; }
+    public List<Token> IdentifierList { get; } = identifierList;
 
-    public Expr Value { get; }
-
-    public LetExpr(List<Token> identifierList, Expr value)
-        : base(identifierList.First().Position)
-    {
-        IdentifierList = identifierList;
-        Value = value;
-    }
+    public Expr Value { get; } = value;
 }
 
-class NewExpr : Expr
+class NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
+    : Expr(identifier.Position)
 {
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
-    public IList<Token> ModulePath { get; }
+    public IList<Token> ModulePath { get; } = modulePath;
 
-    public IList<Expr> Arguments { get; }
+    public IList<Expr> Arguments { get; } = arguments;
 
     public StructSymbol? StructSymbol { get; init; }
-
-    public NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        ModulePath = modulePath;
-        Arguments = arguments;
-    }
 }
 
-class IfExpr : Expr
+class IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch) : Expr(condition.Position)
 {
-    public Expr Condition { get; }
+    public Expr Condition { get; } = condition;
 
-    public Expr ThenBranch { get; }
+    public Expr ThenBranch { get; } = thenBranch;
 
-    public Expr? ElseBranch { get; }
-
-    public IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch)
-        : base(condition.Position)
-    {
-        Condition = condition;
-        ThenBranch = thenBranch;
-        ElseBranch = elseBranch;
-    }
+    public Expr? ElseBranch { get; } = elseBranch;
 }
 
-class ForExpr : Expr
+class ForExpr(List<Token> identifierList, Expr value, BlockExpr branch) : Expr(identifierList.First().Position)
 {
-    public List<Token> IdentifierList { get; }
+    public List<Token> IdentifierList { get; } = identifierList;
 
-    public Expr Value { get; }
+    public Expr Value { get; } = value;
 
-    public BlockExpr Branch { get; }
-
-    public ForExpr(List<Token> identifierList, Expr value, BlockExpr branch)
-        : base(identifierList.First().Position)
-    {
-        IdentifierList = identifierList;
-        Value = value;
-        Branch = branch;
-    }
+    public BlockExpr Branch { get; } = branch;
 }
 
-class WhileExpr : Expr
+class WhileExpr(Expr condition, BlockExpr branch) : Expr(condition.Position)
 {
-    public Expr Condition { get; }
+    public Expr Condition { get; } = condition;
 
-    public BlockExpr Branch { get; }
-
-    public WhileExpr(Expr condition, BlockExpr branch)
-        : base(condition.Position)
-    {
-        Condition = condition;
-        Branch = branch;
-    }
+    public BlockExpr Branch { get; } = branch;
 }
 
-class TupleExpr : Expr
+class TupleExpr(List<Expr> values, TextPos position) : Expr(position)
 {
-    public List<Expr> Values { get; }
-
-    public TupleExpr(List<Expr> values, TextPos position)
-        : base(position)
-    {
-        Values = values;
-    }
+    public List<Expr> Values { get; } = values;
 }
 
-class ListExpr : Expr
+class ListExpr(IList<Expr> values, TextPos position) : Expr(position)
 {
-    public IList<Expr> Values { get; }
-
-    public ListExpr(IList<Expr> values, TextPos position)
-        : base(position)
-    {
-        Values = values;
-    }
+    public IList<Expr> Values { get; } = values;
 }
 
-class SetExpr : Expr
+class SetExpr(List<Expr> entries, TextPos position) : Expr(position)
 {
-    public List<Expr> Entries { get; }
-
-    public SetExpr(List<Expr> entries, TextPos position)
-        : base(position)
-    {
-        Entries = entries;
-    }
+    public List<Expr> Entries { get; } = entries;
 }
 
-class DictionaryExpr : Expr
+class DictionaryExpr(List<(Expr, Expr)> entries, TextPos position) : Expr(position)
 {
-    public List<(Expr, Expr)> Entries { get; }
-
-    public DictionaryExpr(List<(Expr, Expr)> entries, TextPos position)
-        : base(position)
-    {
-        Entries = entries;
-    }
+    public List<(Expr, Expr)> Entries { get; } = entries;
 }
 
-class BlockExpr : Expr
+class BlockExpr(
+    List<Expr> expressions,
+    StructureKind parentStructureKind,
+    TextPos pos,
+    Scope scope)
+    : Expr(pos)
 {
-    public List<Expr> Expressions { get; }
+    public List<Expr> Expressions { get; } = expressions;
 
-    public StructureKind ParentStructureKind { get; }
+    public StructureKind ParentStructureKind { get; } = parentStructureKind;
 
-    public Scope Scope { get; set;  }
-
-    public BlockExpr(
-        List<Expr> expressions,
-        StructureKind parentStructureKind,
-        TextPos pos,
-        Scope scope)
-        : base(pos)
-    {
-        Expressions = expressions;
-        ParentStructureKind = parentStructureKind;
-        Scope = scope;
-    }
+    public Scope Scope { get; set;  } = scope;
 }
 
-class KeywordExpr : Expr
+class KeywordExpr(TokenKind kind, Expr? value, TextPos pos) : Expr(pos)
 {
-    public TokenKind Kind { get; }
+    public TokenKind Kind { get; } = kind;
 
-    public Expr? Value { get; }
-
-    public KeywordExpr(TokenKind kind, Expr? value, TextPos pos)
-        : base(pos)
-    {
-        Kind = kind;
-        Value = value;
-    }
+    public Expr? Value { get; } = value;
 }
 
 class BinaryExpr : Expr
@@ -375,75 +263,41 @@ class UnaryExpr : Expr
     }
 }
 
-class FieldAccessExpr : Expr
+class FieldAccessExpr(Expr objectExpr, Token identifier) : Expr(identifier.Position)
 {
-    public Expr Object { get; }
+    public Expr Object { get; } = objectExpr;
 
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
     public RuntimeString? RuntimeIdentifier { get; set; }
-
-    public FieldAccessExpr(Expr objectExpr, Token identifier)
-        : base(identifier.Position)
-    {
-        Object = objectExpr;
-        Identifier = identifier;
-    }
 }
 
-class RangeExpr : Expr
+class RangeExpr(Expr? from, Expr? to, bool inclusive) : Expr(from?.Position ?? to!.Position)
 {
-    public Expr? From { get; }
+    public Expr? From { get; } = from;
 
-    public Expr? To { get; }
+    public Expr? To { get; } = to;
 
-    public bool Inclusive { get; }
-
-    public RangeExpr(Expr? from, Expr? to, bool inclusive)
-        : base(from?.Position ?? to!.Position)
-    {
-        From = from;
-        To = to;
-        Inclusive = inclusive;
-    }
+    public bool Inclusive { get; } = inclusive;
 }
 
-class IndexerExpr : Expr
+class IndexerExpr(Expr value, Expr index) : Expr(index.Position)
 {
-    public Expr Value { get; }
+    public Expr Value { get; } = value;
 
-    public Expr Index { get; }
-
-    public IndexerExpr(Expr value, Expr index)
-        : base(index.Position)
-    {
-        Value = value;
-        Index = index;
-    }
+    public Expr Index { get; } = index;
 }
 
-class TypeExpr : Expr
+class TypeExpr(Token identifier) : Expr(identifier.Position)
 {
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
     public RuntimeType? RuntimeValue { get; init; }
-
-    public TypeExpr(Token identifier)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-    }
 }
 
-class VariableExpr : Expr
+class VariableExpr(Token identifier) : Expr(identifier.Position)
 {
-    public Token Identifier { get; }
-
-    public VariableExpr(Token identifier)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-    }
+    public Token Identifier { get; } = identifier;
 }
 
 enum CallStyle
@@ -480,19 +334,26 @@ enum RedirectionKind
     All,
 }
 
-class CallExpr : Expr
+class CallExpr(
+    Token identifier,
+    IList<Token> modulePath,
+    IList<Expr> arguments,
+    CallStyle callStyle,
+    Plurality plurality,
+    CallType callType)
+    : Expr(identifier.Position)
 {
-    public Token Identifier { get; }
+    public Token Identifier { get; } = identifier;
 
-    public IList<Token> ModulePath { get; }
+    public IList<Token> ModulePath { get; } = modulePath;
 
-    public IList<Expr> Arguments { get; set; }
+    public IList<Expr> Arguments { get; set; } = arguments;
 
-    public CallStyle CallStyle { get; }
+    public CallStyle CallStyle { get; } = callStyle;
 
-    public Plurality Plurality { get; }
+    public Plurality Plurality { get; } = plurality;
 
-    public CallType CallType { get; }
+    public CallType CallType { get; } = callType;
 
     public FunctionSymbol? FunctionSymbol { get; init; }
 
@@ -509,36 +370,13 @@ class CallExpr : Expr
     public bool IsReference { get; set; }
 
     public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();
-
-    public CallExpr(
-        Token identifier,
-        IList<Token> modulePath,
-        IList<Expr> arguments,
-        CallStyle callStyle,
-        Plurality plurality,
-        CallType callType)
-        : base(identifier.Position)
-    {
-        Identifier = identifier;
-        ModulePath = modulePath;
-        Arguments = arguments;
-        CallStyle = callStyle;
-        Plurality = plurality;
-        CallType = callType;
-    }
 }
 
-class LiteralExpr : Expr
+class LiteralExpr(Token value) : Expr(value.Position)
 {
-    public Token Value { get; }
+    public Token Value { get; } = value;
 
     public RuntimeObject? RuntimeValue { get; init; }
-
-    public LiteralExpr(Token value)
-        : base(value.Position)
-    {
-        Value = value;
-    }
 }
 
 class StringInterpolationExpr : Expr
@@ -560,51 +398,30 @@ class StringInterpolationExpr : Expr
     }
 }
 
-class ClosureExpr : Expr
+class ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body) : Expr(body.Position)
 {
-    public CallExpr Function { get; }
+    public CallExpr Function { get; } = function;
 
-    public List<Token> Parameters { get; }
+    public List<Token> Parameters { get; } = parameters;
 
-    public BlockExpr Body { get; set; }
+    public BlockExpr Body { get; set; } = body;
 
-    public HashSet<string> CapturedVariables { get; init; } = new();
+    public HashSet<string> CapturedVariables { get; init; } = [];
 
     public RuntimeClosureFunction? RuntimeValue { get; set; }
-
-    public ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body)
-        : base(body.Position)
-    {
-        Function = function;
-        Parameters = parameters;
-        Body = body;
-    }
 }
 
-class TryExpr : Expr
+class TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
+    : Expr(body.Position)
 {
-    public BlockExpr Body { get; }
+    public BlockExpr Body { get; } = body;
 
-    public BlockExpr CatchBody { get; }
+    public BlockExpr CatchBody { get; } = catchBody;
 
-    public Token? CatchIdentifier { get; }
-
-    public TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
-        : base(body.Position)
-    {
-        Body = body;
-        CatchBody = catchBody;
-        CatchIdentifier = catchIdentifier;
-    }
+    public Token? CatchIdentifier { get; } = catchIdentifier;
 }
 
-class ThrowExpr : Expr
+class ThrowExpr(Expr value) : Expr(value.Position)
 {
-    public Expr Value { get; }
-
-    public ThrowExpr(Expr value)
-        : base(value.Position)
-    {
-        Value = value;
-    }
+    public Expr Value { get; } = value;
 }

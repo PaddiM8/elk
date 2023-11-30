@@ -6,11 +6,10 @@ using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 
-class SelectionListing
+class SelectionListing(IRenderer renderer)
 {
     public int SelectedIndex { get; set; }
 
-    private readonly IRenderer _renderer;
     private IList<Completion> _items = Array.Empty<Completion>();
     private int _maxLength;
     private bool _hasDescriptions;
@@ -18,11 +17,6 @@ class SelectionListing
     private int _lastHeight;
     private const string ItemMargin = "   ";
     private const string DescriptionMargin = "  ";
-
-    public SelectionListing(IRenderer renderer)
-    {
-        _renderer = renderer;
-    }
 
     public void LoadItems(IList<Completion> items)
     {
@@ -51,15 +45,15 @@ class SelectionListing
         _hasDescriptions = false;
         _lastBottomRowIndex = 0;
         SelectedIndex = 0;
-        _renderer.WriteRaw(Ansi.ClearToEndOfScreen());
+        renderer.WriteRaw(Ansi.ClearToEndOfScreen());
     }
 
     public void Render()
     {
-        var currentMaxLength = Math.Min(_maxLength, _renderer.WindowWidth);
+        var currentMaxLength = Math.Min(_maxLength, renderer.WindowWidth);
         var columnCount = Math.Min(
             _items.Count,
-            _renderer.WindowWidth / (currentMaxLength + ItemMargin.Length)
+            renderer.WindowWidth / (currentMaxLength + ItemMargin.Length)
         );
         columnCount = Math.Max(1, Math.Min(5, columnCount));
 
@@ -67,11 +61,11 @@ class SelectionListing
             columnCount = 1;
 
         if (columnCount == 1)
-            currentMaxLength = _renderer.WindowWidth;
+            currentMaxLength = renderer.WindowWidth;
 
         var maxRowCount = Math.Max(
             7,
-            _renderer.WindowHeight - _renderer.CursorTop - 1
+            renderer.WindowHeight - renderer.CursorTop - 1
         );
         var startRow = (int)((float)SelectedIndex / columnCount / maxRowCount) * maxRowCount;
         var rowCount = Math.Min(
@@ -96,11 +90,11 @@ class SelectionListing
         }
 
         var lineLength = Math.Min(
-            _renderer.WindowWidth - 1,
+            renderer.WindowWidth - 1,
             columnWidths.Sum() + (columnCount - 1) * ItemMargin.Length
         );
-        var bottomRowIndex = _renderer.CursorTop + rowCount;
-        if (_lastBottomRowIndex > bottomRowIndex && _lastHeight <= _renderer.WindowHeight)
+        var bottomRowIndex = renderer.CursorTop + rowCount;
+        if (_lastBottomRowIndex > bottomRowIndex && _lastHeight <= renderer.WindowHeight)
         {
             var difference = _lastBottomRowIndex - bottomRowIndex;
             var clearLines = string.Join(
@@ -112,16 +106,16 @@ class SelectionListing
             lineLength = 0;
         }
 
-        _renderer.WriteLinesOutside(output.ToString(), rowCount, lineLength);
-        _lastHeight = _renderer.WindowHeight;
-        _lastBottomRowIndex = _renderer.CursorTop + rowCount;
+        renderer.WriteLinesOutside(output.ToString(), rowCount, lineLength);
+        _lastHeight = renderer.WindowHeight;
+        _lastBottomRowIndex = renderer.CursorTop + rowCount;
     }
 
     private string RenderColumn(int[] columnWidths, int rowIndex, int columnIndex)
     {
         var columnCount = columnWidths.Length;
         var columnWidth = Math.Min(
-            _renderer.WindowWidth,
+            renderer.WindowWidth,
             columnWidths[columnIndex]
         );
         var index = rowIndex * columnCount + columnIndex;
@@ -149,7 +143,7 @@ class SelectionListing
         // Padding
         var itemLength = content.GetWcLength() + (truncatedDescription?.GetWcLength() ?? 0);
         var padding = new string(' ', columnWidth - itemLength);
-        if (itemLength == _renderer.WindowWidth)
+        if (itemLength == renderer.WindowWidth)
             padding = "";
 
         // Selection colors

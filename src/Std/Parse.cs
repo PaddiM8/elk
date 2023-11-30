@@ -78,7 +78,7 @@ public static partial class Parse
         }
 
         return new RuntimeTable(
-            new RuntimeList(lines.FirstOrDefault() ?? new List<RuntimeString>()),
+            new RuntimeList(lines.FirstOrDefault() ?? []),
             lines.Skip(1)
         );
     }

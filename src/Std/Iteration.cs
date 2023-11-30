@@ -513,7 +513,7 @@ static class Iteration
     {
         var items = values as IEnumerable<RuntimeObject> ?? values.As<RuntimeList>().Values;
 
-        return new(items.Select((x, i) => new RuntimeTuple(new[] { x, new RuntimeInteger(i) })));
+        return new(items.Select((x, i) => new RuntimeTuple([x, new RuntimeInteger(i)])));
     }
 
     /// <param name="items"></param>
@@ -530,5 +530,5 @@ static class Iteration
     /// <example>[1, 2, 3] | iter::zip([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6)]</example>
     [ElkFunction("zip")]
     public static RuntimeList Zip(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
-        => new(a.Zip(b).Select(x => new RuntimeTuple(new[] { x.First, x.Second })));
+        => new(a.Zip(b).Select(x => new RuntimeTuple([x.First, x.Second])));
 }

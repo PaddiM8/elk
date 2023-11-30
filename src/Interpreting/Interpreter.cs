@@ -117,7 +117,7 @@ partial class Interpreter
                     ast.FirstOrDefault()?.Position ?? TextPos.Default,
                     new LocalScope(_scope)
                 );
-                ast = new List<Expr> { block };
+                ast = [block];
             }
 
             return Interpret(ast, isEntireModule: false);
@@ -354,11 +354,8 @@ partial class Interpreter
     private RuntimeObject Visit(SetExpr expr)
     {
         var dict = new Dictionary<int, RuntimeObject>(expr.Entries.Count);
-        foreach (var value in expr.Entries)
-        {
-            var evaluatedValue = Next(value);
+        foreach (var evaluatedValue in expr.Entries.Select(Next))
             dict.TryAdd(evaluatedValue.GetHashCode(), evaluatedValue);
-        }
 
         return new RuntimeSet(dict);
     }
@@ -1058,7 +1055,7 @@ partial class Interpreter
     {
         var scope = new LocalScope(
             expr.Function.EnclosingClosureValue?.Environment as Scope.Scope
-                ?? (Scope.Scope)_scope.ModuleScope
+                ?? _scope.ModuleScope
         );
         foreach (var capture in expr.CapturedVariables)
         {

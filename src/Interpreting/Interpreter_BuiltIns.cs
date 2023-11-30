@@ -108,28 +108,29 @@ partial class Interpreter
         if (arguments.Count == 0)
             throw new RuntimeWrongNumberOfArgumentsException(1, 0, true);
 
-        var evaluate = () => functionReference switch
-        {
-            RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(arguments, runtimeStdFunction.StdFunction),
-            RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
-                arguments,
-                runtimeSymbolFunction.FunctionSymbol.Expr,
-                isRoot
-            ),
-            RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(arguments, runtimeClosure, isRoot),
-            _ => EvaluateProgramCall(
-                ((RuntimeProgramFunction)functionReference).ProgramName,
-                arguments,
-                pipedValue: null,
-                RedirectionKind.None,
-                disableRedirectionBuffering: false,
-                automaticStart: true,
-                environmentVariables: null
-            ),
-        };
+        RuntimeObject Evaluate()
+            => functionReference switch
+            {
+                RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(arguments, runtimeStdFunction.StdFunction),
+                RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
+                    arguments,
+                    runtimeSymbolFunction.FunctionSymbol.Expr,
+                    isRoot
+                ),
+                RuntimeClosureFunction runtimeClosure => EvaluateRuntimeClosure(arguments, runtimeClosure, isRoot),
+                _ => EvaluateProgramCall(
+                    ((RuntimeProgramFunction)functionReference).ProgramName,
+                    arguments,
+                    pipedValue: null,
+                    RedirectionKind.None,
+                    disableRedirectionBuffering: false,
+                    automaticStart: true,
+                    environmentVariables: null
+                ),
+            };
 
         if (functionReference.Plurality == Plurality.Singular || arguments.Count == 0)
-            return evaluate();
+            return Evaluate();
 
         if (arguments.First() is not IEnumerable<RuntimeObject> firstArguments)
             throw new RuntimeCastException(arguments.First().GetType(), "Iterable");
@@ -137,7 +138,7 @@ partial class Interpreter
         var evaluatedWithPlurality = firstArguments.Select(x =>
         {
             arguments[0] = x;
-            return evaluate();
+            return Evaluate();
         });
 
         return new RuntimeList(evaluatedWithPlurality);

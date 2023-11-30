@@ -4,27 +4,20 @@ using System.Linq;
 
 namespace Elk.Std.DataTypes.Serialization.CommandLine;
 
-public class CliResult : IEnumerable<KeyValuePair<string, object?>>
+public class CliResult(Dictionary<string, object?> values, IEnumerable<int> argumentIndices)
+    : IEnumerable<KeyValuePair<string, object?>>
 {
-    public IEnumerable<int> ArgumentIndices { get; }
-
-    private readonly Dictionary<string, object?> _values;
-
-    public CliResult(Dictionary<string, object?> values, IEnumerable<int> argumentIndices)
-    {
-        ArgumentIndices = argumentIndices;
-        _values = values;
-    }
+    public IEnumerable<int> ArgumentIndices { get; } = argumentIndices;
 
     public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
-        => _values.GetEnumerator();
+        => values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
     public RuntimeDictionary ToRuntimeDictionary()
     {
-        var runtimeValues = _values.Select(pair =>
+        var runtimeValues = values.Select(pair =>
         {
             var key = new RuntimeString(pair.Key);
             RuntimeObject value = pair.Value switch
@@ -48,25 +41,25 @@ public class CliResult : IEnumerable<KeyValuePair<string, object?>>
     }
 
     public bool Contains(string identifier)
-        => _values.ContainsKey(identifier);
+        => values.ContainsKey(identifier);
 
     public string? GetString(string identifier)
     {
-        _values.TryGetValue(identifier, out var result);
+        values.TryGetValue(identifier, out var result);
 
         return result as string;
     }
 
     public string GetRequiredString(string identifier)
     {
-        _values.TryGetValue(identifier, out var result);
+        values.TryGetValue(identifier, out var result);
 
         return (string)result!;
     }
 
-    public List<string>? GetList(string identifier)
+    public IEnumerable<string>? GetList(string identifier)
     {
-        _values.TryGetValue(identifier, out var result);
+        values.TryGetValue(identifier, out var result);
 
         return result as List<string>;
     }

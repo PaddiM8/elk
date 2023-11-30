@@ -42,7 +42,7 @@ public record FunctionInfo(string Name, IEnumerable<ParameterInfo> Parameters, V
 
     public string? Summary { get; init; }
 
-    public List<string> Errors { get; init; } = new();
+    public List<string> Errors { get; init; } = [];
 
     public ClosureInfo? Closure { get; init; }
 }

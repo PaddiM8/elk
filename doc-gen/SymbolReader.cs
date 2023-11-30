@@ -90,7 +90,7 @@ public class SymbolReader
                 {
                     Example = functionDocs?.Example,
                     Summary = functionDocs?.Summary,
-                    Errors = functionDocs?.Errors ?? new(),
+                    Errors = functionDocs?.Errors ?? [],
                     Closure = closure,
                 };
                 functionList.Add(function);

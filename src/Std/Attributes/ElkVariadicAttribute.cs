@@ -7,6 +7,4 @@ using System;
 namespace Elk.Std.Attributes;
 
 [AttributeUsage(AttributeTargets.Parameter)]
-public class ElkVariadicAttribute : Attribute
-{
-}
+public class ElkVariadicAttribute : Attribute;

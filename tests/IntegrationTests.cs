@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
-using Elk.Std.Environment;
 using NUnit.Framework;
 using Path = System.IO.Path;
 

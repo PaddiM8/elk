@@ -5,7 +5,6 @@ using System.Linq;
 using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
-using Microsoft.VisualBasic.FileIO;
 
 namespace Elk.Std.String;
 
@@ -17,11 +16,11 @@ public static class StringPath
     /// <returns>A path created by concatenating the given paths.</returns>
     [ElkFunction("join")]
     public static RuntimeString Join(RuntimeString path1, RuntimeString path2)
-        => new(System.IO.Path.Join(path1.Value, path2.Value));
+        => new(Path.Join(path1.Value, path2.Value));
 
     [ElkFunction("fileName")]
     public static RuntimeString FileName(RuntimeString path)
-        => new(System.IO.Path.GetFileName(path.Value));
+        => new(Path.GetFileName(path.Value));
 
     /// <returns>The absolute path for the given path string.</returns>
     [ElkFunction("full")]

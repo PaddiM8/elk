@@ -6,22 +6,15 @@ using Elk.ReadLine.Render;
 
 namespace Elk.ReadLine;
 
-public readonly struct KeyPress
+public readonly struct KeyPress(ConsoleModifiers modifiers, ConsoleKey key)
 {
-    public ConsoleModifiers Modifiers { get; }
+    public ConsoleModifiers Modifiers { get; } = modifiers;
 
-    public ConsoleKey Key { get; }
+    public ConsoleKey Key { get; } = key;
 
     public KeyPress(ConsoleKey key)
+        : this(0, key)
     {
-        Modifiers = 0;
-        Key = key;
-    }
-
-    public KeyPress(ConsoleModifiers modifiers, ConsoleKey key)
-    {
-        Modifiers = modifiers;
-        Key = key;
     }
 }
 

@@ -34,7 +34,7 @@ static class AstBuilder
         );
 
     public static LetExpr Let(string identifier, Expr value)
-        => new(new() { Token(TokenKind.Identifier, identifier) }, value);
+        => new([Token(TokenKind.Identifier, identifier)], value);
 
     public static KeywordExpr KeywordExpr(TokenKind kind, Expr value)
         => new(kind, value, TextPos.Default);
