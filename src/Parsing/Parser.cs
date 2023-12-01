@@ -372,8 +372,15 @@ internal class Parser
         var name = EatExpected(TokenKind.Identifier).Value;
         EatExpected(TokenKind.Equals);
         var value = EatExpected(TokenKind.DoubleQuoteStringLiteral, TokenKind.SingleQuoteStringLiteral);
+        var arguments = value.Value
+            .Split(' ')
+            .Select(x =>
+                new LiteralExpr(
+                    new Token(TokenKind.TextArgumentStringLiteral, x, pos)
+                )
+            );
 
-        _scope.ModuleScope.AddAlias(name, new LiteralExpr(value));
+        _scope.ModuleScope.AddAlias(name, arguments);
 
         return new LiteralExpr(new Token(TokenKind.Nil, "nil", pos));
     }
@@ -1213,8 +1220,7 @@ internal class Parser
             if (alias != null)
             {
                 identifier = identifier with { Value = alias.Name };
-                if (alias.Value != null)
-                    arguments.Add(alias.Value);
+                arguments.AddRange(alias.Arguments);
             }
 
             do
@@ -1256,8 +1262,7 @@ internal class Parser
         if (aliasResult != null)
         {
             identifier = identifier with { Value = aliasResult.Name };
-            if (aliasResult.Value != null)
-                textArguments.Insert(0, aliasResult.Value);
+            textArguments.InsertRange(0, aliasResult.Arguments);
         }
 
         var plurality = ParsePlurality(identifier, out var newIdentifier);
