@@ -24,7 +24,32 @@ public class ReadLinePrompt
 
     private KeyHandler? _keyHandler;
     private readonly ShortcutBag _shortcuts = new();
-    private readonly object _resizeLock = new();
+    private readonly object _rendererLock = new();
+    private Renderer? _activeRenderer;
+
+    public ReadLinePrompt()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+ 
+        PosixSignalRegistration.Create(PosixSignal.SIGWINCH, HandleResize);
+    }
+
+    private void HandleResize(PosixSignalContext context)
+    {
+        if (_activeRenderer == null)
+            return;
+
+        lock (_rendererLock)
+        {
+            var promptPlaceholder = new string(
+                ' ',
+                Math.Max(2, _activeRenderer.PromptStartLeft) - 2
+            );
+            _activeRenderer.WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
+            _activeRenderer.Render();
+        }
+    }
 
     public string Read(string prompt = "", string @default = "")
     {
@@ -33,22 +58,6 @@ public class ReadLinePrompt
 
         var enterPressed = false;
         var renderer = new Renderer(prompt);
-        if (!OperatingSystem.IsWindows())
-        {
-            PosixSignalRegistration.Create(
-                PosixSignal.SIGWINCH,
-                _ =>
-                {
-                    lock (_resizeLock)
-                    {
-                        var promptPlaceholder = new string(' ', Math.Max(2, renderer.PromptStartLeft) - 2);
-                        renderer.WriteRaw(Ansi.MoveToColumn(0) + promptPlaceholder + "❯ ");
-                        renderer.Render();
-                    }
-                }
-            );
-        }
-
         _keyHandler = new KeyHandler(renderer, _shortcuts)
         {
             HistoryHandler = HistoryHandler,
@@ -63,11 +72,17 @@ public class ReadLinePrompt
         if (WordSeparators != null)
             _keyHandler.WordSeparators = WordSeparators;
 
+        lock (_rendererLock)
+            _activeRenderer = renderer;
+
         while (!enterPressed)
         {
             var (firstKey, remaining) = KeyReader.Read();
             _keyHandler.Handle(firstKey, remaining);
         }
+
+        lock (_rendererLock)
+            _activeRenderer = null;
 
         var text = _keyHandler.Text;
         if (string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(@default))
