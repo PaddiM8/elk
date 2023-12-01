@@ -38,12 +38,21 @@ static class Iteration
         => new(items.Append(item));
 
     /// <summary>
-    /// Equivalent to x[y].
+    /// Equivalent to x[y] but returns nil if the item does not exist.
     /// </summary>
     /// <returns>The item at the given index.</returns>
     [ElkFunction("at")]
     public static RuntimeObject At(IIndexable<RuntimeObject> items, RuntimeObject index)
-        => items[index];
+    {
+        try
+        {
+            return items[index];
+        }
+        catch (RuntimeItemNotFoundException)
+        {
+            return RuntimeNil.Value;
+        }
+    }
 
     /// <param name="items">The items to split into chunks</param>
     /// <param name="size">The maximum size of each chunk</param>

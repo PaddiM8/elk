@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -39,6 +40,19 @@ public class Regex
     [ElkFunction("find")]
     public static RuntimeString Find(RuntimeString value, RuntimeRegex pattern)
         => new(pattern.Value.Match(value.Value).Value);
+
+    /// <param name="pattern"></param>
+    /// <param name="value"></param>
+    /// <returns>The first occurrence of the given pattern in the given value.</returns>
+    [ElkFunction("findLast")]
+    public static RuntimeString FindLast(RuntimeString value, RuntimeRegex pattern)
+        => new(
+            System.Text.RegularExpressions.Regex.Match(
+                value.Value,
+                pattern.ToString(),
+                RegexOptions.RightToLeft
+            ).Value
+        );
 
     /// <param name="pattern"></param>
     /// <param name="value"></param>
