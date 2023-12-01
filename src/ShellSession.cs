@@ -69,8 +69,11 @@ public class ShellSession
         if (pathFileContent.Length == 0)
             return;
 
-        pathValue += initialColon + string.Join(":", pathFileContent);
-        Environment.SetEnvironmentVariable("PATH", pathValue);
+        // TODO: Remove duplicates
+        Environment.SetEnvironmentVariable(
+            "PATH",
+            string.Join(":", pathFileContent) + initialColon + pathValue
+        );
     }
 
     public bool ModuleExists(ICollection<string> modulePath)

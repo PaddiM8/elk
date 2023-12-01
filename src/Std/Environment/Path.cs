@@ -29,7 +29,7 @@ public static class Path
         // Reload the path variable
         var pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";
         var colon = pathVar == "" ? "" : ":";
-        System.Environment.SetEnvironmentVariable("PATH", pathVar + colon + path);
+        System.Environment.SetEnvironmentVariable("PATH", path + colon + pathVar);
     }
 
     /// <returns>A list of all the paths in ~/.config/elk/path.txt.</returns>
