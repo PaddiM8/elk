@@ -703,8 +703,14 @@ internal class Parser
     private Expr ParseIndexer()
     {
         var expr = ParseFieldAccess();
-        while (!MatchInclWhiteSpace(TokenKind.NewLine) && AdvanceIf(TokenKind.OpenSquareBracket))
+        while (Match(TokenKind.OpenSquareBracket))
         {
+            var precededByNewLineFollowedByWhiteSpace = Previous?.Kind == TokenKind.WhiteSpace &&
+                _tokens.ElementAtOrDefault(_index - 2)?.Kind == TokenKind.NewLine;
+            if (Previous?.Kind == TokenKind.NewLine || precededByNewLineFollowedByWhiteSpace)
+                break;
+
+            Eat(); // [
             var index = ParseExpr();
             EatExpected(TokenKind.ClosedSquareBracket);
 
@@ -1130,7 +1136,7 @@ internal class Parser
         }
 
         if (expressions.Count == 0 && couldBeDictionary)
-            return new DictionaryExpr(new List<(Expr, Expr)>(), pos);
+            return new DictionaryExpr([], pos);
 
         _scope = _scope.Parent!;
 
@@ -1286,7 +1292,7 @@ internal class Parser
 
     private Plurality ParsePlurality(Token identifier, out Token newToken)
     {
-        if (identifier.Value.EndsWith("!"))
+        if (identifier.Value.EndsWith('!'))
         {
             newToken = identifier with { Value = identifier.Value[..^1] };
 
@@ -1301,7 +1307,7 @@ internal class Parser
     private List<Expr> ParseTextArguments()
     {
         if (!MatchInclWhiteSpace(TokenKind.WhiteSpace))
-            return new();
+            return [];
 
         var pos = Current?.Position ?? TextPos.Default;
         var textArguments = new List<Expr>();

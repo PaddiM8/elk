@@ -1,0 +1,10 @@
+let dict = {
+    "a": 1,
+    "b": 2,
+    "c": 3,
+}
+[[1, 2, 3], [4, 5, 6]]
+    | len
+    | assertEqual(2)
+
+assert(len(dict) == 3)
