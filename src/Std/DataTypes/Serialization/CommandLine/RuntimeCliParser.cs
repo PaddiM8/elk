@@ -381,10 +381,10 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
     private (string? identifier, string? value, bool isFlag)? ParseFlag(
         IEnumerator<(string item, int index)> enumerator,
-        bool ignoreErrors)
+        bool suppressOutput)
     {
         var givenFlag = enumerator.Current.item;
-        if (givenFlag is "-h" or "--help")
+        if (!suppressOutput && givenFlag is "-h" or "--help")
         {
             ShowHelp();
 
@@ -399,7 +399,7 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
         if (flag == null)
         {
-            if (ignoreErrors)
+            if (suppressOutput)
                 return (enumerator.Current.item, null, true);
 
             Console.Error.WriteLine($"Unrecognized flag: {givenFlag}");
@@ -412,7 +412,7 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
         if (!enumerator.MoveNext() || enumerator.Current.item.StartsWith("-"))
         {
-            if (ignoreErrors)
+            if (suppressOutput)
                 return (enumerator.Current.item, null, true);
 
             Console.Error.WriteLine($"Expected value for flag: {givenFlag}");

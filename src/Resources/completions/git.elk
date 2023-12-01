@@ -5,8 +5,11 @@ cli::create git
     | cli::addVerb branch => &handleBranch
     | cli::addVerb checkout => &handleCheckout
     | cli::addVerb switch => &handleSwitch
+    | cli::addVerb pull => &handlePull
+    | cli::addVerb push => &handlePush
     | cli::addVerb rebase => &handleRebase
     | cli::addVerb reset => &handleReset
+    | cli::addVerb restore => &handleRestore
     | cli::addArgument({ "valueKind": "path", "variadic": true })
     | cli::addFlag({ "short": "v", "long": "version", "description": "display git version" })
     | cli::addFlag({ "short": "C", "valueKind": "directory", "description": "run as if started in dir" })
@@ -73,6 +76,19 @@ fn handleSwitch(parser) {
         | cli::addFlag({ "short": "c", "completionHandler": &branchHandler })
 }
 
+fn handlePull(parser) {
+    parser
+        | cli::addArgument({ "identifier": "remote", "completionHandler": &remoteHandler })
+        | cli::addArgument({ "identifier": "branch", "completionHandler": &branchHandler })
+}
+
+fn handlePush(parser) {
+    parser
+        | cli::addFlag({ "long": "force" })
+        | cli::addArgument({ "identifier": "remote", "completionHandler": &remoteHandler })
+        | cli::addArgument({ "identifier": "branch", "completionHandler": &branchHandler })
+}
+
 fn handleRebase(parser) {
     parser
         | cli::addFlag({ "short": "i", "completionHandler": &reflogHandler })
@@ -85,6 +101,14 @@ fn handleReset(parser) {
         | cli::addFlag({ "long": "hard", "completionHandler": &reflogHandler })
         | cli::addFlag({ "long": "merge", "completionHandler": &reflogHandler })
         | cli::addFlag({ "short": "q", "completionHandler": &reflogHandler })
+        | cli::addFlag({ "long": "", "completionHandler": &stagedFilesHandler, "variadic": true })
+}
+
+fn handleRestore(parser) {
+    parser
+        | cli::addArgument({ "identifier": "file", "completionHandler": &unstagedFilesHandler, "variadic": true })
+        | cli::addFlag({ "long": "source", "completionHandler": &reflogHandler })
+        | cli::addFlag({ "long": "", "completionHandler": &unstagedFilesHandler, "variadic": true })
 }
 
 fn unstagedFilesHandler(value, state) {
@@ -101,6 +125,10 @@ fn stagedFilesHandler(value, state) {
                 | str::path::relative(workingDirectory)
                 | str::path::join(x)
         }
+}
+
+fn remoteHandler(value, state) {
+    git remote
 }
 
 fn branchHandler(value, state) {
