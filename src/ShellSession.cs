@@ -105,13 +105,18 @@ public class ShellSession
 
     public string GetPrompt()
     {
+        var previousExitCode = Environment.GetEnvironmentVariable("?");
+
         // The 'elkPrompt' function should have been created
         // automatically. This is simply a fallback in case
         // something goes wrong.
         if (!_interpreter.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        return CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
+        var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
+        Environment.SetEnvironmentVariable("?", previousExitCode);
+
+        return prompt;
     }
 
     public void RunCommand(
@@ -137,6 +142,7 @@ public class ShellSession
             var position = printErrorLineNumbers
                 ? e.Position ?? _interpreter.Position
                 : null;
+
             result = $"{position} {e.Message}".Trim();
             if (result == "")
                 return;
@@ -148,6 +154,7 @@ public class ShellSession
             var position = printErrorLineNumbers
                 ? _interpreter.Position
                 : null;
+
             result = $"{position} {e.Message}".Trim();
             if (result == "")
                 return;

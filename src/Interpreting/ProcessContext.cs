@@ -11,15 +11,13 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting;
 
-public class ProcessContext : IEnumerable<string>
+public class ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
+    : IEnumerable<string>
 {
     public bool Success
         => _exitCode == 0 || _allowNonZeroExit;
 
-
-    private Process? _process;
-    private readonly RuntimeObject? _pipedValue;
-    private bool _waitForExit;
+    private Process? _process = process;
     private readonly BlockingCollection<string> _buffer = new(new ConcurrentQueue<string>());
     private bool _allowNonZeroExit;
     private int _exitCode;
@@ -27,13 +25,6 @@ public class ProcessContext : IEnumerable<string>
     private bool _disposeOutput;
     private bool _disposeError;
     private readonly object _closeProcessLock = new();
-
-    public ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
-    {
-        _process = process;
-        _pipedValue = pipedValue;
-        _waitForExit = waitForExit;
-    }
 
     public IEnumerator<string> GetEnumerator()
         => _buffer.GetConsumingEnumerable().GetEnumerator();
@@ -52,20 +43,17 @@ public class ProcessContext : IEnumerable<string>
             throw new RuntimeNotFoundException(_process!.StartInfo.FileName);
         }
 
-        if (_pipedValue != null)
-            Read(_pipedValue);
+        if (pipedValue != null)
+            Read(pipedValue);
 
-        //_process.WaitForExit();
-        //var exitCode = _process.ExitCode;
         CloseProcess(messageOnError: false);
-        //Environment.SetEnvironmentVariable("?", exitCode.ToString());
 
         return _exitCode;
     }
 
     public void MakeBackground()
     {
-        _waitForExit = false;
+        waitForExit = false;
         _process!.StartInfo.RedirectStandardOutput = false;
         _process!.StartInfo.RedirectStandardError = false;
     }
@@ -80,7 +68,7 @@ public class ProcessContext : IEnumerable<string>
         if (!_disposeError)
             _process!.ErrorDataReceived += Process_DataReceived;
 
-        if (!_waitForExit)
+        if (!waitForExit)
         {
             _process!.Exited += (_, _)
                 => CloseProcess(messageOnError: true);
@@ -119,10 +107,10 @@ public class ProcessContext : IEnumerable<string>
         if (_openPipeCount == 0)
             _buffer.CompleteAdding();
 
-        if (_pipedValue != null)
-            Read(_pipedValue);
+        if (pipedValue != null)
+            Read(pipedValue);
 
-        if (_waitForExit)
+        if (waitForExit)
             CloseProcess(messageOnError: true);
     }
 
@@ -212,11 +200,18 @@ public class ProcessContext : IEnumerable<string>
 
             if (_exitCode != 0)
             {
-                throw new RuntimeUserException(
-                    messageOnError
-                        ? new RuntimeString("Program returned a non-zero exit code.")
-                        : RuntimeNil.Value
-                );
+                RuntimeObject message = messageOnError
+                    ? new RuntimeString("Program returned a non-zero exit code.")
+                    : RuntimeNil.Value;
+                // TODO: Somehow get the actual signal rather than relying on exit codes
+                if (_exitCode >= 128 && _exitCode <= 128 + SignalHelper.SignalNames.Length)
+                {
+                    message = new RuntimeString(
+                        SignalHelper.SignalNames[_exitCode - 128]
+                    );
+                }
+
+                throw new RuntimeUserException(message);
             }
         }
     }
