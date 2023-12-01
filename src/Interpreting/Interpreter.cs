@@ -96,12 +96,19 @@ partial class Interpreter
         return lastResult;
     }
 
-    public RuntimeObject Interpret(string input, bool ownScope = false)
+    public RuntimeObject Interpret(string input, bool ownScope = false, string? filePath = null)
     {
+        if (filePath != null)
+            filePath = Path.GetFullPath(filePath);
+
         try
         {
             var ast = Parser.Parse(
-                Lexer.Lex(input, _rootModule.FilePath, out var lexError),
+                Lexer.Lex(
+                    input,
+                    filePath ?? _rootModule.FilePath,
+                    out var lexError
+                ),
                 _scope
             );
             _rootModule.Ast = ast;

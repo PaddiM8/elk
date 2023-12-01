@@ -210,7 +210,7 @@ public class ShellSession
             }
 
             Console.CancelKeyPress += (_, _) => CallOnExit();
-            interpreter.Interpret(File.ReadAllText(filePath));
+            interpreter.Interpret(File.ReadAllText(filePath), ownScope: false, filePath);
 
             CallOnExit();
         }
