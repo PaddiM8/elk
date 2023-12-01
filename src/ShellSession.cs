@@ -138,12 +138,8 @@ public class ShellSession
             if (result == "")
                 return;
         }
-        catch (InvalidOperationException e)
+        catch (Exception e)
         {
-            // Sort/Order methods (eg. in the standard library) throw an exception when
-            // they fail to compare two items. This should simply be a runtime error,
-            // since that means the user is trying to compare values that can not be
-            // compared with each other.
             textWriter = Console.Error;
             Console.ForegroundColor = ConsoleColor.Red;
             var position = printErrorLineNumbers
@@ -214,12 +210,8 @@ public class ShellSession
             Console.Error.WriteLine($"{e.Position} {e.Message}");
             Console.ResetColor();
         }
-        catch (InvalidOperationException e)
+        catch (Exception e)
         {
-            // Sort/Order methods (eg. in the standard library) throw an exception when
-            // they fail to compare two items. This should simply be a runtime error,
-            // since that means the user is trying to compare values that can not be
-            // compared with each other.
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
             Console.ResetColor();
