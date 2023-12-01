@@ -892,6 +892,10 @@ partial class Interpreter
             .Select(x => x.Value)
             .ToList();
 
+        // TODO: Does this need to be set every time? Might need to due to
+        // some standard library functions being lazy, but not sure.
+        runtimeClosure.Expr.RuntimeValue = runtimeClosure;
+
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
             return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body));

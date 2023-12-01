@@ -46,3 +46,14 @@ assert(([1, 2, 3] | iter::reduce => &op::mul) == 6)
 fn b(x, y): x + y
 assert(([1, 2, 3] | map => &b(10) | join ", ") == "11, 12, 13")
 assert(([1, 2, 3] | map => &op::mul(3) | math::sum) == 18)
+
+# lazy
+[
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9],
+]
+    | map => x { x | map => y: y + 1 }
+    | map => &join ", "
+    | join ", "
+    | assertEqual("2, 3, 4, 5, 6, 7, 8, 9, 10")
