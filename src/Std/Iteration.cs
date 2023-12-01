@@ -61,6 +61,15 @@ static class Iteration
     public static RuntimeList Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
         => new(items.Chunk((int)size.Value).Select(x => new RuntimeList(x)));
 
+    /// <summary>
+    /// Some standard library functions return lazily evaluated Iterables. This function
+    /// forces an Iterable's items to be evaluated right away.
+    /// </summary>
+    /// <param name="items">The Iterable to collect.</param>
+    [ElkFunction("collect")]
+    public static RuntimeList Collect(IEnumerable<RuntimeObject> items)
+        => new(items.ToList());
+
     /// <param name="first">The first Iterable.</param>
     /// <param name="second">The second Iterable.</param>
     /// <returns>A new list containing the items of both the the given Iterables.</returns>
