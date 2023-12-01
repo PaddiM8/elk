@@ -68,7 +68,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         }
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
-        if (isColonColon || (!isRelativeIdentifier && endPos < _currentInvocationInfo?.TextArgumentStartIndex))
+        var atInvocationName = endPos < _currentInvocationInfo?.TextArgumentStartIndex;
+        if (isColonColon || (!isRelativeIdentifier && atInvocationName))
         {
             return GetProgramCompletions(
                 Utils.Unescape(
@@ -88,7 +89,9 @@ class AutoCompleteHandler : IAutoCompleteHandler
         var completions = FileUtils.GetPathCompletions(
             Utils.Unescape(path),
             _shell.WorkingDirectory,
-            isRelativeIdentifier ? FileType.Executable : FileType.All
+            isRelativeIdentifier && atInvocationName
+                ? FileType.Executable
+                : FileType.All
         );
 
         return completions
