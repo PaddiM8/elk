@@ -290,11 +290,14 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         var (highlightedTextArguments, textArgumentsInfo) = NextTextArguments();
         if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentsInfo.Arguments.Any())
         {
+            var fullName = string.Join("::", modulePath.Append(identifier));
             _lastShellStyleInvocations.Add(
                 new(
-                    string.Join("::", modulePath.Append(identifier)),
+                    fullName,
                     textArgumentsInfo,
-                    startIndex,
+                    // startIndex is the start index of the last identifier, but we need the start
+                    // index of the entire qualified name.
+                    startIndex - fullName.Length + identifier.Length,
                     Current?.Position.Index ?? _length
                 )
             );
