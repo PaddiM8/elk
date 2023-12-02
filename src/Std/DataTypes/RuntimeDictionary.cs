@@ -4,9 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes.Serialization;
+using Newtonsoft.Json;
 
 #endregion
 
@@ -17,6 +18,8 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
     : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
     public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; } = entries;
+
+    private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
 
     public RuntimeDictionary()
         : this(new Dictionary<int, (RuntimeObject, RuntimeObject)>())
@@ -82,21 +85,7 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         => Entries.GetHashCode();
 
     public override string ToString()
-    {
-        var stringBuilder = new StringBuilder("{\n");
-        foreach (var entry in Entries)
-        {
-            stringBuilder.Append("    ");
-            var key = entry.Value.Item1.ToDisplayString();
-            var value = entry.Value.Item2.ToDisplayString();
-            stringBuilder.AppendLine($"{key}: {value},");
-        }
-
-        stringBuilder.Remove(stringBuilder.Length - 1, 1);
-        stringBuilder.Append("\n}");
-
-        return stringBuilder.ToString();
-    }
+        => JsonConvert.SerializeObject(this, Formatting.Indented, _jsonConverter);
 
     public RuntimeObject? GetValue(string key)
     {

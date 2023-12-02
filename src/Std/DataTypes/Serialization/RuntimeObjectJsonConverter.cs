@@ -67,6 +67,8 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
         return value switch
         {
             RuntimeBoolean boolean => new(boolean.IsTrue),
+            RuntimeFloat floatValue => new(floatValue.Value),
+            RuntimeInteger integerValue => new(integerValue.Value),
             RuntimeNil => JValue.CreateNull(),
             _ => new(value.ToString() ?? ""),
         };
