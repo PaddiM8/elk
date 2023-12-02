@@ -259,19 +259,36 @@ public class StdBindingsGenerator : ISourceGenerator
                     sourceBuilder.Append(", ");
 
                 var typeName = GetFullTypeName(compilation, parameter.Type!);
-                var isStdType = parameter.Type!.ToString().StartsWith("Runtime");
+                var parameterType = parameter.Type!.ToString();
+                var isStdType = parameterType.StartsWith("Runtime");
+                var isAdditionalType = _additionalTypes.Values.Any(x => x.StartsWith(typeName));
                 var nullable = parameter.Type is NullableTypeSyntax
                     ? "?"
                     : "";
-                sourceBuilder.Append(
-                    isStdType
-                        ? $"(({BaseObjectName}{nullable})"
-                        : $"({typeName}{nullable})"
-                );
 
-                sourceBuilder.Append($"args[{i}]");
+                if (!isAdditionalType)
+                {
+                    // Cast
+                    sourceBuilder.Append(
+                        isStdType
+                            ? $"(({BaseObjectName}{nullable})"
+                            : $"({typeName}{nullable})"
+                    );
+                }
+
+                var arg = $"args[{i}]";
                 if (string.IsNullOrEmpty(nullable))
-                    sourceBuilder.Append('!');
+                    arg += "!";
+
+                sourceBuilder.Append(arg);
+
+                if (isAdditionalType)
+                {
+                    var elkTypeName = _additionalTypes.First(kv => kv.Value == typeName).Key;
+                    sourceBuilder.Append($" is {typeName} _{i}");
+                    sourceBuilder.Append($" ? _{i}");
+                    sourceBuilder.Append($" : throw new Elk.Interpreting.Exceptions.RuntimeCastException({arg}.GetType(), \"{elkTypeName}\")");
+                }
 
                 if (isStdType)
                 {

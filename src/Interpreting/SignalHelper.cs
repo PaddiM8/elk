@@ -9,8 +9,8 @@ public class SignalHelper
         "SIGQUIT (Quit request from job control with core dump (^\\))",
         "SIGILL (Illegal instruction)",
         "SIGTRAP (Trace or breakpoint trap)",
-        "SIGABRT (Abort)",
-        "SIGIOT (Abort (Alias for SIGABRT))",
+        "", // SIGABRT
+        "", // SIGIOT
         "SIGBUS (Misaligned address error)",
         "SIGFPE (Floating point exception)",
         "SIGKILL (Forced quit)",

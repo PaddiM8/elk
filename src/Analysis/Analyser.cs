@@ -102,7 +102,7 @@ class Analyser
         {
             ClosureExpr closureExpr => Visit(closureExpr, pipedValue),
             CallExpr callExpr => Visit(callExpr, pipedValue, hasClosure, validateParameters),
-            _ => throw new RuntimeException("Expected a function call to the right of pipe."),
+            _ => throw new RuntimeException("Expected function call to the right of pipe."),
         };
 
         analysedExpr.EnclosingFunction = expr.EnclosingFunction;

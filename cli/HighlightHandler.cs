@@ -107,16 +107,10 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
 
         if (keyword.Kind == TokenKind.Fn)
         {
-            var insideParameterList = false;
             while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
             {
                 var token = Eat()!;
-                if (token.Kind == TokenKind.OpenParenthesis)
-                    insideParameterList = true;
-                if (token.Kind == TokenKind.ClosedParenthesis)
-                    insideParameterList = false;
-
-                if (insideParameterList && token.Kind == TokenKind.Identifier)
+                if (token.Kind == TokenKind.Identifier)
                     _unevaluatedVariables.Add(token.Value);
 
                 builder.Append(token.Value);
