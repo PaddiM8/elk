@@ -22,6 +22,11 @@ static class Iteration
     public static RuntimeBoolean All(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.All(x => x.As<RuntimeBoolean>().IsTrue));
 
+    /// <returns>Whether or not the closure evaluates to true for all of the items.</returns>
+    [ElkFunction("allOf")]
+    public static RuntimeBoolean AllOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => RuntimeBoolean.From(items.All(x => closure(x).As<RuntimeBoolean>().IsTrue));
+
     /// <returns>Whether or not all the values in the list evaluate to true and the list is non-empty.</returns>
     [ElkFunction("allAndAny")]
     public static RuntimeBoolean AllANdAny(IEnumerable<RuntimeObject> items)
@@ -31,6 +36,11 @@ static class Iteration
     [ElkFunction("any")]
     public static RuntimeBoolean Any(IEnumerable<RuntimeObject> items)
         => RuntimeBoolean.From(items.Any(x => x.As<RuntimeBoolean>().IsTrue));
+
+    /// <returns>Whether or not the closure evaluates to true for any of the items.</returns>
+    [ElkFunction("anyOf")]
+    public static RuntimeBoolean AnyOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => RuntimeBoolean.From(items.Any(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
     /// <returns>A new list with the given item append to the given Iterable.</returns>
     [ElkFunction("append")]
