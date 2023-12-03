@@ -161,6 +161,11 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         }
         else if (keyword.Kind == TokenKind.Struct)
         {
+            if (Current?.Kind == TokenKind.WhiteSpace)
+                builder.Append(Eat()!.Value);
+            if (Current?.Kind == TokenKind.Identifier)
+                _unevaluatedVariables.Add(Current.Value);
+
             while (!ReachedEnd && Current?.Kind != TokenKind.ClosedParenthesis)
                 builder.Append(Eat()!.Value);
         }

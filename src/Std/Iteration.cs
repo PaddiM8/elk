@@ -152,22 +152,33 @@ static class Iteration
     /// <param name="items"></param>
     /// <param name="closure"></param>
     /// <returns>A list of flattened values where the closure has been called on each value.</returns>
-    /// <example>["abc", "def"] | select => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
+    /// <example>["abc", "def"] | flatMap => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
     [ElkFunction("flatMap", Reachability.Everywhere)]
-    public static RuntimeList FlatMap(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeList FlatMap(
+        IEnumerable<RuntimeObject> items,
+        Func<RuntimeObject, RuntimeObject> closure)
     {
         return new(
-            items.Select(x =>
-            {
-                if (x is not IEnumerable<RuntimeObject> enumerable)
-                    throw new RuntimeCastException(x.GetType(), "Iterable");
-
-                return enumerable;
-            })
-            .SelectMany(x => x)
-            .Select(closure)
+            items
+                .Select(x =>
+                    x as IEnumerable<RuntimeObject>
+                        ?? throw new RuntimeCastException(x.GetType(), "Iterable")
+                )
+                .Select(x => x.Select(closure))
+                .SelectMany(x => x)
         );
     }
+
+    [ElkFunction("flatten")]
+    public static RuntimeList Flatten(IEnumerable<RuntimeObject> items)
+        => new(
+            items
+                .Select(x =>
+                    x as IEnumerable<RuntimeObject>
+                        ?? throw new RuntimeCastException(x.GetType(), "Iterable")
+                )
+                .SelectMany(x => x)
+        );
 
     /// <param name="items">The Iterable to look in</param>
     /// <param name="target">The value to search for</param>
@@ -311,7 +322,7 @@ static class Iteration
     /// <param name="items"></param>
     /// <param name="closure"></param>
     /// <returns>A list of values where the closure has been called on each value.</returns>
-    /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
+    /// <example>[1, 2, 3] | map => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("map", Reachability.Everywhere)]
     public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
