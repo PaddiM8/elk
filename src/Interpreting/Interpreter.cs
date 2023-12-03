@@ -525,10 +525,24 @@ partial class Interpreter
         }
 
         if (expr.Operator is OperationKind.EqualsEquals)
+        {
+            var isLeftNil = left is RuntimeNil;
+            var isRightNil = right is RuntimeNil;
+            if (isLeftNil != isRightNil && (isLeftNil || isRightNil))
+                return RuntimeBoolean.False;
+
             return RuntimeBoolean.From(left.Equals(right));
+        }
 
         if (expr.Operator is OperationKind.NotEquals)
+        {
+            var isLeftNil = left is RuntimeNil;
+            var isRightNil = right is RuntimeNil;
+            if (isLeftNil != isRightNil && (isLeftNil || isRightNil))
+                return RuntimeBoolean.True;
+
             return RuntimeBoolean.From(!left.Equals(right));
+        }
 
         return expr.Operator switch
         {

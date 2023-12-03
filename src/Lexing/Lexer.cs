@@ -121,9 +121,7 @@ public class Lexer
             '|' => Peek == '|'
                 ? Build(TokenKind.PipePipe, Eat(2))
                 : NextPipe(),
-            '?' => Peek == '?'
-                ? Build(TokenKind.QuestionQuestion, Eat(2))
-                : Build(TokenKind.Unknown, Eat()),
+            '?' => NextCoalescing(),
             '(' => Build(TokenKind.OpenParenthesis, Eat()),
             ')' => Build(TokenKind.ClosedParenthesis, Eat()),
             '[' => Build(TokenKind.OpenSquareBracket, Eat()),
@@ -142,6 +140,17 @@ public class Lexer
             '\0' => Build(TokenKind.EndOfFile, Eat()),
             _ => NextComplex(),
         };
+    }
+
+    private Token NextCoalescing()
+    {
+        var first = Eat();
+        if (Current != '?')
+            return Build(TokenKind.Unknown, first);
+
+        return Peek == '='
+            ? Build(TokenKind.QuestionQuestionEquals, first + Eat(2))
+            : Build(TokenKind.QuestionQuestion, first + Eat(1));
     }
 
     private Token NextPipe()

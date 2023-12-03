@@ -18,7 +18,7 @@ public enum TokenKind
     // Operators
     Plus, Minus, Star, Slash, Percent, Caret,
     Greater, Less, GreaterEquals, LessEquals, EqualsEquals, NotEquals,
-    Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals,
+    Equals, PlusEquals, MinusEquals, StarEquals, SlashEquals, QuestionQuestionEquals,
     AmpersandAmpersand, PipePipe,
     Pipe, PipeErr, PipeAll,
     Ampersand,

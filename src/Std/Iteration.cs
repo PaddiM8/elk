@@ -52,7 +52,7 @@ static class Iteration
     /// </summary>
     /// <returns>The item at the given index.</returns>
     [ElkFunction("at")]
-    public static RuntimeObject At(IIndexable<RuntimeObject> items, RuntimeObject index)
+    public static RuntimeObject At(IIndexable<RuntimeObject> items, RuntimeObject index, RuntimeObject? fallback = null)
     {
         try
         {
@@ -60,7 +60,7 @@ static class Iteration
         }
         catch (RuntimeItemNotFoundException)
         {
-            return RuntimeNil.Value;
+            return fallback ?? RuntimeNil.Value;
         }
     }
 

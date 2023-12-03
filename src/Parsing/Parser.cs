@@ -475,7 +475,8 @@ internal class Parser
                 TokenKind.PlusEquals,
                 TokenKind.MinusEquals,
                 TokenKind.StarEquals,
-                TokenKind.SlashEquals
+                TokenKind.SlashEquals,
+                TokenKind.QuestionQuestionEquals
             ))
         {
             var op = Eat();
@@ -537,11 +538,39 @@ internal class Parser
                     TokenKind.Equals,
                     new BinaryExpr(left, TokenKind.Slash, right)
                 ),
+                TokenKind.QuestionQuestionEquals => new IfExpr(
+                    new UnaryExpr(TokenKind.Not, LValueToCondition(left)),
+                    new BlockExpr(
+                        [new BinaryExpr(left, TokenKind.Equals, right)],
+                        StructureKind.Other,
+                        left.Position,
+                        new LocalScope(_scope)
+                    ),
+                    null
+                ),
                 _ => throw new ArgumentOutOfRangeException(),
             };
         }
 
         return left;
+    }
+
+    private Expr LValueToCondition(Expr lvalue)
+    {
+        if (lvalue is IndexerExpr indexer)
+        {
+            return new BinaryExpr(
+                indexer.Index,
+                TokenKind.In,
+                indexer.Value
+            );
+        }
+
+        return new BinaryExpr(
+            lvalue,
+            TokenKind.NotEquals,
+            new LiteralExpr(new Token(TokenKind.Nil, "nil", lvalue.Position))
+        );
     }
 
     private Expr ParseOr()
