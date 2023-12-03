@@ -12,9 +12,10 @@ fn countVisible(lines) {
     count
 }
 
-fn mapCondition(items, value):
+fn mapCondition(items, value) {
     items | map => x: x < value
-    
+}
+
 fn isVisible(lines, x, y) {
     let value = lines[y][x]
 
@@ -24,9 +25,6 @@ fn isVisible(lines, x, y) {
     (lines | list::column(x) | iter::skip(y + 1) | mapCondition(value) | iter::allAndAny)
 }
 
-# 682
 cat(scriptPath() + "/input.txt")
     | countVisible
     | assertEqual(682)
-
-

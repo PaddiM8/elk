@@ -38,6 +38,18 @@ level1 => a: {
     }
 }
 
+# local variable (should take precedence)
+let duplicate = 1
+[1] | map => x {
+    let duplicate = 3
+    assert(duplicate == 3)
+}
+
+let duplicate2 = 1
+[3] | map => duplicate2 {
+    assert(duplicate2 == 3)
+}
+
 # function reference
 fn a(x): x + 1
 assert(([1, 2, 3] | map => &a | join) == "234")

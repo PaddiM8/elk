@@ -693,8 +693,8 @@ partial class Interpreter
                 : new RuntimeString(value);
         }
 
-        return expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
-               ?? _scope.FindVariable(expr.Identifier.Value)?.Value
+        return _scope.FindVariable(expr.Identifier.Value)?.Value
+               ?? expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
                ?? RuntimeNil.Value;
     }
 
@@ -707,7 +707,7 @@ partial class Interpreter
         List<RuntimeObject> evaluatedArguments;
         if (expr.CallStyle == CallStyle.TextArguments)
         {
-            evaluatedArguments = new List<RuntimeObject>();
+            evaluatedArguments = [];
             foreach (var argument in partlyEvaluatedArguments)
             {
                 if (argument is not RuntimeString stringArgument)
@@ -913,23 +913,28 @@ partial class Interpreter
             .Select(x => x.Value)
             .ToList();
 
-        // TODO: Does this need to be set every time? Might need to due to
+        // Does this need to be set every time? Might need to due to
         // some standard library functions being lazy, but not sure.
         runtimeClosure.Expr.RuntimeValue = runtimeClosure;
 
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
-            return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body));
+        {
+            var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
+
+            return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body, scope));
+        }
 
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
         {
             return new Func<RuntimeObject, RuntimeObject>(
                 a =>
                 {
+                    var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
                     if (parameters.Count > 0)
-                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+                        scope.AddVariable(parameters[0], a);
 
-                    return NextBlock(runtimeClosure.Expr.Body);
+                    return NextBlock(runtimeClosure.Expr.Body, scope);
                 });
         }
 
@@ -938,13 +943,14 @@ partial class Interpreter
             return new Func<RuntimeObject, RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
+                    var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
                     if (parameters.Count > 0)
-                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+                        scope.AddVariable(parameters[0], a);
 
                     if (parameters.Count > 1)
-                        runtimeClosure.Environment.AddVariable(parameters[1], b);
+                        scope.AddVariable(parameters[1], b);
 
-                    return NextBlock(runtimeClosure.Expr.Body);
+                    return NextBlock(runtimeClosure.Expr.Body, scope);
                 });
         }
 
@@ -954,11 +960,12 @@ partial class Interpreter
             return new Action<RuntimeObject>(
                 a =>
                 {
+                    var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
                     runtimeClosure.Expr.Body.IsRoot = true;
                     if (parameters.Count > 0)
-                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+                        scope.AddVariable(parameters[0], a);
 
-                    NextBlock(runtimeClosure.Expr.Body);
+                    NextBlock(runtimeClosure.Expr.Body, scope);
                 });
         }
 
@@ -967,24 +974,26 @@ partial class Interpreter
             return new Action<RuntimeObject, RuntimeObject>(
                 (a, b) =>
                 {
+                    var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
                     runtimeClosure.Expr.Body.IsRoot = true;
                     if (parameters.Count > 0)
-                        runtimeClosure.Environment.AddVariable(parameters[0], a);
+                        scope.AddVariable(parameters[0], a);
 
                     if (parameters.Count > 1)
-                        runtimeClosure.Environment.AddVariable(parameters[1], b);
+                        scope.AddVariable(parameters[1], b);
 
-                    NextBlock(runtimeClosure.Expr.Body);
+                    NextBlock(runtimeClosure.Expr.Body, scope);
                 });
         }
 
         // Fallback, variadic
         return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(args =>
         {
+            var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
             foreach (var (parameter, argument) in parameters.Zip(args))
-                runtimeClosure.Environment.AddVariable(parameter, argument);
+                scope.AddVariable(parameter, argument);
 
-            return NextBlock(runtimeClosure.Expr.Body);
+            return NextBlock(runtimeClosure.Expr.Body, scope);
         });
     }
 
@@ -1084,8 +1093,8 @@ partial class Interpreter
         );
         foreach (var capture in expr.CapturedVariables)
         {
-            var value = expr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
-                ?? _scope.FindVariable(capture)?.Value
+            var value = _scope.FindVariable(capture)?.Value
+                ?? expr.Function.EnclosingClosureValue?.Environment.FindVariable(capture)?.Value
                 ?? RuntimeNil.Value;
             scope.AddVariable(capture, value);
         }
