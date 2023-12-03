@@ -47,6 +47,21 @@ fn b(x, y): x + y
 assert(([1, 2, 3] | map => &b(10) | join ", ") == "11, 12, 13")
 assert(([1, 2, 3] | map => &op::mul(3) | math::sum) == 18)
 
+# nested with captured variable
+fn nested_with_captured_variable(captured) {
+    [[1, 2, 3], [4, 5, 6]]
+        | map => arr {
+            arr | map => x {
+                x + captured
+            }
+        }
+}
+
+nested_with_captured_variable(2)
+    | iter::flatten
+    | join ", "
+    | assertEqual "3, 4, 5, 6, 7, 8"
+
 # lazy
 [
     [1, 2, 3],

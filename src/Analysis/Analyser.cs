@@ -541,7 +541,7 @@ class Analyser
             IsRoot = expr.IsRoot,
         };
 
-        if (!expr.Identifier.Value.StartsWith("$"))
+        if (!expr.Identifier.Value.StartsWith('$'))
         {
             if (!_scope.HasVariable(expr.Identifier.Value))
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
@@ -788,6 +788,17 @@ class Analyser
         _enclosingFunction = closure;
         closure.Body = (BlockExpr)Next(expr.Body);
         _enclosingFunction = previousEnclosingFunction;
+
+        // If closure inside a closure captures a variable that is outside its parent,
+        // the parent needs to capture it as well, in order to pass it on to the child.
+        if (_enclosingFunction is ClosureExpr enclosingClosure)
+        {
+            foreach (var captured in expr.CapturedVariables
+                .Where(x => enclosingClosure.Body.Scope.HasVariable(x)))
+            {
+                enclosingClosure.CapturedVariables.Add(captured);
+            }
+        }
 
         if (closure.Body.Expressions.Count != 1 ||
             closure.Body.Expressions.First() is not CallExpr { IsReference: true } functionReference)
