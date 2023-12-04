@@ -406,6 +406,21 @@ static class Iteration
         return container;
     }
 
+    /// <summary>
+    /// Adds all the given items to the container, one by one.
+    /// </summary>
+    /// <returns></returns>
+    [ElkFunction("pushAll", Reachability.Everywhere)]
+    public static RuntimeList PushAll(
+        RuntimeList container,
+        IEnumerable<RuntimeObject> values)
+    {
+        foreach (var value in values)
+            container.Values.Add(value);
+
+        return container;
+    }
+
     /// <param name="input">An indexable object.</param>
     /// <param name="startIndex"></param>
     /// <param name="endIndex"></param>

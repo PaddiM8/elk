@@ -10,14 +10,9 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Integer")]
-public class RuntimeInteger : RuntimeObject
+public class RuntimeInteger(long value) : RuntimeObject
 {
-    public long Value { get; }
-
-    public RuntimeInteger(long value)
-    {
-        Value = value;
-    }
+    public long Value { get; } = value;
 
     public override bool Equals(object? obj)
         => obj is RuntimeObject runtimeObject &&

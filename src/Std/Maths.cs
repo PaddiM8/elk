@@ -86,14 +86,9 @@ static class Maths
     /// <returns>An Integer of Float of the sum of the given values.</returns>
     [ElkFunction("sum")]
     public static RuntimeObject Sum(IEnumerable<RuntimeObject> items)
-    {
-        // TODO: Better handling for Integers
-        var result = items.Sum(x => x.As<RuntimeFloat>().Value);
-
-        return Math.Floor(result) == result
-            ? new RuntimeInteger((int)result)
-            : new RuntimeFloat(result);
-    }
+        => items.FirstOrDefault() is RuntimeFloat
+            ? new RuntimeFloat(items.Sum(x => x.As<RuntimeFloat>().Value))
+            : new RuntimeInteger(items.Sum(x => x.As<RuntimeInteger>().Value));
 
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The square root of the input number</returns>

@@ -10,14 +10,9 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Float")]
-public class RuntimeFloat : RuntimeObject
+public class RuntimeFloat(double value) : RuntimeObject
 {
-    public double Value { get; }
-
-    public RuntimeFloat(double value)
-    {
-        Value = value;
-    }
+    public double Value { get; } = value;
 
     public override bool Equals(object? obj)
         => obj is RuntimeObject runtimeObject &&
