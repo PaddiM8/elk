@@ -17,13 +17,13 @@ public class SignalHelper
         "", // SIGUSR1
         "SIGSEGV (Address boundary error)",
         "", // SIGUSR2
-        "SIGPIPE (Broken pipe)",
-        "SIGALRM (Timer expired)",
+        "", // SIGPIPE
+        "", // SIGALARM
         "", // SIGTERM
         "", // STKFLT
         "", // SIGCHLD
         "", // SIGCONT
-        "SIGSTOP (Forced stop)",
+        "", // SIGSTOP
         "", // SIGTSTP
         "", // SIGTTIN
         "", //SIGTTOU

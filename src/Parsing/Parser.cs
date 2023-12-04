@@ -732,9 +732,17 @@ internal class Parser
 
     private Expr ParseIndexer()
     {
-        var expr = ParseFieldAccess();
-        while (Match(TokenKind.OpenSquareBracket))
+        var expr = ParsePrimary();
+        while (Match(TokenKind.OpenSquareBracket, TokenKind.Arrow))
         {
+            if (AdvanceIf(TokenKind.Arrow))
+            {
+                var identifier = EatExpected(TokenKind.Identifier);
+
+                expr = new FieldAccessExpr(expr, identifier);
+                continue;
+            }
+
             var precededByNewLineFollowedByWhiteSpace = Previous?.Kind == TokenKind.WhiteSpace &&
                 _tokens.ElementAtOrDefault(_index - 2)?.Kind == TokenKind.NewLine;
             if (Previous?.Kind == TokenKind.NewLine || precededByNewLineFollowedByWhiteSpace)
@@ -748,19 +756,6 @@ internal class Parser
         }
 
         return expr;
-    }
-
-    private Expr ParseFieldAccess()
-    {
-        var left = ParsePrimary();
-        while (AdvanceIf(TokenKind.Arrow))
-        {
-            var identifier = EatExpected(TokenKind.Identifier);
-
-            left = new FieldAccessExpr(left, identifier);
-        }
-
-        return left;
     }
 
     private Expr ParsePrimary()
@@ -1158,10 +1153,12 @@ internal class Parser
         while (!AdvanceIf(TokenKind.ClosedBrace))
         {
             expressions.Add(ParseExpr());
+            if (!orAsOtherStructure)
+                continue;
 
-            if (orAsOtherStructure && Match(TokenKind.Comma) && expressions.Count == 1)
+            if (Match(TokenKind.Comma) && expressions.Count == 1)
                 return ContinueParseAsSet(expressions.First());
-            if (orAsOtherStructure && Match(TokenKind.Colon) && expressions.Count == 1)
+            if (Match(TokenKind.Colon) && expressions.Count == 1)
                 return ContinueParseAsDictionary(expressions.First());
         }
 
@@ -1193,9 +1190,8 @@ internal class Parser
     private Expr ContinueParseAsDictionary(Expr firstExpression)
     {
         _scope = _scope.Parent!;
-
-        if (Previous == null || !(IsLiteral(Previous.Kind) || Previous.Kind == TokenKind.Identifier))
-            throw Error("Expected literal or identifier as dictionary key");
+        if (firstExpression is not (LiteralExpr or StringInterpolationExpr or VariableExpr))
+            throw Error("Expected literal or variable as dictionary key");
 
         EatExpected(TokenKind.Colon);
         var expressions = new List<(Expr, Expr)>

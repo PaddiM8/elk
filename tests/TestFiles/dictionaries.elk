@@ -1,6 +1,6 @@
 let dict = {
     "a": 1,
-    "b": "yes",
+    "b"    : "yes",
 }
 
 assert(dict->a == 1)

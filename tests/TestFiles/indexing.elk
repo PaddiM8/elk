@@ -44,3 +44,11 @@ let table1 = [
 assert(table1[0]["b"] == 2)
 assert(table1[-1]["b"] == 5)
 assert(table1[-1][-1] == 6)
+
+let nested = [
+    {
+        "a": 2
+    }
+]
+
+assert(nested[0]->a == 2)
