@@ -514,7 +514,7 @@ partial class Interpreter
             {
                 RuntimeList list => list.Values
                     .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
-                RuntimeRange range => range.Contains((int)left.As<RuntimeInteger>().Value),
+                RuntimeRange range => range.Contains(left.As<RuntimeInteger>().Value),
                 RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
                 RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
@@ -647,12 +647,12 @@ partial class Interpreter
 
     private RuntimeObject Visit(RangeExpr expr)
     {
-        int? from = expr.From == null
+        long? from = expr.From == null
             ? null
-            : (int)Next(expr.From).As<RuntimeInteger>().Value;
-        int? to = expr.To == null
+            : Next(expr.From).As<RuntimeInteger>().Value;
+        long? to = expr.To == null
             ? null
-            : (int)Next(expr.To).As<RuntimeInteger>().Value;
+            : Next(expr.To).As<RuntimeInteger>().Value;
 
         if (expr.Inclusive)
         {

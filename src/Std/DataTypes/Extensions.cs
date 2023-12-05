@@ -89,6 +89,9 @@ static class Extensions
             ? containerLength + range.To.Value
             : range.To ?? containerLength;
 
-        return (from, to - from);
+        return (
+            (int)from,
+            (int)(to - from)
+        );
     }
 }

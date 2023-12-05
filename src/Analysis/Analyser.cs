@@ -744,7 +744,7 @@ class Analyser
         return newExpr;
     }
 
-    private int ParseInt(string numberLiteral)
+    private static long ParseInt(string numberLiteral)
     {
         try
         {
@@ -760,7 +760,7 @@ class Analyser
             throw new RuntimeException("Invalid number literal");
         }
 
-        return int.Parse(numberLiteral);
+        return long.Parse(numberLiteral);
     }
 
     private StringInterpolationExpr Visit(StringInterpolationExpr expr)

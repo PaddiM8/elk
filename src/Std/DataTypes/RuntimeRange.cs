@@ -3,7 +3,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -13,26 +12,19 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Range")]
-public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
+public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObject, IEnumerable<RuntimeObject>
 {
-    public int? From { get; }
+    public long? From { get; } = from;
 
-    public int? To { get; }
+    public long? To { get; } = to;
 
-    public int Increment { get; set; }
+    public long Increment { get; set; } = increment;
 
     public IEnumerator<RuntimeObject> GetEnumerator()
         => new RuntimeRangeEnumerator(From, To, Increment);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
-
-    public RuntimeRange(int? from, int? to, int increment = 1)
-    {
-        From = from;
-        To = to;
-        Increment = increment;
-    }
 
     public override RuntimeObject As(Type toType)
         => toType switch
@@ -66,15 +58,16 @@ public class RuntimeRange : RuntimeObject, IEnumerable<RuntimeObject>
     public override string ToString()
         => $"{From}..{To}";
 
-    public bool Contains(int value)
+    public bool Contains(long value)
         => value >= From && value < To;
 
     private IEnumerable<RuntimeInteger> AsEnumerable()
     {
-        var from = From ?? 0;
-        var count = (To ?? from) - from;
+        var start = From ?? 0;
+        var count = (To ?? start) - start;
 
-        return Enumerable.Range(from, count).Select(x => new RuntimeInteger(x));
+        for (var i = start; i < start + count; i++)
+            yield return new RuntimeInteger(i);
     }
 }
 
@@ -88,13 +81,13 @@ class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
     object IEnumerator.Current
         => Current;
 
-    private readonly int? _from;
-    private readonly int? _to;
-    private readonly int _increment;
-    private int _pos;
+    private readonly long? _from;
+    private readonly long? _to;
+    private readonly long _increment;
+    private long _pos;
     private readonly bool _reversed;
 
-    public RuntimeRangeEnumerator(int? from, int? to, int increment)
+    public RuntimeRangeEnumerator(long? from, long? to, long increment)
     {
         if (to == null || to > from)
         {

@@ -69,7 +69,7 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
         {
             _ when toType == typeof(RuntimeString)
                 => this,
-            _ when toType == typeof(RuntimeInteger) && int.TryParse(Value, out var number)
+            _ when toType == typeof(RuntimeInteger) && long.TryParse(Value, out var number)
                 => new RuntimeInteger(number),
             _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out var number)
                 => new RuntimeFloat(number),

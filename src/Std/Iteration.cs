@@ -149,6 +149,11 @@ static class Iteration
     public static RuntimeObject First(IEnumerable<RuntimeObject> items)
         => items.FirstOrDefault() ?? RuntimeNil.Value;
 
+    /// <returns>The first element of the given iterable object where the closure returns true.</returns>
+    [ElkFunction("firstOf")]
+    public static RuntimeObject FirstOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+        => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue) ?? RuntimeNil.Value;
+
     /// <param name="items"></param>
     /// <param name="closure"></param>
     /// <returns>A list of flattened values where the closure has been called on each value.</returns>

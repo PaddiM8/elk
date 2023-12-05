@@ -78,7 +78,7 @@ public class List
     {
         var from = range.From ?? 0;
         var to = range.To ?? list.Count;
-        list.Values.RemoveRange(from, to - from);
+        list.Values.RemoveRange((int)from, (int)(to - from));
 
         return list;
     }
