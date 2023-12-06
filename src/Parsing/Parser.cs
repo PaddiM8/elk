@@ -1035,7 +1035,7 @@ internal class Parser
 
         var scope = new LocalScope(_scope);
         foreach (var identifier in identifierList)
-            _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+            scope.AddVariable(identifier.Value, RuntimeNil.Value);
 
         var branch = ParseBlockOrSingle(StructureKind.Loop, scope);
 

@@ -693,9 +693,11 @@ partial class Interpreter
                 : new RuntimeString(value);
         }
 
-        return _scope.FindVariable(expr.Identifier.Value)?.Value
+        var result = _scope.FindVariable(expr.Identifier.Value)?.Value
                ?? expr.EnclosingClosureValue?.Environment.FindVariable(expr.Identifier.Value)?.Value
                ?? RuntimeNil.Value;
+
+        return result;
     }
 
     private RuntimeObject Visit(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
