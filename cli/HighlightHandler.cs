@@ -88,7 +88,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
 
         return Current?.Kind switch
         {
-            >= TokenKind.Not and <= TokenKind.Catch => NextKeyword(),
+            >= TokenKind.Not and <= TokenKind.Pub => NextKeyword(),
             TokenKind.IntegerLiteral or TokenKind.FloatLiteral => NextNumberLiteral(),
             TokenKind.Comment => NextComment(),
             TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => NextStringLiteral(),
