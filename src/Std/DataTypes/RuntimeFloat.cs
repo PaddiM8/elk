@@ -18,6 +18,11 @@ public class RuntimeFloat(double value) : RuntimeObject
         => obj is RuntimeObject runtimeObject &&
             Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
 
+    public override int CompareTo(RuntimeObject? other)
+        => other is null or RuntimeNil
+            ? 1
+            : Value.CompareTo(other.As<RuntimeFloat>().Value);
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

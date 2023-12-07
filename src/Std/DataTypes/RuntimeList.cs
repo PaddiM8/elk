@@ -41,6 +41,11 @@ public class RuntimeList(IEnumerable<RuntimeObject> values)
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
+    public override int CompareTo(RuntimeObject? other)
+        => other is IEnumerable<RuntimeObject> otherEnumerable
+            ? this.OrdinalCompare(otherEnumerable)
+            : throw new RuntimeInvalidOperationException("comparison", GetType());
+
     public RuntimeObject this[RuntimeObject index]
     {
         get

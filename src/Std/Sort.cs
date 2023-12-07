@@ -17,7 +17,7 @@ public class Sort
     {
         return container switch
         {
-            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderByDescending(x => x)),
+            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderBy(x => x)),
             IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(x => x)),
             _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };

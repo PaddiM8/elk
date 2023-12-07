@@ -18,6 +18,16 @@ public class RuntimeInteger(long value) : RuntimeObject
         => obj is RuntimeObject runtimeObject &&
             Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
 
+    public override int CompareTo(RuntimeObject? other)
+    {
+        if (other is RuntimeFloat otherFloat)
+            return Value.CompareTo(otherFloat.Value);
+
+        return other is null or RuntimeNil
+            ? 1
+            : Value.CompareTo(other.As<RuntimeInteger>().Value);
+    }
+
     public override RuntimeObject As(Type toType)
         => toType switch
         {

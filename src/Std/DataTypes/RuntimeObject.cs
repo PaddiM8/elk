@@ -29,16 +29,7 @@ public abstract class RuntimeObject : IComparable<RuntimeObject>
 
     public virtual int CompareTo(RuntimeObject? other)
     {
-        if (other is null or RuntimeNil)
-            return 1;
-
-        if (((RuntimeBoolean)Operation(OperationKind.Less, other)).IsTrue)
-            return -1;
-
-        if (((RuntimeBoolean)Operation(OperationKind.EqualsEquals, other)).IsTrue)
-            return 0;
-
-        return 1;
+        throw new RuntimeInvalidOperationException("comparison", GetType());
     }
 
     protected RuntimeInvalidOperationException InvalidOperation(OperationKind kind)

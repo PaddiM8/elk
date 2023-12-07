@@ -13,16 +13,11 @@ using Elk.Std.DataTypes.Serialization;
 namespace Elk.Std.DataTypes;
 
 [ElkType("String")]
-public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
+public class RuntimeString(string value) : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public string Value { get; }
+    public string Value { get; } = value;
 
     public bool IsTextArgument { get; set; }
-
-    public RuntimeString(string value)
-    {
-        Value = value;
-    }
 
     public RuntimeObject this[RuntimeObject index]
     {
@@ -63,6 +58,11 @@ public class RuntimeString : RuntimeObject, IEnumerable<RuntimeObject>, IIndexab
     public override bool Equals(object? obj)
         => obj is RuntimeObject runtimeObject &&
             Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
+
+    public override int CompareTo(RuntimeObject? other)
+        => other is null or RuntimeNil
+            ? 1
+            : string.CompareOrdinal(Value, other.As<RuntimeString>().Value);
 
     public override RuntimeObject As(Type toType)
         => toType switch

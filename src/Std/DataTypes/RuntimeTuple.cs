@@ -12,20 +12,21 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Tuple")]
-public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
+public class RuntimeTuple(IEnumerable<RuntimeObject> values)
+    : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<RuntimeObject> Values { get; }
-
-    public RuntimeTuple(IEnumerable<RuntimeObject> values)
-    {
-        Values = values.ToList();
-    }
+    public List<RuntimeObject> Values { get; } = values.ToList();
 
     public IEnumerator<RuntimeObject> GetEnumerator()
         => Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
+
+    public override int CompareTo(RuntimeObject? other)
+        => other is IEnumerable<RuntimeObject> otherEnumerable
+            ? this.OrdinalCompare(otherEnumerable)
+            : throw new RuntimeInvalidOperationException("comparison", GetType());
 
     public RuntimeObject this[RuntimeObject index]
     {
@@ -60,23 +61,6 @@ public class RuntimeTuple : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
-
-    public override int CompareTo(RuntimeObject? other)
-    {
-        if (other is not RuntimeTuple otherTuple)
-            return -1;
-
-        foreach (var (item, otherItem) in Values.Zip(otherTuple))
-        {
-            var comparison = item.CompareTo(otherItem);
-            if (comparison == 0)
-                continue;
-
-            return comparison;
-        }
-
-        return 0;
-    }
 
     public override int GetHashCode()
         => Values.GetHashCode();

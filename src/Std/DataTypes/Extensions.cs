@@ -94,4 +94,21 @@ static class Extensions
             (int)(to - from)
         );
     }
+
+    public static int OrdinalCompare(this IEnumerable<RuntimeObject> self, IEnumerable<RuntimeObject> other)
+    {
+        foreach (var (a, b) in self.ZipLongest(other))
+        {
+            if (a == null)
+                return -1;
+            if (b == null)
+                return 1;
+
+            var order = a.CompareTo(b);
+            if (order != 0)
+                return order;
+        }
+
+        return 0;
+    }
 }
