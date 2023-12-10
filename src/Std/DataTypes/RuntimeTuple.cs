@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Parsing;
 using Elk.Std.Attributes;
 
 #endregion
@@ -22,6 +23,10 @@ public class RuntimeTuple(IEnumerable<RuntimeObject> values)
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
+
+    public override bool Equals(object? obj)
+        => obj is RuntimeObject runtimeObject &&
+            Operation(OperationKind.EqualsEquals, runtimeObject) is RuntimeBoolean { IsTrue: true };
 
     public override int CompareTo(RuntimeObject? other)
         => other is IEnumerable<RuntimeObject> otherEnumerable
@@ -61,6 +66,23 @@ public class RuntimeTuple(IEnumerable<RuntimeObject> values)
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
+
+    public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
+    {
+        if (other is not IEnumerable<RuntimeObject> otherTuple)
+            throw InvalidOperation(kind);
+
+        return kind switch
+        {
+            OperationKind.EqualsEquals => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) == 0),
+            OperationKind.NotEquals => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) != 0),
+            OperationKind.Greater => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) > 0),
+            OperationKind.GreaterEquals => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) >= 0),
+            OperationKind.Less => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) < 0),
+            OperationKind.LessEquals => RuntimeBoolean.From(this.OrdinalCompare(otherTuple) <= 0),
+            _ => throw InvalidOperation(kind),
+        };
+    }
 
     public override int GetHashCode()
         => Values.GetHashCode();
