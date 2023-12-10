@@ -39,6 +39,56 @@ static class Maths
     public static RuntimeFloat Floor(RuntimeObject x)
         => new(Math.Floor(x.As<RuntimeFloat>().Value));
 
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>The greatest common denominator.</returns>
+    [ElkFunction("gcd")]
+    public static RuntimeInteger Gcd(RuntimeInteger a, RuntimeInteger b)
+    {
+        var x = a.Value;
+        var y = b.Value;
+        while (y != 0)
+        {
+            var temp = y;
+            y = x % y;
+            x = temp;
+        }
+        return new(x);
+    }
+
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>The lowest common multiple.</returns>
+    [ElkFunction("lcm")]
+    public static RuntimeInteger Lcm(RuntimeInteger a, RuntimeInteger b)
+    {
+        var x = a.Value;
+        var y = b.Value;
+        while (y != 0)
+        {
+            var temp = y;
+            y = x % y;
+            x = temp;
+        }
+
+        if (x == 0)
+            throw new RuntimeException("Not defined");
+
+        return new(a.Value * b.Value / x);
+    }
+
+    [ElkFunction("log")]
+    public static RuntimeFloat Log(RuntimeFloat a, RuntimeFloat newBase)
+        => new(Math.Log(a.Value, newBase.Value));
+
+    [ElkFunction("log2")]
+    public static RuntimeFloat Log2(RuntimeFloat value)
+        => new(Math.Log2(value.Value));
+
+    [ElkFunction("log10")]
+    public static RuntimeFloat Log10(RuntimeFloat value)
+        => new(Math.Log10(value.Value));
+
     /// <param name="x" types="Integer, Float"></param>
     /// <param name="y" types="Integer, Float"></param>
     /// <returns>The highest of the two input numbers.</returns>
