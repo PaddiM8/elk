@@ -915,16 +915,21 @@ partial class Interpreter
             .Select(x => x.Value)
             .ToList();
 
-        // Does this need to be set every time? Might need to due to
-        // some standard library functions being lazy, but not sure.
-        runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-
         // TODO: Do something about this mess...
         if (closureFuncType == typeof(Func<RuntimeObject>))
         {
             var scope = new LocalScope(runtimeClosure.Expr.Body.Scope.ModuleScope);
 
-            return new Func<RuntimeObject>(() => NextBlock(runtimeClosure.Expr.Body, scope));
+            return new Func<RuntimeObject>(() =>
+                {
+                    var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+                    runtimeClosure.Expr.RuntimeValue = runtimeClosure;
+                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
+
+                    return result;
+                }
+            );
         }
 
         if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
@@ -936,7 +941,12 @@ partial class Interpreter
                     if (parameters.Count > 0)
                         scope.AddVariable(parameters[0], a);
 
-                    return NextBlock(runtimeClosure.Expr.Body, scope);
+                    var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+                    runtimeClosure.Expr.RuntimeValue = runtimeClosure;
+                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
+
+                    return result;
                 });
         }
 
@@ -952,7 +962,12 @@ partial class Interpreter
                     if (parameters.Count > 1)
                         scope.AddVariable(parameters[1], b);
 
-                    return NextBlock(runtimeClosure.Expr.Body, scope);
+                    var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+                    runtimeClosure.Expr.RuntimeValue = runtimeClosure;
+                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
+
+                    return result;
                 });
         }
 
@@ -967,7 +982,10 @@ partial class Interpreter
                     if (parameters.Count > 0)
                         scope.AddVariable(parameters[0], a);
 
+                    var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+                    runtimeClosure.Expr.RuntimeValue = runtimeClosure;
                     NextBlock(runtimeClosure.Expr.Body, scope);
+                    runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
                 });
         }
 
@@ -984,7 +1002,10 @@ partial class Interpreter
                     if (parameters.Count > 1)
                         scope.AddVariable(parameters[1], b);
 
+                    var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+                    runtimeClosure.Expr.RuntimeValue = runtimeClosure;
                     NextBlock(runtimeClosure.Expr.Body, scope);
+                    runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
                 });
         }
 
@@ -995,7 +1016,12 @@ partial class Interpreter
             foreach (var (parameter, argument) in parameters.Zip(args))
                 scope.AddVariable(parameter, argument);
 
-            return NextBlock(runtimeClosure.Expr.Body, scope);
+            var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
+            runtimeClosure.Expr.RuntimeValue = runtimeClosure;
+            var result = NextBlock(runtimeClosure.Expr.Body, scope);
+            runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
+
+            return result;
         });
     }
 
@@ -1106,11 +1132,16 @@ partial class Interpreter
             scope,
             BuildRuntimeFunctionInvoker
         );
+
+        var previousRuntimeValue = expr.RuntimeValue;
         expr.RuntimeValue = runtimeClosure;
 
-        return expr.Function.IsReference
+        var result = expr.Function.IsReference
             ? runtimeClosure
             : NextCallWithClosure(expr.Function, runtimeClosure);
+        expr.RuntimeValue = previousRuntimeValue;
+
+        return result;
     }
 
     private RuntimeObject Visit(TryExpr expr)
