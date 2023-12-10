@@ -491,8 +491,12 @@ static class Iteration
     /// <param name="n">The amount of times it should be repeated</param>
     /// <returns>A list containing n instances of the given item.</returns>
     [ElkFunction("repeat")]
-    public static RuntimeList Repeat(RuntimeObject item, RuntimeInteger n)
-        => new(Enumerable.Repeat(item, (int)n.Value));
+    public static RuntimeList Repeat(RuntimeObject item, RuntimeInteger? n = null)
+        => new(
+            n == null
+                ? DataTypes.Extensions.RepeatIndefinitely(item)
+                : Enumerable.Repeat(item, (int)n.Value)
+        );
 
     [ElkFunction("reverse")]
     public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)

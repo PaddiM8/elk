@@ -111,4 +111,12 @@ static class Extensions
 
         return 0;
     }
+
+    public static IEnumerable<T> RepeatIndefinitely<T>(T item)
+    {
+        while (true)
+        {
+            yield return item;
+        }
+    }
 }
