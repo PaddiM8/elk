@@ -1371,7 +1371,7 @@ internal class Parser
                 }
 
                 textArguments.Add(new StringInterpolationExpr(interpolationParts, pos));
-                interpolationParts = new();
+                interpolationParts = [];
                 continue;
             }
 
@@ -1407,10 +1407,12 @@ internal class Parser
                 {
                     interpolationParts.Add(ParseDoubleQuoteStringLiteral());
                 }
-                else if (isDollar && Current!.Value.Length > 1)
+                else if (isDollar)
                 {
+                    var identifier = Eat();
                     // Environment variable
-                    interpolationParts.Add(new VariableExpr(Eat()));
+                    if (Current!.Value.Length > 1)
+                        interpolationParts.Add(new VariableExpr(identifier));
                 }
                 else if (isDollar && next?.Kind == TokenKind.OpenBrace)
                 {
