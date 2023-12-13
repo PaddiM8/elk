@@ -212,18 +212,19 @@ public class KeyHandler
 
     public void MoveCursorRight()
     {
-        if (_renderer is { IsEndOfLine: true, HintText: not null })
-        {
-            _renderer.Insert(_renderer.HintText, includeHint: true);
-
-            return;
-        }
-
+        TryInsertHint();
         _renderer.Caret++;
+    }
+
+    private void TryInsertHint()
+    {
+        if (_renderer is { IsEndOfLine: true, HintText: not null })
+            _renderer.Insert(_renderer.HintText, includeHint: true);
     }
 
     public void MoveCursorEnd()
     {
+        TryInsertHint();
         _renderer.Caret = _renderer.Text.Length;
     }
 
