@@ -322,6 +322,7 @@ static class Iteration
             RuntimeDictionary dict => new(dict.Entries.Count),
             RuntimeTable table => new(table.Rows.Count),
             RuntimePipe pipe => new(pipe.Count),
+            RuntimeNil nil => throw new RuntimeCastException(nil.GetType(), "Iterable"),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
 
