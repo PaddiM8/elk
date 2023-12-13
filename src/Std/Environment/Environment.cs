@@ -44,7 +44,7 @@ static class Environment
         var exitCode = System.Environment.GetEnvironmentVariable("?");
 
         return exitCode == null
-            ? RuntimeNil.Value
+            ? new RuntimeInteger(0)
             : new RuntimeInteger(int.Parse(exitCode));
     }
 
