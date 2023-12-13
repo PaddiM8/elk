@@ -235,11 +235,10 @@ public class Lexer
     private Token NextWhiteSpace()
     {
         if (AdvanceIf('\n'))
-        {
             return Build(TokenKind.NewLine, Environment.NewLine);
-        }
 
         var startIndex = _index;
+        var startColumn = _pos.column;
         var value = new StringBuilder();
         while (char.IsWhiteSpace(Current))
             value.Append(Eat());
@@ -247,31 +246,31 @@ public class Lexer
         return Build(
             TokenKind.WhiteSpace,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            new(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
     private Token NextComment()
     {
         var startIndex = _index;
+        var startColumn = _pos.column;
         var value = new StringBuilder();
         while (!ReachedEnd && Current != '\n')
-        {
             value.Append(Eat());
-        }
 
         return Build(
             TokenKind.Comment,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            new(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
     private Token NextIdentifier()
     {
-        var startIndex = _index;
         var value = new StringBuilder();
         value.Append(Eat());
+        var startIndex = _index;
+        var startColumn = _pos.column;
 
         // Question marks are generally not allowed in identifiers,
         // but we still need to allow '$?', since that's used for
@@ -283,7 +282,7 @@ public class Lexer
             return Build(
                 TokenKind.Identifier,
                 value.ToString(),
-                new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+                new(_pos.line, startColumn, startIndex, _filePath)
             );
         }
 
@@ -347,15 +346,16 @@ public class Lexer
         return Build(
             kind,
             valueString,
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            new(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
     private Token NextString()
     {
-        var startIndex = _index;
         Eat(); // Initial quote
 
+        var startIndex = _index;
+        var startColumn = _pos.column;
         var value = new StringBuilder();
         if (_mode == LexerMode.Preserve)
             value.Append('"');
@@ -446,14 +446,15 @@ public class Lexer
         return Build(
             TokenKind.DoubleQuoteStringLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            new(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
     private Token NextSingleQuoteString()
     {
-        var startIndex = _index;
         Eat(); // Quote
+        var startIndex = _index;
+        var startColumn = _pos.column;
 
         var value = new StringBuilder();
         if (_mode == LexerMode.Preserve)
@@ -489,7 +490,7 @@ public class Lexer
         return Build(
             TokenKind.SingleQuoteStringLiteral,
             value.ToString(),
-            new(_pos.line, _pos.column - value.Length, startIndex, _filePath)
+            new(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
