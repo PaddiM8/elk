@@ -8,3 +8,10 @@ let dict = {
     | assertEqual(2)
 
 assert(len(dict) == 3)
+
+let result = while true {
+    break
+    let x = 3
+}
+
+result | assertEqual(nil)

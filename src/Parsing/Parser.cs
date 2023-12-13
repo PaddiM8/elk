@@ -447,6 +447,16 @@ internal class Parser
         if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
         {
             var keyword = Eat();
+            if (Current?.Kind == TokenKind.NewLine ||
+                Current?.Kind == TokenKind.WhiteSpace && Peek()?.Kind == TokenKind.NewLine)
+            {
+                return new KeywordExpr(
+                    keyword.Kind,
+                    null,
+                    keyword.Position
+                );
+            }
+
             if (Match(TokenKind.If))
             {
                 return ParseBinaryIf(
