@@ -33,7 +33,7 @@ these kind of symbols in shell languages.
 
 ::: info
 The `and`/`or` keywords are used for logical operations on booleans, while the 
-non-redirecting variants `(`&& and `||`) are used to chain program invocations.
+non-redirecting variants (`&&` and `||`) are used to chain program invocations.
 :::
 
 ```elk

@@ -145,7 +145,7 @@ cases.
 # `map` will iterate over the file content line by line 
 cat file.txt | map => x: x + "!"
 
-# gets the 6th file
+# gets the 6th line
 cat("file.txt")[5] | println
 
 # converts the Pipe into a string and then applies str::upper
@@ -180,7 +180,7 @@ second expression. Iterating over the range `0..10` only yields the numbers 0
 to 9. To instead make a range inclusive, an equal sign is added after the dots, 
 eg. `0..=10`.
 
-::: hint
+::: info
 It is sometimes necessary to place a range inside parentheses, such as `(1..)` 
 to avoid expressions around it to be parsed as a part of the range.
 :::

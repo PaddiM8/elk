@@ -27,7 +27,7 @@ else
 fi
 
 # elk
-if var != nil {
+if not var {
    echo is not empty
 } else {
    echo is empty

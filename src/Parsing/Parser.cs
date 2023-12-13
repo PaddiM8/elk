@@ -435,6 +435,9 @@ internal class Parser
             var op = Eat();
             _allowEndOfExpression = true;
             var right = ParseKeyword();
+            var elseBranch = AdvanceIf(TokenKind.Else)
+                ? ParseBlockOrSingle(StructureKind.Other)
+                : null;
 
             return new BinaryExpr(left, op.Kind, right);
         }

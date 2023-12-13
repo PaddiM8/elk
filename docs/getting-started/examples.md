@@ -76,7 +76,7 @@ the Iterable that was given as an argument. This is called [Plurality](/basics/p
 :::
 
 ```elk
-let sizes = du | column 0 | int!
-echo Sizes:
-echo(sizes | select => x: x / 1000 | join ", ")
+let sizes = du | str::column 0 | int!
+println Sizes:
+sizes | map => x: x / 1000 | join ", " | println
 ```
