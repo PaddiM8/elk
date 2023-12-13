@@ -85,7 +85,7 @@ public class RuntimeTuple(IEnumerable<RuntimeObject> values)
     }
 
     public override int GetHashCode()
-        => Values.GetHashCode();
+        => Values.Aggregate(typeof(RuntimeObject).GetHashCode(), HashCode.Combine);
 
     public override string ToString()
         => $"({string.Join(", ", Values.Select(x => x.ToDisplayString()))})";
