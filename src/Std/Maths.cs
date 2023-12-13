@@ -17,9 +17,14 @@ namespace Elk.Std;
 [ElkModule("math")]
 static class Maths
 {
+    /// <returns>The input number made positive.</returns>
+    [ElkFunction("atan2")]
+    public static RuntimeFloat Atan2(RuntimeFloat y, RuntimeFloat x)
+        => new(Math.Atan2(y.Value, x.Value));
+
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number made positive.</returns>
-    [ElkFunction("abs", Reachability.Everywhere)]
+    [ElkFunction("abs")]
     public static RuntimeObject Abs(RuntimeObject x)
         => x switch
         {
@@ -29,13 +34,13 @@ static class Maths
 
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded up.</returns>
-    [ElkFunction("ceil", Reachability.Everywhere)]
+    [ElkFunction("ceil")]
     public static RuntimeFloat Ceil(RuntimeObject x)
         => new(Math.Ceiling(x.As<RuntimeFloat>().Value));
 
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The input number rounded down.</returns>
-    [ElkFunction("floor", Reachability.Everywhere)]
+    [ElkFunction("floor")]
     public static RuntimeFloat Floor(RuntimeObject x)
         => new(Math.Floor(x.As<RuntimeFloat>().Value));
 
@@ -142,7 +147,7 @@ static class Maths
 
     /// <param name="x" types="Integer, Float"></param>
     /// <returns>The square root of the input number</returns>
-    [ElkFunction("sqrt", Reachability.Everywhere)]
+    [ElkFunction("sqrt")]
     public static RuntimeFloat Sqrt(RuntimeObject x)
         => x is RuntimeInteger integer
             ? new(Math.Sqrt(integer.Value))
