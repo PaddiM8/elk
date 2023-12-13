@@ -760,6 +760,7 @@ internal class Parser
 
     private Expr ParsePrimary()
     {
+        SkipWhiteSpace();
         if (Current != null && IsLiteral(Current.Kind))
         {
             return ParseLiteral();
