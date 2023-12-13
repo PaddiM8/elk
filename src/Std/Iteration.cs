@@ -1,6 +1,7 @@
 #region
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
@@ -353,12 +354,48 @@ static class Iteration
     public static RuntimeObject MinOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => items.Min(closure) ?? RuntimeNil.Value;
 
-    /// <param name="items">A list of values that will be stringified.</param>
-    /// <param name="separator">Character sequence that should be put between each value.</param>
+    /// <param name="items">A list of values that will be stringified</param>
+    /// <param name="separator">Character sequence that should be put between each value</param>
     /// <returns>A new string of all the list values separated by the specified separator string.</returns>
     [ElkFunction("join", Reachability.Everywhere)]
     public static RuntimeString Join(IEnumerable<RuntimeObject> items, RuntimeString? separator = null)
         => new(string.Join(separator?.Value ?? "", items.Select(x => x.As<RuntimeString>())));
+
+    /// <returns>The cartesian product of an Iterable.</returns>
+    [ElkFunction("product")]
+    public static RuntimeList Permutations(IEnumerable<RuntimeObject> items, RuntimeInteger? repeat = null)
+    {
+        if (repeat == null)
+        {
+            var iterableItems = items.Select(x =>
+                x as IEnumerable<RuntimeObject>
+                    ?? throw new RuntimeCastException(x.GetType(), "Iterable")
+            );
+
+            return new(GetCartesianProduct(iterableItems));
+        }
+
+        var repeatedItems = Enumerable.Repeat(items, (int)repeat.Value);
+
+        return new(GetCartesianProduct(repeatedItems));
+    }
+
+    private static IEnumerable<RuntimeObject> GetCartesianProduct(IEnumerable<IEnumerable<RuntimeObject>> iterables)
+    {
+        var result1 = new List<IEnumerable<RuntimeObject>> { new List<RuntimeObject>() };
+        var result2 = new List<IEnumerable<RuntimeObject>>();
+        foreach (var iterable in iterables)
+        {
+            foreach (var x in result1)
+                result2.AddRange(iterable.Select(y => x.Append(y)));
+
+            result1 = [..result2];
+            result2 = [];
+        }
+
+        foreach (var r in result1)
+            yield return new RuntimeList(r);
+    }
 
     /// <returns>A new list with the given item prepended to the given Iterable.</returns>
     [ElkFunction("prepend")]
