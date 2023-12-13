@@ -24,6 +24,22 @@ public class Into
     public static RuntimeString Char(RuntimeInteger codepoint)
         => new(char.ConvertFromUtf32((int)codepoint.Value));
 
+    /// <returns>A list of characters.</returns>
+    [ElkFunction("chars")]
+    public static RuntimeList Chars(RuntimeString input)
+        => new(input);
+
+    /// <param name="charString">A string containing the character to be converted.</param>
+    /// <returns>An integer representing the unicode codepoint of the character.</returns>
+    [ElkFunction("charCode")]
+    public static RuntimeInteger CharCode(RuntimeString charString)
+    {
+        if (charString.Value.Length == 0)
+            throw new RuntimeStdException("Cannot convert an empty string into a character code.");
+
+        return new(char.ConvertToUtf32(charString.Value, 0));
+    }
+
     /// <param name="rows">A collection of rows containing a list of columns.</param>
     /// <param name="separator">The column separator. Default: ,</param>
     /// <returns>A CSV string.</returns>
@@ -65,17 +81,6 @@ public class Into
         }
 
         return new(builder.ToString());
-    }
-
-    /// <param name="charString">A string containing the character to be converted.</param>
-    /// <returns>An integer representing the unicode codepoint of the character.</returns>
-    [ElkFunction("charCode")]
-    public static RuntimeInteger CharCode(RuntimeString charString)
-    {
-        if (charString.Value.Length == 0)
-            throw new RuntimeStdException("Cannot convert an empty string into a character code.");
-
-        return new(char.ConvertToUtf32(charString.Value, 0));
     }
 
     /// <param name="value">Value that should be cast</param>
@@ -153,6 +158,10 @@ public class Into
     [ElkFunction("table")]
     public static RuntimeTable ToTable(RuntimeObject value)
         => value.As<RuntimeTable>();
+
+    [ElkFunction("tuple")]
+    public static RuntimeTuple ToTuple(IEnumerable<RuntimeObject> items)
+        => new(items);
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("type")]
