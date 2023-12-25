@@ -70,8 +70,17 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
         if (!waitForExit)
         {
-            _process!.Exited += (_, _)
-                => CloseProcess(messageOnError: true);
+            _process!.Exited += (_, _) =>
+            {
+                try
+                {
+                    CloseProcess(messageOnError: true);
+                }
+                catch
+                {
+                    // How would this be handled?
+                }
+            };
         }
 
         if (_disposeOutput)
@@ -198,21 +207,21 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
             Environment.SetEnvironmentVariable("?", _exitCode.ToString());
 
-            if (_exitCode != 0)
-            {
-                RuntimeObject message = messageOnError
-                    ? new RuntimeString("Program returned a non-zero exit code.")
-                    : RuntimeNil.Value;
-                // TODO: Somehow get the actual signal rather than relying on exit codes
-                if (_exitCode >= 128 && _exitCode <= 128 + SignalHelper.SignalNames.Length)
-                {
-                    message = new RuntimeString(
-                        SignalHelper.SignalNames[_exitCode - 128]
-                    );
-                }
+            if (_exitCode == 0)
+                return;
 
-                throw new RuntimeUserException(message);
+            RuntimeObject message = messageOnError
+                ? new RuntimeString("Program returned a non-zero exit code.")
+                : RuntimeNil.Value;
+            // TODO: Somehow get the actual signal rather than relying on exit codes
+            if (_exitCode >= 128 && _exitCode <= 128 + SignalHelper.SignalNames.Length)
+            {
+                message = new RuntimeString(
+                    SignalHelper.SignalNames[_exitCode - 128]
+                );
             }
+
+            throw new RuntimeUserException(message);
         }
     }
 }
