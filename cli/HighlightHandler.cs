@@ -253,7 +253,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
 
     private string NextIdentifier(List<string>? modulePath = null)
     {
-        var startIndex = Current!.Position.Index;
+        var startIndex = Current!.Position.Index - 1;
         var identifier = Eat()!.Value.Trim();
         if (identifier.StartsWith('$'))
             return identifier;
@@ -291,7 +291,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         {
             var fullName = string.Join("::", modulePath.Append(identifier));
             _lastShellStyleInvocations.Add(
-                new(
+                new ShellStyleInvocationInfo(
                     fullName,
                     textArgumentsInfo,
                     // startIndex is the start index of the last identifier, but we need the start
@@ -354,9 +354,9 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         var pos = Current?.Position.Index ?? _length;
         var textForCompletion = string.Join("::", modulePath) + "::";
         _lastShellStyleInvocations.Add(
-            new(
+            new ShellStyleInvocationInfo(
                 textForCompletion,
-                new(Array.Empty<string>(), -1),
+                new TextArgumentsInfo(Array.Empty<string>(), -1),
                 pos - textForCompletion.Length,
                 pos
             )
@@ -372,7 +372,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
 
     private string NextPath()
     {
-        var startIndex = Current!.Position.Index;
+        var startIndex = Current!.Position.Index - 1;
         var builder = new StringBuilder();
         while (!ReachedTextEnd() &&
                Current?.Kind is not (TokenKind.WhiteSpace or TokenKind.OpenParenthesis or TokenKind.OpenSquareBracket))
@@ -394,7 +394,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         if (Current?.Kind != TokenKind.OpenParenthesis || textArgumentsInfo.Arguments.Any())
         {
             _lastShellStyleInvocations.Add(
-                new(
+                new ShellStyleInvocationInfo(
                     identifier,
                     textArgumentsInfo,
                     startIndex,
@@ -413,12 +413,12 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
     private (string highlighted, TextArgumentsInfo argumentsInfo) NextTextArguments()
     {
         if (Current?.Kind != TokenKind.WhiteSpace)
-            return ("", new(Array.Empty<string>(), -1));
+            return ("", new TextArgumentsInfo(Array.Empty<string>(), -1));
 
         var textArguments = new List<string>();
         var textArgumentBuilder = new StringBuilder();
         var caretAtArgumentIndex = -1;
-        var startIndex = Current.Position.Index;
+        var startIndex = Current.Position.Index - 1;
         while (!ReachedTextEnd())
         {
             if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)

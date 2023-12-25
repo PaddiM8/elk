@@ -1,27 +1,21 @@
+using System;
 using System.IO;
 using Elk.Std.DataTypes.Serialization.CommandLine;
 
 namespace Elk.Cli;
 
-class CustomCompletionProvider
+class CustomCompletionProvider(ShellSession shellSession)
 {
-    private readonly ShellSession _shellSession;
-
-    public CustomCompletionProvider(ShellSession shellSession)
-    {
-        _shellSession = shellSession;
-    }
-
     public RuntimeCliParser? Get(string identifier)
     {
         // Look for already loaded completions
         if (ParserStorage.CompletionParsers.TryGetValue(identifier, out var parser))
             return parser;
 
-        // Look for completions in `/Resources/completions`
+        // Look for default completions
         var embedded = ResourceProvider.ReadFile($"completions/{identifier}.elk");
         if (embedded != null)
-            _shellSession.RunCommand(embedded, ownScope: true, printReturnedValue: false);
+            shellSession.RunCommand(embedded, ownScope: true, printReturnedValue: false);
 
         if (ParserStorage.CompletionParsers.TryGetValue(identifier, out parser))
             return parser;
@@ -29,7 +23,7 @@ class CustomCompletionProvider
         // Look for completions in ~/.config/elk/completions
         var completionFile = Path.Combine(CommonPaths.ConfigFolder, $"completions/{identifier}.elk");
         if (File.Exists(completionFile))
-            _shellSession.RunCommand(File.ReadAllText(completionFile), ownScope: true, printReturnedValue: false);
+            shellSession.RunCommand(File.ReadAllText(completionFile), ownScope: true, printReturnedValue: false);
 
         ParserStorage.CompletionParsers.TryGetValue(identifier, out parser);
 
