@@ -1410,17 +1410,17 @@ internal class Parser
                 {
                     interpolationParts.Add(ParseDoubleQuoteStringLiteral());
                 }
+                else if (isDollar && next?.Kind == TokenKind.OpenBrace)
+                {
+                    Eat();
+                    interpolationParts.Add(ParseBlock(StructureKind.Other));
+                }
                 else if (isDollar)
                 {
                     var identifier = Eat();
                     // Environment variable
                     if (Current!.Value.Length > 1)
                         interpolationParts.Add(new VariableExpr(identifier));
-                }
-                else if (isDollar && next?.Kind == TokenKind.OpenBrace)
-                {
-                    Eat();
-                    interpolationParts.Add(ParseBlock(StructureKind.Other));
                 }
             }
             else
