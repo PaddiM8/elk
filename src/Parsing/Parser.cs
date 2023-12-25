@@ -1419,7 +1419,7 @@ internal class Parser
                 {
                     var identifier = Eat();
                     // Environment variable
-                    if (Current!.Value.Length > 1)
+                    if (identifier.Value.Length > 1)
                         interpolationParts.Add(new VariableExpr(identifier));
                 }
             }
