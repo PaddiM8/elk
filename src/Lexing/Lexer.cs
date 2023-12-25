@@ -500,7 +500,7 @@ public class Lexer
     private static bool IsValidIdentifierMiddle(char c, char next)
         => c != '$' && (IsValidIdentifierStart(c) ||
             c == '-' && next != '>' ||
-            "+*/%^.".Contains(c) ||
+            "+*%^.".Contains(c) ||
             char.IsDigit(c));
 
     private Token Build(TokenKind kind, char value)
