@@ -69,10 +69,14 @@ public class RuntimeString(string value) : RuntimeObject, IEnumerable<RuntimeObj
         {
             _ when toType == typeof(RuntimeString)
                 => this,
-            _ when toType == typeof(RuntimeInteger) && long.TryParse(Value, out var number)
-                => new RuntimeInteger(number),
-            _ when toType == typeof(RuntimeFloat) && double.TryParse(Value, out var number)
-                => new RuntimeFloat(number),
+            _ when toType == typeof(RuntimeInteger)
+                => long.TryParse(Value, out var number)
+                    ? new RuntimeInteger(number)
+                    : throw new RuntimeException("Could not cast the given String to an Integer"),
+            _ when toType == typeof(RuntimeFloat)
+                => double.TryParse(Value, out var number)
+                    ? new RuntimeFloat(number)
+                    : throw new RuntimeException("Could not cast the given String to a Float"),
             _ when toType == typeof(RuntimeRegex)
                 => new RuntimeRegex(new System.Text.RegularExpressions.Regex(Value)),
             _ when toType == typeof(RuntimeBoolean)

@@ -138,12 +138,8 @@ public class ShellSession
         catch (RuntimeException e)
         {
             textWriter = Console.Error;
-            Console.ForegroundColor = ConsoleColor.Red;
-            var position = printErrorLineNumbers
-                ? e.Position ?? _interpreter.Position
-                : null;
-
-            result = $"{position} {e.Message}".Trim();
+            e.Position ??= _interpreter.Position;
+            result = e.ToString(printErrorLineNumbers).Trim();
             if (result == "")
                 return;
         }
@@ -195,6 +191,9 @@ public class ShellSession
         if (!File.Exists(filePath))
         {
             Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.Write("Error");
+            Console.ResetColor();
+            Console.Error.Write(": ");
             Console.Error.WriteLine($"No such file: {filePath}");
             Console.ResetColor();
 
@@ -216,15 +215,15 @@ public class ShellSession
         }
         catch (RuntimeException e)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"{e.Position} {e.Message}");
-            Console.ResetColor();
+            Console.Error.WriteLine(e);
         }
         catch (Exception e)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
+            Console.Error.Write("Error");
             Console.ResetColor();
+            Console.Error.Write(": ");
+            Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
         }
     }
 
@@ -249,8 +248,9 @@ public class ShellSession
         catch (RuntimeException e)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Error evaluating {identifier}: {e.Position} {e.Message}");
+            Console.Error.Write($"Error evaluating {identifier}: ");
             Console.ResetColor();
+            Console.WriteLine(e);
 
             return null;
         }

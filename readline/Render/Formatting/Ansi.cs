@@ -2,8 +2,13 @@ using System;
 
 namespace Elk.ReadLine.Render.Formatting;
 
-static class Ansi
+public static class Ansi
 {
+    public static string Bold(string text)
+        => text.Length == 0
+            ? ""
+            : $"\x1b[1m{text}\x1b[0m";
+
     public static string Color(string text, AnsiForeground foreground)
         => text.Length == 0
             ? ""

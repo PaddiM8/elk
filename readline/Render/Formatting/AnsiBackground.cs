@@ -1,6 +1,6 @@
 namespace Elk.ReadLine.Render.Formatting;
 
-enum AnsiBackground
+public enum AnsiBackground
 {
     Default = 49,
     Black = 40,

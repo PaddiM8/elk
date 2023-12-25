@@ -13,6 +13,7 @@ using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
+using Trace = Elk.Interpreting.Exceptions.Trace;
 
 #endregion
 
@@ -702,6 +703,21 @@ partial class Interpreter
 
     private RuntimeObject Visit(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
     {
+        try
+        {
+            return EvaluateCall(expr, runtimeClosure);
+        }
+        catch (RuntimeException ex)
+        {
+            if (_lastExpr != null)
+                ex.ElkStackTrace.Add(new Trace(expr.Position, expr.Identifier));
+
+            throw;
+        }
+    }
+
+    private RuntimeObject EvaluateCall(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
+    {
         if (expr is { IsReference: false, CallType: CallType.BuiltInTime })
             return EvaluateBuiltInTime(expr.Arguments);
 
@@ -719,8 +735,8 @@ partial class Interpreter
                 }
 
                 var matches = stringArgument.IsTextArgument
-                    ? Globbing.Glob(ShellEnvironment.WorkingDirectory, stringArgument.Value)
-                    : Array.Empty<string>();
+                    ? Globbing.Glob(ShellEnvironment.WorkingDirectory, stringArgument.Value).ToList()
+                    : new List<string>();
                 if (matches.Any())
                 {
                     evaluatedArguments.AddRange(

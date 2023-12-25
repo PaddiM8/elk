@@ -112,8 +112,8 @@ fn handleRestore(parser) {
 }
 
 fn unstagedFilesHandler(value, state) {
-    let repoPath = git rev-parse --show-toplevel
-    git ls-files ${repoPath} --exclude-standard --others --modified | str::path::fuzzyFind(value)
+    let repoPath = git rev-parse --show-toplevel | disposeErr
+    git ls-files ${repoPath} --exclude-standard --others --modified | disposeErr | str::path::fuzzyFind(value)
 }
 
 fn stagedFilesHandler(value, state) {

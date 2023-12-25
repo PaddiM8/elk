@@ -1,6 +1,8 @@
 #region
 
 using System;
+using System.Text;
+using Elk.ReadLine.Render.Formatting;
 using Newtonsoft.Json;
 
 #endregion
@@ -13,9 +15,29 @@ public record TextPos(int Line, int Column, int Index, string? FilePath)
         => new(1, 1, 0, null);
 
     public override string ToString()
-        => FilePath == null
-            ? $"[{Line}:{Column}]"
-            : $"{FilePath} [{Line}:{Column}]";
+    {
+        var builder = new StringBuilder();
+        if (FilePath != null)
+        {
+            builder.Append(FormatPath(FilePath));
+            builder.Append(' ');
+        }
+
+        builder.Append('(');
+        builder.Append(Ansi.Color($"{Line}:{Column}", AnsiForeground.DarkYellow));
+        builder.Append(')');
+
+        return builder.ToString();
+    }
+
+    private string FormatPath(string path)
+    {
+        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (path.StartsWith(homePath))
+            path = "~" + path[homePath.Length..];
+
+        return Ansi.Color(path, AnsiForeground.DarkGray);
+    }
 }
 
 [JsonConverter(typeof(TokenConverter))]
