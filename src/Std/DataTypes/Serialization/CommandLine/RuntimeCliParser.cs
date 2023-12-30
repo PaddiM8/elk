@@ -125,8 +125,8 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
         try
         {
-            return GetCompletions(
-                tokensBeforeCaret,
+             return GetCompletions(
+                tokensBeforeCaret.ToList(),
                 Parse(allTokens, ignoreErrors: true),
                 completionKind
             );
@@ -139,7 +139,7 @@ public class RuntimeCliParser(string name) : RuntimeObject
     }
 
     private IEnumerable<Completion> GetCompletions(
-        IEnumerable<string> tokens,
+        ICollection<string> tokens,
         CliResult? cliResult,
         CompletionKind completionKind)
     {
@@ -177,7 +177,7 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
         // If the first argument is a verb, let the verb's parser deal with the rest
         if (_verbs.TryGetValue(tokens.First(), out var verbParser))
-            return verbParser.GetCompletions(tokens.Skip(1), cliResult, completionKind);
+            return verbParser.GetCompletions(tokens.Skip(1).ToList(), cliResult, completionKind);
 
         // If there is only one token and the parser contains verbs,
         // that means two things: the cursor is at the token, and
@@ -223,7 +223,7 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
             var allowCustom = completionKind != CompletionKind.Hint || flag?.AllowCustomCompletionHints is true;
             if (allowCustom && flag?.CompletionHandler != null && cliResult != null)
-                return flag.CompletionHandler(last, cliResult);
+                return FilterCompletions(flag.CompletionHandler(last, cliResult), last);
 
             if (flag is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
             {
@@ -252,25 +252,33 @@ public class RuntimeCliParser(string name) : RuntimeObject
             : null;
         var allowCustomCompletion = completionKind != CompletionKind.Hint || currentArgument?.AllowCustomCompletionHints is true;
         if (allowCustomCompletion && currentArgument?.CompletionHandler != null && cliResult != null)
-            return currentArgument.CompletionHandler(last, cliResult);
+            return FilterCompletions(currentArgument.CompletionHandler(last, cliResult), last);
 
-        if (currentArgument is { ValueKind: CliValueKind.Path or CliValueKind.Directory })
-        {
-            var completions = FileUtils.GetPathCompletions(
-                last,
-                ShellEnvironment.WorkingDirectory,
-                currentArgument.ValueKind == CliValueKind.Directory
-                    ? FileType.Directory
-                    : FileType.All
-            );
+        // If none of the actions are relevant, simply return the matched flags.
+        if (currentArgument is not { ValueKind: CliValueKind.Path or CliValueKind.Directory })
+            return matchedFlags;
 
-            return last.StartsWith('-')
-                ? completions.Concat(matchedFlags)
-                : completions;
-        }
+        var completions = FileUtils.GetPathCompletions(
+            last,
+            ShellEnvironment.WorkingDirectory,
+            currentArgument.ValueKind == CliValueKind.Directory
+                ? FileType.Directory
+                : FileType.All
+        );
 
-        // If none of the above actions are relevant, simply return the matched flags.
-        return matchedFlags;
+        return last.StartsWith('-')
+            ? completions.Concat(matchedFlags)
+            : completions;
+    }
+
+    private IEnumerable<Completion> FilterCompletions(IEnumerable<Completion> completions, string query)
+    {
+        var collected = completions.ToList();
+        var filtered = collected.Where(x => x.DisplayText.StartsWith(query));
+
+        return filtered.Any()
+            ? filtered
+            : collected.Where(x => x.DisplayText.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
     public CliResult? Parse(IEnumerable<string> args, bool ignoreErrors = false)

@@ -13,16 +13,16 @@ namespace Elk.Cli;
 
 class AutoCompleteHandler : IAutoCompleteHandler
 {
-    public char[] Separators { get; set; }
+    // Not used since there is a custom implementation of GetCompletionStart
+    public char[] Separators { get; set; } = [];
 
     private readonly ShellSession _shell;
     private readonly HighlightHandler _highlightHandler;
     private readonly CustomCompletionProvider _customCompletionProvider;
     private ShellStyleInvocationInfo? _currentInvocationInfo;
 
-    public AutoCompleteHandler(ShellSession shell, char[] separators, HighlightHandler highlightHandler)
+    public AutoCompleteHandler(ShellSession shell, HighlightHandler highlightHandler)
     {
-        Separators = separators;
         _shell = shell;
         _highlightHandler = highlightHandler;
         _customCompletionProvider = new CustomCompletionProvider(_shell);
@@ -36,8 +36,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (_currentInvocationInfo == null)
             return 0;
 
-        var path = FindPathBefore(text, cursorPos);
-        var completionTarget = Path.GetFileName(path);
+        var completionTarget = FindPathBefore(text, cursorPos);
 
         return cursorPos - completionTarget.Length;
     }
@@ -82,12 +81,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         // At this stage, we want the entire path instead.
         // ./program some/directory/and.file
         //           ^^^^^^^^^^^^^^^^^^^^^^^
-        var path = FindPathBefore(text, endPos);
-        if (path.StartsWith('~'))
-            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
-
         var completions = FileUtils.GetPathCompletions(
-            Utils.Unescape(path),
+            Utils.Unescape(FindPathBefore(text, endPos)),
             _shell.WorkingDirectory,
             isRelativeIdentifier && atInvocationName
                 ? FileType.Executable

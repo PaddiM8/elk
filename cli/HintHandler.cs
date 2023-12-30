@@ -7,26 +7,15 @@ using Elk.Std.DataTypes.Serialization.CommandLine;
 
 namespace Elk.Cli;
 
-class HintHandler : IHintHandler
+class HintHandler(
+    HistoryRepository historyRepository,
+    ShellSession shell,
+    HighlightHandler highlightHandler,
+    CustomCompletionProvider customCompletionProvider)
+    : IHintHandler
 {
-    private readonly HistoryRepository _historyRepository;
-    private readonly ShellSession _shell;
-    private readonly HighlightHandler _highlightHandler;
-    private readonly CustomCompletionProvider _customCompletionProvider;
     private bool _previousHadHistoryMatch;
     private string _previousPromptText = "";
-
-    public HintHandler(
-        HistoryRepository historyRepository,
-        ShellSession shell,
-        HighlightHandler highlightHandler,
-        CustomCompletionProvider customCompletionProvider)
-    {
-        _historyRepository = historyRepository;
-        _shell = shell;
-        _highlightHandler = highlightHandler;
-        _customCompletionProvider = customCompletionProvider;
-    }
 
     public string Hint(string promptText)
     {
@@ -34,8 +23,8 @@ class HintHandler : IHintHandler
         if (!_previousHadHistoryMatch && _previousPromptText.Any() && promptText.StartsWith(_previousPromptText))
             return GetFileHint();
 
-        var suggestion = _historyRepository.GetSingleWithPathAndStart(
-            _shell.WorkingDirectory,
+        var suggestion = historyRepository.GetSingleWithPathAndStart(
+            shell.WorkingDirectory,
             promptText
         );
         _previousHadHistoryMatch = suggestion != null;
@@ -48,7 +37,7 @@ class HintHandler : IHintHandler
 
     private string GetFileHint()
     {
-        var invocationInfo = _highlightHandler.LastShellStyleInvocations.LastOrDefault();
+        var invocationInfo = highlightHandler.LastShellStyleInvocations.LastOrDefault();
         var activeTextArgument = invocationInfo?.TextArgumentsInfo.Arguments
             .ElementAtOrDefault(invocationInfo.TextArgumentsInfo.CaretAtArgumentIndex);
         if (activeTextArgument == "" || invocationInfo == null)
@@ -67,11 +56,9 @@ class HintHandler : IHintHandler
         if (completion == null)
             return "";
 
-        var completionStart = completionTarget.LastIndexOf('/') + 1;
-        var fileNameLength = completionTarget.Length - completionStart;
-        if (fileNameLength >= completion.CompletionText.Length)
+        if (completionTarget.Length >= completion.CompletionText.Length)
         {
-            Debug.Assert(fileNameLength == completion.CompletionText.Length);
+            Debug.Assert(completionTarget.Length == completion.CompletionText.Length);
 
             return "";
         }
@@ -80,7 +67,7 @@ class HintHandler : IHintHandler
             ? " "
             : "";
 
-        return Utils.Escape(completion.CompletionText[fileNameLength..]) + trailingSpace;
+        return Utils.Escape(completion.CompletionText[completionTarget.Length..]) + trailingSpace;
     }
 
     private IEnumerable<Completion> GetCompletions(
@@ -91,13 +78,13 @@ class HintHandler : IHintHandler
     {
         var completionParser = invocationInfo == null || !isTextArgument
             ? null
-            : _customCompletionProvider.Get(invocationInfo.Name);
+            : customCompletionProvider.Get(invocationInfo.Name);
         if (completionParser != null)
             return completionParser.GetCompletions(allTextArguments, null, CompletionKind.Hint);
 
         return FileUtils.GetPathCompletions(
             Utils.Unescape(completionTarget),
-            _shell.WorkingDirectory,
+            shell.WorkingDirectory,
             isTextArgument
                 ? FileType.All
                 : FileType.Executable,

@@ -57,9 +57,7 @@ public static class FileUtils
 
     public static bool IsValidStartOfPath(string path, string workingDirectory)
     {
-        if (path.StartsWith('~'))
-            path = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + path[1..];
-
+        path = ExpandPath(path);
         var absolutePath = path.StartsWith('/')
             ? path
             : Path.Combine(workingDirectory, path);
@@ -86,10 +84,6 @@ public static class FileUtils
         FileType fileType,
         CompletionKind completionKind = CompletionKind.Normal)
     {
-        // TODO: Create a method that expands the tilde
-        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (path.StartsWith('~'))
-            path = homePath + path[1..];
         var lastSlashIndex = path
             .WithIndex()
             .LastOrDefault(x => x.item == '/' && path.ElementAtOrDefault(x.index - 1) != '\\')
@@ -99,11 +93,11 @@ public static class FileUtils
             ? "/"
             : path[..lastSlashIndex];
         var fullPath = path.StartsWith('/')
-            ? pathWithoutCompletion
-            : Path.Combine(workingDirectory, pathWithoutCompletion);
+            ? ExpandPath(pathWithoutCompletion)
+            : Path.Combine(workingDirectory, ExpandPath(pathWithoutCompletion));
         var completionTarget = path.EndsWith('/')
             ? ""
-            : path[lastSlashIndex..].TrimStart('/');
+            : ExpandPath(path[lastSlashIndex..].TrimStart('/'));
 
         if (!Directory.Exists(fullPath))
             return Array.Empty<Completion>();
@@ -114,7 +108,7 @@ public static class FileUtils
             .Where(x => includeHidden || !x!.StartsWith('.'))
             .Where(x => x!.StartsWith(completionTarget))
             .Order()
-            .Select(x => new Completion(x!, $"{x}/"))
+            .Select(x => new Completion(Path.Join(pathWithoutCompletion, x), $"{x}/"))
             .ToList();
 
         IEnumerable<Completion> files = Array.Empty<Completion>();
@@ -126,10 +120,11 @@ public static class FileUtils
                 .Where(x => x.name.StartsWith(completionTarget))
                 .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                 .Order()
-                .Select(x => new Completion(x.name)
+                .Select(x => new Completion(Path.Join(pathWithoutCompletion, x.name), x.name)
                 {
                     HasTrailingSpace = true,
-                });
+                })
+                .ToList();
         }
 
         if (completionKind != CompletionKind.Hint && !directories.Any() && !files.Any())
@@ -139,7 +134,7 @@ public static class FileUtils
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
-                .Select(x => new Completion(x!, $"{x}/"))
+                .Select(x => new Completion(Path.Join(pathWithoutCompletion, x), $"{x}/"))
                 .ToList();
 
             if (fileType != FileType.Directory)
@@ -149,10 +144,11 @@ public static class FileUtils
                     .Where(x => x.name.Contains(completionTarget, comparison))
                     .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                     .Order()
-                    .Select(x => new Completion(x.name)
+                    .Select(x => new Completion(Path.Join(pathWithoutCompletion, x.name), x.name)
                     {
                         HasTrailingSpace = true,
-                    });
+                    })
+                    .ToList();
             }
         }
 
@@ -171,9 +167,23 @@ public static class FileUtils
         if (completions.Count > 1 && path.Length > 0 &&
             !"./~".Contains(path.Last()))
         {
-            completions.Insert(0, new Completion(completionTarget, "..."));
+            completions.Insert(
+                0,
+                new Completion(
+                    Path.Join(pathWithoutCompletion, completionTarget),
+                    "..."
+                )
+            );
         }
 
         return completions;
+    }
+
+    public static string ExpandPath(string path)
+    {
+        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return path.StartsWith('~')
+            ? homePath + path[1..]
+            : path;
     }
 }
