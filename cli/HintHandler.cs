@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -38,16 +39,23 @@ class HintHandler(
     private string GetFileHint()
     {
         var invocationInfo = highlightHandler.LastShellStyleInvocations.LastOrDefault();
-        var activeTextArgument = invocationInfo?.TextArgumentsInfo.Arguments
-            .ElementAtOrDefault(invocationInfo.TextArgumentsInfo.CaretAtArgumentIndex);
-        if (activeTextArgument == "" || invocationInfo == null)
+        if (invocationInfo == null)
+            return "";
+
+        var arguments = invocationInfo.TextArgumentsInfo.Arguments;
+        var argumentIndex = invocationInfo.TextArgumentsInfo.ActiveArgumentIndex;
+        if (argumentIndex != arguments.Count - 1)
+            return "";
+
+        var activeTextArgument = arguments.ElementAtOrDefault(argumentIndex);
+        if (activeTextArgument == "")
             return "";
 
         var completionTarget = activeTextArgument ?? invocationInfo.Name;
         // For some reason TextArgumentsInfo.Arguments contains elements for the spaces
         // that separate the arguments. This should probably be fixed at some point.
         var completions = GetCompletions(
-            string.Concat(invocationInfo.TextArgumentsInfo.Arguments).TrimStart(),
+            string.Concat(arguments).TrimStart(),
             completionTarget,
             invocationInfo,
             isTextArgument: activeTextArgument != null

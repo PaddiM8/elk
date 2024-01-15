@@ -23,7 +23,7 @@ record ShellStyleInvocationInfo(
 
 record TextArgumentsInfo(
     IList<string> Arguments,
-    int CaretAtArgumentIndex
+    int ActiveArgumentIndex
 );
 
 class HighlightHandler(ShellSession shell) : IHighlightHandler
@@ -456,7 +456,7 @@ class HighlightHandler(ShellSession shell) : IHighlightHandler
         textArguments.Add(textArgumentBuilder.ToString());
         textArgumentBuilder.Clear();
 
-        if (_caret >= startIndex && _caret <= Previous?.Position.Index + Previous?.Value.Length)
+        if (caretAtArgumentIndex == -1 && _caret >= startIndex)
             caretAtArgumentIndex = textArguments.Count - 1;
 
         var highlightedTextArguments = textArguments.Select(x =>

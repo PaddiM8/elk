@@ -1,24 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Elk.ReadLine.Render;
 
-class CompletionState : IRenderable
+class CompletionState(IRenderer renderer) : IRenderable
 {
     public bool IsActive { get; set; }
 
-    private readonly IRenderer _renderer;
-    private readonly SelectionListing _listing;
+    private readonly SelectionListing _listing = new(renderer);
     private IList<Completion> _completions = Array.Empty<Completion>();
     private int _completionStart;
-
-    public CompletionState(IRenderer renderer)
-    {
-        _renderer = renderer;
-        _listing = new SelectionListing(renderer);
-    }
 
     public void StartNew(IList<Completion> completions, int completionStart)
     {
@@ -90,13 +82,14 @@ class CompletionState : IRenderable
 
     private void InsertCompletion()
     {
-        _renderer.RemoveLeft(_renderer.Caret - _completionStart, render: false);
+        renderer.RemoveLeft(renderer.Caret - _completionStart, render: true);
         var completion = _completions[_listing.SelectedIndex];
         var trailingSpace = completion.HasTrailingSpace
             ? " "
             : "";
-        _renderer.Insert(
-            completion.CompletionText + trailingSpace,
+        var input = completion.CompletionText + trailingSpace;
+        renderer.Insert(
+            input,
             includeHint: false
         );
     }

@@ -264,10 +264,22 @@ internal class Renderer : IRenderer
         _text.Insert(Caret, input);
 
         var newPos = Caret + input.Length;
-        StartTransaction();
         RenderText(hasHint);
-        Caret = newPos;
-        EndTransaction();
+        if (input.Length == 1)
+        {
+            Caret = newPos;
+
+            return;
+        }
+
+        // I've tried flushing stdout and all but this is
+        // the only thing I've found that works. Very hacky
+        // though.
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            System.Threading.Thread.Sleep(1);
+            Caret = newPos;
+        });
     }
 
     public void RemoveLeft(int count, bool render = true)
