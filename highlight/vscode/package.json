@@ -1,0 +1,25 @@
+{
+  "name": "elk-shell",
+  "displayName": "elk",
+  "description": "Highlighting for the elk shell language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "elk",
+      "aliases": ["elk", "elk"],
+      "extensions": [".elk"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "elk",
+      "scopeName": "source.elk",
+      "path": "./syntaxes/elk.tmLanguage.json"
+    }]
+  }
+}
