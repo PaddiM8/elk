@@ -2,7 +2,11 @@ with ./submodule/util
 with decrement from ./util2
 using ./submodule/collection
 
+let outside = "outside"
+
 module internal {
+    outside | assertEqual "outside"
+
     pub fn hello2() {
         assert(hello() == "hello")
         assert(util::increment(2) == 3)

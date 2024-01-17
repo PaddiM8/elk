@@ -53,21 +53,11 @@ partial class Interpreter
 
         Debug.Assert(scope is not { Ast: null });
 
-        var previousScope = _scope;
-        foreach (var module in _scope.ModuleScope.Modules
-            .Concat(_scope.ModuleScope.ImportedModules)
-            .Where(x => x != _scope)
-            .Where(x => x.AnalysisStatus != AnalysisStatus.Failed && x.AnalysisStatus != AnalysisStatus.Evaluated))
-        {
-            _scope = module;
-            if (module.AnalysisStatus == AnalysisStatus.None)
-                Analyser.Analyse(module.Ast, module, isEntireModule: true);
-
-            module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Interpret(module.Ast, module, isEntireModule: true);
-        }
-
-        _scope = previousScope;
+        EvaluateModules(
+            _scope.ModuleScope.ImportedModules
+                .Where(x => x != _scope)
+                .Where(x => x.AnalysisStatus != AnalysisStatus.Failed && x.AnalysisStatus != AnalysisStatus.Evaluated)
+        );
 
         var analysedAst = Analyser.Analyse(ast, _scope.ModuleScope, isEntireModule);
         RuntimeObject lastResult = RuntimeNil.Value;
@@ -93,8 +83,26 @@ partial class Interpreter
             // This has to be caught here due to generators being used.
             throw new RuntimeException(e.Message, Position);
         }
+        
+        EvaluateModules(_scope.ModuleScope.Modules);
 
         return lastResult;
+    }
+    
+    private void EvaluateModules(IEnumerable<ModuleScope> modules)
+    {
+        var previousScope = _scope;
+        foreach (var module in modules)
+        {
+            _scope = module;
+            if (module.AnalysisStatus == AnalysisStatus.None)
+                Analyser.Analyse(module.Ast, module, isEntireModule: true);
+
+            module.AnalysisStatus = AnalysisStatus.Evaluated;
+            Interpret(module.Ast, module, isEntireModule: true);
+        }
+
+        _scope = previousScope;
     }
 
     public RuntimeObject Interpret(string input, bool ownScope = false, string? filePath = null)
