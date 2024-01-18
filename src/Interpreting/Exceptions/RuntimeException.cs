@@ -16,7 +16,7 @@ public class RuntimeException : Exception
 {
     public TextPos? Position { get; set; }
 
-    public List<Trace> ElkStackTrace { get; } = [];
+    public List<Trace> ElkStackTrace { get; init; } = [];
 
     public RuntimeException(string message)
         : base(message)

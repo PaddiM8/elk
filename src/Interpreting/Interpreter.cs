@@ -83,7 +83,7 @@ partial class Interpreter
             // This has to be caught here due to generators being used.
             throw new RuntimeException(e.Message, Position);
         }
-        
+
         EvaluateModules(_scope.ModuleScope.Modules);
 
         return lastResult;
@@ -143,6 +143,7 @@ partial class Interpreter
             e.Position ??= Position;
             _lastExpr = null;
             _scope = _rootModule;
+
             throw;
         }
         catch (ParseException e)
@@ -926,6 +927,13 @@ partial class Interpreter
         try
         {
             return stdFunction.Invoke(allArguments);
+        }
+        catch (RuntimeException e)
+        {
+            throw new RuntimeStdException(e.Message)
+            {
+                ElkStackTrace = e.ElkStackTrace,
+            };
         }
         catch (Exception e)
         {
