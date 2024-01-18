@@ -25,6 +25,13 @@ var cliParser = new RuntimeCliParser("elk")
     })
     .AddFlag(new CliFlag
     {
+        Identifier = "command",
+        ShortName = "c",
+        Description = "A command to execute",
+        ValueKind = CliValueKind.Text
+    })
+    .AddFlag(new CliFlag
+    {
         Identifier = "highlight",
         LongName = "highlight",
         Description = "Print the file contents with semantic highlighting (ANSI escaped).",
@@ -32,6 +39,13 @@ var cliParser = new RuntimeCliParser("elk")
     })
     .SetAction(result =>
     {
+        if (result.Contains("command"))
+        {
+            new ShellSession().RunCommand(result.GetRequiredString("command"));
+
+            return;
+        }
+
         if (result.Contains("highlight"))
         {
             var highlightFile = result.GetRequiredString("highlight");
