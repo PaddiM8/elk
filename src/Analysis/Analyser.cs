@@ -84,7 +84,6 @@ class Analyser
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             TryExpr e => Visit(e),
-            ThrowExpr e => Visit(e),
             _ => throw new NotSupportedException(),
         };
 
@@ -852,9 +851,6 @@ class Analyser
             IsRoot = expr.IsRoot,
         };
     }
-
-    private ThrowExpr Visit(ThrowExpr expr)
-        => new(Next(expr.Value));
 
     private StdFunction? ResolveStdFunction(string name, IList<Token> modulePath)
     {

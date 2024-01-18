@@ -435,9 +435,6 @@ internal class Parser
             var op = Eat();
             _allowEndOfExpression = true;
             var right = ParseKeyword();
-            var elseBranch = AdvanceIf(TokenKind.Else)
-                ? ParseBlockOrSingle(StructureKind.Other)
-                : null;
 
             return new BinaryExpr(left, op.Kind, right);
         }
@@ -447,7 +444,7 @@ internal class Parser
 
     private Expr ParseKeyword()
     {
-        if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue))
+        if (Match(TokenKind.Return, TokenKind.Break, TokenKind.Continue, TokenKind.Throw))
         {
             var keyword = Eat();
             if (Current?.Kind == TokenKind.NewLine ||
@@ -814,11 +811,6 @@ internal class Parser
             return ParseTry();
         }
 
-        if (Match(TokenKind.Throw))
-        {
-            return ParseThrow();
-        }
-
         if (Match(TokenKind.OpenSquareBracket))
         {
             return ParseList();
@@ -1080,13 +1072,6 @@ internal class Parser
         var catchBody = ParseBlockOrSingle(StructureKind.Other, catchScope);
 
         return new TryExpr(body, catchBody, catchIdentifier);
-    }
-
-    private Expr ParseThrow()
-    {
-        EatExpected(TokenKind.Throw);
-
-        return new ThrowExpr(ParseExpr());
     }
 
     private List<Token> ParseIdentifierList()

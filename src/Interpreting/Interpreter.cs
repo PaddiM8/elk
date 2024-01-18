@@ -212,7 +212,6 @@ partial class Interpreter
             StringInterpolationExpr e => Visit(e),
             ClosureExpr e => Visit(e),
             TryExpr e => Visit(e),
-            ThrowExpr e => Visit(e),
             _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, null),
         };
     }
@@ -444,6 +443,15 @@ partial class Interpreter
 
     private RuntimeObject Visit(KeywordExpr expr)
     {
+        if (expr.Kind == TokenKind.Throw)
+        {
+            throw new RuntimeUserException(
+                expr.Value == null
+                    ? RuntimeNil.Value
+                    : Next(expr.Value)
+            );
+        }
+
         var returnKind = expr.Kind switch
         {
             TokenKind.Break => ReturnKind.BreakLoop,
@@ -745,7 +753,7 @@ partial class Interpreter
 
                 var matches = stringArgument.IsTextArgument
                     ? Globbing.Glob(ShellEnvironment.WorkingDirectory, stringArgument.Value).ToList()
-                    : new List<string>();
+                    : [];
                 if (matches.Any())
                 {
                     evaluatedArguments.AddRange(
@@ -845,7 +853,18 @@ partial class Interpreter
         var evaluatedWithPlurality = firstArguments.Select(x =>
         {
             evaluatedArguments[0] = x;
-            return Evaluate(evaluatedArguments);
+
+            try
+            {
+                return Evaluate(evaluatedArguments);
+            }
+            catch (RuntimeException ex)
+            {
+                if (_lastExpr != null)
+                    ex.ElkStackTrace.Add(new Trace(expr.Position, expr.EnclosingFunction));
+
+                throw;
+            }
         });
 
         return new RuntimeList(evaluatedWithPlurality);
@@ -1198,7 +1217,4 @@ partial class Interpreter
 
         return result;
     }
-
-    private RuntimeObject Visit(ThrowExpr expr)
-        => throw new RuntimeUserException(Next(expr));
 }

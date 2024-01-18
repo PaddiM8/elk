@@ -420,8 +420,3 @@ class TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
 
     public Token? CatchIdentifier { get; } = catchIdentifier;
 }
-
-class ThrowExpr(Expr value) : Expr(value.Position)
-{
-    public Expr Value { get; } = value;
-}
