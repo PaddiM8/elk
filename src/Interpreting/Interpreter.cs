@@ -719,7 +719,7 @@ partial class Interpreter
         catch (RuntimeException ex)
         {
             if (_lastExpr != null)
-                ex.ElkStackTrace.Add(new Trace(expr.Position, expr.Identifier));
+                ex.ElkStackTrace.Add(new Trace(expr.Position, expr.EnclosingFunction));
 
             throw;
         }

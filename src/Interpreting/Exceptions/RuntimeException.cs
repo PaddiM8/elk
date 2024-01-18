@@ -4,13 +4,30 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Elk.Lexing;
+using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
 
 #endregion
 
 namespace Elk.Interpreting.Exceptions;
 
-public record Trace(TextPos Position, Token? FunctionIdentifier);
+public record Trace(TextPos Position, Token? FunctionIdentifier = null)
+{
+    internal Trace(TextPos position, Expr? enclosingFunction)
+        : this(position, GetEnclosingFunctionName(enclosingFunction, position))
+    {
+    }
+
+    private static Token? GetEnclosingFunctionName(Expr? enclosingFunction, TextPos position)
+    {
+        if (enclosingFunction == null)
+            return null;
+
+        return enclosingFunction is FunctionExpr functionExpr
+            ? functionExpr.Identifier
+            : new Token(TokenKind.Identifier, "<closure>", position);
+    }
+}
 
 public class RuntimeException : Exception
 {
@@ -28,7 +45,7 @@ public class RuntimeException : Exception
     {
         Position = position;
         if (position != null)
-            ElkStackTrace.Add(new Trace(position, null));
+            ElkStackTrace.Add(new Trace(position));
     }
 
     public override string ToString()
