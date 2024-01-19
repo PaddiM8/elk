@@ -133,58 +133,7 @@ internal class Parser
         var importScope = ImportUserModule(relativePath, moduleName, pos);
         foreach (var symbolImportToken in symbolImportTokens)
         {
-            var importedFunction = importScope.FindFunction(symbolImportToken.Value, lookInImports: false);
-            if (importedFunction != null)
-            {
-                if (importedFunction.Expr.AccessLevel != AccessLevel.Public)
-                {
-                    throw new ParseException(
-                        pos,
-                        $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'"
-                    );
-                }
-
-                _scope.ModuleScope.ImportFunction(importedFunction);
-                continue;
-            }
-
-            var importedStruct = importScope.FindStruct(symbolImportToken.Value, lookInImports: false);
-            if (importedStruct != null)
-            {
-                if (importedStruct.Expr?.AccessLevel is not (AccessLevel.Public or null))
-                {
-                    throw new ParseException(
-                        pos,
-                        $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'"
-                    );
-                }
-
-                _scope.ModuleScope.ImportStruct(importedStruct);
-                continue;
-            }
-
-            var importedModule = importScope.FindModule([symbolImportToken], lookInImports: false);
-            if (importedModule != null)
-            {
-                if (importedModule.AccessLevel != AccessLevel.Public)
-                {
-                    throw new ParseException(
-                        pos,
-                        $"Cannot import private symbol '{importedModule.Name}'"
-                    );
-                }
-
-                _scope.ModuleScope.ImportModule(symbolImportToken.Value, importedModule);
-                continue;
-            }
-
-            if (importedModule == null)
-            {
-                throw new ParseException(
-                    symbolImportToken.Position,
-                    $"Module does not contain symbol '{symbolImportToken.Value}'"
-                );
-            }
+            _scope.ModuleScope.ImportUnknown(importScope, symbolImportToken);
         }
     }
 

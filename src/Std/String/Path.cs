@@ -65,4 +65,10 @@ public static class StringPath
         => entirePath.Value.StartsWith(basePath.Value)
             ? new(entirePath.Value[basePath.Value.Length..].TrimStart('/'))
             : entirePath;
+
+    /// <param name="path"></param>
+    /// <returns>The given file name without its extension.</returns>
+    [ElkFunction("withoutExtension")]
+    public static RuntimeString WithoutExtension(RuntimeString path)
+        => new(Path.GetFileNameWithoutExtension(path.Value));
 }

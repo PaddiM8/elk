@@ -12,8 +12,13 @@ namespace Elk.Interpreting.Scope;
 
 record Alias(string Name, IEnumerable<LiteralExpr> Arguments);
 
+record UnknownSymbol(ModuleScope Module, Token Token);
+
 class ModuleScope : Scope
 {
+    public IEnumerable<UnknownSymbol> ImportedUnknowns
+        => _importedUnknowns.Values;
+
     public IEnumerable<ModuleScope> Modules
         => _modules.Values;
 
@@ -44,6 +49,7 @@ class ModuleScope : Scope
 
     public RootModuleScope RootModule { get; }
 
+    private readonly Dictionary<string, UnknownSymbol> _importedUnknowns = new();
     private readonly Dictionary<string, ModuleScope> _modules = new();
     private readonly Dictionary<string, ModuleScope> _importedModules = new();
     private readonly Dictionary<string, StructSymbol> _structs = new();
@@ -214,6 +220,18 @@ class ModuleScope : Scope
         }
 
         return result ?? Parent?.ModuleScope.FindFunction(name, lookInImports);
+    }
+
+    public void ImportUnknown(ModuleScope importScope, Token token)
+    {
+        var symbol = new UnknownSymbol(importScope, token);
+        if (!_importedUnknowns.TryAdd(token.Value, symbol))
+            _importedUnknowns[token.Value] = symbol;
+    }
+
+    public void ClearUnknowns()
+    {
+        _importedUnknowns.Clear();
     }
 
     public void ImportModule(string name, ModuleScope module)

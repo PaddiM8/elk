@@ -32,6 +32,7 @@ class Analyser
         };
 
         module.AnalysisStatus = AnalysisStatus.Analysed;
+        ResolveImports(module);
 
         try
         {
@@ -49,6 +50,67 @@ class Analyser
             ex.Position = analyser._currentExpr?.Position;
             throw;
         }
+    }
+
+    private static void ResolveImports(ModuleScope module)
+    {
+        foreach (var (importScope, token) in module.ImportedUnknowns)
+        {
+            var importedFunction = importScope.FindFunction(token.Value, lookInImports: false);
+            if (importedFunction != null)
+            {
+                if (importedFunction.Expr.AccessLevel != AccessLevel.Public)
+                {
+                    throw new ParseException(
+                        token.Position,
+                        $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'"
+                    );
+                }
+
+                importScope.ImportFunction(importedFunction);
+                continue;
+            }
+
+            var importedStruct = importScope.FindStruct(token.Value, lookInImports: false);
+            if (importedStruct != null)
+            {
+                if (importedStruct.Expr?.AccessLevel is not (AccessLevel.Public or null))
+                {
+                    throw new ParseException(
+                        token.Position,
+                        $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'"
+                    );
+                }
+
+                importScope.ImportStruct(importedStruct);
+                continue;
+            }
+
+            var importedModule = importScope.FindModule([token], lookInImports: false);
+            if (importedModule != null)
+            {
+                if (importedModule.AccessLevel != AccessLevel.Public)
+                {
+                    throw new ParseException(
+                        token.Position,
+                        $"Cannot import private symbol '{importedModule.Name}'"
+                    );
+                }
+
+                importScope.ImportModule(token.Value, importedModule);
+                continue;
+            }
+
+            if (importedModule == null)
+            {
+                throw new ParseException(
+                    token.Position,
+                    $"Module does not contain symbol '{token.Value}'"
+                );
+            }
+        }
+
+        module.ClearUnknowns();
     }
 
     private Expr Next(Expr expr)
