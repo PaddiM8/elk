@@ -51,13 +51,16 @@ public class ReadLinePrompt
         }
     }
 
-    public string Read(string prompt = "", string @default = "")
+    public string Read(string? prompt = null, string? defaultInput = null)
     {
         if (Console.CursorLeft != 0)
             Console.WriteLine();
 
         var enterPressed = false;
-        var renderer = new Renderer(prompt);
+        var renderer = new Renderer(prompt)
+        {
+            Text = defaultInput ?? ""
+        };
         _keyHandler = new KeyHandler(renderer, _shortcuts)
         {
             HistoryHandler = HistoryHandler,
@@ -84,13 +87,7 @@ public class ReadLinePrompt
         lock (_rendererLock)
             _activeRenderer = null;
 
-        var text = _keyHandler.Text;
-        if (string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(@default))
-        {
-            text = @default;
-        }
-
-        return text;
+        return _keyHandler.Text;
     }
 
     public void RegisterShortcut(KeyPress keyPress, Action<KeyHandler> action)

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Elk.Interpreting;
+using Elk.ReadLine;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -128,6 +129,26 @@ static class IO
             Console.Write(prompt.Value);
 
         return new RuntimeString(Console.ReadLine() ?? "");
+    }
+
+    /// <summary>
+    /// Reads the next line from the standard input stream.
+    /// This is used to get input from the user in a terminal.
+    /// Handles some standard terminal shortcuts, like ctrl+w.
+    /// </summary>
+    /// <param name="prompt">Text that should be printed before the input prompt</param>
+    /// <param name="defaultInput"></param>
+    /// <returns>The value given by the user.</returns>
+    [ElkFunction("interactiveInput")]
+    public static RuntimeString InteractiveInput(RuntimeString? prompt = null, RuntimeString? defaultInput = null)
+    {
+        var readLine = new ReadLinePrompt();
+        readLine.RegisterShortcut(
+            new KeyPress(ConsoleModifiers.Control, ConsoleKey.D),
+            _ => System.Environment.Exit(0)
+        );
+
+        return new RuntimeString(readLine.Read(prompt?.Value, defaultInput?.Value));
     }
 
     /// <summary>
