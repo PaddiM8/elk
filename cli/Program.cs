@@ -65,7 +65,15 @@ var cliParser = new RuntimeCliParser("elk")
         var filePath = result.GetString("file_path");
         if (filePath == null)
         {
-            Repl.Run();
+            try
+            {
+                Repl.Run();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
             return;
         }
 
