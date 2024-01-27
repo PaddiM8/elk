@@ -61,13 +61,13 @@ class Analyser
             {
                 if (importedFunction.Expr.AccessLevel != AccessLevel.Public)
                 {
-                    throw new ParseException(
-                        token.Position,
-                        $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'"
+                    throw new RuntimeException(
+                        $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'",
+                        token.Position
                     );
                 }
 
-                importScope.ImportFunction(importedFunction);
+                module.ImportFunction(importedFunction);
                 continue;
             }
 
@@ -76,13 +76,13 @@ class Analyser
             {
                 if (importedStruct.Expr?.AccessLevel is not (AccessLevel.Public or null))
                 {
-                    throw new ParseException(
-                        token.Position,
-                        $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'"
+                    throw new RuntimeException(
+                        $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'",
+                        token.Position
                     );
                 }
 
-                importScope.ImportStruct(importedStruct);
+                module.ImportStruct(importedStruct);
                 continue;
             }
 
@@ -91,21 +91,21 @@ class Analyser
             {
                 if (importedModule.AccessLevel != AccessLevel.Public)
                 {
-                    throw new ParseException(
-                        token.Position,
-                        $"Cannot import private symbol '{importedModule.Name}'"
+                    throw new RuntimeException(
+                        $"Cannot import private symbol '{importedModule.Name}'",
+                        token.Position
                     );
                 }
 
-                importScope.ImportModule(token.Value, importedModule);
+                module.ImportModule(token.Value, importedModule);
                 continue;
             }
 
             if (importedModule == null)
             {
-                throw new ParseException(
-                    token.Position,
-                    $"Module does not contain symbol '{token.Value}'"
+                throw new RuntimeException(
+                    $"Module does not contain symbol '{token.Value}'",
+                    token.Position
                 );
             }
         }

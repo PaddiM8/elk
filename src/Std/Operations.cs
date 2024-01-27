@@ -12,6 +12,11 @@ public class Operations
     public static RuntimeObject Add(RuntimeObject x, RuntimeObject y)
         => x.Operation(OperationKind.Addition, y);
 
+    /// <returns>The result of x ?? y.</returns>
+    [ElkFunction("coalesce")]
+    public static RuntimeObject Coalesce(RuntimeObject x, RuntimeObject y)
+        => x is RuntimeNil ? y : x;
+
     /// <returns>The result of dividing the two given numbers.</returns>
     [ElkFunction("div")]
     public static RuntimeObject Div(RuntimeObject x, RuntimeObject y)

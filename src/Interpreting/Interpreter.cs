@@ -70,6 +70,9 @@ partial class Interpreter
         {
             e.Position = Position;
             _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
+            if (_lastExpr != null)
+                e.ElkStackTrace.Insert(0, new Trace(_lastExpr.Position, _lastExpr.EnclosingFunction));
+
             throw;
         }
         catch (InvalidOperationException e)

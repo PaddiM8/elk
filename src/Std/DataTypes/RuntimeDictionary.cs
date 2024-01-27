@@ -73,6 +73,10 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         {
             _ when toType == typeof(RuntimeDictionary)
                 => this,
+            _ when toType == typeof(RuntimeList)
+                => new RuntimeList(
+                    Entries.Values.Select(x => new RuntimeTuple([x.Item1, x.Item2]))
+                ),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Entries.Any()),
             _ when toType == typeof(RuntimeString)

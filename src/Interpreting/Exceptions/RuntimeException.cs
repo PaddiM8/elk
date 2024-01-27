@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Elk.Lexing;
 using Elk.Parsing;
@@ -69,6 +70,9 @@ public class RuntimeException : Exception
                 $"{position}{trace.FunctionIdentifier?.Value}".Trim()
             );
         }
+
+        if (!ElkStackTrace.Any() && Position != null)
+            builder.AppendLine(Position.ToString());
 
         return builder.ToString().Trim();
     }
