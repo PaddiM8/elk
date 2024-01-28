@@ -412,19 +412,32 @@ public class Lexer
                 value.Append(Eat());
                 value.Append(Eat());
                 var openBraces = 1;
-                var inString = false;
+                char? inStringSymbol = null;
 
                 // This is necessary to handle string literals inside interpolation environments
-                while (!ReachedEnd && (Current != '"' || openBraces > 0))
+                while (!ReachedEnd && openBraces > 0)
                 {
-                    if (Current == '"' && Previous != '\\')
-                        inString = !inString;
-                    if (!inString && Current == '{')
+                    var isClosingQuote =
+                        (inStringSymbol == '"' && Current == '"') ||
+                        (inStringSymbol == '\'' && Current == '\'');
+
+                    if (inStringSymbol == null && Current is '"' or '\'')
+                    {
+                        inStringSymbol = Current;
+                    }
+                    else if (isClosingQuote && Previous != '\\')
+                    {
+                        inStringSymbol = null;
+                    }
+
+                    if (!inStringSymbol.HasValue && Current == '{')
                         openBraces++;
-                    if (!inString && Current == '}')
+                    if (!inStringSymbol.HasValue && Current == '}')
                         openBraces--;
+
                     value.Append(Eat());
                 }
+
             }
             else
             {

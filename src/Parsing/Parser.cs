@@ -1110,10 +1110,10 @@ internal class Parser
                 return ContinueParseAsDictionary(expressions.First());
         }
 
+        _scope = _scope.Parent!;
+
         if (expressions.Count == 0 && couldBeDictionary)
             return new DictionaryExpr([], pos);
-
-        _scope = _scope.Parent!;
 
         return new BlockExpr(expressions, parentStructureKind, pos, blockScope);
     }

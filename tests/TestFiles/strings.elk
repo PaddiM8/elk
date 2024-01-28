@@ -1,5 +1,6 @@
 let x = 5
 assert("${x}" == "5")
+assert("a ${x} b \n c" == "a 5 b \n c")
 assert("a${x}b" == "a5b")
 assert('a${x}b' == "a\${x}b")
 assert("${"x"}" == "x")
