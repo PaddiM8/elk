@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,6 +10,17 @@ namespace Elk.Std;
 [ElkModule("re")]
 public class Regex
 {
+    /// <param name="pattern"></param>
+    /// <returns>A new Regex where dots match newlines.</returns>
+    [ElkFunction("dotAll")]
+    public static RuntimeRegex DotAll(RuntimeRegex pattern)
+        => new(
+            new System.Text.RegularExpressions.Regex(
+                pattern.Value.ToString(),
+                pattern.Value.Options | RegexOptions.Singleline
+            )
+        );
+
     /// <param name="pattern"></param>
     /// <param name="value"></param>
     /// <returns>The values of the groups of the first match.</returns>
@@ -60,4 +72,39 @@ public class Regex
     [ElkFunction("findAll")]
     public static RuntimeList FindAll(RuntimeString value, RuntimeRegex pattern)
         => new(pattern.Value.Matches(value.Value).Select(x => new RuntimeString(x.Value)));
+
+    /// <param name="value">The entire string</param>
+    /// <param name="replacement">The replacement</param>
+    /// <param name="pattern">The pattern to replace</param>
+    [ElkFunction("replace")]
+    public static RuntimeString Replace(RuntimeString value, RuntimeString replacement, RuntimeRegex pattern)
+        => new(pattern.Value.Replace(value.Value, replacement.Value));
+
+    /// <param name="value">The entire string</param>
+    /// <param name="pattern">The pattern to replace</param>
+    /// <param name="closure"></param>
+    [ElkFunction("replaceWithClosure")]
+    public static RuntimeString ReplaceWithClosure(
+        RuntimeString value,
+        RuntimeRegex pattern,
+        Func<RuntimeObject, RuntimeObject> closure)
+    {
+        var result = pattern.Value.Replace(
+            value.Value,
+            match =>
+            {
+                var runtimeMatch = new RuntimeDictionary
+                {
+                    ["value"] = new RuntimeString(match.Value),
+                    ["groups"] = new RuntimeList(
+                        match.Groups.Values
+                            .Select(x => new RuntimeString(x.Value))
+                    )
+                };
+
+                return closure.Invoke(runtimeMatch).As<RuntimeString>().Value;
+            });
+
+        return new RuntimeString(result);
+    }
 }
