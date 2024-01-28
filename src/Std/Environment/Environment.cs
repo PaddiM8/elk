@@ -26,7 +26,31 @@ static class Environment
 
         return new RuntimeList(env.Argv);
     }
-    
+
+    /// <summary>
+    /// Evaluates the given string as Elk code.
+    /// </summary>
+    /// <param name="input">The input string</param>
+    /// <param name="env">A dictionary with variables</param>
+    /// <returns>The resulting value.</returns>
+    [ElkFunction("eval", Reachability.Everywhere)]
+    public static RuntimeObject Eval(RuntimeString input, RuntimeDictionary? env = null)
+    {
+        var interpreter = new Interpreter(null);
+        if (env != null)
+        {
+            foreach (var (key, value) in env.Entries.Select(x => x.Value))
+            {
+                interpreter.CurrentModule.AddVariable(
+                    key.As<RuntimeString>().Value,
+                    value
+                );
+            }
+        }
+
+        return interpreter.Interpret(input.Value);
+    }
+
     /// <summary>
     /// Exits the program.
     /// </summary>
