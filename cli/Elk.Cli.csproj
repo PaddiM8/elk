@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\Elk.csproj" />
+    <ProjectReference Include="..\language-server\Elk.LanguageServer.csproj" />
   </ItemGroup>
 
 </Project>

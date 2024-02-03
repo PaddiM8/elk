@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Elk;
 using Elk.Cli;
+using Elk.LanguageServer;
 using Elk.Std.DataTypes.Serialization.CommandLine;
 
 #endregion
@@ -27,7 +28,7 @@ var cliParser = new RuntimeCliParser("elk")
     {
         Identifier = "command",
         ShortName = "c",
-        Description = "A command to execute",
+        Description = "A command to execute.",
         ValueKind = CliValueKind.Text
     })
     .AddFlag(new CliFlag
@@ -36,6 +37,12 @@ var cliParser = new RuntimeCliParser("elk")
         LongName = "highlight",
         Description = "Print the file contents with semantic highlighting (ANSI escaped).",
         ValueKind = CliValueKind.Path,
+    })
+    .AddFlag(new CliFlag
+    {
+        Identifier = "lsp",
+        LongName = "lsp",
+        Description = "Start the language server.",
     })
     .SetAction(result =>
     {
@@ -58,6 +65,15 @@ var cliParser = new RuntimeCliParser("elk")
             var content = File.ReadAllText(highlightFile);
             var highlighted = new HighlightHandler(new ShellSession()).Highlight(content, 0);
             Console.WriteLine(highlighted);
+
+            return;
+        }
+
+        if (result.Contains("lsp"))
+        {
+#pragma warning disable VSTHRD002
+            ElkLanguageServer.StartAsync().Wait();
+#pragma warning restore VSTHRD002
 
             return;
         }

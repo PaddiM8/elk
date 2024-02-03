@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OmniSharp.Extensions.LanguageProtocol" Version="0.19.9" />
+    <PackageReference Include="StreamJsonRpc" Version="2.17.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../src/Elk.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Generators", "generator
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.ReadLine", "readline\Elk.ReadLine.csproj", "{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.LanguageServer", "language-server\Elk.LanguageServer.csproj", "{4C4C9F51-14A9-42C9-B9AE-4ED560878179}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C4C9F51-14A9-42C9-B9AE-4ED560878179}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C4C9F51-14A9-42C9-B9AE-4ED560878179}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C4C9F51-14A9-42C9-B9AE-4ED560878179}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C4C9F51-14A9-42C9-B9AE-4ED560878179}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
