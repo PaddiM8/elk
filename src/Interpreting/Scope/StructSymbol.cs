@@ -3,7 +3,7 @@ using Elk.Std.Bindings;
 
 namespace Elk.Interpreting.Scope;
 
-class StructSymbol
+public class StructSymbol
 {
     public string Name
         => Expr?.Identifier.Value ?? StdStruct!.Name;

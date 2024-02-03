@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace Elk.Parsing;
 
-enum StructureKind
+public enum StructureKind
 {
     Other,
     Loop,
@@ -48,7 +48,7 @@ public enum OperationKind
     In,
 }
 
-abstract class Expr(TextPos pos)
+public abstract class Expr(TextPos pos)
 {
     [JsonIgnore]
     public TextPos Position { get; } = pos;
@@ -57,17 +57,17 @@ abstract class Expr(TextPos pos)
 
     public Expr? EnclosingFunction { get; set; }
 
-    public RuntimeClosureFunction? EnclosingClosureValue
+    internal RuntimeClosureFunction? EnclosingClosureValue
         => EnclosingFunction is ClosureExpr closureExpr
             ? closureExpr.RuntimeValue
             : null;
 }
 
-class EmptyExpr() : Expr(TextPos.Default);
+public class EmptyExpr() : Expr(TextPos.Default);
 
-record Parameter(Token Identifier, Expr? DefaultValue, bool IsVariadic);
+public record Parameter(Token Identifier, Expr? DefaultValue, bool IsVariadic);
 
-class ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body) : Expr(identifier.Position)
+public class ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body) : Expr(identifier.Position)
 {
     public AccessLevel AccessLevel { get; } = accessLevel;
 
@@ -76,7 +76,7 @@ class ModuleExpr(AccessLevel accessLevel, Token identifier, BlockExpr body) : Ex
     public BlockExpr Body { get; } = body;
 }
 
-class StructExpr(
+public class StructExpr(
     AccessLevel accessLevel,
     Token identifier,
     IList<Parameter> parameters,
@@ -92,7 +92,7 @@ class StructExpr(
     public ModuleScope Module { get; } = module;
 }
 
-enum AnalysisStatus
+internal enum AnalysisStatus
 {
     None,
     Failed,
@@ -100,13 +100,13 @@ enum AnalysisStatus
     Evaluated,
 }
 
-enum AccessLevel
+public enum AccessLevel
 {
     Private,
     Public,
 }
 
-class FunctionExpr(
+public class FunctionExpr(
     AccessLevel accessLevel,
     Token identifier,
     List<Parameter> parameters,
@@ -127,19 +127,19 @@ class FunctionExpr(
 
     public bool HasClosure { get; } = hasClosure;
 
-    public RuntimeClosureFunction? GivenClosure { get; set; }
+    internal RuntimeClosureFunction? GivenClosure { get; set; }
 
-    public AnalysisStatus AnalysisStatus { get; set; }
+    internal AnalysisStatus AnalysisStatus { get; set; }
 }
 
-class LetExpr(List<Token> identifierList, Expr value) : Expr(identifierList.First().Position)
+public class LetExpr(List<Token> identifierList, Expr value) : Expr(identifierList.First().Position)
 {
     public List<Token> IdentifierList { get; } = identifierList;
 
     public Expr Value { get; } = value;
 }
 
-class NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
+public class NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
     : Expr(identifier.Position)
 {
     public Token Identifier { get; } = identifier;
@@ -151,7 +151,7 @@ class NewExpr(Token identifier, IList<Token> modulePath, IList<Expr> arguments)
     public StructSymbol? StructSymbol { get; init; }
 }
 
-class IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch) : Expr(condition.Position)
+public class IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch) : Expr(condition.Position)
 {
     public Expr Condition { get; } = condition;
 
@@ -160,7 +160,7 @@ class IfExpr(Expr condition, Expr thenBranch, Expr? elseBranch) : Expr(condition
     public Expr? ElseBranch { get; } = elseBranch;
 }
 
-class ForExpr(List<Token> identifierList, Expr value, BlockExpr branch) : Expr(identifierList.First().Position)
+public class ForExpr(List<Token> identifierList, Expr value, BlockExpr branch) : Expr(identifierList.First().Position)
 {
     public List<Token> IdentifierList { get; } = identifierList;
 
@@ -169,34 +169,34 @@ class ForExpr(List<Token> identifierList, Expr value, BlockExpr branch) : Expr(i
     public BlockExpr Branch { get; } = branch;
 }
 
-class WhileExpr(Expr condition, BlockExpr branch) : Expr(condition.Position)
+public class WhileExpr(Expr condition, BlockExpr branch) : Expr(condition.Position)
 {
     public Expr Condition { get; } = condition;
 
     public BlockExpr Branch { get; } = branch;
 }
 
-class TupleExpr(List<Expr> values, TextPos position) : Expr(position)
+public class TupleExpr(List<Expr> values, TextPos position) : Expr(position)
 {
     public List<Expr> Values { get; } = values;
 }
 
-class ListExpr(IList<Expr> values, TextPos position) : Expr(position)
+public class ListExpr(IList<Expr> values, TextPos position) : Expr(position)
 {
     public IList<Expr> Values { get; } = values;
 }
 
-class SetExpr(List<Expr> entries, TextPos position) : Expr(position)
+public class SetExpr(List<Expr> entries, TextPos position) : Expr(position)
 {
     public List<Expr> Entries { get; } = entries;
 }
 
-class DictionaryExpr(List<(Expr, Expr)> entries, TextPos position) : Expr(position)
+public class DictionaryExpr(List<(Expr, Expr)> entries, TextPos position) : Expr(position)
 {
     public List<(Expr, Expr)> Entries { get; } = entries;
 }
 
-class BlockExpr(
+public class BlockExpr(
     List<Expr> expressions,
     StructureKind parentStructureKind,
     TextPos pos,
@@ -210,14 +210,14 @@ class BlockExpr(
     public Scope Scope { get; set;  } = scope;
 }
 
-class KeywordExpr(TokenKind kind, Expr? value, TextPos pos) : Expr(pos)
+public class KeywordExpr(TokenKind kind, Expr? value, TextPos pos) : Expr(pos)
 {
     public TokenKind Kind { get; } = kind;
 
     public Expr? Value { get; } = value;
 }
 
-class BinaryExpr : Expr
+public class BinaryExpr : Expr
 {
     public Expr Left { get; }
 
@@ -242,7 +242,7 @@ class BinaryExpr : Expr
     }
 }
 
-class UnaryExpr : Expr
+public class UnaryExpr : Expr
 {
     public OperationKind Operator { get; }
 
@@ -263,7 +263,7 @@ class UnaryExpr : Expr
     }
 }
 
-class FieldAccessExpr(Expr objectExpr, Token identifier) : Expr(identifier.Position)
+public class FieldAccessExpr(Expr objectExpr, Token identifier) : Expr(identifier.Position)
 {
     public Expr Object { get; } = objectExpr;
 
@@ -272,7 +272,7 @@ class FieldAccessExpr(Expr objectExpr, Token identifier) : Expr(identifier.Posit
     public RuntimeString? RuntimeIdentifier { get; set; }
 }
 
-class RangeExpr(Expr? from, Expr? to, bool inclusive) : Expr(from?.Position ?? to!.Position)
+public class RangeExpr(Expr? from, Expr? to, bool inclusive) : Expr(from?.Position ?? to!.Position)
 {
     public Expr? From { get; } = from;
 
@@ -281,26 +281,26 @@ class RangeExpr(Expr? from, Expr? to, bool inclusive) : Expr(from?.Position ?? t
     public bool Inclusive { get; } = inclusive;
 }
 
-class IndexerExpr(Expr value, Expr index) : Expr(index.Position)
+public class IndexerExpr(Expr value, Expr index) : Expr(index.Position)
 {
     public Expr Value { get; } = value;
 
     public Expr Index { get; } = index;
 }
 
-class TypeExpr(Token identifier) : Expr(identifier.Position)
+public class TypeExpr(Token identifier) : Expr(identifier.Position)
 {
     public Token Identifier { get; } = identifier;
 
     public RuntimeType? RuntimeValue { get; init; }
 }
 
-class VariableExpr(Token identifier) : Expr(identifier.Position)
+public class VariableExpr(Token identifier) : Expr(identifier.Position)
 {
     public Token Identifier { get; } = identifier;
 }
 
-enum CallStyle
+public enum CallStyle
 {
     Parenthesized,
     TextArguments,
@@ -312,7 +312,7 @@ public enum Plurality
     Plural,
 }
 
-enum CallType
+public enum CallType
 {
     Unknown,
     Program,
@@ -326,7 +326,7 @@ enum CallType
     BuiltInTime,
 }
 
-enum RedirectionKind
+public enum RedirectionKind
 {
     None,
     Output,
@@ -334,7 +334,7 @@ enum RedirectionKind
     All,
 }
 
-class CallExpr(
+public class CallExpr(
     Token identifier,
     IList<Token> modulePath,
     IList<Expr> arguments,
@@ -372,14 +372,14 @@ class CallExpr(
     public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();
 }
 
-class LiteralExpr(Token value) : Expr(value.Position)
+public class LiteralExpr(Token value) : Expr(value.Position)
 {
     public Token Value { get; } = value;
 
     public RuntimeObject? RuntimeValue { get; init; }
 }
 
-class StringInterpolationExpr : Expr
+public class StringInterpolationExpr : Expr
 {
     public List<Expr> Parts { get; }
 
@@ -398,7 +398,7 @@ class StringInterpolationExpr : Expr
     }
 }
 
-class ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body) : Expr(body.Position)
+public class ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body) : Expr(body.Position)
 {
     public CallExpr Function { get; } = function;
 
@@ -408,10 +408,10 @@ class ClosureExpr(CallExpr function, List<Token> parameters, BlockExpr body) : E
 
     public HashSet<string> CapturedVariables { get; init; } = [];
 
-    public RuntimeClosureFunction? RuntimeValue { get; set; }
+    internal RuntimeClosureFunction? RuntimeValue { get; set; }
 }
 
-class TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
+public class TryExpr(BlockExpr body, BlockExpr catchBody, Token? catchIdentifier)
     : Expr(body.Position)
 {
     public BlockExpr Body { get; } = body;

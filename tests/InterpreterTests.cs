@@ -1,6 +1,7 @@
 #region
 
 using System.Collections.Generic;
+using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -15,6 +16,18 @@ namespace Elk.Tests;
 
 internal class InterpreterTests
 {
+    private RuntimeObject Interpret(IList<Expr> ast, Scope? scope = null)
+    {
+        var interpreter = new Interpreter(null);
+
+        return ElkProgram.Evaluate(
+            ast,
+            scope ?? interpreter.CurrentModule,
+            AnalysisScope.OncePerModule,
+            interpreter
+        ) ?? RuntimeNil.Value;
+    }
+
     [TestCase(2, TokenKind.Plus, 3, 5)]
     [TestCase(2, TokenKind.Minus, 3, -1)]
     [TestCase(2, TokenKind.Star, 3, 6)]
@@ -37,7 +50,7 @@ internal class InterpreterTests
             op,
             Literal(right)
         );
-        var result = new Interpreter(null).Interpret(new List<Expr> { ast }, isEntireModule: true);
+        var result = Interpret([ast]);
         Assert.AreEqual(RuntimeValue(expectedResult).GetType(), result.GetType());
         Assert.True(SameResult(expectedResult, result));
     }
@@ -49,7 +62,7 @@ internal class InterpreterTests
             TokenKind.Minus,
             Literal(2)
         );
-        var result = new Interpreter(null).Interpret(new List<Expr> { ast }, isEntireModule: true);
+        var result = Interpret([ast]);
         Assert.True(SameResult(-2, result));
     }
 
@@ -64,7 +77,7 @@ internal class InterpreterTests
         var scope = new RootModuleScope(null, ast);
         scope.AddVariable("x", RuntimeNil.Value);
 
-        var result = new Interpreter(null).Interpret(ast, scope, isEntireModule: true);
+        var result = Interpret(ast, scope);
         Assert.True(SameResult(2, result));
     }
 

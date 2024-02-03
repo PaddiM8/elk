@@ -21,9 +21,9 @@ class Analyser
         _scope = rootModule;
     }
 
-    public static IList<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module, bool isEntireModule)
+    public static IList<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module, AnalysisScope analysisScope)
     {
-        if (isEntireModule && module.AnalysisStatus != AnalysisStatus.None)
+        if (analysisScope == AnalysisScope.OncePerModule && module.AnalysisStatus != AnalysisStatus.None)
             return module.Ast;
 
         var analyser = new Analyser(module.RootModule)
@@ -40,7 +40,7 @@ class Analyser
                 .Select(expr => analyser.Next(expr))
                 .ToList();
 
-            if (isEntireModule)
+            if (analysisScope == AnalysisScope.OncePerModule)
                 module.Ast = analysedAst;
 
             return analysedAst;

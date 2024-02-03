@@ -7,7 +7,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting.Scope;
 
-abstract class Scope
+public abstract class Scope
 {
     public ModuleScope ModuleScope { get; protected init; }
 

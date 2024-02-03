@@ -2,12 +2,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting.Scope;
 
-class VariableSymbol
+public class VariableSymbol(RuntimeObject value)
 {
-    public RuntimeObject Value { get; set; }
-
-    public VariableSymbol(RuntimeObject value)
-    {
-        Value = value;
-    }
+    public RuntimeObject Value { get; set; } = value;
 }

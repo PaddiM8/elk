@@ -43,27 +43,15 @@ partial class Interpreter
         _scope = _rootModule;
     }
 
-    public RuntimeObject Interpret(IList<Expr> ast, bool isEntireModule)
-        => Interpret(ast, null, isEntireModule);
-
-    public RuntimeObject Interpret(IList<Expr> ast, ModuleScope? scope, bool isEntireModule)
+    public RuntimeObject Interpret(IList<Expr> ast, Scope.Scope scope)
     {
-        if (scope != null)
-            _scope = scope;
+        var previousScope = _scope;
+        _scope = scope;
 
-        Debug.Assert(scope is not { Ast: null });
-
-        EvaluateModules(
-            _scope.ModuleScope.ImportedModules
-                .Where(x => x != _scope)
-                .Where(x => x.AnalysisStatus != AnalysisStatus.Failed && x.AnalysisStatus != AnalysisStatus.Evaluated)
-        );
-
-        var analysedAst = Analyser.Analyse(ast, _scope.ModuleScope, isEntireModule);
         RuntimeObject lastResult = RuntimeNil.Value;
         try
         {
-            foreach (var expr in analysedAst)
+            foreach (var expr in ast)
                 lastResult = Next(expr);
         }
         catch (RuntimeException e)
@@ -73,11 +61,16 @@ partial class Interpreter
             if (_lastExpr != null)
                 e.ElkStackTrace.Insert(0, new Trace(_lastExpr.Position, _lastExpr.EnclosingFunction));
 
+            _lastExpr = null;
+            _scope = _rootModule;
+
             throw;
         }
         catch (InvalidOperationException e)
         {
             _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
+            _lastExpr = null;
+            _scope = _rootModule;
 
             // Sort/Order methods (eg. in the standard library) throw an exception when
             // they fail to compare two items. This should simply be a runtime error,
@@ -87,98 +80,10 @@ partial class Interpreter
             throw new RuntimeException(e.Message, Position);
         }
 
-        EvaluateModules(_scope.ModuleScope.Modules);
+        _scope = previousScope;
 
         return lastResult;
     }
-    
-    private void EvaluateModules(IEnumerable<ModuleScope> modules)
-    {
-        var previousScope = _scope;
-        foreach (var module in modules)
-        {
-            _scope = module;
-            if (module.AnalysisStatus == AnalysisStatus.None)
-                Analyser.Analyse(module.Ast, module, isEntireModule: true);
-
-            module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Interpret(module.Ast, module, isEntireModule: true);
-        }
-
-        _scope = previousScope;
-    }
-
-    public RuntimeObject Interpret(string input, bool ownScope = false, string? filePath = null)
-    {
-        if (filePath != null)
-            filePath = Path.GetFullPath(filePath);
-
-        try
-        {
-            var ast = Parser.Parse(
-                Lexer.Lex(
-                    input,
-                    filePath ?? _rootModule.FilePath,
-                    out var lexError
-                ),
-                _scope
-            );
-            _rootModule.Ast = ast;
-
-            if (lexError != null)
-                throw new RuntimeException(lexError.Message, lexError.Position);
-
-            if (ownScope)
-            {
-                var block = new BlockExpr(
-                    ast,
-                    StructureKind.Other,
-                    ast.FirstOrDefault()?.Position ?? TextPos.Default,
-                    new LocalScope(_scope)
-                );
-                ast = [block];
-            }
-
-            return Interpret(ast, isEntireModule: false);
-        }
-        catch (RuntimeException e)
-        {
-            e.Position ??= Position;
-            _lastExpr = null;
-            _scope = _rootModule;
-
-            throw;
-        }
-        catch (ParseException e)
-        {
-            _lastExpr = null;
-            _scope = _rootModule;
-
-            throw new RuntimeException(e.Message, e.Position);
-        }
-    }
-
-    public bool ModuleExists(IEnumerable<string> modulePath)
-        => _scope.ModuleScope.FindModule(modulePath, true) != null;
-
-    public bool StructExists(string name)
-        => _scope.ModuleScope.FindStruct(name, true) != null;
-
-    public bool FunctionExists(string name, IEnumerable<string>? modulePath = null)
-    {
-        var module = modulePath == null
-            ? _scope.ModuleScope
-            : _scope.ModuleScope.FindModule(modulePath, true);
-
-        return module?.FindFunction(name, true)?.Expr.AnalysisStatus
-            is not (null or AnalysisStatus.Failed);
-    }
-
-    public bool VariableExists(string name)
-        => _scope.ModuleScope.FindVariable(name) != null;
-
-    public bool AliasExists(string name)
-        => _scope.ModuleScope.FindAlias(name) != null;
 
     private RuntimeObject Next(Expr expr)
     {

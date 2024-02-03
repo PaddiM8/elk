@@ -5,16 +5,17 @@ using System.IO;
 using System.Linq;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Std.Bindings;
 
 #endregion
 
 namespace Elk.Interpreting.Scope;
 
-record Alias(string Name, IEnumerable<LiteralExpr> Arguments);
+public record Alias(string Name, IEnumerable<LiteralExpr> Arguments);
 
-record UnknownSymbol(ModuleScope Module, Token Token);
+public record UnknownSymbol(ModuleScope Module, Token Token);
 
-class ModuleScope : Scope
+public class ModuleScope : Scope
 {
     public IEnumerable<UnknownSymbol> ImportedUnknowns
         => _importedUnknowns.Values;
@@ -45,7 +46,7 @@ class ModuleScope : Scope
 
     public IList<Expr> Ast { get; set; }
 
-    public AnalysisStatus AnalysisStatus { get; set; }
+    internal AnalysisStatus AnalysisStatus { get; set; }
 
     public RootModuleScope RootModule { get; }
 
@@ -221,6 +222,32 @@ class ModuleScope : Scope
 
         return result ?? Parent?.ModuleScope.FindFunction(name, lookInImports);
     }
+
+    public bool ModuleExists(IEnumerable<string> modulePath)
+        => FindModule(modulePath, true) != null || StdBindings.HasModule(modulePath);
+
+    public bool StructExists(string name)
+        => FindStruct(name, true) != null || StdBindings.HasRuntimeType(name);
+
+    public bool FunctionExists(string name, IEnumerable<string>? modulePath = null)
+    {
+        var module = modulePath == null
+            ? ModuleScope
+            : ModuleScope.FindModule(modulePath, true);
+        var isLocalFunction = module?.FindFunction(name, true)?.Expr.AnalysisStatus
+            is not (null or AnalysisStatus.Failed);
+
+        return isLocalFunction ||
+            StdBindings.HasFunction(name, modulePath) ||
+            FindImportedStdFunctionModule(name) != null;
+    }
+
+    public bool VariableExists(string name)
+        => ModuleScope.FindVariable(name) != null;
+
+    public bool AliasExists(string name)
+        => ModuleScope.FindAlias(name) != null;
+
 
     public void ImportUnknown(ModuleScope importScope, Token token)
     {

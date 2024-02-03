@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Bindings;
@@ -17,6 +19,9 @@ namespace Elk;
 
 public class ShellSession
 {
+    public ModuleScope CurrentModule
+        => _interpreter.CurrentModule;
+
     public string WorkingDirectory
         => ShellEnvironment.WorkingDirectory;
 
@@ -76,32 +81,8 @@ public class ShellSession
         );
     }
 
-    public bool ModuleExists(ICollection<string> modulePath)
-    {
-        return _interpreter.ModuleExists(modulePath) ||
-            StdBindings.HasModule(modulePath);
-    }
-
-    public bool StructExists(string name)
-        => _interpreter.StructExists(name) || StdBindings.HasRuntimeType(name);
-
-    public bool FunctionExists(string name, ICollection<string>? modulePath = null)
-    {
-        if (_interpreter.FunctionExists(name, modulePath))
-            return true;
-
-        return StdBindings.HasFunction(name, modulePath) ||
-            _interpreter.CurrentModule.FindImportedStdFunctionModule(name) != null;
-    }
-
-    public bool VariableExists(string name)
-        => _interpreter.VariableExists(name);
-
     public bool ProgramExists(string name)
         => FileUtils.ExecutableExists(name, WorkingDirectory);
-
-    public bool AliasExists(string name)
-        => _interpreter.AliasExists(name);
 
     public string GetPrompt()
     {
@@ -110,7 +91,7 @@ public class ShellSession
         // The 'elkPrompt' function should have been created
         // automatically. This is simply a fallback in case
         // something goes wrong.
-        if (!_interpreter.FunctionExists("elkPrompt"))
+        if (!_interpreter.CurrentModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
         var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
@@ -129,8 +110,15 @@ public class ShellSession
         string result;
         try
         {
-            var resultObject = _interpreter.Interpret(command, ownScope);
-            if (resultObject is RuntimeNil)
+            var resultObject = ElkProgram.Evaluate(
+                command,
+                ownScope
+                    ? new LocalScope(_interpreter.CurrentModule)
+                    : _interpreter.CurrentModule,
+                AnalysisScope.AppendToModule,
+                _interpreter
+            );
+            if (resultObject is RuntimeNil or null)
                 return;
 
             result = resultObject.ToString() ?? "";
@@ -204,12 +192,17 @@ public class ShellSession
         {
             void CallOnExit()
             {
-                if (interpreter.FunctionExists("__onExit"))
+                if (interpreter.CurrentModule.FunctionExists("__onExit"))
                     CallFunction(interpreter, "__onExit");
             }
 
             Console.CancelKeyPress += (_, _) => CallOnExit();
-            interpreter.Interpret(File.ReadAllText(filePath), ownScope: false, filePath);
+            ElkProgram.Evaluate(
+                File.ReadAllText(filePath),
+                new RootModuleScope(filePath, null),
+                AnalysisScope.OncePerModule,
+                interpreter
+            );
 
             CallOnExit();
         }
@@ -243,7 +236,12 @@ public class ShellSession
 
         try
         {
-            return interpreter.Interpret(new List<Expr> { call }, isEntireModule: false);
+            return ElkProgram.Evaluate(
+                new List<Expr> { call },
+                interpreter.CurrentModule,
+                AnalysisScope.AppendToModule,
+                interpreter
+            );
         }
         catch (RuntimeException e)
         {

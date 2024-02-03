@@ -4,17 +4,17 @@ using Elk.Parsing;
 
 namespace Elk.Interpreting.Scope;
 
-class RootModuleScope : ModuleScope
+public class RootModuleScope : ModuleScope
 {
     private readonly Dictionary<string, ModuleScope> _allModules = new();
 
-    public RootModuleScope(string? filePath, IList<Expr> ast)
+    public RootModuleScope(string? filePath, IList<Expr>? ast)
         : base(
             AccessLevel.Public,
             Path.GetFileNameWithoutExtension(filePath),
             null,
             filePath,
-            ast
+            ast ?? []
         )
     {
         if (FilePath != null)

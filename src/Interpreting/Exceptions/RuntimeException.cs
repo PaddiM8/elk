@@ -58,7 +58,7 @@ public class RuntimeException : Exception
             return "";
 
         var builder = new StringBuilder();
-        builder.Append(Ansi.Color("Error", AnsiForeground.Red) + ": ");
+        builder.Append(Ansi.Format("Error", AnsiForeground.Red) + ": ");
         builder.AppendLine(Message);
 
         foreach (var trace in ElkStackTrace)

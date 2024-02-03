@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using NUnit.Framework;
@@ -26,7 +27,12 @@ public class IntegrationTests
         {
             try
             {
-                interpreter.Interpret(File.ReadAllText(filePath));
+                ElkProgram.Evaluate(
+                    File.ReadAllText(filePath),
+                    interpreter.CurrentModule,
+                    AnalysisScope.OncePerModule,
+                    interpreter
+                );
             }
             catch (RuntimeException e)
             {
