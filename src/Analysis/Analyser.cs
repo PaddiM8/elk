@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Highlighting;
 using Elk.Std.Bindings;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -10,15 +11,23 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Analysis;
 
-class Analyser
+class Analyser(RootModuleScope rootModule)
 {
-    private Scope _scope;
+    private Scope _scope = rootModule;
     private Expr? _enclosingFunction;
     private Expr? _currentExpr;
+    private List<SemanticToken>? _semanticTokens;
 
-    private Analyser(RootModuleScope rootModule)
+    public static IList<SemanticToken> GetSemanticTokens(IEnumerable<Expr> ast, ModuleScope module)
     {
-        _scope = rootModule;
+        var analyser = new Analyser(module.RootModule)
+        {
+            _scope = module,
+            _semanticTokens = [],
+        };
+        analyser.Start(ast, module, AnalysisScope.OverwriteExistingModule);
+
+        return analyser._semanticTokens;
     }
 
     public static IList<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module, AnalysisScope analysisScope)
@@ -31,13 +40,18 @@ class Analyser
             _scope = module,
         };
 
+        return analyser.Start(ast, module, analysisScope);
+    }
+
+    private IList<Expr> Start(IEnumerable<Expr> ast, ModuleScope module, AnalysisScope analysisScope)
+    {
         module.AnalysisStatus = AnalysisStatus.Analysed;
         ResolveImports(module);
 
         try
         {
             var analysedAst = ast
-                .Select(expr => analyser.Next(expr))
+                .Select(expr => Next(expr))
                 .ToList();
 
             if (analysisScope == AnalysisScope.OncePerModule)
@@ -47,7 +61,7 @@ class Analyser
         }
         catch (RuntimeException ex)
         {
-            ex.Position = analyser._currentExpr?.Position;
+            ex.Position = _currentExpr?.Position;
             throw;
         }
     }
@@ -173,6 +187,8 @@ class Analyser
 
     private ModuleExpr Visit(ModuleExpr expr)
     {
+        AddSemanticToken(SemanticTokenKind.Module, expr.Identifier);
+
         var block = (BlockExpr)Next(expr.Body);
         block.IsRoot = true;
 
@@ -181,6 +197,8 @@ class Analyser
 
     private StructExpr Visit(StructExpr expr)
     {
+        AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
+
         var newStruct = new StructExpr(
             expr.AccessLevel,
             expr.Identifier,
@@ -201,6 +219,8 @@ class Analyser
     {
         if (expr.AnalysisStatus != AnalysisStatus.None)
             return expr;
+
+        AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
 
         expr.EnclosingFunction = expr;
         var parameters = AnalyseParameters(expr.Parameters);
@@ -252,6 +272,8 @@ class Analyser
         var newParameters = new List<Parameter>();
         foreach (var (parameter, i) in parameters.WithIndex())
         {
+            AddSemanticToken(SemanticTokenKind.Parameter, parameter.Identifier);
+
             if (parameter.DefaultValue == null)
             {
                 if (encounteredDefaultParameter)
@@ -281,11 +303,15 @@ class Analyser
 
     private LetExpr Visit(LetExpr expr)
     {
+        AddSemanticTokens(SemanticTokenKind.Variable, expr.IdentifierList);
+
         return new LetExpr(expr.IdentifierList, Next(expr.Value));
     }
 
     private NewExpr Visit(NewExpr expr)
     {
+        AddSemanticTokens(SemanticTokenKind.Module, expr.ModulePath);
+
         var module = _scope.ModuleScope.FindModule(expr.ModulePath, lookInImports: true);
         if (module == null)
         {
@@ -308,6 +334,8 @@ class Analyser
                 );
             }
 
+            AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
+
             return new NewExpr(
                 expr.Identifier,
                 expr.ModulePath,
@@ -325,6 +353,7 @@ class Analyser
         if (module != _scope.ModuleScope && symbol.Expr.AccessLevel != AccessLevel.Public)
             throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, expr.Identifier.Value);
 
+        AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
         ValidateArguments(
             expr.Arguments,
             symbol.Expr.Parameters,
@@ -362,6 +391,8 @@ class Analyser
 
     private ForExpr Visit(ForExpr expr)
     {
+        AddSemanticTokens(SemanticTokenKind.Variable, expr.IdentifierList);
+
         var forValue = Next(expr.Value);
         foreach (var identifier in expr.IdentifierList)
             expr.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
@@ -614,6 +645,8 @@ class Analyser
             closure.CapturedVariables.Add(expr.Identifier.Value);
         }
 
+        AddSemanticToken(SemanticTokenKind.Variable, expr.Identifier);
+
         return variableExpr;
     }
 
@@ -642,6 +675,9 @@ class Analyser
             );
         }
 
+        foreach (var moduleIdentifier in expr.ModulePath)
+            AddSemanticToken(SemanticTokenKind.Module, moduleIdentifier);
+
         var stdFunction = !builtIn.HasValue
             ? ResolveStdFunction(name, expr.ModulePath)
             : null;
@@ -659,6 +695,11 @@ class Analyser
                 _ => CallType.Function,
             },
         };
+
+        var semanticFeature = expr.CallStyle == CallStyle.TextArguments
+            ? SemanticFeature.TextArgumentCall
+            : SemanticFeature.None;
+        AddSemanticToken(SemanticTokenKind.Function, expr.Identifier, semanticFeature);
 
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         if (pipedValue != null && callType != CallType.Program)
@@ -782,6 +823,9 @@ class Analyser
 
     private LiteralExpr Visit(LiteralExpr expr)
     {
+        if (expr.Value.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.TextArgumentStringLiteral)
+            AddSemanticToken(SemanticTokenKind.String, expr.Value);
+
         RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
@@ -845,6 +889,8 @@ class Analyser
             CapturedVariables = expr.CapturedVariables,
         };
 
+        AddSemanticTokens(SemanticTokenKind.Parameter, expr.Parameters);
+
         var previousEnclosingFunction = _enclosingFunction;
         _enclosingFunction = closure;
         closure.Body = (BlockExpr)Next(expr.Body);
@@ -900,6 +946,9 @@ class Analyser
     private TryExpr Visit(TryExpr expr)
     {
         var tryBranch = (BlockExpr)Next(expr.Body);
+        if (expr.CatchIdentifier != null)
+            AddSemanticToken(SemanticTokenKind.Parameter, expr.CatchIdentifier);
+
         var catchBranch = (BlockExpr)Next(expr.CatchBody);
         tryBranch.IsRoot = expr.IsRoot;
         catchBranch.IsRoot = expr.IsRoot;
@@ -938,5 +987,19 @@ class Analyser
             throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, name);
 
         return symbol;
+    }
+
+    private void AddSemanticToken(SemanticTokenKind kind, Token token, SemanticFeature feature = SemanticFeature.None)
+    {
+        _semanticTokens?.Add(new SemanticToken(kind, token.Value, token.Position, feature));
+    }
+
+    private void AddSemanticTokens(SemanticTokenKind kind, IEnumerable<Token> tokens)
+    {
+        if (_semanticTokens == null)
+            return;
+
+        foreach (var token in tokens)
+            _semanticTokens.Add(new SemanticToken(kind, token.Value, token.Position));
     }
 }

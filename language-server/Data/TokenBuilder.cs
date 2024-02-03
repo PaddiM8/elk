@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using Elk.Highlighting;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -37,7 +36,7 @@ static class TokenBuilder
 
             // Delta start char
             data.Add(
-                previousLine.HasValue && line == previousLine.Value
+                line == previousLine
                     ? column - previousColumn!.Value
                     : column
             );

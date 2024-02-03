@@ -1,3 +1,4 @@
+using System;
 using Elk.Lexing;
 
 namespace Elk.Highlighting;
@@ -22,4 +23,16 @@ public enum SemanticTokenKind
     InterpolationOperator,
 }
 
-public record SemanticToken(SemanticTokenKind Kind, string Value, TextPos Position);
+[Flags]
+public enum SemanticFeature
+{
+    None,
+    TextArgumentCall,
+}
+
+public record SemanticToken(
+    SemanticTokenKind Kind,
+    string Value,
+    TextPos Position,
+    SemanticFeature Feature = SemanticFeature.None
+);

@@ -15,7 +15,7 @@ enum InterpolationPartKind
     Expression,
 }
 
-record InterpolationPart(string Value, InterpolationPartKind Kind);
+record InterpolationPart(string Value, InterpolationPartKind Kind, int Offset);
 
 class StringInterpolationParser
 {
@@ -23,6 +23,7 @@ class StringInterpolationParser
     {
         var literal = token.Value;
         var textString = new StringBuilder();
+        var nextPartStartPos = 0;
         for (var i = 0; i < literal.Length; i++)
         {
             // Parse escaped dollar signs literally
@@ -38,16 +39,22 @@ class StringInterpolationParser
 
             if (literal[i] == '$' && next == '{')
             {
+                var offset = i - 1;
                 i++;
                 if (textString.Length > 0)
                 {
-                    yield return new InterpolationPart(textString.ToString(), InterpolationPartKind.Text);
+                    yield return new InterpolationPart(
+                        textString.ToString(),
+                        InterpolationPartKind.Text,
+                        nextPartStartPos
+                    );
                     textString.Clear();
                 }
 
                 var expressionPart = NextExpressionPart(token, i + 1);
-                yield return new InterpolationPart(expressionPart, InterpolationPartKind.Expression);
+                yield return new InterpolationPart(expressionPart, InterpolationPartKind.Expression, offset);
                 i += expressionPart.Length + 1; // One additional for the closing brace
+                nextPartStartPos = i;
 
                 continue;
             }
@@ -56,7 +63,7 @@ class StringInterpolationParser
         }
 
         if (textString.Length > 0)
-            yield return new InterpolationPart(textString.ToString(), InterpolationPartKind.Text);
+            yield return new InterpolationPart(textString.ToString(), InterpolationPartKind.Text, nextPartStartPos);
     }
 
     private static string NextExpressionPart(Token token, int startIndex)

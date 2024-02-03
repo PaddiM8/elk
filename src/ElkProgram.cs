@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.Analysis;
+using Elk.Highlighting;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
@@ -11,17 +12,34 @@ using Elk.Std.DataTypes;
 
 namespace Elk;
 
+class EvaluationResult
+{
+    public RuntimeObject? Value { get; init; }
+
+    public IList<SemanticToken>? SemanticTokens { get; init; }
+}
+
 public static class ElkProgram
 {
-    public static RuntimeObject? Evaluate(
-        string input,
-        Scope scope,
-        AnalysisScope analysisScope)
+    public static IList<SemanticToken> GetSemanticInformation(string input, Scope scope)
     {
-        return Evaluate(input, scope, analysisScope, null);
+        try
+        {
+            return Evaluate(
+                input,
+                scope,
+                AnalysisScope.OverwriteExistingModule,
+                null
+            ).SemanticTokens!;
+        }
+        catch
+        {
+            // TODO: Return error messages
+            return new List<SemanticToken>();
+        }
     }
 
-    internal static RuntimeObject? Evaluate(
+    internal static EvaluationResult Evaluate(
         string input,
         Scope scope,
         AnalysisScope analysisScope,
@@ -40,12 +58,10 @@ public static class ElkProgram
         if (lexError != null)
             throw new RuntimeException(lexError.Message, lexError.Position);
 
-        return interpreter != null
-            ? Evaluate(ast, scope, analysisScope, interpreter)
-            : null;
+        return Evaluate(ast, scope, analysisScope, interpreter);
     }
 
-    internal static RuntimeObject? Evaluate(
+    internal static EvaluationResult Evaluate(
         IList<Expr> ast,
         Scope scope,
         AnalysisScope analysisScope,
@@ -60,11 +76,22 @@ public static class ElkProgram
             interpreter
         );
 
+        if (interpreter == null)
+        {
+            return new EvaluationResult
+            {
+                SemanticTokens = Analyser.GetSemanticTokens(ast, scope.ModuleScope),
+            };
+        }
+
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = interpreter?.Interpret(analysedAst, scope);
+        var result = new Interpreter(scope.ModuleScope.FilePath).Interpret(analysedAst, scope);
         EvaluateModules(scope.ModuleScope.Modules, interpreter);
 
-        return result;
+        return new EvaluationResult
+        {
+            Value = result,
+        };
     }
 
     private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter? interpreter)

@@ -54,7 +54,7 @@ static class Environment
             interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
             interpreter
-        ) ?? RuntimeNil.Value;
+        ).Value ?? RuntimeNil.Value;
     }
 
     /// <summary>

@@ -876,7 +876,12 @@ internal class Parser
         var column = stringLiteral.Position.Column;
         foreach (var part in parts)
         {
-            var textPos = stringLiteral.Position with { Column = column, FilePath = _scope.ModuleScope.FilePath };
+            var textPos = stringLiteral.Position with
+            {
+                Column = column + part.Offset,
+                FilePath = _scope.ModuleScope.FilePath
+            };
+
             if (part.Kind == InterpolationPartKind.Text)
             {
                 var token = new Token(
@@ -1286,12 +1291,12 @@ internal class Parser
         if (!MatchInclWhiteSpace(TokenKind.WhiteSpace))
             return [];
 
-        var pos = Current?.Position ?? TextPos.Default;
         var textArguments = new List<Expr>();
         var interpolationParts = new List<Expr>();
         var currentText = new StringBuilder();
         AdvanceIf(TokenKind.WhiteSpace);
         AdvanceIf(TokenKind.Backslash);
+        var pos = Current?.Position ?? TextPos.Default;
 
         while (!ReachedTextEnd())
         {
@@ -1312,6 +1317,7 @@ internal class Parser
 
                 textArguments.Add(new StringInterpolationExpr(interpolationParts, pos));
                 interpolationParts = [];
+                pos = Current?.Position ?? TextPos.Default;
                 continue;
             }
 

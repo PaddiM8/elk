@@ -25,7 +25,7 @@ internal class InterpreterTests
             scope ?? interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
             interpreter
-        ) ?? RuntimeNil.Value;
+        ).Value ?? RuntimeNil.Value;
     }
 
     [TestCase(2, TokenKind.Plus, 3, 5)]

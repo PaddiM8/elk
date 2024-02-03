@@ -24,7 +24,10 @@
         "grammars": [{
             "language": "elk",
             "scopeName": "source.elk",
-            "path": "./syntaxes/elk.tmLanguage.json"
+            "path": "./syntaxes/elk.tmLanguage.json",
+            "embeddedLanguages": {
+                "meta.embedded.line.elk": "elk"
+            }
         }],
         "configuration": {
             "type": "object",

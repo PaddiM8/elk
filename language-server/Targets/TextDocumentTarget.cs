@@ -2,7 +2,6 @@ using Elk.LanguageServer.Data;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using StreamJsonRpc;
-using Elk.Services;
 
 namespace Elk.LanguageServer.Targets;
 
@@ -46,9 +45,8 @@ class TextDocumentTarget
     {
         var parameters = token.ToObject<SemanticTokensParams>()!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
-        var highlighter = new Highlighter(document.Module, null);
-        var tokens = highlighter.Highlight(document.Text, 0);
+        var semanticTokens = ElkProgram.GetSemanticInformation(document.Text, document.Module);
 
-        return TokenBuilder.BuildSemanticTokens(tokens);
+        return TokenBuilder.BuildSemanticTokens(semanticTokens);
     }
 }

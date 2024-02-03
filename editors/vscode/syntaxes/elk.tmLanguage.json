@@ -15,9 +15,6 @@
 			"include": "#types"
 		},
 		{
-			"include": "#entity"
-		},
-		{
 			"include": "#comment"
 		},
 		{
@@ -49,25 +46,6 @@
 				}
 			]
 		},
-		"entity": {
-			"patterns": [
-				{
-					"captures": {
-						"1": {
-							"name": "support.function"
-						},
-						"2": {
-							"name": "support.function"
-						},
-						"3": {
-							"name": "string.quoted.double.elk"
-						}
-					},
-					"name": "meta.function.elk",
-					"match": "(\\w+)(?=\\()|(?<!\\w\\s)\\b(\\w+)(?=(\\s(?!in\\b|from\\b)[\\w\"]((?!=>)(\\$\\{[^}]*\\}|[^\n{})|]))*))"
-				}
-			]
-		},
 		"comment": {
 			"patterns": [
 				{
@@ -81,8 +59,11 @@
 				{
 					"name": "string.quoted.double.elk",
 					"begin": "\"",
-					"end": "\"",
+					"end": "(?<!\\\\)\"",
 					"patterns": [
+						{
+							"include": "#interpolation"
+						},
 						{
 							"name": "constant.character.escape.elk",
 							"match": "\\\\."
@@ -93,6 +74,31 @@
 					"name": "string.quoted.single.elk",
 					"begin": "'",
 					"end": "'"
+				}
+			]
+		},
+		"interpolation": {
+			"patterns": [
+				{
+					"name": "meta.template.expression.elk",
+					"begin": "\\$\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.template-expression.begin.elk"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.template-expression.end.elk"
+						}
+					},
+					"contentName": "meta.embedded.line.elk",
+					"patterns": [
+						{
+							"include": "#constant"
+						}
+					]
 				}
 			]
 		}

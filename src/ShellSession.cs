@@ -10,7 +10,6 @@ using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
-using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 #endregion
@@ -117,7 +116,7 @@ public class ShellSession
                     : _interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
                 _interpreter
-            );
+            ).Value;
             if (resultObject is RuntimeNil or null)
                 return;
 
@@ -241,7 +240,7 @@ public class ShellSession
                 interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
                 interpreter
-            );
+            ).Value;
         }
         catch (RuntimeException e)
         {
