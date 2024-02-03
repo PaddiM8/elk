@@ -878,7 +878,7 @@ internal class Parser
         {
             var textPos = stringLiteral.Position with
             {
-                Column = column + part.Offset,
+                Column = stringLiteral.Position.Column + part.Offset,
                 FilePath = _scope.ModuleScope.FilePath
             };
 
@@ -893,7 +893,11 @@ internal class Parser
             }
             else
             {
-                var tokens = Lexer.Lex(part.Value, textPos, out var lexError);
+                var startPos = textPos with
+                {
+                    Column = textPos.Column + 3, // Start after: "${
+                };
+                var tokens = Lexer.Lex(part.Value, startPos, out var lexError);
                 if (lexError != null)
                     throw new RuntimeException(lexError.Message, lexError.Position);
 

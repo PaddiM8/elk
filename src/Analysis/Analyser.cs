@@ -696,10 +696,28 @@ class Analyser(RootModuleScope rootModule)
             },
         };
 
-        var semanticFeature = expr.CallStyle == CallStyle.TextArguments
-            ? SemanticFeature.TextArgumentCall
-            : SemanticFeature.None;
-        AddSemanticToken(SemanticTokenKind.Function, expr.Identifier, semanticFeature);
+        if (_semanticTokens != null && expr.CallStyle == CallStyle.TextArguments)
+        {
+            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier, SemanticFeature.TextArgumentCall);
+            foreach (var argument in expr.Arguments)
+            {
+                if (argument is LiteralExpr literalExpr)
+                    AddSemanticToken(SemanticTokenKind.String, literalExpr.Value);
+
+                if (argument is not StringInterpolationExpr interpolationExpr)
+                    continue;
+
+                foreach (var part in interpolationExpr.Parts)
+                {
+                    if (part is LiteralExpr literalPart)
+                        AddSemanticToken(SemanticTokenKind.String, literalPart.Value);
+                }
+            }
+        }
+        else
+        {
+            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
+        }
 
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         if (pipedValue != null && callType != CallType.Program)
@@ -823,9 +841,6 @@ class Analyser(RootModuleScope rootModule)
 
     private LiteralExpr Visit(LiteralExpr expr)
     {
-        if (expr.Value.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.TextArgumentStringLiteral)
-            AddSemanticToken(SemanticTokenKind.String, expr.Value);
-
         RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),

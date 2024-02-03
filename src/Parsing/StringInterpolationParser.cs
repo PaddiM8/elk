@@ -39,7 +39,7 @@ class StringInterpolationParser
 
             if (literal[i] == '$' && next == '{')
             {
-                var offset = i - 1;
+                var offset = i;
                 i++;
                 if (textString.Length > 0)
                 {
