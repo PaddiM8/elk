@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.Text;
+using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 
 #endregion
@@ -40,12 +41,12 @@ class StringInterpolationParser
                 i++;
                 if (textString.Length > 0)
                 {
-                    yield return new(textString.ToString(), InterpolationPartKind.Text);
+                    yield return new InterpolationPart(textString.ToString(), InterpolationPartKind.Text);
                     textString.Clear();
                 }
 
                 var expressionPart = NextExpressionPart(token, i + 1);
-                yield return new(expressionPart, InterpolationPartKind.Expression);
+                yield return new InterpolationPart(expressionPart, InterpolationPartKind.Expression);
                 i += expressionPart.Length + 1; // One additional for the closing brace
 
                 continue;
@@ -55,7 +56,7 @@ class StringInterpolationParser
         }
 
         if (textString.Length > 0)
-            yield return new(textString.ToString(), InterpolationPartKind.Text);
+            yield return new InterpolationPart(textString.ToString(), InterpolationPartKind.Text);
     }
 
     private static string NextExpressionPart(Token token, int startIndex)
@@ -68,7 +69,7 @@ class StringInterpolationParser
         while (i < literal.Length && (openBraceCount > 0 || literal[i] != '}'))
         {
             if (i >= literal.Length)
-                throw new ParseException(textPos, "Expected '}' inside string literal");
+                throw new RuntimeException("Expected '}' inside string literal", textPos);
 
             if (literal[i] == '"')
                 inString = !inString;

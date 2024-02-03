@@ -24,7 +24,7 @@ public record TextPos(int Line, int Column, int Index, string? FilePath)
         }
 
         builder.Append('(');
-        builder.Append(Ansi.Color($"{Line}:{Column}", AnsiForeground.DarkYellow));
+        builder.Append(Ansi.Format($"{Line}:{Column}", AnsiForeground.DarkYellow));
         builder.Append(')');
 
         return builder.ToString();
@@ -36,7 +36,7 @@ public record TextPos(int Line, int Column, int Index, string? FilePath)
         if (path.StartsWith(homePath))
             path = "~" + path[homePath.Length..];
 
-        return Ansi.Color(path, AnsiForeground.DarkGray);
+        return Ansi.Format(path, AnsiForeground.DarkGray);
     }
 }
 

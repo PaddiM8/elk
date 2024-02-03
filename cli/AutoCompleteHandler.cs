@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.ReadLine;
+using Elk.Services;
 using Elk.Std.Bindings;
 
 #endregion
@@ -30,7 +31,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
 
     public int GetCompletionStart(string text, int cursorPos)
     {
-        _currentInvocationInfo = _highlightHandler.LastShellStyleInvocations
+        _currentInvocationInfo = _highlightHandler.Highlighter.LastShellStyleInvocations
             .FirstOrDefault(x => x.StartIndex <= cursorPos && x.EndIndex >= cursorPos);
 
         if (_currentInvocationInfo == null)

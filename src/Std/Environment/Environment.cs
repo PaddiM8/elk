@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
@@ -48,7 +49,12 @@ static class Environment
             }
         }
 
-        return interpreter.Interpret(input.Value);
+        return ElkProgram.Evaluate(
+            input.Value,
+            interpreter.CurrentModule,
+            AnalysisScope.OncePerModule,
+            interpreter
+        ) ?? RuntimeNil.Value;
     }
 
     /// <summary>

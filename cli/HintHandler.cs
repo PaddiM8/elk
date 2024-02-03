@@ -1,9 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
+using Elk.Services;
 using Elk.Std.DataTypes.Serialization.CommandLine;
 
 namespace Elk.Cli;
@@ -38,7 +38,7 @@ class HintHandler(
 
     private string GetFileHint()
     {
-        var invocationInfo = highlightHandler.LastShellStyleInvocations.LastOrDefault();
+        var invocationInfo = highlightHandler.Highlighter.LastShellStyleInvocations.LastOrDefault();
         if (invocationInfo == null)
             return "";
 

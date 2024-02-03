@@ -44,7 +44,7 @@ class SearchListing(IRenderer renderer, IHighlightHandler? highlightHandler)
             const string prefix = "❯ ";
             var truncated = escaped.WcTruncate(renderer.WindowWidth - prefix.Length);
             var highlighted = x.index == _selectedIndex
-                ? Ansi.Color(prefix + truncated, AnsiForeground.Black, AnsiBackground.White)
+                ? Ansi.Format(prefix + truncated, AnsiForeground.Black, AnsiBackground.White)
                 : prefix + (highlightHandler?.Highlight(truncated, renderer.Caret) ?? truncated);
 
             return highlighted + Ansi.ClearToEndOfLine();

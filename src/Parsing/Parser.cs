@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Std.Bindings;
@@ -108,7 +109,7 @@ internal class Parser
             while (AdvanceIf(TokenKind.Comma));
 
             if (!MatchIdentifier("from"))
-                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'from'");
+                throw new RuntimeException("Expected 'from'", Current?.Position ?? TextPos.Default);
 
             Eat();
         }
@@ -122,7 +123,7 @@ internal class Parser
             foreach (var symbolImportToken in symbolImportTokens)
             {
                 if (StdBindings.HasFunction(symbolImportToken.Value, moduleName))
-                    throw new ParseException(pos, $"Module does not contain function '{symbolImportToken.Value}'");
+                    throw new RuntimeException($"Module does not contain function '{symbolImportToken.Value}'", pos);
 
                 _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
             }
@@ -180,7 +181,7 @@ internal class Parser
         var absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
 
         if (!File.Exists(absolutePath))
-            throw new ParseException(pos, $"Cannot find file '{absolutePath}'");
+            throw new RuntimeException($"Cannot find file '{absolutePath}'", pos);
 
         var importScope = _scope.ModuleScope.RootModule.FindRegisteredModule(absolutePath);
         if (importScope == null)
@@ -199,7 +200,7 @@ internal class Parser
                 importScope
             );
             if (lexError != null)
-                throw new ParseException(lexError.Position, lexError.Message);
+                throw new RuntimeException(lexError.Message, lexError.Position);
         }
 
         _scope.ModuleScope.ImportModule(moduleName, importScope);
@@ -223,9 +224,9 @@ internal class Parser
                 TokenKind.Module => ParseModule(AccessLevel.Public),
                 TokenKind.Struct => ParseStruct(AccessLevel.Public),
                 TokenKind.Fn => ParseFn(AccessLevel.Public),
-                _ => throw new ParseException(
-                    Current!.Position,
-                    "Expected declaration after 'pub'"
+                _ => throw new RuntimeException(
+                    "Expected declaration after 'pub'",
+                    Current!.Position
                 ),
             };
         }
@@ -297,7 +298,7 @@ internal class Parser
             }
             else
             {
-                throw new ParseException(Current?.Position ?? TextPos.Default, "Expected 'closure'");
+                throw new RuntimeException("Expected 'closure'", Current?.Position ?? TextPos.Default);
             }
         }
 
@@ -792,8 +793,9 @@ internal class Parser
         EatExpected(TokenKind.EqualsGreater);
         if (function is not CallExpr left)
         {
-            throw new ParseException(
-                Current?.Position ?? TextPos.Default, "Expected function call or reference to the left of closure"
+            throw new RuntimeException(
+                "Expected function call or reference to the left of closure",
+                Current?.Position ?? TextPos.Default
             );
         }
 
@@ -802,9 +804,9 @@ internal class Parser
             var call = ParseIdentifier();
             if (call is not CallExpr { IsReference: true } functionReference)
             {
-                throw new ParseException(
-                    Current?.Position ?? TextPos.Default,
-                    "Expected function or function reference to the right of closure."
+                throw new RuntimeException(
+                    "Expected function or function reference to the right of closure.",
+                    Current?.Position ?? TextPos.Default
                 );
             }
 
@@ -888,12 +890,13 @@ internal class Parser
             {
                 var tokens = Lexer.Lex(part.Value, textPos, out var lexError);
                 if (lexError != null)
-                    throw new ParseException(lexError.Position, lexError.Message);
+                    throw new RuntimeException(lexError.Message, lexError.Position);
 
                 var ast = Parse(tokens, _scope);
                 if (ast.Count != 1)
-                    throw new ParseException(
-                        textPos, "Expected exactly one expression in the string interpolation block"
+                    throw new RuntimeException(
+                        "Expected exactly one expression in the string interpolation block",
+                        textPos
                     );
 
                 foreach (var expr in ast)
@@ -1514,10 +1517,10 @@ internal class Parser
     private bool MatchInclWhiteSpace(params TokenKind[] kinds)
         => Current != null && kinds.Contains(Current.Kind);
 
-    private ParseException Error(string message)
+    private RuntimeException Error(string message)
         => Current == null && _index > 0
-            ? new(_tokens[_index - 1].Position, message)
-            : new(Current?.Position ?? TextPos.Default, message);
+            ? new RuntimeException(message, _tokens[_index - 1].Position)
+            : new RuntimeException(message, Current?.Position ?? TextPos.Default);
 
     private void SkipWhiteSpace()
     {

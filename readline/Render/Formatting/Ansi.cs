@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace Elk.ReadLine.Render.Formatting;
 
@@ -9,20 +10,39 @@ public static class Ansi
             ? ""
             : $"\x1b[1m{text}\x1b[0m";
 
-    public static string Color(string text, AnsiForeground foreground)
-        => text.Length == 0
-            ? ""
-            : $"\x1b[{(int)foreground}m{text}\x1b[0m";
+    public static string Format(string text, AnsiForeground foreground)
+        => Format(text, (int)foreground);
 
-    public static string Color(string text, AnsiBackground background)
-        => text.Length == 0
-            ? ""
-            : $"\x1b[{(int)background}m{text}\x1b[0m";
+    public static string Format(string text, AnsiBackground background)
+        => Format(text, (int)background);
 
-    public static string Color(string text, AnsiForeground foreground, AnsiBackground background)
-        => text.Length == 0
+    public static string Format(string text, AnsiModifier modifier)
+        => Format(text, (int)modifier);
+
+    public static string Format(string text, AnsiForeground foreground, AnsiBackground background)
+        => Format(text, (int)foreground, (int)background);
+
+    public static string Format(string text, AnsiForeground foreground, AnsiModifier modifier)
+        => Format(text, (int)foreground, (int)modifier);
+
+    public static string Format(string text, AnsiBackground background, AnsiModifier modifier)
+        => Format(text, (int)background, (int)modifier);
+
+    public static string Format(
+        string text,
+        AnsiForeground foreground,
+        AnsiBackground background,
+        AnsiModifier modifier)
+        => Format(text, (int)foreground, (int)background, (int)modifier);
+
+    private static string Format(string text, params int[] formats)
+    {
+        var formatString = string.Join("", formats.Select(x => $"\x1b[{x}m"));
+
+        return text.Length == 0
             ? ""
-            : $"\x1b[{(int)foreground}m\x1b[{(int)background}m{text}\x1b[0m";
+            : $"{formatString}{text}\x1b[0m";
+    }
 
     public static string Left(int n)
         => n < 1 ? "" : $"\x1b[{n}D";

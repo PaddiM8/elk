@@ -252,6 +252,7 @@ public class Lexer
 
     private Token NextComment()
     {
+        var startLine = _pos.line;
         var startIndex = _index;
         var startColumn = _pos.column;
         var value = new StringBuilder();
@@ -261,16 +262,16 @@ public class Lexer
         return Build(
             TokenKind.Comment,
             value.ToString(),
-            new(_pos.line, startColumn, startIndex, _filePath)
+            new(startLine, startColumn, startIndex, _filePath)
         );
     }
 
     private Token NextIdentifier()
     {
-        var value = new StringBuilder();
-        value.Append(Eat());
         var startIndex = _index;
         var startColumn = _pos.column;
+        var value = new StringBuilder();
+        value.Append(Eat());
 
         // Question marks are generally not allowed in identifiers,
         // but we still need to allow '$?', since that's used for
@@ -352,11 +353,11 @@ public class Lexer
 
     private Token NextString()
     {
-        Eat(); // Initial quote
-
         var startIndex = _index;
         var startColumn = _pos.column;
         var value = new StringBuilder();
+        Eat(); // Initial quote
+
         if (_mode == LexerMode.Preserve)
             value.Append('"');
 
@@ -465,11 +466,11 @@ public class Lexer
 
     private Token NextSingleQuoteString()
     {
-        Eat(); // Quote
         var startIndex = _index;
         var startColumn = _pos.column;
-
         var value = new StringBuilder();
+        Eat(); // Quote
+
         if (_mode == LexerMode.Preserve)
             value.Append('\'');
 
@@ -562,7 +563,7 @@ public class Lexer
         if (toReturn == '\n')
         {
             _pos.line++;
-            _pos.column = 0;
+            _pos.column = 1;
         }
         else
         {

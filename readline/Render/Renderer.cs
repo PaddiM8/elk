@@ -96,7 +96,7 @@ internal class Renderer : IRenderer
         _prompt = prompt ?? "";
 
         #if DEBUG
-        _prompt = Ansi.Color("\u25cf ", AnsiForeground.Red) + _prompt;
+        _prompt = Ansi.Format("\u25cf ", AnsiForeground.Red) + _prompt;
         #endif
 
         RenderPrompt();
@@ -358,7 +358,7 @@ internal class Renderer : IRenderer
                 hintHeight--;
 
             hintMovement = Ansi.Up(hintHeight) + Ansi.MoveToColumn(left + 1);
-            formattedHint = Indent(Ansi.Color(truncatedHint, AnsiForeground.Gray));
+            formattedHint = Indent(Ansi.Format(truncatedHint, AnsiForeground.Gray));
         }
 
         // Write

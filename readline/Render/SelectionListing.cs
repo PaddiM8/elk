@@ -137,7 +137,7 @@ class SelectionListing(IRenderer renderer)
         if (truncatedDescription != null)
         {
             content += DescriptionMargin;
-            formattedDescription = Ansi.Color(truncatedDescription, AnsiForeground.Gray);
+            formattedDescription = Ansi.Format(truncatedDescription, AnsiForeground.Gray);
         }
 
         // Padding
@@ -149,9 +149,9 @@ class SelectionListing(IRenderer renderer)
         // Selection colors
         if (index == SelectedIndex)
         {
-            content = Ansi.Color(content, AnsiForeground.Black, AnsiBackground.White);
+            content = Ansi.Format(content, AnsiForeground.Black, AnsiBackground.White);
             if (truncatedDescription != null)
-                formattedDescription = Ansi.Color(truncatedDescription, AnsiForeground.Black, AnsiBackground.White);
+                formattedDescription = Ansi.Format(truncatedDescription, AnsiForeground.Black, AnsiBackground.White);
         }
 
         return margin + content + formattedDescription + padding + Ansi.ClearToEndOfLine();
