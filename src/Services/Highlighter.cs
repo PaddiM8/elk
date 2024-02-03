@@ -133,11 +133,20 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
 
         if (keyword.Kind == TokenKind.Fn)
         {
+            var reachedFirstIdentifier = false;
             while (!ReachedEnd && Current?.Kind is not TokenKind.OpenBrace and not TokenKind.Colon)
             {
                 var token = Eat()!;
                 if (token.Kind == TokenKind.Identifier)
                 {
+                    if (!reachedFirstIdentifier)
+                    {
+                        reachedFirstIdentifier = true;
+                        Push(SemanticTokenKind.Function, token);
+
+                        continue;
+                    }
+
                     _unevaluatedVariables.Add(token.Value);
                     Push(SemanticTokenKind.Parameter, token);
                 }

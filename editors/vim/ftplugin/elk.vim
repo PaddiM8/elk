@@ -22,3 +22,14 @@ let b:undo_ftplugin = "
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
+
+if has("nvim")
+    hi! link @lsp.type.string String
+
+lua << EOF
+    vim.lsp.start({
+        name = "elk",
+        cmd = {"elk --lsp"}
+    })
+EOF
+endif

@@ -15,7 +15,12 @@ static class TokenBuilder
         SemanticToken? previousToken = null;
         foreach (var token in elkTokens)
         {
-            if (token.Kind == SemanticTokenKind.None)
+            if (token.Kind is
+                SemanticTokenKind.None or
+                SemanticTokenKind.Keyword or
+                SemanticTokenKind.Comment or
+                SemanticTokenKind.Operator or
+                SemanticTokenKind.InterpolationOperator)
                 continue;
 
             var line = token.Position.Line - 1;
@@ -49,7 +54,7 @@ static class TokenBuilder
             previousToken = token;
         }
 
-        return new SemanticTokens()
+        return new SemanticTokens
         {
             Data = [..data],
         };
