@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Highlighting;
 using Elk.Std.Bindings;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Services;
 using Elk.Std.DataTypes;
 
 namespace Elk.Analysis;
@@ -698,7 +698,7 @@ class Analyser(RootModuleScope rootModule)
 
         if (_semanticTokens != null && expr.CallStyle == CallStyle.TextArguments)
         {
-            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier, SemanticFeature.TextArgumentCall);
+            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
             foreach (var argument in expr.Arguments)
             {
                 if (argument is LiteralExpr literalExpr)
@@ -1004,9 +1004,9 @@ class Analyser(RootModuleScope rootModule)
         return symbol;
     }
 
-    private void AddSemanticToken(SemanticTokenKind kind, Token token, SemanticFeature feature = SemanticFeature.None)
+    private void AddSemanticToken(SemanticTokenKind kind, Token token)
     {
-        _semanticTokens?.Add(new SemanticToken(kind, token.Value, token.Position, feature));
+        _semanticTokens?.Add(new SemanticToken(kind, token.Value, token.Position));
     }
 
     private void AddSemanticTokens(SemanticTokenKind kind, IEnumerable<Token> tokens)

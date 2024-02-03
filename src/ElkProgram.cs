@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.Analysis;
-using Elk.Highlighting;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Services;
 using Elk.Std.DataTypes;
 
 namespace Elk;

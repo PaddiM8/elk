@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Elk.Highlighting;
+using Elk.Services;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Elk.LanguageServer.Data;

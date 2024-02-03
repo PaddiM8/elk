@@ -1,4 +1,3 @@
-using Elk.Highlighting;
 using Elk.Interpreting.Scope;
 
 namespace Elk.LanguageServer;

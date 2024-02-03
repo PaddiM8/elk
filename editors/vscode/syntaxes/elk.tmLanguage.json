@@ -6,22 +6,29 @@
 	"foldingEndMarker": "^\\s*\\}",
 	"patterns": [
 		{
-			"include": "#constants"
-		},
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#types"
-		},
-		{
-			"include": "#comment"
-		},
-		{
-			"include": "#strings"
+			"include": "#expressions"
 		}
 	],
 	"repository": {
+		"expressions": {
+			"patterns": [
+				{
+					"include": "#constants"
+				},
+				{
+					"include": "#keywords"
+				},
+				{
+					"include": "#types"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#strings"
+				}
+			]
+		},
 		"constants": {
 			"patterns": [
 				{
@@ -96,7 +103,7 @@
 					"contentName": "meta.embedded.line.elk",
 					"patterns": [
 						{
-							"include": "#constant"
+							"include": "#expressions"
 						}
 					]
 				}

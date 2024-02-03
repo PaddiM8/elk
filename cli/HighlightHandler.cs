@@ -2,7 +2,6 @@
 
 using System;
 using System.Text;
-using Elk.Highlighting;
 using Elk.ReadLine;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Services;

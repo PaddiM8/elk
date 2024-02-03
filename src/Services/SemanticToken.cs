@@ -1,7 +1,7 @@
 using System;
 using Elk.Lexing;
 
-namespace Elk.Highlighting;
+namespace Elk.Services;
 
 public enum SemanticTokenKind
 {
@@ -33,6 +33,5 @@ public enum SemanticFeature
 public record SemanticToken(
     SemanticTokenKind Kind,
     string Value,
-    TextPos Position,
-    SemanticFeature Feature = SemanticFeature.None
+    TextPos Position
 );
