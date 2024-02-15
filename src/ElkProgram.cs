@@ -12,16 +12,18 @@ using Elk.Std.DataTypes;
 
 namespace Elk;
 
-class EvaluationResult
+public class EvaluationResult
 {
     public RuntimeObject? Value { get; init; }
 
-    public IList<SemanticToken>? SemanticTokens { get; init; }
+    public Ast? Ast { get; init; }
+
+    public IEnumerable<SemanticToken>? SemanticTokens { get; init; }
 }
 
 public static class ElkProgram
 {
-    public static IList<SemanticToken> GetSemanticInformation(string input, Scope scope)
+    public static EvaluationResult GetSemanticInformation(string input, Scope scope)
     {
         try
         {
@@ -30,12 +32,12 @@ public static class ElkProgram
                 scope,
                 AnalysisScope.OverwriteExistingModule,
                 null
-            ).SemanticTokens!;
+            );
         }
         catch
         {
             // TODO: Return error messages
-            return new List<SemanticToken>();
+            return new EvaluationResult();
         }
     }
 
@@ -58,43 +60,48 @@ public static class ElkProgram
         if (lexError != null)
             throw new RuntimeException(lexError.Message, lexError.Position);
 
+        if (interpreter == null)
+        {
+            return new EvaluationResult
+            {
+                Ast = ast,
+                SemanticTokens = ast.GetSemanticTokens(),
+            };
+        }
+
         return Evaluate(ast, scope, analysisScope, interpreter);
     }
 
     internal static EvaluationResult Evaluate(
-        IList<Expr> ast,
+        Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter)
+        Interpreter interpreter)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
         EvaluateModules(
             scope.ModuleScope.ImportedModules
                 .Where(x => x != scope)
-                .Where(x => x.AnalysisStatus != AnalysisStatus.Failed && x.AnalysisStatus != AnalysisStatus.Evaluated),
+                .Where(x =>
+                    x.AnalysisStatus != AnalysisStatus.Failed &&
+                        x.AnalysisStatus != AnalysisStatus.Evaluated
+                ),
             interpreter
         );
 
-        if (interpreter == null)
-        {
-            return new EvaluationResult
-            {
-                SemanticTokens = Analyser.GetSemanticTokens(ast, scope.ModuleScope),
-            };
-        }
-
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = new Interpreter(scope.ModuleScope.FilePath).Interpret(analysedAst, scope);
+        var result = new Interpreter(scope.ModuleScope.FilePath).Interpret(analysedAst.Expressions, scope);
         EvaluateModules(scope.ModuleScope.Modules, interpreter);
 
         return new EvaluationResult
         {
+            Ast = ast,
             Value = result,
         };
     }
 
-    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter? interpreter)
+    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter interpreter)
     {
         foreach (var module in modules)
         {

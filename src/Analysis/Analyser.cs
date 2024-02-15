@@ -18,7 +18,7 @@ class Analyser(RootModuleScope rootModule)
     private Expr? _currentExpr;
     private List<SemanticToken>? _semanticTokens;
 
-    public static IList<SemanticToken> GetSemanticTokens(IEnumerable<Expr> ast, ModuleScope module)
+    public static IList<SemanticToken> GetSemanticTokens(Ast ast, ModuleScope module)
     {
         var analyser = new Analyser(module.RootModule)
         {
@@ -30,7 +30,7 @@ class Analyser(RootModuleScope rootModule)
         return analyser._semanticTokens;
     }
 
-    public static IList<Expr> Analyse(IEnumerable<Expr> ast, ModuleScope module, AnalysisScope analysisScope)
+    public static Ast Analyse(Ast ast, ModuleScope module, AnalysisScope analysisScope)
     {
         if (analysisScope == AnalysisScope.OncePerModule && module.AnalysisStatus != AnalysisStatus.None)
             return module.Ast;
@@ -43,16 +43,18 @@ class Analyser(RootModuleScope rootModule)
         return analyser.Start(ast, module, analysisScope);
     }
 
-    private IList<Expr> Start(IEnumerable<Expr> ast, ModuleScope module, AnalysisScope analysisScope)
+    private Ast Start(Ast ast, ModuleScope module, AnalysisScope analysisScope)
     {
         module.AnalysisStatus = AnalysisStatus.Analysed;
         ResolveImports(module);
 
         try
         {
-            var analysedAst = ast
+            var analysedExpressions = ast
+                .Expressions
                 .Select(expr => Next(expr))
                 .ToList();
+            var analysedAst = new Ast(analysedExpressions);
 
             if (analysisScope == AnalysisScope.OncePerModule)
                 module.Ast = analysedAst;
@@ -61,7 +63,7 @@ class Analyser(RootModuleScope rootModule)
         }
         catch (RuntimeException ex)
         {
-            ex.Position = _currentExpr?.Position;
+            ex.Position = _currentExpr?.StartPosition;
             throw;
         }
     }
@@ -187,8 +189,6 @@ class Analyser(RootModuleScope rootModule)
 
     private ModuleExpr Visit(ModuleExpr expr)
     {
-        AddSemanticToken(SemanticTokenKind.Module, expr.Identifier);
-
         var block = (BlockExpr)Next(expr.Body);
         block.IsRoot = true;
 
@@ -197,13 +197,13 @@ class Analyser(RootModuleScope rootModule)
 
     private StructExpr Visit(StructExpr expr)
     {
-        AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
-
         var newStruct = new StructExpr(
             expr.AccessLevel,
             expr.Identifier,
             AnalyseParameters(expr.Parameters),
-            expr.Module
+            expr.Module,
+            expr.StartPosition,
+            expr.EndPosition
         );
 
         var uniqueParameters = new HashSet<string>(newStruct.Parameters.Select(x => x.Identifier.Value));
@@ -219,8 +219,6 @@ class Analyser(RootModuleScope rootModule)
     {
         if (expr.AnalysisStatus != AnalysisStatus.None)
             return expr;
-
-        AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
 
         expr.EnclosingFunction = expr;
         var parameters = AnalyseParameters(expr.Parameters);
@@ -272,8 +270,6 @@ class Analyser(RootModuleScope rootModule)
         var newParameters = new List<Parameter>();
         foreach (var (parameter, i) in parameters.WithIndex())
         {
-            AddSemanticToken(SemanticTokenKind.Parameter, parameter.Identifier);
-
             if (parameter.DefaultValue == null)
             {
                 if (encounteredDefaultParameter)
@@ -303,15 +299,16 @@ class Analyser(RootModuleScope rootModule)
 
     private LetExpr Visit(LetExpr expr)
     {
-        AddSemanticTokens(SemanticTokenKind.Variable, expr.IdentifierList);
-
-        return new LetExpr(expr.IdentifierList, Next(expr.Value));
+        return new LetExpr(
+            expr.IdentifierList,
+            Next(expr.Value),
+            _scope,
+            expr.StartPosition
+        );
     }
 
     private NewExpr Visit(NewExpr expr)
     {
-        AddSemanticTokens(SemanticTokenKind.Module, expr.ModulePath);
-
         var module = _scope.ModuleScope.FindModule(expr.ModulePath, lookInImports: true);
         if (module == null)
         {
@@ -334,12 +331,13 @@ class Analyser(RootModuleScope rootModule)
                 );
             }
 
-            AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
-
             return new NewExpr(
                 expr.Identifier,
                 expr.ModulePath,
-                expr.Arguments.Select(Next).ToList()
+                expr.Arguments.Select(Next).ToList(),
+                _scope,
+                expr.StartPosition,
+                expr.EndPosition
             )
             {
                 StructSymbol = new StructSymbol(stdStruct),
@@ -353,7 +351,6 @@ class Analyser(RootModuleScope rootModule)
         if (module != _scope.ModuleScope && symbol.Expr.AccessLevel != AccessLevel.Public)
             throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, expr.Identifier.Value);
 
-        AddSemanticToken(SemanticTokenKind.Struct, expr.Identifier);
         ValidateArguments(
             expr.Arguments,
             symbol.Expr.Parameters,
@@ -363,7 +360,10 @@ class Analyser(RootModuleScope rootModule)
         return new NewExpr(
             expr.Identifier,
             expr.ModulePath,
-            expr.Arguments.Select(Next).ToList()
+            expr.Arguments.Select(Next).ToList(),
+            _scope,
+            expr.StartPosition,
+            expr.EndPosition
         )
         {
             StructSymbol = symbol,
@@ -383,7 +383,7 @@ class Analyser(RootModuleScope rootModule)
             elseBranch.IsRoot = expr.IsRoot;
         }
 
-        return new IfExpr(ifCondition, thenBranch, elseBranch)
+        return new IfExpr(ifCondition, thenBranch, elseBranch, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -391,8 +391,6 @@ class Analyser(RootModuleScope rootModule)
 
     private ForExpr Visit(ForExpr expr)
     {
-        AddSemanticTokens(SemanticTokenKind.Variable, expr.IdentifierList);
-
         var forValue = Next(expr.Value);
         foreach (var identifier in expr.IdentifierList)
             expr.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
@@ -400,7 +398,7 @@ class Analyser(RootModuleScope rootModule)
         var branch = (BlockExpr)Next(expr.Branch);
         branch.IsRoot = true;
 
-        return new ForExpr(expr.IdentifierList, forValue, branch)
+        return new ForExpr(expr.IdentifierList, forValue, branch, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -412,7 +410,7 @@ class Analyser(RootModuleScope rootModule)
         var whileBranch = (BlockExpr)Next(expr.Branch);
         whileBranch.IsRoot = true;
 
-        return new WhileExpr(whileCondition, whileBranch)
+        return new WhileExpr(whileCondition, whileBranch, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -422,7 +420,7 @@ class Analyser(RootModuleScope rootModule)
     {
         var tupleValues = expr.Values.Select(Next).ToList();
 
-        return new TupleExpr(tupleValues, expr.Position)
+        return new TupleExpr(tupleValues, _scope, expr.StartPosition, expr.EndPosition)
         {
             IsRoot = expr.IsRoot,
         };
@@ -432,7 +430,7 @@ class Analyser(RootModuleScope rootModule)
     {
         var listValues = expr.Values.Select(Next).ToList();
 
-        return new ListExpr(listValues, expr.Position)
+        return new ListExpr(listValues, _scope, expr.StartPosition, expr.EndPosition)
         {
             IsRoot = expr.IsRoot,
         };
@@ -443,7 +441,7 @@ class Analyser(RootModuleScope rootModule)
         foreach (var value in expr.Entries)
             Next(value);
 
-        return new SetExpr(expr.Entries.Select(Next).ToList(), expr.Position)
+        return new SetExpr(expr.Entries.Select(Next).ToList(), _scope, expr.StartPosition, expr.EndPosition)
         {
             IsRoot = expr.IsRoot,
         };
@@ -455,7 +453,7 @@ class Analyser(RootModuleScope rootModule)
             .Select(x => (Next(x.Item1), Next(x.Item2)))
             .ToList();
 
-        return new DictionaryExpr(dictEntries, expr.Position)
+        return new DictionaryExpr(dictEntries, _scope, expr.StartPosition, expr.EndPosition)
         {
             IsRoot = expr.IsRoot,
         };
@@ -476,8 +474,9 @@ class Analyser(RootModuleScope rootModule)
         var newExpr = new BlockExpr(
             blockExpressions,
             expr.ParentStructureKind,
-            expr.Position,
-            expr.Scope
+            expr.Scope,
+            expr.StartPosition,
+            expr.EndPosition
         )
         {
             IsRoot = expr.IsRoot,
@@ -493,7 +492,7 @@ class Analyser(RootModuleScope rootModule)
         if (expr.Value != null)
             keywordValue = Next(expr.Value);
 
-        return new KeywordExpr(expr.Kind, keywordValue, expr.Position)
+        return new KeywordExpr(expr.Keyword, keywordValue, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -544,7 +543,7 @@ class Analyser(RootModuleScope rootModule)
             return NextCallOrClosure(expr.Right, left, hasClosure: false);
         }
 
-        return new BinaryExpr(left, expr.Operator, Next(expr.Right))
+        return new BinaryExpr(left, expr.Operator, Next(expr.Right), _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -562,7 +561,7 @@ class Analyser(RootModuleScope rootModule)
             throw new RuntimeException("Invalid assignment");
         }
 
-        return new BinaryExpr(Next(expr.Left), expr.Operator, Next(expr.Right))
+        return new BinaryExpr(Next(expr.Left), expr.Operator, Next(expr.Right), _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -570,7 +569,7 @@ class Analyser(RootModuleScope rootModule)
 
     private UnaryExpr Visit(UnaryExpr expr)
     {
-        return new UnaryExpr(expr.Operator, Next(expr.Value))
+        return new UnaryExpr(expr.Operator, Next(expr.Value), _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -578,7 +577,7 @@ class Analyser(RootModuleScope rootModule)
 
     private FieldAccessExpr Visit(FieldAccessExpr expr)
     {
-        return new FieldAccessExpr(Next(expr.Object), expr.Identifier)
+        return new FieldAccessExpr(Next(expr.Object), expr.Identifier, _scope)
         {
             IsRoot = expr.IsRoot,
             RuntimeIdentifier = new RuntimeString(expr.Identifier.Value),
@@ -594,7 +593,7 @@ class Analyser(RootModuleScope rootModule)
             ? null
             : Next(expr.To);
 
-        return new RangeExpr(from, to, expr.Inclusive)
+        return new RangeExpr(from, to, expr.Inclusive, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -602,7 +601,7 @@ class Analyser(RootModuleScope rootModule)
 
     private IndexerExpr Visit(IndexerExpr expr)
     {
-        return new IndexerExpr(Next(expr.Value), Next(expr.Index))
+        return new IndexerExpr(Next(expr.Value), Next(expr.Index), _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -615,7 +614,7 @@ class Analyser(RootModuleScope rootModule)
         if (stdType == null && userType == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
-        var newExpr = new TypeExpr(expr.Identifier)
+        var newExpr = new TypeExpr(expr.Identifier, _scope)
         {
             RuntimeValue = stdType != null
                 ? new RuntimeType(stdType)
@@ -628,7 +627,7 @@ class Analyser(RootModuleScope rootModule)
 
     private VariableExpr Visit(VariableExpr expr)
     {
-        var variableExpr = new VariableExpr(expr.Identifier)
+        var variableExpr = new VariableExpr(expr.Identifier, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -644,8 +643,6 @@ class Analyser(RootModuleScope rootModule)
         {
             closure.CapturedVariables.Add(expr.Identifier.Value);
         }
-
-        AddSemanticToken(SemanticTokenKind.Variable, expr.Identifier);
 
         return variableExpr;
     }
@@ -675,9 +672,6 @@ class Analyser(RootModuleScope rootModule)
             );
         }
 
-        foreach (var moduleIdentifier in expr.ModulePath)
-            AddSemanticToken(SemanticTokenKind.Module, moduleIdentifier);
-
         var stdFunction = !builtIn.HasValue
             ? ResolveStdFunction(name, expr.ModulePath)
             : null;
@@ -695,29 +689,6 @@ class Analyser(RootModuleScope rootModule)
                 _ => CallType.Function,
             },
         };
-
-        if (_semanticTokens != null && expr.CallStyle == CallStyle.TextArguments)
-        {
-            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
-            foreach (var argument in expr.Arguments)
-            {
-                if (argument is LiteralExpr literalExpr)
-                    AddSemanticToken(SemanticTokenKind.String, literalExpr.Value);
-
-                if (argument is not StringInterpolationExpr interpolationExpr)
-                    continue;
-
-                foreach (var part in interpolationExpr.Parts)
-                {
-                    if (part is LiteralExpr literalPart)
-                        AddSemanticToken(SemanticTokenKind.String, literalPart.Value);
-                }
-            }
-        }
-        else
-        {
-            AddSemanticToken(SemanticTokenKind.Function, expr.Identifier);
-        }
 
         var evaluatedArguments = expr.Arguments.Select(Next).ToList();
         if (pipedValue != null && callType != CallType.Program)
@@ -796,7 +767,8 @@ class Analyser(RootModuleScope rootModule)
             evaluatedArguments,
             expr.CallStyle,
             expr.Plurality,
-            callType
+            callType,
+            _scope
         )
         {
             IsRoot = expr.IsRoot,
@@ -834,7 +806,12 @@ class Analyser(RootModuleScope rootModule)
             }
 
             arguments.Add(
-                new ListExpr(variadicArguments, variadicArguments.FirstOrDefault()?.Position ?? TextPos.Default)
+                new ListExpr(
+                    variadicArguments,
+                    _scope,
+                    variadicArguments.FirstOrDefault()?.StartPosition ?? TextPos.Default,
+                    variadicArguments.LastOrDefault()?.EndPosition ?? TextPos.Default
+                )
             );
         }
     }
@@ -855,7 +832,7 @@ class Analyser(RootModuleScope rootModule)
             _ => RuntimeNil.Value,
         };
 
-        var newExpr = new LiteralExpr(expr.Value)
+        var newExpr = new LiteralExpr(expr.Value, _scope)
         {
             RuntimeValue = value,
             IsRoot = expr.IsRoot,
@@ -887,7 +864,7 @@ class Analyser(RootModuleScope rootModule)
     {
         var parts = expr.Parts.Select(Next).ToList();
 
-        return new StringInterpolationExpr(parts, expr.Position)
+        return new StringInterpolationExpr(parts, expr.StartPosition, _scope)
         {
             IsRoot = expr.IsRoot,
         };
@@ -898,13 +875,11 @@ class Analyser(RootModuleScope rootModule)
         expr.EnclosingFunction = expr;
 
         var function = (CallExpr)NextCallOrClosure(expr.Function, pipedValue, hasClosure: true);
-        var closure = new ClosureExpr(function, expr.Parameters, expr.Body)
+        var closure = new ClosureExpr(function, expr.Parameters, expr.Body, _scope)
         {
             IsRoot = expr.IsRoot,
             CapturedVariables = expr.CapturedVariables,
         };
-
-        AddSemanticTokens(SemanticTokenKind.Parameter, expr.Parameters);
 
         var previousEnclosingFunction = _enclosingFunction;
         _enclosingFunction = closure;
@@ -938,7 +913,7 @@ class Analyser(RootModuleScope rootModule)
             _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
         };
         var implicitArguments = closureParameters
-            .Select(x => new VariableExpr(x)
+            .Select(x => new VariableExpr(x, _scope)
             {
                 EnclosingFunction = closure,
             });
@@ -961,9 +936,6 @@ class Analyser(RootModuleScope rootModule)
     private TryExpr Visit(TryExpr expr)
     {
         var tryBranch = (BlockExpr)Next(expr.Body);
-        if (expr.CatchIdentifier != null)
-            AddSemanticToken(SemanticTokenKind.Parameter, expr.CatchIdentifier);
-
         var catchBranch = (BlockExpr)Next(expr.CatchBody);
         tryBranch.IsRoot = expr.IsRoot;
         catchBranch.IsRoot = expr.IsRoot;
@@ -971,7 +943,8 @@ class Analyser(RootModuleScope rootModule)
         return new TryExpr(
             tryBranch,
             catchBranch,
-            expr.CatchIdentifier
+            expr.CatchIdentifier,
+            _scope
         )
         {
             IsRoot = expr.IsRoot,
@@ -1002,19 +975,5 @@ class Analyser(RootModuleScope rootModule)
             throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, name);
 
         return symbol;
-    }
-
-    private void AddSemanticToken(SemanticTokenKind kind, Token token)
-    {
-        _semanticTokens?.Add(new SemanticToken(kind, token.Value, token.Position));
-    }
-
-    private void AddSemanticTokens(SemanticTokenKind kind, IEnumerable<Token> tokens)
-    {
-        if (_semanticTokens == null)
-            return;
-
-        foreach (var token in tokens)
-            _semanticTokens.Add(new SemanticToken(kind, token.Value, token.Position));
     }
 }
