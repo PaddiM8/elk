@@ -529,7 +529,7 @@ public class Lexer
             value,
             pos ?? new TextPos(
                 _pos.line,
-                _pos.column,
+                _pos.column - value.Length,
                 _index - value.Length,
                 _filePath
             )

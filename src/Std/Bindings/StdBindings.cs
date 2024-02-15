@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Elk.Interpreting.Exceptions;
 
 namespace Elk.Std.Bindings;
 
@@ -12,6 +13,15 @@ namespace Elk.Std.Bindings;
 /// </summary>
 public static partial class StdBindings
 {
+    public static IEnumerable<string> Types
+        => _types.Keys;
+
+    public static IEnumerable<string> Modules
+        => _modules.Keys;
+
+    public static IEnumerable<StdFunction> Functions
+        => _functions.Values;
+
     public static IEnumerable<string> FullSymbolNames
         => _modules.Keys.Concat(_functions.Keys);
 

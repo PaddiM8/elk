@@ -41,7 +41,15 @@ public record TextPos(int Line, int Column, int Index, string? FilePath)
 }
 
 [JsonConverter(typeof(TokenConverter))]
-public record Token(TokenKind Kind, string Value, TextPos Position);
+public record Token(TokenKind Kind, string Value, TextPos Position)
+{
+    public TextPos EndPosition
+        => Position with
+        {
+            Column = Position.Column + Value.Length,
+            Index = Position.Index + Value.Length,
+        };
+}
 
 class TokenConverter : JsonConverter<Token>
 {

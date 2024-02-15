@@ -420,7 +420,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         Push(
             isCallable
                 ? SemanticTokenKind.Function
-                : SemanticTokenKind.Variable,
+                : SemanticTokenKind.UnknownSymbol,
             identifierToken
         );
 

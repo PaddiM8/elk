@@ -65,9 +65,9 @@ partial class Interpreter
         if (arguments.Any())
             throw new RuntimeWrongNumberOfArgumentsException(0, arguments.Count);
 
-        var path = _lastExpr!.Position.FilePath == null
+        var path = _lastExpr!.StartPosition.FilePath == null
             ? ShellEnvironment.WorkingDirectory
-            : Path.GetDirectoryName(_lastExpr.Position.FilePath)!;
+            : Path.GetDirectoryName(_lastExpr.StartPosition.FilePath)!;
 
         return new RuntimeString(path);
     }

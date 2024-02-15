@@ -1,4 +1,3 @@
-using System;
 using Elk.Lexing;
 
 namespace Elk.Services;
@@ -23,15 +22,14 @@ public enum SemanticTokenKind
     InterpolationOperator,
 }
 
-[Flags]
-public enum SemanticFeature
-{
-    None,
-    TextArgumentCall,
-}
-
 public record SemanticToken(
     SemanticTokenKind Kind,
     string Value,
     TextPos Position
-);
+)
+{
+    public SemanticToken(SemanticTokenKind kind, Token token)
+        : this(kind, token.Value, token.Position)
+    {
+    }
+}

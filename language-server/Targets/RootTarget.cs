@@ -13,11 +13,15 @@ class RootTarget
     {
         return new InitializeResult
         {
-            Capabilities = new ServerCapabilities()
+            Capabilities = new ServerCapabilities
             {
                 PositionEncoding = PositionEncodingKind.UTF16,
                 TextDocumentSync = new TextDocumentSync(TextDocumentSyncKind.Full),
-                SemanticTokensProvider = new SemanticTokensRegistrationOptions.StaticOptions()
+                CompletionProvider = new CompletionRegistrationOptions.StaticOptions
+                {
+                    TriggerCharacters = new Container<string>(":"),
+                },
+                SemanticTokensProvider = new SemanticTokensRegistrationOptions.StaticOptions
                 {
                     Legend = new SemanticTokensLegend
                     {

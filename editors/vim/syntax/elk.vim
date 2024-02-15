@@ -2,41 +2,41 @@ if exists('b:current_syntax')
     finish
 endif
 
-syntax case match
-syntax iskeyword @,48-57,-,_,.,/
+syn case match
+syn iskeyword @,48-57,-,_,.,/
 
-syntax cluster elkKeyword contains=elkConditional,
+syn cluster elkKeyword contains=elkConditional,
             \ elkRepeat,elkLabel,elkControl,elkBoolean
-syntax keyword elkConditional if else
-syntax keyword elkRepeat while for in
-syntax keyword elkControl return break continue exit
-syntax keyword elkBoolean true false
-syntax keyword elkUnspecifiedKeyword with from using let nil not and or module struct new try catch throw alias unalias pub
+syn keyword elkConditional if else
+syn keyword elkRepeat while for in
+syn keyword elkControl return break continue exit
+syn keyword elkBoolean true false
+syn keyword elkUnspecifiedKeyword with from using let nil not and or module struct new try catch throw alias unalias pub
 
-syntax keyword elkFunction fn skipwhite
+syn keyword elkFunction fn skipwhite
 
-syntax match elkOperator '[\[\]=*~%&|<>!+-]'
-syntax match elkOperator '\.\.'
+syn match elkOperator '[\[\]=*~%&|<>!+-]'
+syn match elkOperator '\.\.'
 
-syntax match elkComment /#.*/
-syntax match elkNumber /\v<[+-]=(\d+\.)=\d+>/
+syn match elkComment /#.*/
+syn match elkNumber /\v<[+-]=(\d+\.)=\d+>/
 
-syntax match elkBraces "[\[\]]"
-syntax region elkStringInterp matchgroup=elkBraces start=/\${/ end=/}/ contained contains=ALL
-syntax region elkString   start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=elkStringInterp
+syn match elkBraces "[\[\]]"
+syn region elkStringInterp matchgroup=elkBraces start=/\${/ end=/}/ contained contains=ALL
+syn region elkString   start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=elkStringInterp
 
 hi def link elkBraces Delimiter
-highlight default link elkKeyword Keyword
-highlight default link elkUnspecifiedKeyword Keyword
-highlight default link elkFunction elkKeyword
-highlight default link elkConditional Conditional
-highlight default link elkRepeat Repeat
-highlight default link elkLabel Label
-highlight default link elkComment Comment
-highlight default link elkOperator Operator
-highlight default link elkString String
-highlight default link elkNumber Number
-highlight default link elkBoolean Boolean
-highlight default link elkControl Exception
+hi def link elkKeyword Keyword
+hi def link elkUnspecifiedKeyword Keyword
+hi def link elkFunction elkKeyword
+hi def link elkConditional Conditional
+hi def link elkRepeat Repeat
+hi def link elkLabel Label
+hi def link elkComment Comment
+hi def link elkOperator Operator
+hi def link elkString String
+hi def link elkNumber Number
+hi def link elkBoolean Boolean
+hi def link elkControl Exception
 
 let b:current_syntax = 'elk'

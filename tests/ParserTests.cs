@@ -15,16 +15,16 @@ namespace Elk.Tests;
 
 internal class ParserTests
 {
-    private static RootModuleScope _scope = new(null, Array.Empty<Expr>());
+    private static RootModuleScope _scope = new(null, new Ast(Array.Empty<Expr>()));
 
     [SetUp]
     public void SetUp()
     {
-        _scope = new RootModuleScope(null, Array.Empty<Expr>());
+        _scope = new RootModuleScope(null, new Ast(Array.Empty<Expr>()));
     }
 
-    private List<Expr> Parse(List<Token> tokens)
-        => Parser.Parse(tokens, _scope);
+    private IList<Expr> Parse(List<Token> tokens)
+        => Parser.Parse(tokens, _scope).Expressions;
 
     [Test]
     public void TestBinary()

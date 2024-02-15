@@ -21,7 +21,7 @@ internal class InterpreterTests
         var interpreter = new Interpreter(null);
 
         return ElkProgram.Evaluate(
-            ast,
+            new Ast(ast),
             scope ?? interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
             interpreter
@@ -74,7 +74,7 @@ internal class InterpreterTests
             Let("x", Literal(2)),
             Var("x"),
         };
-        var scope = new RootModuleScope(null, ast);
+        var scope = new RootModuleScope(null, new Ast(ast));
         scope.AddVariable("x", RuntimeNil.Value);
 
         var result = Interpret(ast, scope);

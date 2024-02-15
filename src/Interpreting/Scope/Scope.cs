@@ -1,6 +1,9 @@
 #region
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Elk.Parsing;
 using Elk.Std.DataTypes;
 
 #endregion
@@ -28,7 +31,7 @@ public abstract class Scope
 
     public void AddVariable(string name, RuntimeObject value)
     {
-        if (!_variables.TryAdd(name, new VariableSymbol(value)))
+        if (!_variables.TryAdd(name, new VariableSymbol(name, value)))
         {
             UpdateVariable(name, value);
         }
@@ -65,5 +68,54 @@ public abstract class Scope
         }
 
         return true;
+    }
+
+    public IEnumerable<ISymbol> Query(string name, bool includePrivate)
+    {
+        IEnumerable<ISymbol> modules = ModuleScope.Modules
+            .Concat(
+                includePrivate
+                    ? ModuleScope.ImportedModules
+                    : Array.Empty<ModuleScope>()
+            )
+            .Where(x => includePrivate || x.AccessLevel == AccessLevel.Public)
+            .Where(x => x.Name?.Contains(name) is true);
+        IEnumerable<ISymbol> structs = ModuleScope
+            .Structs
+            .Concat(
+                includePrivate
+                    ? ModuleScope.ImportedStructs
+                    : Array.Empty<StructSymbol>()
+            )
+            .Where(x => includePrivate || x.Expr?.AccessLevel == AccessLevel.Public)
+            .Where(x => x.Name.Contains(name));
+        IEnumerable<ISymbol> functions = ModuleScope
+            .Functions
+            .Concat(
+                includePrivate
+                    ? ModuleScope.ImportedFunctions
+                    : Array.Empty<FunctionSymbol>()
+            )
+            .Where(x => includePrivate || x.Expr.AccessLevel == AccessLevel.Public)
+            .Where(x => x.Expr.Identifier.Value.Contains(name));
+        var locals = includePrivate
+            ? QueryLocals(name)
+            : Array.Empty<ISymbol>();
+
+        return modules
+            .Concat(structs)
+            .Concat(functions)
+            .Concat(locals);
+    }
+
+    private IEnumerable<ISymbol> QueryLocals(string name)
+    {
+        return _variables
+            .Where(x => x.Key.Contains(name))
+            .Select(x => x.Value)
+            .Concat(
+                Parent?.QueryLocals(name)
+                    ?? Array.Empty<ISymbol>()
+            );
     }
 }

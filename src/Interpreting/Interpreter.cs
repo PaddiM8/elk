@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Elk.Analysis;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -29,7 +28,7 @@ partial class Interpreter
     public bool PrintErrors { get; init; } = true;
 
     public TextPos Position
-        => _lastExpr?.Position ?? TextPos.Default;
+        => _lastExpr?.StartPosition ?? TextPos.Default;
 
     private Scope.Scope _scope;
     private readonly RootModuleScope _rootModule;
@@ -39,7 +38,7 @@ partial class Interpreter
     public Interpreter(string? filePath)
     {
         ShellEnvironment = new ShellEnvironment();
-        _rootModule = new(filePath, Array.Empty<Expr>());
+        _rootModule = new RootModuleScope(filePath, new Ast(Array.Empty<Expr>()));
         _scope = _rootModule;
     }
 
@@ -59,7 +58,7 @@ partial class Interpreter
             e.Position = Position;
             _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
             if (_lastExpr != null)
-                e.ElkStackTrace.Insert(0, new Trace(_lastExpr.Position, _lastExpr.EnclosingFunction));
+                e.ElkStackTrace.Insert(0, new Trace(_lastExpr.StartPosition, _lastExpr.EnclosingFunction));
 
             _lastExpr = null;
             _scope = _rootModule;
@@ -351,7 +350,7 @@ partial class Interpreter
 
     private RuntimeObject Visit(KeywordExpr expr)
     {
-        if (expr.Kind == TokenKind.Throw)
+        if (expr.Keyword.Kind == TokenKind.Throw)
         {
             throw new RuntimeUserException(
                 expr.Value == null
@@ -360,7 +359,7 @@ partial class Interpreter
             );
         }
 
-        var returnKind = expr.Kind switch
+        var returnKind = expr.Keyword.Kind switch
         {
             TokenKind.Break => ReturnKind.BreakLoop,
             TokenKind.Continue => ReturnKind.ContinueLoop,
@@ -635,7 +634,7 @@ partial class Interpreter
         catch (RuntimeException ex)
         {
             if (_lastExpr != null)
-                ex.ElkStackTrace.Add(new Trace(expr.Position, expr.EnclosingFunction));
+                ex.ElkStackTrace.Add(new Trace(expr.StartPosition, expr.EnclosingFunction));
 
             throw;
         }
@@ -769,7 +768,7 @@ partial class Interpreter
             catch (RuntimeException ex)
             {
                 if (_lastExpr != null)
-                    ex.ElkStackTrace.Add(new Trace(expr.Position, expr.EnclosingFunction));
+                    ex.ElkStackTrace.Add(new Trace(expr.StartPosition, expr.EnclosingFunction));
 
                 throw;
             }

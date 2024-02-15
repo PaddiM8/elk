@@ -227,7 +227,8 @@ public class ShellSession
             Array.Empty<Expr>(),
             CallStyle.Parenthesized,
             Plurality.Singular,
-            CallType.Function
+            CallType.Function,
+            interpreter.CurrentModule
         )
         {
             IsRoot = true,
@@ -236,7 +237,7 @@ public class ShellSession
         try
         {
             return ElkProgram.Evaluate(
-                new List<Expr> { call },
+                new Ast(new List<Expr> { call }),
                 interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
                 interpreter

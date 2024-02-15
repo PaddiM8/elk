@@ -15,7 +15,7 @@ public record Alias(string Name, IEnumerable<LiteralExpr> Arguments);
 
 public record UnknownSymbol(ModuleScope Module, Token Token);
 
-public class ModuleScope : Scope
+public class ModuleScope : Scope, ISymbol
 {
     public IEnumerable<UnknownSymbol> ImportedUnknowns
         => _importedUnknowns.Values;
@@ -44,7 +44,7 @@ public class ModuleScope : Scope
 
     public string? FilePath { get; }
 
-    public IList<Expr> Ast { get; set; }
+    public Ast Ast { get; set; }
 
     internal AnalysisStatus AnalysisStatus { get; set; }
 
@@ -66,7 +66,7 @@ public class ModuleScope : Scope
         string? name,
         Scope? parent,
         string? filePath,
-        IList<Expr> ast)
+        Ast ast)
         : base(parent)
     {
         AccessLevel = accessLevel;
@@ -84,7 +84,7 @@ public class ModuleScope : Scope
         string name,
         RootModuleScope rootModule,
         string filePath,
-        IList<Expr> ast)
+        Ast ast)
         : base(null)
     {
         AccessLevel = accessLevel;
@@ -100,7 +100,7 @@ public class ModuleScope : Scope
         string name,
         RootModuleScope rootModule,
         string filePath,
-        IList<Expr> ast)
+        Ast ast)
         => new(accessLevel, name, rootModule, filePath, ast);
 
     public void AddAlias(string name, IEnumerable<LiteralExpr> arguments)

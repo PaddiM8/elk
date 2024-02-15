@@ -46,7 +46,6 @@ export async function activate(context: ExtensionContext) {
     client = new LanguageClient("elk-vscode", "Elk Language Server", serverOptions, clientOptions);
     client.registerProposedFeatures();
     client.setTrace(Trace.Verbose);
-    client.info("hello!")
     client.start();
 }
 

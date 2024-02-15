@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -15,6 +16,8 @@ namespace Elk.Tests;
 
 static class AstBuilder
 {
+    private static readonly Scope _scope = new RootModuleScope("/", null);
+
     public static Token Token(TokenKind kind, string value)
         => new(kind, value, TextPos.Default);
 
@@ -34,19 +37,19 @@ static class AstBuilder
         );
 
     public static LetExpr Let(string identifier, Expr value)
-        => new([Token(TokenKind.Identifier, identifier)], value);
+        => new([Token(TokenKind.Identifier, identifier)], value, _scope, value.StartPosition);
 
     public static KeywordExpr KeywordExpr(TokenKind kind, Expr value)
-        => new(kind, value, TextPos.Default);
+        => new(Token(kind, kind.ToString()), value, _scope);
 
     public static BinaryExpr Binary(Expr left, TokenKind op, Expr right)
-        => new(left, op, right);
+        => new(left, op, right, _scope);
 
     public static UnaryExpr Unary(TokenKind op, Expr value)
-        => new(op, value);
+        => new(op, value, _scope);
 
     public static VariableExpr Var(string identifier)
-        => new(Token(TokenKind.Identifier, identifier));
+        => new(Token(TokenKind.Identifier, identifier), _scope);
 
     public static CallExpr Call(string identifier, List<Expr> arguments)
         => new(
@@ -55,24 +58,43 @@ static class AstBuilder
             arguments,
             CallStyle.Parenthesized,
             Plurality.Singular,
-            CallType.Unknown
+            CallType.Unknown,
+            _scope
         );
 
     public static IfExpr If(Expr condition, Expr thenBranch, Expr? elseBranch = null)
-        => new(condition, thenBranch, elseBranch);
+        => new(condition, thenBranch, elseBranch, _scope);
 
     public static BlockExpr Block(List<Expr> expressions, StructureKind structureKind, Scope scope)
-        => new(expressions, structureKind, TextPos.Default, scope);
+        => new(expressions, structureKind, scope, TextPos.Default, TextPos.Default);
 
     public static LiteralExpr Literal(object value)
         => value switch
         {
-            null => new(Token(TokenKind.Nil, "nil")),
-            true => new(Token(TokenKind.True, "true")),
-            false => new(Token(TokenKind.False, "false")),
-            int x => new LiteralExpr(Token(TokenKind.IntegerLiteral, x.ToString())),
-            double x => new LiteralExpr(Token(TokenKind.FloatLiteral, x.ToString())),
-            string x => new(Token(TokenKind.DoubleQuoteStringLiteral, x)),
-            _ => new(Token(TokenKind.Unknown, value.ToString() ?? "")),
+            null => new(Token(TokenKind.Nil, "nil"), _scope),
+            true => new(Token(TokenKind.True, "true"), _scope),
+            false => new(Token(TokenKind.False, "false"), _scope),
+            int x => new LiteralExpr(
+                Token(
+                    TokenKind.IntegerLiteral,
+                    x.ToString()
+                ),
+                _scope
+            ),
+            double x => new LiteralExpr(
+                Token(
+                    TokenKind.FloatLiteral,
+                    x.ToString(CultureInfo.InvariantCulture)
+                ),
+                _scope
+            ),
+            string x => new(
+                Token(TokenKind.DoubleQuoteStringLiteral, x),
+                _scope
+            ),
+            _ => new(
+                Token(TokenKind.Unknown, value.ToString() ?? ""),
+                _scope
+            ),
         };
 }
