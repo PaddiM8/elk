@@ -49,6 +49,10 @@ public record Token(TokenKind Kind, string Value, TextPos Position)
             Column = Position.Column + Value.Length,
             Index = Position.Index + Value.Length,
         };
+
+    public bool IsByPosition(int line, int column)
+        => line >= Position.Line && line <= EndPosition.Line &&
+            column >= Position.Column && column <= EndPosition.Column;
 }
 
 class TokenConverter : JsonConverter<Token>

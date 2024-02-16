@@ -85,7 +85,6 @@ public static class ElkProgram
 
             return new EvaluationResult
             {
-                Ast = ast,
                 SemanticTokens = semanticTokens,
                 Diagnostics = diagnostics,
             };
@@ -116,7 +115,7 @@ public static class ElkProgram
 
         return new EvaluationResult
         {
-            Ast = ast,
+            Ast = analysedAst,
             Value = result,
         };
     }

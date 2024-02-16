@@ -1280,7 +1280,8 @@ internal class Parser
             {
                 if (!Match(TokenKind.ClosedParenthesis))
                     arguments.Add(ParseExpr());
-            } while (AdvanceIf(TokenKind.Comma));
+            }
+            while (AdvanceIf(TokenKind.Comma));
 
             var endPos = EatExpected(TokenKind.ClosedParenthesis).EndPosition;
             var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);

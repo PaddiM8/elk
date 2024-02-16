@@ -14,11 +14,11 @@ public class Ast(IList<Expr> expressions)
     {
         foreach (var expr in children)
         {
-            if (line < expr.StartPosition.Line || line >= expr.EndPosition.Line)
+            if (line < expr.StartPosition.Line || line > expr.EndPosition.Line)
                 continue;
 
             var isSameLine = expr.StartPosition.Line == expr.EndPosition.Line;
-            if (isSameLine && (column < expr.StartPosition.Column || column >= expr.EndPosition.Column))
+            if (isSameLine && (column < expr.StartPosition.Column || column > expr.EndPosition.Column))
                 continue;
 
             return FindExpressionAt(line, column, expr.ChildExpressions)

@@ -3,7 +3,6 @@ using Elk.Std.Bindings;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using StreamJsonRpc;
-using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Elk.LanguageServer.Targets;
 
@@ -148,8 +147,29 @@ class TextDocumentTarget(JsonRpc rpc)
     public SemanticTokens SemanticTokensFull(JToken token)
     {
         var parameters = token.ToObject<SemanticTokensParams>()!;
-        var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
 
-        return document.SemanticTokens;
+        return DocumentStorage.Get(parameters.TextDocument.Uri.Path).SemanticTokens;
+    }
+
+    [JsonRpcMethod("textDocument/hover")]
+    public Hover Hover(JToken token)
+    {
+        var parameters = token.ToObject<HoverParams>()!;
+        var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
+        if (document.Ast == null)
+            return new Hover();
+
+        var hoverInfo = HoverProvider.GetInfo(
+            document,
+            parameters.Position.Line,
+            parameters.Position.Character
+        );
+        if (hoverInfo == null)
+            return new Hover();
+
+        return new Hover
+        {
+            Contents = new MarkedStringsOrMarkupContent(hoverInfo),
+        };
     }
 }

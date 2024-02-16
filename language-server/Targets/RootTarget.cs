@@ -29,6 +29,7 @@ class RootTarget
                     },
                     Full = true,
                 },
+                HoverProvider = new HoverRegistrationOptions.StaticOptions(),
             },
         };
     }
