@@ -113,7 +113,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .Where(x => x.name.StartsWith(name))
             .DistinctBy(x => x.name)
             .OrderBy(x => x.name)
-            .Select(x => new Completion(x.name, x.name, x.documentation))
+            .Select(x => new Completion(x.name, x.name, x.documentation?.Replace("\n", " ")))
             .Select(x => x with
             {
                 DisplayText = Utils.Escape(x.CompletionText),

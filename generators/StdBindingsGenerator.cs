@@ -215,7 +215,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var documentation = function.Documentation?
                 .Replace("\\", @"\\")
                 .Replace("\"", "\\\"")
-                .Replace("\n", " ");
+                .Replace("\n", "\\n");
             var documentationLiteral = documentation == null
                 ? "null"
                 : $"\"{documentation}\"";
@@ -527,30 +527,50 @@ public class StdBindingsGenerator : ISourceGenerator
             .GetSemanticModel(methodSyntax.SyntaxTree)
             .GetDeclaredSymbol(methodSyntax)!
             .GetDocumentationCommentXml();
-        var documentation = "";
+        var documentationBuilder = new StringBuilder();
         if (!string.IsNullOrEmpty(documentationXml))
         {
             var document = new XmlDocument();
             document.LoadXml(documentationXml);
+
+            // Summary
             var summary = document.DocumentElement?
                 .SelectSingleNode("/member/summary")?
                 .InnerText
                 .Trim();
+            documentationBuilder.Append(summary);
+            if (summary?.EndsWith('.') is false)
+                documentationBuilder.Append('.');
+
+            // Parameters
+            var parameterNodes = document.DocumentElement?.SelectNodes("/member/param");
+            if (parameterNodes?.Count > 0)
+            {
+                documentationBuilder.AppendLine("\n---");
+                foreach (XmlNode parameterNode in parameterNodes)
+                {
+                    documentationBuilder.Append(parameterNode.Attributes?["name"]?.Value);
+                    documentationBuilder.Append(": ");
+                    documentationBuilder.AppendLine(parameterNode.InnerText.Trim());
+                }
+
+                documentationBuilder.AppendLine("---");
+            }
+
+            // Returns
             var returns = document.DocumentElement?
                 .SelectSingleNode("/member/returns")?
                 .InnerText
                 .Trim();
-            if (summary?.EndsWith('.') is false)
-                summary += ".";
-
-            documentation = $"{summary} returns: {returns}";
+            if (!string.IsNullOrWhiteSpace(returns))
+                documentationBuilder.Append($"\nReturns: {returns}");
         }
 
         return new StdFunctionInfo(
             reachableEverywhere ? null : module.Name,
             name,
             $"{namespacePath}.{module.Syntax.Identifier.Text}.{methodSyntax.Identifier.Text}",
-            documentation,
+            documentationBuilder.ToString().Trim(),
             minArgumentCount,
             maxArgumentCount,
             hasClosure,

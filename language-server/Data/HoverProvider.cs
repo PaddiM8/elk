@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Elk.Parsing;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -38,8 +39,16 @@ class HoverProvider
             return null;
 
         var signatureStringBuilder = new StringBuilder();
-        if (callExpr.StdFunction?.Documentation != null)
-            signatureStringBuilder.AppendLine($"# {callExpr.StdFunction.Documentation}");
+
+        // Documentation
+        var documentation = callExpr.StdFunction?.Documentation;
+        if (documentation != null)
+        {
+            documentation = Regex.Replace(documentation, @"\n+\s*", "\n# ");
+            signatureStringBuilder.AppendLine($"# {documentation}");
+        }
+
+        // Name
         signatureStringBuilder.Append($"fn {callExpr.Identifier.Value}(");
 
         // Parameters
