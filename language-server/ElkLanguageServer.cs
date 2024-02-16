@@ -6,6 +6,7 @@ namespace Elk.LanguageServer;
 
 public static class ElkLanguageServer
 {
+    public static JsonRpc DeleteMeRpc = null!;
     public static async Task StartAsync()
     {
         var formatter = new JsonMessageFormatter();
@@ -20,6 +21,7 @@ public static class ElkLanguageServer
             formatter,
             null!
         );
+        DeleteMeRpc = rpc;
         var targetOptions = new JsonRpcTargetOptions
         {
             UseSingleObjectParameterDeserialization = true,

@@ -33,7 +33,8 @@ class RootTarget
                 SignatureHelpProvider = new SignatureHelpRegistrationOptions.StaticOptions
                 {
                     TriggerCharacters = new Container<string>("(", ","),
-                }
+                },
+                DefinitionProvider = new DefinitionRegistrationOptions.StaticOptions(),
             },
         };
     }

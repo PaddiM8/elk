@@ -4,6 +4,7 @@ using Elk.Std.Bindings;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using StreamJsonRpc;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Elk.LanguageServer.Targets;
 
@@ -159,7 +160,7 @@ class TextDocumentTarget(JsonRpc rpc)
         if (document.Ast == null)
             return new Hover();
 
-        var hoverInfo = HoverProvider.GetInfo(
+        var hoverInfo = SymbolInformationProvider.GetInfo(
             document,
             parameters.Position.Line,
             parameters.Position.Character
@@ -263,6 +264,34 @@ class TextDocumentTarget(JsonRpc rpc)
         return new SignatureHelp
         {
             Signatures = new Container<SignatureInformation>(signature)
+        };
+    }
+
+    [JsonRpcMethod("textDocument/definition")]
+    public Location? Definition(JToken token)
+    {
+        var parameters = token.ToObject<DefinitionParams>()!;
+        var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
+        if (document.Ast == null)
+            return null;
+
+        var position = SymbolInformationProvider.GetDefinition(
+            document,
+            parameters.Position.Line,
+            parameters.Position.Character
+        );
+        if (position?.FilePath == null)
+            return null;
+
+        return new Location
+        {
+            Uri = position.FilePath,
+            Range = new Range(
+                position.Line - 1,
+                position.Column - 1,
+                position.Line - 1,
+                position.Column - 1
+            ),
         };
     }
 }

@@ -464,7 +464,7 @@ public class CallExpr(
     Scope scope,
     TextPos endPos)
     : Expr(
-        identifier.Position,
+        modulePath.FirstOrDefault()?.Position ?? identifier.Position,
         endPos,
         scope
     )
