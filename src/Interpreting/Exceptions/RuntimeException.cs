@@ -32,7 +32,9 @@ public record Trace(TextPos Position, Token? FunctionIdentifier = null)
 
 public class RuntimeException : Exception
 {
-    public TextPos? Position { get; set; }
+    public TextPos? StartPosition { get; set; }
+
+    public TextPos? EndPosition { get; set; }
 
     public List<Trace> ElkStackTrace { get; init; } = [];
 
@@ -41,12 +43,14 @@ public class RuntimeException : Exception
     {
     }
 
-    public RuntimeException(string message, TextPos? position)
+    public RuntimeException(string message, TextPos? startPosition, TextPos? endPosition)
         : base(message)
     {
-        Position = position;
-        if (position != null)
-            ElkStackTrace.Add(new Trace(position));
+        StartPosition = startPosition;
+        EndPosition = endPosition;
+
+        if (startPosition != null)
+            ElkStackTrace.Add(new Trace(startPosition));
     }
 
     public override string ToString()
@@ -71,8 +75,8 @@ public class RuntimeException : Exception
             );
         }
 
-        if (!ElkStackTrace.Any() && Position != null)
-            builder.AppendLine(Position.ToString());
+        if (!ElkStackTrace.Any() && StartPosition != null)
+            builder.AppendLine(StartPosition.ToString());
 
         return builder.ToString().Trim();
     }

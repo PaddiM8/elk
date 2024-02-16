@@ -76,7 +76,7 @@ class StringInterpolationParser
         while (i < literal.Length && (openBraceCount > 0 || literal[i] != '}'))
         {
             if (i >= literal.Length)
-                throw new RuntimeException("Expected '}' inside string literal", textPos);
+                throw new RuntimeException("Expected '}' inside string literal", textPos, token.EndPosition);
 
             if (literal[i] == '"')
                 inString = !inString;

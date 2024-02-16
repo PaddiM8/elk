@@ -461,8 +461,13 @@ public class CallExpr(
     CallStyle callStyle,
     Plurality plurality,
     CallType callType,
-    Scope scope)
-    : Expr(identifier.Position, arguments.LastOrDefault()?.EndPosition ?? identifier.EndPosition, scope)
+    Scope scope,
+    TextPos endPos)
+    : Expr(
+        identifier.Position,
+        endPos,
+        scope
+    )
 {
     public Token Identifier { get; } = identifier;
 

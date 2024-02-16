@@ -109,7 +109,7 @@ internal class Parser
             while (AdvanceIf(TokenKind.Comma));
 
             if (!MatchIdentifier("from"))
-                throw new RuntimeException("Expected 'from'", Current?.Position ?? TextPos.Default);
+                throw Error("Expected 'from'");
 
             Eat();
         }
@@ -123,7 +123,13 @@ internal class Parser
             foreach (var symbolImportToken in symbolImportTokens)
             {
                 if (StdBindings.HasFunction(symbolImportToken.Value, moduleName))
-                    throw new RuntimeException($"Module does not contain function '{symbolImportToken.Value}'", pos);
+                {
+                    throw new RuntimeException(
+                        $"Module does not contain function '{symbolImportToken.Value}'",
+                        pos,
+                        Previous!.EndPosition
+                    );
+                }
 
                 _scope.ModuleScope.ImportStdFunction(symbolImportToken.Value, moduleName);
             }
@@ -181,7 +187,13 @@ internal class Parser
         var absolutePath = Path.GetFullPath(Path.Combine(directoryPath, path) + ".elk");
 
         if (!File.Exists(absolutePath))
-            throw new RuntimeException($"Cannot find file '{absolutePath}'", pos);
+        {
+            throw new RuntimeException(
+                $"Cannot find file '{absolutePath}'",
+                pos,
+                Previous!.EndPosition
+            );
+        }
 
         var importScope = _scope.ModuleScope.RootModule.FindRegisteredModule(absolutePath);
         if (importScope == null)
@@ -199,8 +211,15 @@ internal class Parser
                 Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
                 importScope
             );
+
             if (lexError != null)
-                throw new RuntimeException(lexError.Message, lexError.Position);
+            {
+                throw new RuntimeException(
+                    lexError.Message,
+                    lexError.StartPosition,
+                    lexError.EndPosition
+                );
+            }
         }
 
         _scope.ModuleScope.ImportModule(moduleName, importScope);
@@ -226,7 +245,8 @@ internal class Parser
                 TokenKind.Fn => ParseFn(AccessLevel.Public),
                 _ => throw new RuntimeException(
                     "Expected declaration after 'pub'",
-                    Current!.Position
+                    Current!.Position,
+                    Current!.EndPosition
                 ),
             };
         }
@@ -300,7 +320,7 @@ internal class Parser
             }
             else
             {
-                throw new RuntimeException("Expected 'closure'", Current?.Position ?? TextPos.Default);
+                throw Error("Expected 'closure'");
             }
         }
 
@@ -814,23 +834,13 @@ internal class Parser
     {
         EatExpected(TokenKind.EqualsGreater);
         if (function is not CallExpr left)
-        {
-            throw new RuntimeException(
-                "Expected function call or reference to the left of closure",
-                Current?.Position ?? TextPos.Default
-            );
-        }
+            throw Error("Expected function call or reference to the left of closure");
 
         if (Match(TokenKind.Ampersand))
         {
             var call = ParseIdentifier();
             if (call is not CallExpr { IsReference: true } functionReference)
-            {
-                throw new RuntimeException(
-                    "Expected function or function reference to the right of closure.",
-                    Current?.Position ?? TextPos.Default
-                );
-            }
+                throw Error("Expected function or function reference to the right of closure.");
 
             var block = new BlockExpr(
                 [functionReference],
@@ -901,6 +911,7 @@ internal class Parser
         {
             var textPos = stringLiteral.Position with
             {
+                Index = stringLiteral.Position.Index + part.Offset,
                 Column = stringLiteral.Position.Column + part.Offset,
                 FilePath = _scope.ModuleScope.FilePath
             };
@@ -922,13 +933,20 @@ internal class Parser
                 };
                 var tokens = Lexer.Lex(part.Value, startPos, out var lexError);
                 if (lexError != null)
-                    throw new RuntimeException(lexError.Message, lexError.Position);
+                {
+                    throw new RuntimeException(
+                        lexError.Message,
+                        lexError.StartPosition,
+                        lexError.EndPosition
+                    );
+                }
 
                 var ast = Parse(tokens, _scope);
                 if (ast.Expressions.Count != 1)
                     throw new RuntimeException(
                         "Expected exactly one expression in the string interpolation block",
-                        textPos
+                        textPos,
+                        tokens.LastOrDefault()?.EndPosition ?? textPos
                     );
 
                 foreach (var expr in ast.Expressions)
@@ -1264,7 +1282,7 @@ internal class Parser
                     arguments.Add(ParseExpr());
             } while (AdvanceIf(TokenKind.Comma));
 
-            EatExpected(TokenKind.ClosedParenthesis);
+            var endPos = EatExpected(TokenKind.ClosedParenthesis).EndPosition;
             var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
 
             var call = new CallExpr(
@@ -1274,7 +1292,8 @@ internal class Parser
                 CallStyle.Parenthesized,
                 functionPlurality,
                 CallType.Unknown,
-                _scope
+                _scope,
+                endPos
             )
             {
                 IsReference = isReference,
@@ -1310,7 +1329,8 @@ internal class Parser
             CallStyle.TextArguments,
             plurality,
             CallType.Unknown,
-            _scope
+            _scope,
+            textArguments.LastOrDefault()?.EndPosition ?? identifier.EndPosition
         )
         {
             IsReference = isReference,
@@ -1573,9 +1593,17 @@ internal class Parser
         => Current != null && kinds.Contains(Current.Kind);
 
     private RuntimeException Error(string message)
-        => Current == null && _index > 0
-            ? new RuntimeException(message, _tokens[_index - 1].Position)
-            : new RuntimeException(message, Current?.Position ?? TextPos.Default);
+    {
+        var token = Current == null && _index > 0
+            ? _tokens[_index - 1]
+            : Current;
+
+        return new RuntimeException(
+            message,
+            token?.Position ?? TextPos.Default,
+            token?.EndPosition ?? TextPos.Default
+        );
+    }
 
     private void SkipWhiteSpace()
     {

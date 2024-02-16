@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
 
@@ -36,7 +37,11 @@ partial class Interpreter
         }
         else
         {
-            throw new RuntimeException($"cd: The directory \"{path}\" does not exist", Position);
+            throw new RuntimeException(
+                $"cd: The directory \"{path}\" does not exist",
+                Position,
+                _lastExpr?.EndPosition ?? TextPos.Default
+            );
         }
 
         return RuntimeNil.Value;

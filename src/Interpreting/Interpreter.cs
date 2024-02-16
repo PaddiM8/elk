@@ -55,7 +55,8 @@ partial class Interpreter
         }
         catch (RuntimeException e)
         {
-            e.Position = Position;
+            e.StartPosition = Position;
+            e.EndPosition = _lastExpr?.EndPosition ?? TextPos.Default;
             _scope.ModuleScope.AnalysisStatus = AnalysisStatus.Failed;
             if (_lastExpr != null)
                 e.ElkStackTrace.Insert(0, new Trace(_lastExpr.StartPosition, _lastExpr.EnclosingFunction));
@@ -76,7 +77,11 @@ partial class Interpreter
             // since that means the user is trying to compare values that can not be
             // compared with each other.
             // This has to be caught here due to generators being used.
-            throw new RuntimeException(e.Message, Position);
+            throw new RuntimeException(
+                e.Message,
+                Position,
+                _lastExpr?.EndPosition ?? TextPos.Default
+            );
         }
 
         _scope = previousScope;

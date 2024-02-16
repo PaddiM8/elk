@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,7 +19,9 @@ public class EvaluationResult
 
     public Ast? Ast { get; init; }
 
-    public IEnumerable<SemanticToken>? SemanticTokens { get; init; }
+    public IEnumerable<SemanticToken>? SemanticTokens { get; set; }
+
+    public IEnumerable<DiagnosticMessage> Diagnostics { get; init;  } = Array.Empty<DiagnosticMessage>();
 }
 
 public static class ElkProgram
@@ -34,10 +37,15 @@ public static class ElkProgram
                 null
             );
         }
-        catch
+        catch (RuntimeException ex)
         {
-            // TODO: Return error messages
-            return new EvaluationResult();
+            if (ex.StartPosition == null)
+                return new EvaluationResult();
+
+            return new EvaluationResult
+            {
+                Diagnostics = [new DiagnosticMessage(ex.Message, ex.StartPosition, ex.StartPosition)]
+            };
         }
     }
 
@@ -58,25 +66,37 @@ public static class ElkProgram
         scope.ModuleScope.Ast = ast;
 
         if (lexError != null)
-            throw new RuntimeException(lexError.Message, lexError.Position);
+            throw new RuntimeException(lexError.Message, lexError.StartPosition, lexError.EndPosition);
 
-        if (interpreter == null)
+        var semanticTokens = ast.GetSemanticTokens();
+
+        try
         {
+            var result = Evaluate(ast, scope, analysisScope, interpreter);
+            result.SemanticTokens = semanticTokens;
+
+            return result;
+        }
+        catch (RuntimeException ex)
+        {
+            List<DiagnosticMessage> diagnostics = ex.StartPosition == null || ex.EndPosition == null
+                ? []
+                : [new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)];
+
             return new EvaluationResult
             {
                 Ast = ast,
-                SemanticTokens = ast.GetSemanticTokens(),
+                SemanticTokens = semanticTokens,
+                Diagnostics = diagnostics,
             };
         }
-
-        return Evaluate(ast, scope, analysisScope, interpreter);
     }
 
     internal static EvaluationResult Evaluate(
         Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter interpreter)
+        Interpreter? interpreter)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
@@ -91,7 +111,7 @@ public static class ElkProgram
         );
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = new Interpreter(scope.ModuleScope.FilePath).Interpret(analysedAst.Expressions, scope);
+        var result = interpreter?.Interpret(analysedAst.Expressions, scope);
         EvaluateModules(scope.ModuleScope.Modules, interpreter);
 
         return new EvaluationResult
@@ -101,7 +121,7 @@ public static class ElkProgram
         };
     }
 
-    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter interpreter)
+    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter? interpreter)
     {
         foreach (var module in modules)
         {

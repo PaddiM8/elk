@@ -3,13 +3,14 @@ using Elk.Std.Bindings;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using StreamJsonRpc;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Elk.LanguageServer.Targets;
 
-class TextDocumentTarget
+class TextDocumentTarget(JsonRpc rpc)
 {
     [JsonRpcMethod("textDocument/didOpen")]
-    public static void DidOpen(JToken token)
+    public void DidOpen(JToken token)
     {
         var parameters = token.ToObject<DidOpenTextDocumentParams>();
         if (parameters == null || Path.GetExtension(parameters.TextDocument.Uri.Path) != ".elk")
@@ -19,30 +20,44 @@ class TextDocumentTarget
             parameters.TextDocument.Uri.Path,
             parameters.TextDocument.Text
         );
+        document.RefreshSemantics();
         DocumentStorage.Add(document);
     }
 
     [JsonRpcMethod("textDocument/didClose")]
-    public static void DidClose(JToken token)
+    public void DidClose(JToken token)
     {
         var parameters = token.ToObject<DidOpenTextDocumentParams>()!;
         DocumentStorage.Remove(parameters.TextDocument.Uri.Path);
     }
 
     [JsonRpcMethod("textDocument/didChange")]
-    public static void DidChange(JToken token)
+    public async Task DidChangeAsync(JToken token)
     {
         var parameters = token.ToObject<DidChangeTextDocumentParams>();
         if (parameters == null || Path.GetExtension(parameters.TextDocument.Uri.Path) != ".elk")
             return;
 
         var newText = parameters.ContentChanges.FirstOrDefault()?.Text;
-        if (newText != null)
-            DocumentStorage.Update(parameters.TextDocument.Uri.Path, newText);
+        if (newText == null)
+            return;
+
+        var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
+        document.Text = newText;
+        document.RefreshSemantics();
+
+        await rpc.NotifyWithParameterObjectAsync(
+            "textDocument/publishDiagnostics",
+            new PublishDiagnosticsParams
+            {
+                Uri = parameters.TextDocument.Uri,
+                Diagnostics = new Container<Diagnostic>(document.Diagnostics),
+            }
+        );
     }
 
     [JsonRpcMethod("textDocument/completion")]
-    public static CompletionList Completion(JToken token)
+    public CompletionList Completion(JToken token)
     {
         var parameters = token.ToObject<CompletionParams>()!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
@@ -130,16 +145,10 @@ class TextDocumentTarget
     }
 
     [JsonRpcMethod("textDocument/semanticTokens/full")]
-    public static SemanticTokens SemanticTokensFull(JToken token)
+    public SemanticTokens SemanticTokensFull(JToken token)
     {
         var parameters = token.ToObject<SemanticTokensParams>()!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
-        var result = ElkProgram.GetSemanticInformation(document.Text, document.Module);
-        if (result.Ast != null)
-            document.Ast = result.Ast;
-
-        if (result.SemanticTokens != null)
-            document.SemanticTokens = TokenBuilder.BuildSemanticTokens(result.SemanticTokens);
 
         return document.SemanticTokens;
     }

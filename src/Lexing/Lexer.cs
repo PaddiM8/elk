@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Elk.Lexing;
 
-public record LexError(TextPos Position, string Message);
+public record LexError(string Message, TextPos StartPosition, TextPos EndPosition);
 
 public enum LexerMode
 {
@@ -575,6 +575,15 @@ public class Lexer
 
     private void Error(string message)
     {
-        _error = new LexError(new(_pos.line, _pos.column, _index, _filePath), message);
+        var pos = new TextPos(_pos.line, _pos.column, _index, _filePath);
+        _error = new LexError(
+            message,
+            pos,
+            pos with
+            {
+                Column = pos.Column + 1,
+                Index = pos.Index + 1,
+            }
+        );
     }
 }

@@ -9,11 +9,6 @@ static class DocumentStorage
         _documents[document.Uri] = document;
     }
 
-    public static void Update(string uri, string text)
-    {
-        _documents[uri].Text = text;
-    }
-
     public static SemanticDocument Get(string uri)
         => _documents[uri];
 

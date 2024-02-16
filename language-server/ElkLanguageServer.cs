@@ -26,7 +26,7 @@ public static class ElkLanguageServer
         };
 
         rpc.AddLocalRpcTarget(new RootTarget(), targetOptions);
-        rpc.AddLocalRpcTarget(new TextDocumentTarget(), targetOptions);
+        rpc.AddLocalRpcTarget(new TextDocumentTarget(rpc), targetOptions);
         rpc.StartListening();
         await rpc.Completion;
     }

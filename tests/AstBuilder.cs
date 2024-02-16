@@ -59,7 +59,8 @@ static class AstBuilder
             CallStyle.Parenthesized,
             Plurality.Singular,
             CallType.Unknown,
-            _scope
+            _scope,
+            TextPos.Default
         );
 
     public static IfExpr If(Expr condition, Expr thenBranch, Expr? elseBranch = null)

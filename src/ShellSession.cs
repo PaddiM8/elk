@@ -125,7 +125,7 @@ public class ShellSession
         catch (RuntimeException e)
         {
             textWriter = Console.Error;
-            e.Position ??= _interpreter.Position;
+            e.StartPosition ??= _interpreter.Position;
             result = e.ToString(printErrorLineNumbers).Trim();
             if (result == "")
                 return;
@@ -228,7 +228,8 @@ public class ShellSession
             CallStyle.Parenthesized,
             Plurality.Singular,
             CallType.Function,
-            interpreter.CurrentModule
+            interpreter.CurrentModule,
+            TextPos.Default
         )
         {
             IsRoot = true,

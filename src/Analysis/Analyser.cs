@@ -40,7 +40,17 @@ class Analyser(RootModuleScope rootModule)
             _scope = module,
         };
 
-        return analyser.Start(ast, module, analysisScope);
+        try
+        {
+            return analyser.Start(ast, module, analysisScope);
+        }
+        catch (RuntimeException ex)
+        {
+            ex.StartPosition ??= analyser._currentExpr?.StartPosition;
+            ex.EndPosition ??= analyser._currentExpr?.EndPosition;
+
+            throw;
+        }
     }
 
     private Ast Start(Ast ast, ModuleScope module, AnalysisScope analysisScope)
@@ -63,7 +73,8 @@ class Analyser(RootModuleScope rootModule)
         }
         catch (RuntimeException ex)
         {
-            ex.Position = _currentExpr?.StartPosition;
+            ex.StartPosition = _currentExpr?.StartPosition;
+            ex.EndPosition = _currentExpr?.EndPosition;
             throw;
         }
     }
@@ -79,7 +90,8 @@ class Analyser(RootModuleScope rootModule)
                 {
                     throw new RuntimeException(
                         $"Cannot import private symbol '{importedFunction.Expr.Identifier.Value}'",
-                        token.Position
+                        token.Position,
+                        token.EndPosition
                     );
                 }
 
@@ -94,7 +106,8 @@ class Analyser(RootModuleScope rootModule)
                 {
                     throw new RuntimeException(
                         $"Cannot import private symbol '{importedStruct.Expr?.Identifier.Value}'",
-                        token.Position
+                        token.Position,
+                        token.EndPosition
                     );
                 }
 
@@ -109,7 +122,8 @@ class Analyser(RootModuleScope rootModule)
                 {
                     throw new RuntimeException(
                         $"Cannot import private symbol '{importedModule.Name}'",
-                        token.Position
+                        token.Position,
+                        token.EndPosition
                     );
                 }
 
@@ -121,7 +135,8 @@ class Analyser(RootModuleScope rootModule)
             {
                 throw new RuntimeException(
                     $"Module does not contain symbol '{token.Value}'",
-                    token.Position
+                    token.Position,
+                    token.EndPosition
                 );
             }
         }
@@ -132,6 +147,7 @@ class Analyser(RootModuleScope rootModule)
     private Expr Next(Expr expr)
     {
         expr.EnclosingFunction = _enclosingFunction;
+        var previousExpr = _currentExpr;
         _currentExpr = expr;
 
         var analysedExpr = expr switch
@@ -166,6 +182,7 @@ class Analyser(RootModuleScope rootModule)
         };
 
         analysedExpr.EnclosingFunction = expr.EnclosingFunction;
+        _currentExpr = previousExpr;
 
         return analysedExpr;
     }
@@ -173,6 +190,7 @@ class Analyser(RootModuleScope rootModule)
     private Expr NextCallOrClosure(Expr expr, Expr? pipedValue, bool hasClosure, bool validateParameters = true)
     {
         expr.EnclosingFunction = _enclosingFunction;
+        var previousExpr = _currentExpr;
         _currentExpr = expr;
 
         var analysedExpr = expr switch
@@ -183,6 +201,7 @@ class Analyser(RootModuleScope rootModule)
         };
 
         analysedExpr.EnclosingFunction = expr.EnclosingFunction;
+        _currentExpr = previousExpr;
 
         return analysedExpr;
     }
@@ -768,7 +787,8 @@ class Analyser(RootModuleScope rootModule)
             expr.CallStyle,
             expr.Plurality,
             callType,
-            _scope
+            _scope,
+            expr.EndPosition
         )
         {
             IsRoot = expr.IsRoot,

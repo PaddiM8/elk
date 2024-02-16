@@ -36,7 +36,7 @@ public class IntegrationTests
             }
             catch (RuntimeException e)
             {
-                throw new RuntimeException($"{e.Position} {e.Message}");
+                throw new RuntimeException($"{e.StartPosition} {e.Message}");
             }
         });
     }
