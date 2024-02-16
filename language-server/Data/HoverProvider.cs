@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.RegularExpressions;
 using Elk.Parsing;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -38,29 +36,16 @@ class HoverProvider
         if (callExpr.CallType is not (CallType.Function or CallType.StdFunction))
             return null;
 
-        var signatureStringBuilder = new StringBuilder();
-
-        // Documentation
-        var documentation = callExpr.StdFunction?.Documentation;
-        if (documentation != null)
-        {
-            documentation = Regex.Replace(documentation, @"\n+\s*", "\n# ");
-            signatureStringBuilder.AppendLine($"# {documentation}");
-        }
-
-        // Name
-        signatureStringBuilder.Append($"fn {callExpr.Identifier.Value}(");
-
-        // Parameters
         var parameterNames = callExpr.FunctionSymbol?.Expr.Parameters.Select(x => x.Identifier.Value)
             ?? callExpr.StdFunction?.Parameters.Select(x => x.Name)
             ?? [];
-        signatureStringBuilder.Append(string.Join(", ", parameterNames));
-        signatureStringBuilder.Append(')');
 
-        if (callExpr.FunctionSymbol?.Expr.HasClosure is true)
-            signatureStringBuilder.Append(" => closure");
-
-        return new MarkedString("elk", signatureStringBuilder.ToString());
+        return DocumentationBuilder.BuildSignature(
+            callExpr.Identifier.Value,
+            parameterNames,
+            callExpr.StdFunction?.Documentation,
+            hasClosure: callExpr.FunctionSymbol?.Expr.HasClosure
+                ?? callExpr.StdFunction?.HasClosure is true
+        );
     }
 }

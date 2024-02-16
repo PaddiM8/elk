@@ -52,4 +52,12 @@ class SemanticDocument(string uri, string text)
         );
     }
 
+    public string? GetLineAtCaret(int line, int column)
+    {
+        var lineContent = Text.Split('\n').ElementAtOrDefault(line);
+        if (lineContent == null || column > lineContent.Length)
+            return null;
+
+        return lineContent[..column];
+    }
 }

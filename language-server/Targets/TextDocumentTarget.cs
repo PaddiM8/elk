@@ -1,3 +1,4 @@
+using System.Text;
 using Elk.LanguageServer.Data;
 using Elk.Std.Bindings;
 using Newtonsoft.Json.Linq;
@@ -63,11 +64,10 @@ class TextDocumentTarget(JsonRpc rpc)
         if (document.Ast == null)
             return new CompletionList();
 
-        var lineContent = document.Text.Split('\n').ElementAtOrDefault(parameters.Position.Line);
-        if (lineContent == null || parameters.Position.Character > lineContent.Length)
+        var lineContent = document.GetLineAtCaret(parameters.Position.Line, parameters.Position.Character);
+        if (lineContent == null)
             return new CompletionList();
 
-        lineContent = lineContent[..parameters.Position.Character];
         var fullIdentifierChars = lineContent
             .Reverse()
             .TakeWhile(x => char.IsLetterOrDigit(x) || x is '_' or '-' or '$' or ':')
@@ -82,7 +82,7 @@ class TextDocumentTarget(JsonRpc rpc)
 
         var expr = document.Ast.FindExpressionAt(
             parameters.Position.Line + 1,
-            parameters.Position.Character
+            parameters.Position.Character + 1
         );
         var scope = modulePath.Length > 1
             ? expr?.Scope.ModuleScope.FindModule(modulePath.SkipLast(1), lookInImports: true)
@@ -170,6 +170,99 @@ class TextDocumentTarget(JsonRpc rpc)
         return new Hover
         {
             Contents = new MarkedStringsOrMarkupContent(hoverInfo),
+        };
+    }
+
+    [JsonRpcMethod("textDocument/signatureHelp")]
+    public SignatureHelp SignatureHelp(JToken token)
+    {
+        var parameters = token.ToObject<SignatureHelpParams>()!;
+        var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
+
+        var lineContent = document.GetLineAtCaret(parameters.Position.Line, parameters.Position.Character);
+        if (lineContent == null || document.Ast == null)
+            return new SignatureHelp();
+
+        bool IsStartIdentifierChar(char c)
+            => char.IsLetterOrDigit(c) || c == '_';
+
+        StringBuilder? identifierBuilder = null;
+        for (var i = lineContent.Length - 1; i > 1; i--)
+        {
+            var next = lineContent[i - 1];
+            if (lineContent[i] == '(' && IsStartIdentifierChar(next))
+            {
+                identifierBuilder = new StringBuilder();
+                continue;
+            }
+
+            if (identifierBuilder == null)
+                continue;
+
+            var current = lineContent[i];
+            if (!IsStartIdentifierChar(current) && current != ':')
+                break;
+
+            identifierBuilder.Insert(0, current);
+        }
+
+        if (identifierBuilder == null || identifierBuilder.Length == 0)
+            return new SignatureHelp();
+
+        var modulePath = identifierBuilder.ToString().Split("::").ToList();
+        var identifier = modulePath.Last();
+        modulePath.RemoveAt(modulePath.Count - 1);
+
+        var expr = document.Ast.FindExpressionAt(
+            parameters.Position.Line + 1,
+            parameters.Position.Character + 1
+        );
+        var scope = modulePath.Count > 0
+            ? expr?.Scope.ModuleScope.FindModule(modulePath, lookInImports: true)
+            : expr?.Scope;
+        scope ??= document.Module;
+
+        MarkedString documentation;
+        var functionSymbol = scope.ModuleScope.FindFunction(identifier, lookInImports: false);
+        if (functionSymbol != null)
+        {
+            documentation = DocumentationBuilder.BuildSignature(
+                identifier,
+                functionSymbol.Expr.Parameters.Select(x => x.Identifier.Value),
+                null,
+                functionSymbol.Expr.HasClosure
+            );
+        }
+        else
+        {
+            var stdFunction = StdBindings.GetFunction(identifier, modulePath);
+
+            if (stdFunction == null)
+                return new SignatureHelp();
+
+            documentation = DocumentationBuilder.BuildSignature(
+                identifier,
+                stdFunction.Parameters.Select(x => x.Name),
+                stdFunction.Documentation,
+                stdFunction.HasClosure
+            );
+        }
+
+        var signature = new SignatureInformation
+        {
+            Label = identifier,
+            Documentation = new StringOrMarkupContent(
+                new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```elk\n{documentation.Value}\n```",
+                }
+            ),
+        };
+
+        return new SignatureHelp
+        {
+            Signatures = new Container<SignatureInformation>(signature)
         };
     }
 }

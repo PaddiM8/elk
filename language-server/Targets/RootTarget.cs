@@ -30,6 +30,10 @@ class RootTarget
                     Full = true,
                 },
                 HoverProvider = new HoverRegistrationOptions.StaticOptions(),
+                SignatureHelpProvider = new SignatureHelpRegistrationOptions.StaticOptions
+                {
+                    TriggerCharacters = new Container<string>("(", ","),
+                }
             },
         };
     }
