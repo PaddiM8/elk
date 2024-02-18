@@ -26,12 +26,13 @@ necessary to use a prefix (eg. `$`) when accessing variables in Elk. The
 following operations can be used to update the value of a variable:
 
 | Operation            | Symbol |
-| -------------------- | ------ |
+|----------------------| ------ |
 | Assignment           | =      |
 | Add to value         | +=     |
 | Subtract from value  | -=     |
 | Divide value         | /=     |
 | Multiply value       | \*=    |
+| Assign value if nil  | ??=    |
 | Raise value to power | ^      |
 
 ```elk
