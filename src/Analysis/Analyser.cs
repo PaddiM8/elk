@@ -956,14 +956,30 @@ class Analyser(RootModuleScope rootModule)
     private TryExpr Visit(TryExpr expr)
     {
         var tryBranch = (BlockExpr)Next(expr.Body);
-        var catchBranch = (BlockExpr)Next(expr.CatchBody);
         tryBranch.IsRoot = expr.IsRoot;
-        catchBranch.IsRoot = expr.IsRoot;
+
+        var catchExpressions = new List<CatchExpr>();
+        foreach (var catchExpression in expr.CatchExpressions)
+        {
+            var type = catchExpression.Type == null
+                ? null
+                : (TypeExpr)Next(catchExpression.Type);
+            var body = (BlockExpr)Next(catchExpression.Body);
+            body.IsRoot = expr.IsRoot;
+
+            var newExpr = new CatchExpr(
+                catchExpression.Identifier,
+                type,
+                body,
+                catchExpression.Scope
+            );
+
+            catchExpressions.Add(newExpr);
+        }
 
         return new TryExpr(
             tryBranch,
-            catchBranch,
-            expr.CatchIdentifier,
+            catchExpressions.ToList(),
             _scope
         )
         {

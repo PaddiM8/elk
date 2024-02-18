@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Parsing;
@@ -177,9 +176,15 @@ class SemanticTokenGenerator
     private void NextTry(TryExpr expr)
     {
         _tokens.AddRange(GetSemanticTokens(expr.Body.ChildExpressions));
-        if (expr.CatchIdentifier != null)
-            _tokens.Add(new SemanticToken(SemanticTokenKind.Parameter, expr.CatchIdentifier));
+        foreach (var catchExpression in expr.CatchExpressions)
+        {
+            if (catchExpression.Identifier != null)
+                _tokens.Add(new SemanticToken(SemanticTokenKind.Parameter, catchExpression.Identifier));
 
-        _tokens.AddRange(GetSemanticTokens(expr.CatchBody.ChildExpressions));
+            if (catchExpression.Type != null)
+                _tokens.Add(new SemanticToken(SemanticTokenKind.Struct, catchExpression.Type.Identifier));
+
+            _tokens.AddRange(GetSemanticTokens(catchExpression.Body.ChildExpressions));
+        }
     }
 }

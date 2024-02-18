@@ -557,17 +557,31 @@ public class ClosureExpr(
 
 public class TryExpr(
     BlockExpr body,
-    BlockExpr catchBody,
-    Token? catchIdentifier,
+    IList<CatchExpr> catchExpressions,
     Scope scope)
-    : Expr(body.StartPosition, catchBody.EndPosition, scope)
+    : Expr(
+        body.StartPosition,
+        catchExpressions.LastOrDefault()?.EndPosition ?? body.EndPosition,
+        scope
+    )
 {
     public BlockExpr Body { get; } = body;
 
-    public BlockExpr CatchBody { get; } = catchBody;
-
-    public Token? CatchIdentifier { get; } = catchIdentifier;
+    public IList<CatchExpr> CatchExpressions { get; } = catchExpressions;
 
     public override IEnumerable<Expr> ChildExpressions
-        => [Body, CatchBody];
+        => CatchExpressions.Prepend<Expr>(Body);
+}
+
+public class CatchExpr(Token? identifier, TypeExpr? type, BlockExpr body, Scope scope)
+    : Expr(body.StartPosition, body.EndPosition, scope)
+{
+    public Token? Identifier { get; } = identifier;
+
+    public TypeExpr? Type { get; } = type;
+
+    public BlockExpr Body { get; } = body;
+
+    public override IEnumerable<Expr> ChildExpressions
+        => [Body];
 }

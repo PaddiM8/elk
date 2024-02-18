@@ -4,10 +4,12 @@ let result = try {
     assert(false)
 }
 
-assert(result == 2)
+assertEqual(result, 2)
 
 let result2 = try {
     list::column(1, 1)
+    assert(false)
+} catch e: String {
     assert(false)
 } catch e {
     assert(isType(e, String))
@@ -15,4 +17,16 @@ let result2 = try {
     "caught"
 }
 
-assert(result2 == "caught")
+assertEqual(result2, "caught")
+
+struct CustomError(msg)
+let result3 = try {
+    throw new CustomError(123)
+    assert(false)
+} catch e: CustomError {
+    e->msg
+} catch {
+    assert(false)
+}
+
+assertEqual(result3, 123)

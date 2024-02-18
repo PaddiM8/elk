@@ -1109,10 +1109,9 @@ partial class Interpreter
 
     private RuntimeObject Visit(TryExpr expr)
     {
-        RuntimeObject result;
         try
         {
-            result = Next(expr.Body);
+            return Next(expr.Body);
         }
         catch (RuntimeException e)
         {
@@ -1120,13 +1119,22 @@ partial class Interpreter
                 ? userException.Value
                 : new RuntimeString(e.Message);
 
-            var scope = new LocalScope(_scope);
-            if (expr.CatchIdentifier != null)
-                scope.AddVariable(expr.CatchIdentifier.Value, value);
+            foreach (var catchExpression in expr.CatchExpressions)
+            {
+                var type = catchExpression.Type == null
+                    ? null
+                    : (RuntimeType)Next(catchExpression.Type);
+                if (type?.Type == value.GetType())
+                    continue;
 
-            result = NextBlock(expr.CatchBody, scope);
+                var scope = new LocalScope(_scope);
+                if (catchExpression.Identifier != null)
+                    scope.AddVariable(catchExpression.Identifier.Value, value);
+
+                return NextBlock(catchExpression.Body, scope);
+            }
+
+            throw;
         }
-
-        return result;
     }
 }

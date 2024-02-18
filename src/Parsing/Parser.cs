@@ -1055,17 +1055,39 @@ internal class Parser
     {
         EatExpected(TokenKind.Try);
         var body = ParseBlockOrSingle(StructureKind.Other);
-        EatExpected(TokenKind.Catch);
-        var catchIdentifier = AdvanceIf(TokenKind.Identifier)
-            ? Previous
-            : null;
-        var catchScope = new LocalScope(_scope);
-        if (catchIdentifier != null)
-            catchScope.AddVariable(catchIdentifier.Value, RuntimeNil.Value);
+        var catchExpressions = new List<CatchExpr>();
+        while (AdvanceIf(TokenKind.Catch))
+        {
+            Token? catchIdentifier = null;
+            TypeExpr? catchType = null;
+            if (AdvanceIf(TokenKind.Identifier))
+            {
+                catchIdentifier = Previous;
 
-        var catchBody = ParseBlockOrSingle(StructureKind.Other, catchScope);
+                if (AdvanceIf(TokenKind.Colon))
+                {
+                    var type = ParseIdentifier();
+                    if (type is not TypeExpr typeExpr)
+                        throw Error("Expected type after catch identifier");
 
-        return new TryExpr(body, catchBody, catchIdentifier, _scope);
+                    catchType = typeExpr;
+                }
+            }
+
+            var catchScope = new LocalScope(_scope);
+            if (catchIdentifier != null)
+                catchScope.AddVariable(catchIdentifier.Value, RuntimeNil.Value);
+
+            var catchBody = ParseBlockOrSingle(StructureKind.Other, catchScope);
+            catchExpressions.Add(
+                new CatchExpr(catchIdentifier, catchType, catchBody, _scope)
+            );
+        }
+
+        if (catchExpressions.Count == 0)
+            throw Error("Expected catch block after try");
+
+        return new TryExpr(body, catchExpressions, _scope);
     }
 
     private List<Token> ParseIdentifierList()
