@@ -33,7 +33,8 @@ class ReturnHandler
     public RuntimeObject Collect()
     {
         ReturnKind = ReturnKind.None;
-        var value = _returnValue ?? throw new InvalidOperationException("Cannot collect return value. No value is being returned.");
+        var value = _returnValue
+            ?? throw new InvalidOperationException("Cannot collect return value. No value is being returned.");
         _returnValue = null;
 
         return value;

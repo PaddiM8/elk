@@ -23,22 +23,13 @@ public class IntegrationTests
             PrintErrors = false,
         };
 
-        Assert.DoesNotThrow(() =>
-        {
-            try
-            {
-                ElkProgram.Evaluate(
-                    File.ReadAllText(filePath),
-                    interpreter.CurrentModule,
-                    AnalysisScope.OncePerModule,
-                    interpreter
-                );
-            }
-            catch (RuntimeException e)
-            {
-                throw new RuntimeException($"{e.StartPosition} {e.Message}");
-            }
-        });
+        var result = ElkProgram.Evaluate(
+            File.ReadAllText(filePath),
+            interpreter.CurrentModule,
+            AnalysisScope.OncePerModule,
+            interpreter
+        );
+        Assert.IsEmpty(result.Diagnostics);
     }
 
     public static IEnumerable<string> ElkFiles()

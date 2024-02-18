@@ -844,7 +844,7 @@ internal class Parser
 
             var block = new BlockExpr(
                 [functionReference],
-                StructureKind.Other,
+                StructureKind.Function,
                 new LocalScope(_scope),
                 Previous!.Position,
                 Previous!.EndPosition
@@ -874,7 +874,7 @@ internal class Parser
             var bodyExpr = ParseComparison();
             right = new BlockExpr(
                 [bodyExpr],
-                StructureKind.Other,
+                StructureKind.Function,
                 scope,
                 bodyExpr.StartPosition,
                 bodyExpr.EndPosition
@@ -884,7 +884,7 @@ internal class Parser
         }
         else
         {
-            right = ParseBlock(StructureKind.Other, couldBeDictionary: false, scope);
+            right = ParseBlock(StructureKind.Function, couldBeDictionary: false, scope);
         }
 
         return new ClosureExpr(left, parameters, right, _scope);
