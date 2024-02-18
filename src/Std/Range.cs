@@ -7,19 +7,16 @@ namespace Elk.Std;
 [ElkModule("range")]
 public class Range
 {
-    [ElkFunction("intersect")]
-    public static RuntimeRange Intersect(RuntimeRange a, RuntimeRange b)
-    {
-        // TODO: Handle non-finite ranges
-        if (!a.From.HasValue || !b.From.HasValue || !a.To.HasValue || !b.To.HasValue)
-            return new RuntimeRange(0, 0);
-
-        var lowerBound = Math.Max(a.From.Value, b.From.Value);
-        var upperBound = Math.Min(a.To.Value, b.To.Value);
-        return lowerBound <= upperBound
-            ? new RuntimeRange(lowerBound, upperBound)
-            : new RuntimeRange(0, 0);
-    }
+    [ElkFunction("bounds")]
+    public static RuntimeTuple Bounds(RuntimeRange range)
+        => new([
+            range.From.HasValue
+                ? new RuntimeInteger(range.From.Value)
+                : RuntimeNil.Value,
+            range.To.HasValue
+                ? new RuntimeInteger(range.To.Value)
+                : RuntimeNil.Value,
+        ]);
 
     [ElkFunction("except")]
     public static RuntimeRange Except(RuntimeRange a, RuntimeRange b)
@@ -45,14 +42,17 @@ public class Range
         );
     }
 
-    [ElkFunction("bounds")]
-    public static RuntimeTuple Bounds(RuntimeRange range)
-        => new([
-            range.From.HasValue
-                ? new RuntimeInteger(range.From.Value)
-                : RuntimeNil.Value,
-            range.To.HasValue
-                ? new RuntimeInteger(range.To.Value)
-                : RuntimeNil.Value,
-        ]);
+    [ElkFunction("intersect")]
+    public static RuntimeRange Intersect(RuntimeRange a, RuntimeRange b)
+    {
+        // TODO: Handle non-finite ranges
+        if (!a.From.HasValue || !b.From.HasValue || !a.To.HasValue || !b.To.HasValue)
+            return new RuntimeRange(0, 0);
+
+        var lowerBound = Math.Max(a.From.Value, b.From.Value);
+        var upperBound = Math.Min(a.To.Value, b.To.Value);
+        return lowerBound <= upperBound
+            ? new RuntimeRange(lowerBound, upperBound)
+            : new RuntimeRange(0, 0);
+    }
 }
