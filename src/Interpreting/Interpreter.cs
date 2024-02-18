@@ -357,11 +357,13 @@ partial class Interpreter
     {
         if (expr.Keyword.Kind == TokenKind.Throw)
         {
-            throw new RuntimeUserException(
-                expr.Value == null
-                    ? RuntimeNil.Value
-                    : Next(expr.Value)
-            );
+            RuntimeObject errorValue = expr.Value == null
+                ? RuntimeNil.Value
+                : Next(expr.Value);
+            var runtimeError = errorValue as RuntimeError
+                ?? new RuntimeError(errorValue);
+
+            throw new RuntimeUserException(runtimeError);
         }
 
         var returnKind = expr.Keyword.Kind switch
@@ -1113,18 +1115,19 @@ partial class Interpreter
         {
             return Next(expr.Body);
         }
-        catch (RuntimeException e)
+        catch (RuntimeException ex)
         {
-            var value = e is RuntimeUserException userException
+            var value = ex is RuntimeUserException userException
                 ? userException.Value
-                : new RuntimeString(e.Message);
+                : new RuntimeError(new RuntimeString(ex.Message));
+            value.StackTrace = ex.ElkStackTrace;
 
             foreach (var catchExpression in expr.CatchExpressions)
             {
                 var type = catchExpression.Type == null
                     ? null
                     : (RuntimeType)Next(catchExpression.Type);
-                if (type?.Type == value.GetType())
+                if (type?.Type == value.Value.GetType())
                     continue;
 
                 var scope = new LocalScope(_scope);

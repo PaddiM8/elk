@@ -83,6 +83,11 @@ public class Into
         return new(builder.ToString());
     }
 
+    /// <returns></returns>
+    [ElkFunction("error")]
+    public static RuntimeError Error(RuntimeObject value)
+        => new(value);
+
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("dict")]
     public static RuntimeDictionary ToDictionary(RuntimeObject? value = null)

@@ -9,10 +9,10 @@ assertEqual(result, 2)
 let result2 = try {
     list::column(1, 1)
     assert(false)
-} catch e: String {
+} catch e with String {
     assert(false)
 } catch e {
-    assert(isType(e, String))
+    assert(isType(error::value(e), String))
 
     "caught"
 }
@@ -23,10 +23,26 @@ struct CustomError(msg)
 let result3 = try {
     throw new CustomError(123)
     assert(false)
-} catch e: CustomError {
-    e->msg
+} catch e with CustomError {
+    error::value(e)->msg
 } catch {
     assert(false)
 }
 
 assertEqual(result3, 123)
+
+let rethrew = false
+try {
+    try {
+        throw "hello"
+    } catch e {
+        rethrew = true
+        throw e
+    }
+
+    assert(false)
+} catch e {
+    assertEqual(error::value(e), "hello")
+}
+
+assert(rethrew)

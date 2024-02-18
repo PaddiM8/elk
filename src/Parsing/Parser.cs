@@ -1064,7 +1064,7 @@ internal class Parser
             {
                 catchIdentifier = Previous;
 
-                if (AdvanceIf(TokenKind.Colon))
+                if (AdvanceIf(TokenKind.With))
                 {
                     var type = ParseIdentifier();
                     if (type is not TypeExpr typeExpr)

@@ -221,7 +221,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
                 );
             }
 
-            throw new RuntimeUserException(message);
+            throw new RuntimeUserException(new RuntimeError(message));
         }
     }
 }

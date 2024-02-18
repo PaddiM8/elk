@@ -2,12 +2,8 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting.Exceptions;
 
-class RuntimeUserException(RuntimeObject value)
-    : RuntimeException(
-        value is RuntimeNil
-            ? ""
-            : value.ToString() ?? ""
-    )
+class RuntimeUserException(RuntimeError value)
+    : RuntimeException(value.ToString() ?? "")
 {
-    public RuntimeObject Value { get; } = value;
+    public RuntimeError Value { get; } = value;
 }
