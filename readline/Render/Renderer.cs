@@ -48,6 +48,7 @@ internal class Renderer : IRenderer
     public string Text
     {
         get => _text.ToString();
+
         set
         {
             _text.Clear();
@@ -104,7 +105,7 @@ internal class Renderer : IRenderer
         PromptStartLeft = _left;
     }
 
-    private void RenderPrompt()
+    public void RenderPrompt()
     {
         WriteRaw(
             Ansi.HideCursor(),

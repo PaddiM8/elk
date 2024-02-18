@@ -14,11 +14,6 @@ class Repl
 {
     public static void Run()
     {
-        Console.CancelKeyPress += (_, args) =>
-        {
-            args.Cancel = true;
-        };
-
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
@@ -41,6 +36,12 @@ class Repl
             EnterHandler = new EnterHandler(),
             SearchHandler = new SearchHandler(historyRepository),
             WordSeparators = [' ', '/', ':'],
+        };
+
+        Console.CancelKeyPress += (_, args) =>
+        {
+            args.Cancel = true;
+            readLine.AbortInput();
         };
 
         readLine.RegisterShortcut(

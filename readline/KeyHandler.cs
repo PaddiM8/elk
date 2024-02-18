@@ -21,7 +21,8 @@ public readonly struct KeyPress(ConsoleModifiers modifiers, ConsoleKey key)
 [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public class KeyHandler
 {
-    public string Text => _renderer.Text;
+    public string Text
+        => _renderer.Text;
 
     public char[] WordSeparators = { ' ' };
 
@@ -182,6 +183,13 @@ public class KeyHandler
 
         if (remaining != null)
             _renderer.Insert(remaining, includeHint: false);
+    }
+
+    public void AbortInput()
+    {
+        _renderer.WriteRaw("\n");
+        _renderer.RenderPrompt();
+        _renderer.Text = "";
     }
 
     public void Backspace()

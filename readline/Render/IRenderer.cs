@@ -42,6 +42,7 @@ internal interface IRenderer : IRenderable
 
     void ClearLineRight(int? fromIndex = null);
 
+    void RenderPrompt();
     void RemoveLeft(int count, bool render = true);
 
     void RemoveRight(int count, bool render = true);

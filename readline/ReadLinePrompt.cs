@@ -26,6 +26,7 @@ public class ReadLinePrompt
     private readonly ShortcutBag _shortcuts = new();
     private readonly object _rendererLock = new();
     private Renderer? _activeRenderer;
+    private bool _isWaitingForKey = false;
 
     public ReadLinePrompt()
     {
@@ -80,7 +81,10 @@ public class ReadLinePrompt
 
         while (!enterPressed)
         {
+            _isWaitingForKey = true;
             var (firstKey, remaining) = KeyReader.Read();
+            _isWaitingForKey = false;
+
             _keyHandler.Handle(firstKey, remaining);
         }
 
@@ -93,5 +97,11 @@ public class ReadLinePrompt
     public void RegisterShortcut(KeyPress keyPress, Action<KeyHandler> action)
     {
         _shortcuts.Add(keyPress, action);
+    }
+
+    public void AbortInput()
+    {
+        if (_isWaitingForKey)
+            _keyHandler?.AbortInput();
     }
 }
