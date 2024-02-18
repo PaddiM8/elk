@@ -211,15 +211,8 @@ internal class Parser
                 Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
                 importScope
             );
-
             if (lexError != null)
-            {
-                throw new RuntimeException(
-                    lexError.Message,
-                    lexError.StartPosition,
-                    lexError.EndPosition
-                );
-            }
+                throw lexError;
         }
 
         _scope.ModuleScope.ImportModule(moduleName, importScope);
@@ -933,13 +926,7 @@ internal class Parser
                 };
                 var tokens = Lexer.Lex(part.Value, startPos, out var lexError);
                 if (lexError != null)
-                {
-                    throw new RuntimeException(
-                        lexError.Message,
-                        lexError.StartPosition,
-                        lexError.EndPosition
-                    );
-                }
+                    throw lexError;
 
                 var ast = Parse(tokens, _scope);
                 if (ast.Expressions.Count != 1)

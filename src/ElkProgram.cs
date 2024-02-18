@@ -28,25 +28,12 @@ public static class ElkProgram
 {
     public static EvaluationResult GetSemanticInformation(string input, Scope scope)
     {
-        try
-        {
-            return Evaluate(
-                input,
-                scope,
-                AnalysisScope.OverwriteExistingModule,
-                null
-            );
-        }
-        catch (RuntimeException ex)
-        {
-            if (ex.StartPosition == null)
-                return new EvaluationResult();
-
-            return new EvaluationResult
-            {
-                Diagnostics = [new DiagnosticMessage(ex.Message, ex.StartPosition, ex.StartPosition)]
-            };
-        }
+        return Evaluate(
+            input,
+            scope,
+            AnalysisScope.OverwriteExistingModule,
+            null
+        );
     }
 
     internal static EvaluationResult Evaluate(
@@ -55,19 +42,43 @@ public static class ElkProgram
         AnalysisScope analysisScope,
         Interpreter? interpreter)
     {
-        var ast = Parser.Parse(
-            Lexer.Lex(
-                input,
-                scope.ModuleScope.FilePath,
-                out var lexError
-            ),
-            scope
-        );
+        Ast ast;
+        try
+        {
+            ast = Parser.Parse(
+                Lexer.Lex(
+                    input,
+                    scope.ModuleScope.FilePath,
+                    out var error
+                ),
+                scope
+            );
+
+            if (error != null)
+                throw error;
+        }
+        catch (RuntimeException ex)
+        {
+            var diagnostics = new List<DiagnosticMessage>();
+            var result = new EvaluationResult
+            {
+                Diagnostics = diagnostics,
+            };
+
+            if (ex.StartPosition == null || ex.EndPosition == null)
+                return result;
+
+            var message = new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)
+            {
+                StackTrace = ex.ElkStackTrace,
+            };
+
+            diagnostics.Add(message);
+
+            return result;
+        }
+
         scope.ModuleScope.Ast = ast;
-
-        if (lexError != null)
-            throw new RuntimeException(lexError.Message, lexError.StartPosition, lexError.EndPosition);
-
         var semanticTokens = ast.GetSemanticTokens();
 
         try
@@ -79,14 +90,35 @@ public static class ElkProgram
         }
         catch (RuntimeException ex)
         {
-            List<DiagnosticMessage> diagnostics = ex.StartPosition == null || ex.EndPosition == null
-                ? []
-                : [new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)];
+            var diagnostics = new List<DiagnosticMessage>();
+            if (ex is { StartPosition: not null, EndPosition: not null })
+            {
+                var message = new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)
+                {
+                    StackTrace = ex.ElkStackTrace,
+                };
+
+                diagnostics.Add(message);
+            }
 
             return new EvaluationResult
             {
                 SemanticTokens = semanticTokens,
                 Diagnostics = diagnostics,
+            };
+        }
+        catch (Exception e)
+        {
+            var message = new DiagnosticMessage(
+                e.Message,
+                interpreter?.Position ?? TextPos.Default,
+                interpreter?.Position ?? TextPos.Default
+            );
+
+            return new EvaluationResult
+            {
+                SemanticTokens = semanticTokens,
+                Diagnostics = [message],
             };
         }
     }

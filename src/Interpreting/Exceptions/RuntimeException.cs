@@ -52,32 +52,4 @@ public class RuntimeException : Exception
         if (startPosition != null)
             ElkStackTrace.Add(new Trace(startPosition));
     }
-
-    public override string ToString()
-        => ToString(includePosition: true);
-
-    public string ToString(bool includePosition)
-    {
-        if (Message.Length == 0)
-            return "";
-
-        var builder = new StringBuilder();
-        builder.Append(Ansi.Format("Error", AnsiForeground.Red) + ": ");
-        builder.AppendLine(Message);
-
-        foreach (var trace in ElkStackTrace)
-        {
-            var position = includePosition
-                ? $"{trace.Position} "
-                : "";
-            builder.AppendLine(
-                $"{position}{trace.FunctionIdentifier?.Value}".Trim()
-            );
-        }
-
-        if (!ElkStackTrace.Any() && StartPosition != null)
-            builder.AppendLine(StartPosition.ToString());
-
-        return builder.ToString().Trim();
-    }
 }

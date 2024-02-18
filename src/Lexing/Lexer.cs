@@ -5,12 +5,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Elk.Interpreting.Exceptions;
 
 #endregion
 
 namespace Elk.Lexing;
-
-public record LexError(string Message, TextPos StartPosition, TextPos EndPosition);
 
 public enum LexerMode
 {
@@ -38,7 +37,7 @@ public class Lexer
     private int _index;
     private (int line, int column) _pos;
     private readonly string? _filePath;
-    private LexError? _error;
+    private RuntimeException? _error;
     private readonly LexerMode _mode;
 
     private Lexer(string input, TextPos startPos, LexerMode mode)
@@ -52,7 +51,7 @@ public class Lexer
     public static List<Token> Lex(
         string input,
         TextPos startPos,
-        out LexError? error,
+        out RuntimeException? error,
         LexerMode mode = LexerMode.Default)
     {
         var lexer = new Lexer(input, startPos, mode);
@@ -70,7 +69,7 @@ public class Lexer
     public static List<Token> Lex(
         string input,
         string? filePath,
-        out LexError? error,
+        out RuntimeException? error,
         LexerMode mode = LexerMode.Default)
     {
         var result = Lex(input, new TextPos(1, 1, 0, filePath), out var innerError, mode);
@@ -576,7 +575,7 @@ public class Lexer
     private void Error(string message)
     {
         var pos = new TextPos(_pos.line, _pos.column, _index, _filePath);
-        _error = new LexError(
+        _error = new RuntimeException(
             message,
             pos,
             pos with

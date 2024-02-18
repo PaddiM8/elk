@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
@@ -106,49 +107,45 @@ public class ShellSession
         bool printErrorLineNumbers = true)
     {
         var textWriter = Console.Out;
-        string result;
-        try
-        {
-            var resultObject = ElkProgram.Evaluate(
-                command,
-                ownScope
-                    ? new LocalScope(_interpreter.CurrentModule)
-                    : _interpreter.CurrentModule,
-                AnalysisScope.AppendToModule,
-                _interpreter
-            ).Value;
-            if (resultObject is RuntimeNil or null)
-                return;
+        var resultBuilder = new StringBuilder();
+        var evaluationResult = ElkProgram.Evaluate(
+            command,
+            ownScope
+                ? new LocalScope(_interpreter.CurrentModule)
+                : _interpreter.CurrentModule,
+            AnalysisScope.AppendToModule,
+            _interpreter
+        );
 
-            result = resultObject.ToString() ?? "";
-        }
-        catch (RuntimeException e)
+        if (evaluationResult.Diagnostics.Any())
         {
-            textWriter = Console.Error;
-            e.StartPosition ??= _interpreter.Position;
-            result = e.ToString(printErrorLineNumbers).Trim();
-            if (result == "")
-                return;
+            foreach (var diagnostic in evaluationResult.Diagnostics)
+            {
+                textWriter = Console.Error;
+                resultBuilder.AppendLine(
+                    diagnostic.ToString(printErrorLineNumbers).Trim()
+                );
+            }
         }
-        catch (Exception e)
+        else if (evaluationResult.Value is RuntimeNil or null)
         {
-            textWriter = Console.Error;
-            Console.ForegroundColor = ConsoleColor.Red;
-            var position = printErrorLineNumbers
-                ? _interpreter.Position
-                : null;
-
-            result = $"{position} {e.Message}".Trim();
-            if (result == "")
-                return;
+            return;
+        }
+        else
+        {
+            resultBuilder.AppendLine(
+                evaluationResult.Value.ToString() ?? ""
+            );
         }
 
-        if (!printReturnedValue)
+        if (!printReturnedValue && !evaluationResult.Diagnostics.Any())
         {
             Console.ResetColor();
+
             return;
         }
 
+        var result = resultBuilder.ToString();
         if (result == "" || result.EndsWith('\n'))
         {
             textWriter.Write(result);
@@ -187,35 +184,28 @@ public class ShellSession
             return;
         }
 
-        try
+        void CallOnExit()
         {
-            void CallOnExit()
-            {
-                if (interpreter.CurrentModule.FunctionExists("__onExit"))
-                    CallFunction(interpreter, "__onExit");
-            }
-
-            Console.CancelKeyPress += (_, _) => CallOnExit();
-            ElkProgram.Evaluate(
-                File.ReadAllText(filePath),
-                new RootModuleScope(filePath, null),
-                AnalysisScope.OncePerModule,
-                interpreter
-            );
-
-            CallOnExit();
+            if (interpreter.CurrentModule.FunctionExists("__onExit"))
+                CallFunction(interpreter, "__onExit");
         }
-        catch (RuntimeException e)
+
+        Console.CancelKeyPress += (_, _) => CallOnExit();
+        var evaluationResult = ElkProgram.Evaluate(
+            File.ReadAllText(filePath),
+            new RootModuleScope(filePath, null),
+            AnalysisScope.OncePerModule,
+            interpreter
+        );
+
+        CallOnExit();
+
+        if (evaluationResult.Diagnostics.Any())
         {
-            Console.Error.WriteLine(e);
-        }
-        catch (Exception e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.Write("Error");
-            Console.ResetColor();
-            Console.Error.Write(": ");
-            Console.Error.WriteLine($"{interpreter.Position} {e.Message}");
+            foreach (var diagnostic in evaluationResult.Diagnostics)
+                Console.Error.WriteLine(diagnostic.ToString().Trim());
+
+            Environment.Exit(1);
         }
     }
 
