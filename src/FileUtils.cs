@@ -84,6 +84,22 @@ public static class FileUtils
         FileType fileType,
         CompletionKind completionKind = CompletionKind.Normal)
     {
+        try
+        {
+            return GetPathCompletionsInternal(path, workingDirectory, fileType, completionKind);
+        }
+        catch
+        {
+            return Array.Empty<Completion>();
+        }
+    }
+
+    private static IList<Completion> GetPathCompletionsInternal(
+        string path,
+        string workingDirectory,
+        FileType fileType,
+        CompletionKind completionKind = CompletionKind.Normal)
+    {
         var lastSlashIndex = path
             .WithIndex()
             .LastOrDefault(x => x.item == '/' && path.ElementAtOrDefault(x.index - 1) != '\\')
