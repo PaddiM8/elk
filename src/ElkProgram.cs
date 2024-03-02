@@ -73,7 +73,8 @@ public static class ElkProgram
                 StackTrace = ex.ElkStackTrace,
             };
 
-            diagnostics.Add(message);
+            if (ex.Message.Length > 0)
+                diagnostics.Add(message);
 
             return result;
         }
@@ -98,7 +99,8 @@ public static class ElkProgram
                     StackTrace = ex.ElkStackTrace,
                 };
 
-                diagnostics.Add(message);
+                if (ex.Message.Length > 0)
+                    diagnostics.Add(message);
             }
 
             return new EvaluationResult

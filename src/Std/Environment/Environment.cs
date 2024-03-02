@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Elk.Analysis;
 using Elk.Interpreting;
+using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -49,12 +50,16 @@ static class Environment
             }
         }
 
-        return ElkProgram.Evaluate(
+        var result = ElkProgram.Evaluate(
             input.Value,
             interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
             interpreter
-        ).Value ?? RuntimeNil.Value;
+        );
+        if (result.Diagnostics.Any())
+            throw new RuntimeException(result.Diagnostics.FirstOrDefault()?.Message ?? "Eval error.");
+
+        return result.Value ?? RuntimeNil.Value;
     }
 
     /// <summary>

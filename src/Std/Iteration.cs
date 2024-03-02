@@ -72,7 +72,7 @@ static class Iteration
     /// <returns>A list of chunks where each chunk is a list of items of the given size.</returns>
     [ElkFunction("chunks")]
     public static RuntimeGenerator Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
-        => new(items.Chunk((int)size.Value).Select(x => new RuntimeGenerator(x)));
+        => new(items.Chunk((int)size.Value).Select(x => new RuntimeTuple(x)));
 
     /// <summary>
     /// Some standard library functions return lazily evaluated Iterables. This function

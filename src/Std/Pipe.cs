@@ -77,6 +77,16 @@ public static class Pipe
         return pipe;
     }
 
+    /// <returns>
+    /// The exit code of the process belonging to the given pipe, or nil if it has not terminated yet.
+    /// Note: Only works on pipes that run in the background (eg. where the `background` function has been used).
+    /// </returns>
+    [ElkFunction("exitCode")]
+    public static RuntimeObject ExitCode(RuntimePipe pipe)
+        => pipe.ExitCode == null
+            ? RuntimeNil.Value
+            : new RuntimeInteger(pipe.ExitCode.Value);
+
     /// <summary>
     /// Waits for a pipe that was started in the background.
     /// </summary>

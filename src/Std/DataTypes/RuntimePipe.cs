@@ -40,6 +40,9 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         }
     }
 
+    public int? ExitCode
+        => _processContext.ExitCode;
+
     public IEnumerator<string> StreamEnumerator { get; private set; } = GetNullEnumerator();
 
     public IEnumerator<RuntimeObject> GetEnumerator()
@@ -153,11 +156,17 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
 
     public void Start()
     {
+        if (_processContext.HasStarted)
+            return;
+
         StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
     }
 
     public void MakeBackground()
     {
+        if (_processContext.HasStarted)
+            return;
+
         _processContext.MakeBackground();
     }
 

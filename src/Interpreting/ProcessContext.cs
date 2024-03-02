@@ -14,13 +14,16 @@ namespace Elk.Interpreting;
 public class ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
     : IEnumerable<string>
 {
+    public bool HasStarted { get; private set; }
+
+    public int? ExitCode { get; private set; }
+
     public bool Success
-        => _exitCode == 0 || _allowNonZeroExit;
+        => ExitCode == 0 || _allowNonZeroExit;
 
     private Process? _process = process;
     private readonly BlockingCollection<string> _buffer = new(new ConcurrentQueue<string>());
     private bool _allowNonZeroExit;
-    private int _exitCode;
     private int _openPipeCount;
     private bool _disposeOutput;
     private bool _disposeError;
@@ -34,6 +37,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     public int Start()
     {
+        HasStarted = true;
+
         try
         {
             _process!.Start();
@@ -48,7 +53,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
         CloseProcess(messageOnError: false);
 
-        return _exitCode;
+        return ExitCode ?? 0;
     }
 
     public void MakeBackground()
@@ -60,6 +65,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     public void StartWithRedirect()
     {
+        HasStarted = true;
+
         if (!_disposeOutput)
         {
             _process!.OutputDataReceived += Process_DataReceived;
@@ -142,7 +149,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
     {
         CloseProcess(messageOnError: true);
 
-        return _exitCode;
+        return ExitCode ?? 0;
     }
 
     private void Process_DataReceived(object sender, DataReceivedEventArgs eventArgs)
@@ -201,23 +208,23 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             if (_process == null)
                 return;
 
-            _exitCode = _process.ExitCode;
+            ExitCode = _process.ExitCode;
             _process.Dispose();
             _process = null;
 
-            Environment.SetEnvironmentVariable("?", _exitCode.ToString());
+            Environment.SetEnvironmentVariable("?", ExitCode.ToString());
 
-            if (_exitCode == 0)
+            if (ExitCode == 0)
                 return;
 
             RuntimeObject message = messageOnError
                 ? new RuntimeString("Program returned a non-zero exit code.")
                 : RuntimeNil.Value;
             // TODO: Somehow get the actual signal rather than relying on exit codes
-            if (_exitCode >= 128 && _exitCode <= 128 + SignalHelper.SignalNames.Length)
+            if (ExitCode >= 128 && ExitCode <= 128 + SignalHelper.SignalNames.Length)
             {
                 message = new RuntimeString(
-                    SignalHelper.SignalNames[_exitCode - 128]
+                    SignalHelper.SignalNames[ExitCode ?? 0 - 128]
                 );
             }
 
