@@ -169,6 +169,7 @@ internal class Renderer : IRenderer
             return;
         }
 
+
         WriteRaw(Ansi.ShowCursor());
         var content = _transaction?.ToString() ?? "";
         _transaction = null;

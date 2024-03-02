@@ -83,9 +83,9 @@ class CompletionState(IRenderer renderer) : IRenderable
     private void InsertCompletion()
     {
         renderer.StartTransaction();
-        renderer.RemoveLeft(renderer.Caret - _completionStart, render: true);
+        renderer.RemoveLeft(renderer.Caret - _completionStart);
         var completion = _completions[_listing.SelectedIndex];
-        var trailingSpace = completion.HasTrailingSpace
+        var trailingSpace = completion.HasTrailingSpace && renderer.IsEndOfLine
             ? " "
             : "";
         var input = completion.CompletionText + trailingSpace;

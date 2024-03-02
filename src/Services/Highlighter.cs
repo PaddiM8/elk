@@ -552,7 +552,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             }
             else if (Current?.Kind == TokenKind.Backslash)
             {
-                Push(Eat()!);
+                textArgumentTokens.Add(Eat()!);
             }
             else if (Current?.Kind == TokenKind.WhiteSpace)
             {
