@@ -781,7 +781,7 @@ partial class Interpreter
             }
         });
 
-        return new RuntimeList(evaluatedWithPlurality);
+        return new RuntimeList(evaluatedWithPlurality.ToList());
     }
 
     private Invoker BuildRuntimeFunctionInvoker(RuntimeFunction function)

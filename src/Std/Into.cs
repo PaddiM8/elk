@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,7 +26,7 @@ public class Into
     /// <returns>A list of characters.</returns>
     [ElkFunction("chars")]
     public static RuntimeList Chars(RuntimeString input)
-        => new(input);
+        => new(input.ToList());
 
     /// <param name="charString">A string containing the character to be converted.</param>
     /// <returns>An integer representing the unicode codepoint of the character.</returns>

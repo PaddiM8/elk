@@ -43,10 +43,10 @@ static class String
     /// <param name="size">The length of each chunk</param>
     /// <returns>A list of string chunks.</returns>
     [ElkFunction("chunks")]
-    public static RuntimeList Chunks(RuntimeString str, RuntimeInteger size)
+    public static RuntimeGenerator Chunks(RuntimeString str, RuntimeInteger size)
     {
         if (size.Value == 0)
-            return new RuntimeList(new List<RuntimeObject>());
+            return new RuntimeGenerator([]);
 
         var chunks = new List<RuntimeString>();
         var builder = new StringBuilder();
@@ -67,7 +67,7 @@ static class String
         if (builder.Length > 0)
             chunks.Add(new RuntimeString(builder.ToString()));
 
-        return new RuntimeList(chunks);
+        return new RuntimeGenerator(chunks);
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ static class String
     /// <param name="divider">The character sequence that divides the column. Default: "\t"</param>
     /// <returns>A list of lines within the specific column.</returns>
     [ElkFunction("column")]
-    public static RuntimeList Column(
+    public static RuntimeGenerator Column(
         RuntimeString input,
         RuntimeInteger index,
         RuntimeString? divider = null)
@@ -123,7 +123,11 @@ static class String
         if (lines.LastOrDefault() == "")
             lines.RemoveAt(lines.Count - 1);
 
-        return new(lines.Select(x => new RuntimeString(x)));
+        return new(
+            lines
+                .Select<string, RuntimeObject>(x => new RuntimeString(x))
+                .ToList()
+        );
     }
 
     /// <returns>A copy of the input string with all the letters made lowercase.</returns>
@@ -174,10 +178,12 @@ static class String
                 x =>
                     x
                         .Split(divider?.Value ?? "\t")
-                        .Select(y => new RuntimeString(y))
+                        .Select<string, RuntimeObject>(y => new RuntimeString(y))
+                        .ToList()
             )
             .Select(x => new RuntimeList(x))
-            .Where(x => x.Values.Count > 1 || !string.IsNullOrEmpty(x.Values.First().ToString()));
+            .Where(x => x.Values.Count > 1 || !string.IsNullOrEmpty(x.Values.First().ToString()))
+            .Cast<RuntimeObject>();
 
         return new(table.ToList());
     }
@@ -203,9 +209,26 @@ static class String
     /// <returns>A list of all the different parts as a result of splitting the string.</returns>
     [ElkFunction("split", Reachability.Everywhere)]
     public static RuntimeList Split(RuntimeString input, RuntimeString? delimiter = null, RuntimeInteger? count = null)
-        => count == null
-            ? new(input.Value.Split(delimiter?.Value ?? " ").Select(x => new RuntimeString(x)))
-            : new(input.Value.Split(delimiter?.Value ?? " ", (int)count.Value).Select(x => new RuntimeString(x)));
+    {
+        if (count == null)
+        {
+            return new(
+                input
+                    .Value
+                    .Split(delimiter?.Value ?? " ")
+                    .Select<string, RuntimeObject>(x => new RuntimeString(x))
+                    .ToList()
+            );
+        }
+
+        return new(
+            input
+                .Value
+                .Split(delimiter?.Value ?? " ", (int)count.Value)
+                .Select<string, RuntimeObject>(x => new RuntimeString(x))
+                .ToList()
+        );
+    }
 
     /// <returns>A copy of the input string with all the letters made uppercase.</returns>
     [ElkFunction("upper")]

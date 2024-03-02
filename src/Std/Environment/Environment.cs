@@ -25,7 +25,7 @@ static class Environment
         if (index != null)
             return env.Argv.ElementAtOrDefault((int)index.Value) ?? RuntimeNil.Value;
 
-        return new RuntimeList(env.Argv);
+        return new RuntimeList(env.Argv.ToList());
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ static class Environment
     /// <param name="pattern">The glob pattern to expand</param>
     /// <returns>Expands a glob string, eg. "**/*.elk"</returns>
     [ElkFunction("expand")]
-    public static RuntimeList Expand(RuntimeString pattern)
+    public static RuntimeGenerator Expand(RuntimeString pattern)
         => new(
             Globbing.Glob(ShellEnvironment.WorkingDirectory, pattern.Value)
                 .Select(x => new RuntimeString(x))

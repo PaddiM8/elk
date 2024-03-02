@@ -41,11 +41,11 @@ public static class Dictionary
 
     /// <returns>The keys in the given dictionary.</returns>
     [ElkFunction("keys")]
-    public static RuntimeList Keys(RuntimeDictionary dictionary)
+    public static RuntimeGenerator Keys(RuntimeDictionary dictionary)
         => new(dictionary.Entries.Values.Select(x => x.Item1));
 
     /// <returns>The values in the given dictionary.</returns>
     [ElkFunction("values")]
-    public static RuntimeList Values(RuntimeDictionary dictionary)
+    public static RuntimeGenerator Values(RuntimeDictionary dictionary)
         => new(dictionary.Entries.Values.Select(x => x.Item2));
 }

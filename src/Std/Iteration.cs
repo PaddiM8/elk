@@ -1,7 +1,6 @@
 #region
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
@@ -45,7 +44,7 @@ static class Iteration
 
     /// <returns>A new list with the given item append to the given Iterable.</returns>
     [ElkFunction("append")]
-    public static RuntimeList Append(IEnumerable<RuntimeObject> items, RuntimeObject item)
+    public static RuntimeGenerator Append(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Append(item));
 
     /// <summary>
@@ -53,11 +52,14 @@ static class Iteration
     /// </summary>
     /// <returns>The item at the given index.</returns>
     [ElkFunction("at")]
-    public static RuntimeObject At(IIndexable<RuntimeObject> items, RuntimeObject index, RuntimeObject? fallback = null)
+    public static RuntimeObject At(IEnumerable<RuntimeObject> items, RuntimeObject index, RuntimeObject? fallback = null)
     {
+        if (items is not IIndexable<RuntimeObject> indexable)
+            return items.ElementAt((int)index.As<RuntimeInteger>().Value);
+
         try
         {
-            return items[index];
+            return indexable[index];
         }
         catch (RuntimeItemNotFoundException)
         {
@@ -69,8 +71,8 @@ static class Iteration
     /// <param name="size">The maximum size of each chunk</param>
     /// <returns>A list of chunks where each chunk is a list of items of the given size.</returns>
     [ElkFunction("chunks")]
-    public static RuntimeList Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
-        => new(items.Chunk((int)size.Value).Select(x => new RuntimeList(x)));
+    public static RuntimeGenerator Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
+        => new(items.Chunk((int)size.Value).Select(x => new RuntimeGenerator(x)));
 
     /// <summary>
     /// Some standard library functions return lazily evaluated Iterables. This function
@@ -85,7 +87,7 @@ static class Iteration
     /// <param name="second">The second Iterable.</param>
     /// <returns>A new list containing the items of both the the given Iterables.</returns>
     [ElkFunction("concat")]
-    public static RuntimeList Concat(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+    public static RuntimeGenerator Concat(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Concat(second));
 
     /// <param name="items">The items to count</param>
@@ -97,12 +99,12 @@ static class Iteration
 
     /// <returns>A list of the distinct items in the given Iterable.</returns>
     [ElkFunction("distinct")]
-    public static RuntimeList Distinct(IEnumerable<RuntimeObject> items)
+    public static RuntimeGenerator Distinct(IEnumerable<RuntimeObject> items)
         => new(items.Distinct());
 
     /// <returns>A list of the distinct items in the given Iterable where the closure determines the keys.</returns>
     [ElkFunction("distinctBy")]
-    public static RuntimeList DistinctBy(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator DistinctBy(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.DistinctBy(closure));
 
     /// <summary>
@@ -122,7 +124,7 @@ static class Iteration
     /// i.e. the items in the first Iterable that don't appear in the second one.
     /// </returns>
     [ElkFunction("except")]
-    public static RuntimeList Except(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+    public static RuntimeGenerator Except(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Except(second));
 
     /// <returns>
@@ -131,7 +133,7 @@ static class Iteration
     /// The closure is used to determine the keys.
     /// </returns>
     [ElkFunction("exceptBy")]
-    public static RuntimeList ExceptBy(
+    public static RuntimeGenerator ExceptBy(
         IEnumerable<RuntimeObject> first,
         IEnumerable<RuntimeObject> second,
         Func<RuntimeObject, RuntimeObject> closure)
@@ -160,7 +162,7 @@ static class Iteration
     /// <returns>A list of flattened values where the closure has been called on each value.</returns>
     /// <example>["abc", "def"] | flatMap => x: x  #=> ["a", "b", "c", "d", "e", "f"]</example>
     [ElkFunction("flatMap", Reachability.Everywhere)]
-    public static RuntimeList FlatMap(
+    public static RuntimeGenerator FlatMap(
         IEnumerable<RuntimeObject> items,
         Func<RuntimeObject, RuntimeObject> closure)
     {
@@ -176,7 +178,7 @@ static class Iteration
     }
 
     [ElkFunction("flatten")]
-    public static RuntimeList Flatten(IEnumerable<RuntimeObject> items)
+    public static RuntimeGenerator Flatten(IEnumerable<RuntimeObject> items)
         => new(
             items
                 .Select(x =>
@@ -234,12 +236,12 @@ static class Iteration
 
     /// <returns>The intersect of the given Iterables.</returns>
     [ElkFunction("intersect")]
-    public static RuntimeList Intersect(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+    public static RuntimeGenerator Intersect(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Intersect(second));
 
     /// <returns>The intersect of the given Iterables where the closure determines the keys.</returns>
     [ElkFunction("intersectBy")]
-    public static RuntimeList IntersectBy(
+    public static RuntimeGenerator IntersectBy(
         IEnumerable<RuntimeObject> first,
         IEnumerable<RuntimeObject> second,
         Func<RuntimeObject, RuntimeObject> closure)
@@ -323,6 +325,7 @@ static class Iteration
             RuntimeTable table => new(table.Rows.Count),
             RuntimePipe pipe => new(pipe.Count),
             RuntimeNil nil => throw new RuntimeCastException(nil.GetType(), "Iterable"),
+            IEnumerable<RuntimeObject> enumerable => new(enumerable.Count()),
             _ => new(container.As<RuntimeString>().Value.Length),
         };
 
@@ -331,7 +334,7 @@ static class Iteration
     /// <returns>A list of values where the closure has been called on each value.</returns>
     /// <example>[1, 2, 3] | map => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("map", Reachability.Everywhere)]
-    public static RuntimeList Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator Map(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Select(closure));
 
     /// <returns>The lowest value in the Iterable.</returns>
@@ -364,7 +367,7 @@ static class Iteration
 
     /// <returns>The cartesian product of an Iterable.</returns>
     [ElkFunction("product")]
-    public static RuntimeList Permutations(IEnumerable<RuntimeObject> items, RuntimeInteger? repeat = null)
+    public static RuntimeGenerator Permutations(IEnumerable<RuntimeObject> items, RuntimeInteger? repeat = null)
     {
         if (repeat == null)
         {
@@ -395,12 +398,12 @@ static class Iteration
         }
 
         foreach (var r in result1)
-            yield return new RuntimeList(r);
+            yield return new RuntimeGenerator(r);
     }
 
     /// <returns>A new list with the given item prepended to the given Iterable.</returns>
     [ElkFunction("prepend")]
-    public static RuntimeList Prepend(IEnumerable<RuntimeObject> items, RuntimeObject item)
+    public static RuntimeGenerator Prepend(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Prepend(item));
 
     /// <summary>
@@ -529,7 +532,7 @@ static class Iteration
     /// <param name="n">The amount of times it should be repeated</param>
     /// <returns>A list containing n instances of the given item.</returns>
     [ElkFunction("repeat")]
-    public static RuntimeList Repeat(RuntimeObject item, RuntimeInteger? n = null)
+    public static RuntimeGenerator Repeat(RuntimeObject item, RuntimeInteger? n = null)
         => new(
             n == null
                 ? DataTypes.Extensions.RepeatIndefinitely(item)
@@ -537,21 +540,21 @@ static class Iteration
         );
 
     [ElkFunction("reverse")]
-    public static RuntimeList Reverse(IEnumerable<RuntimeObject> items)
-        => new(items.Reverse().ToList());
+    public static RuntimeGenerator Reverse(IEnumerable<RuntimeObject> items)
+        => new(items.Reverse());
 
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>
     /// <returns>A new list without the first n items.</returns>
     [ElkFunction("skip")]
-    public static RuntimeList Skip(IEnumerable<RuntimeObject> items, RuntimeInteger count)
+    public static RuntimeGenerator Skip(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Skip((int)count.Value).ToList());
 
     /// <param name="items">All items</param>
     /// <param name="closure"></param>
     /// <returns></returns>
     [ElkFunction("skipWhile")]
-    public static RuntimeList SkipWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator SkipWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.SkipWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
     /// <summary>Changes the step size of the given range. The step size determines how much the range value should increase by after each iteration.</summary>
@@ -574,21 +577,21 @@ static class Iteration
     /// <param name="count">The amount of items to take from the left</param>
     /// <returns>A new list with the specified amount of items.</returns>
     [ElkFunction("take")]
-    public static RuntimeList Take(IEnumerable<RuntimeObject> items, RuntimeInteger count)
+    public static RuntimeGenerator Take(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Take((int)count.Value).ToList());
 
     /// <param name="items">All items</param>
     /// <param name="closure"></param>
     /// <returns></returns>
     [ElkFunction("takeWhile")]
-    public static RuntimeList TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.TakeWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
     /// <param name="first">The first Iterable</param>
     /// <param name="second">The second Iterable</param>
     /// <returns>A new list with the items from the given Iterables combined, excluding duplicates.</returns>
     [ElkFunction("union")]
-    public static RuntimeList Union(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
+    public static RuntimeGenerator Union(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Union(second));
 
     /// <param name="first">The first Iterable</param>
@@ -599,7 +602,7 @@ static class Iteration
     /// The closure selects the key of each item.
     /// </returns>
     [ElkFunction("unionBy")]
-    public static RuntimeList UnionBy(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator UnionBy(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second, Func<RuntimeObject, RuntimeObject> closure)
         => new(first.UnionBy(second, closure));
 
     /// <param name="values" types="Iterable"></param>
@@ -610,7 +613,7 @@ static class Iteration
     /// </returns>
     /// <example>for item, i in values: echo("{i}: {item}")</example>
     [ElkFunction("withIndex", Reachability.Everywhere)]
-    public static RuntimeList WithIndex(RuntimeObject values)
+    public static RuntimeGenerator WithIndex(RuntimeObject values)
     {
         var items = values as IEnumerable<RuntimeObject> ?? values.As<RuntimeList>().Values;
 
@@ -622,7 +625,7 @@ static class Iteration
     /// <returns>A list of values containing only those who evaluated to true in the closure.</returns>
     /// <example>[1, 2, 3] | select => x: x + 1 #=> [2, 3, 4]</example>
     [ElkFunction("where", Reachability.Everywhere)]
-    public static RuntimeList Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    public static RuntimeGenerator Where(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Where(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
     /// <param name="a"></param>
@@ -630,6 +633,6 @@ static class Iteration
     /// <returns>A list containing pairs of values.</returns>
     /// <example>[1, 2, 3] | iter::zip([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6)]</example>
     [ElkFunction("zip")]
-    public static RuntimeList Zip(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
+    public static RuntimeGenerator Zip(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
         => new(a.Zip(b).Select(x => new RuntimeTuple([x.First, x.Second])));
 }

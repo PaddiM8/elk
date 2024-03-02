@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Elk.Interpreting;
 using Elk.ReadLine;
@@ -200,7 +201,7 @@ static class IO
         return new RuntimeDictionary
         {
             ["key"] = new RuntimeString(key),
-            ["modifiers"] = new RuntimeList(modifiers),
+            ["modifiers"] = new RuntimeList(modifiers.Cast<RuntimeObject>().ToList()),
         };
     }
 

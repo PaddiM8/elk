@@ -146,7 +146,7 @@ partial class Interpreter
             return Evaluate();
         });
 
-        return new RuntimeList(evaluatedWithPlurality);
+        return new RuntimeList(evaluatedWithPlurality.ToList());
     }
 
     private RuntimeObject EvaluateRuntimeClosure(

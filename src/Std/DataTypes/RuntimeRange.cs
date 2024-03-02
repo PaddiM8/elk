@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -34,7 +35,7 @@ public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObj
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(AsEnumerable()),
+                => new RuntimeList(AsEnumerable().Cast<RuntimeObject>().ToList()),
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _

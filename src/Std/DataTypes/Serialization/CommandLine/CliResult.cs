@@ -22,7 +22,7 @@ public class CliResult(Dictionary<string, object?> values, IEnumerable<int> argu
             var key = new RuntimeString(pair.Key);
             RuntimeObject value = pair.Value switch
             {
-                IEnumerable<string> list => new RuntimeList(
+                IEnumerable<string> list => new RuntimeGenerator(
                     list.Select(x => new RuntimeString(x))
                 ),
                 null => RuntimeNil.Value,

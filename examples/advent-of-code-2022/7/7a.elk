@@ -10,7 +10,10 @@ fn evaluate(lines) {
 }
 
 fn parseCommand(context) {
-    let captures = context | current | re::groups('(\$\s)(\w+)\s?(.+)?')
+    let captures = context
+        | current
+        | re::groups('(\$\s)(\w+)\s?(.+)?')
+        | iter::collect
     context | advance
 
     (captures[2], captures[3])

@@ -14,7 +14,7 @@ public class Table
     /// <param name="name">The name of the column.</param>
     /// <returns>A list of the values in the column.</returns>
     [ElkFunction("column")]
-    public static RuntimeList Column(RuntimeTable table, RuntimeString name)
+    public static RuntimeGenerator Column(RuntimeTable table, RuntimeString name)
     {
         var index = table.Header.IndexOf(name.Value);
 

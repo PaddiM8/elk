@@ -40,7 +40,7 @@ public static class StringPath
     }
 
     [ElkFunction("fuzzyFind")]
-    public static RuntimeList FuzzyFind(IEnumerable<RuntimeObject> paths, RuntimeString query)
+    public static RuntimeGenerator FuzzyFind(IEnumerable<RuntimeObject> paths, RuntimeString query)
     {
         var pathStrings = paths.Select(x => x.As<RuntimeString>());
         var exactStart = pathStrings.Where(x =>

@@ -14,29 +14,15 @@ using Newtonsoft.Json;
 namespace Elk.Std.DataTypes;
 
 [ElkType("List")]
-public class RuntimeList(IEnumerable<RuntimeObject> values)
+public class RuntimeList(List<RuntimeObject> values)
     : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<RuntimeObject> Values
-    {
-        get
-        {
-            if (_collectedValues == null)
-            {
-                _collectedValues = _uncollectedValues!.ToList();
-                _uncollectedValues = null;
-            }
+    public List<RuntimeObject> Values { get; } = values;
 
-            return _collectedValues;
-        }
-    }
-
-    private List<RuntimeObject>? _collectedValues;
-    private IEnumerable<RuntimeObject>? _uncollectedValues = values;
     private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => (_uncollectedValues ?? _collectedValues!).GetEnumerator();
+        => Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -83,8 +69,12 @@ public class RuntimeList(IEnumerable<RuntimeObject> values)
                 => this,
             _ when toType == typeof(RuntimeTable)
                 => new RuntimeTable(
-                    Values.FirstOrDefault()?.As<RuntimeList>() ?? new RuntimeList(new List<RuntimeObject>()),
-                    Values.Skip(1).Select(x => x.As<RuntimeList>())
+                    Values.FirstOrDefault()?.As<RuntimeList>()
+                        ?? new RuntimeList([]),
+                    Values
+                        .Skip(1)
+                        .Select(x => x.As<RuntimeList>().ToList())
+                        .ToList()
                 ),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Values.Any()),

@@ -17,8 +17,13 @@ public class Sort
     {
         return container switch
         {
-            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderBy(x => x)),
-            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(x => x)),
+            RuntimeTable table => new RuntimeTable(
+                table.Header,
+                table.Rows.OrderBy(x => x).ToList()
+            ),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(
+                enumerable.OrderBy(x => x).ToList()
+            ),
             _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }
@@ -36,8 +41,9 @@ public class Sort
                 table.Rows
                     .OrderBy(closure)
                     .Cast<RuntimeTableRow>()
+                    .ToList()
             ),
-            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(closure)),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderBy(closure).ToList()),
             _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }
@@ -65,8 +71,11 @@ public class Sort
     {
         return container switch
         {
-            RuntimeTable table => new RuntimeTable(table.Header, table.Rows.OrderByDescending(x => x)),
-            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderByDescending(x => x)),
+            RuntimeTable table => new RuntimeTable(
+                table.Header,
+                table.Rows.OrderByDescending(x => x).ToList()
+            ),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderByDescending(x => x).ToList()),
             _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }
@@ -84,8 +93,11 @@ public class Sort
                 table.Rows
                     .OrderByDescending(closure)
                     .Cast<RuntimeTableRow>()
+                    .ToList()
             ),
-            IEnumerable<RuntimeObject> enumerable => new RuntimeList(enumerable.OrderByDescending(closure)),
+            IEnumerable<RuntimeObject> enumerable => new RuntimeList(
+                enumerable.OrderByDescending(closure).ToList()
+            ),
             _ => throw new RuntimeCastException(container.GetType(), "Iterable"),
         };
     }

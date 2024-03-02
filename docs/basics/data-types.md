@@ -120,7 +120,24 @@ Nil values are represented by the `nil` keyword.
 | ----------- | --------------- |
 | Boolean     | `false`         |
 
-##
+## Generator
+
+A Generator represents lazily evaluated values. A Generator can be collected with the function `iter::collect`.
+
+```elk
+# prints "hello" indefinitely
+# `iter::repeat` returns a generator
+for x in iter::repeat("hello") {
+    println(x)
+}
+```
+
+### Conversions
+
+| Target type | Resulting value                |
+|-------------|--------------------------------|
+| List        | A list of the collected values |
+| Boolean     | `true`                         |
 
 ## Pipe
 

@@ -13,14 +13,14 @@ namespace Elk.Std;
 public static partial class Parse
 {
     [ElkFunction("csv")]
-    public static RuntimeList Csv(RuntimeObject csv, RuntimeString? separator = null)
+    public static RuntimeGenerator Csv(RuntimeObject csv, RuntimeString? separator = null)
     {
         var separatorChar = separator?.Value.FirstOrDefault() ?? ',';
         var lines = csv is RuntimePipe pipe
             ? pipe.Select(x => x.As<RuntimeString>().Value)
             : csv.As<RuntimeString>().Value.ToLines();
 
-        return new RuntimeList(new CsvParser(lines, separatorChar));
+        return new RuntimeGenerator(new CsvParser(lines, separatorChar));
     }
 
     /// <param name="str">A string representation of a hexadecimal number.</param>
@@ -64,22 +64,23 @@ public static partial class Parse
             .Select(line =>
                 separatorRegex
                     .Split(line)
-                    .Select(x => new RuntimeString(x))
+                    .Select<string, RuntimeObject>(x => new RuntimeString(x))
                     .ToList()
             )
-            .Where(x => x.Count >= 2);
+            .Where(x => x.Count >= 2)
+            .ToList();
 
         if (headerColumns.Any())
         {
             return new RuntimeTable(
-                new RuntimeList(headerColumns),
+                new RuntimeList(headerColumns.ToList()),
                 lines
             );
         }
 
         return new RuntimeTable(
-            new RuntimeList(lines.FirstOrDefault() ?? []),
-            lines.Skip(1)
+            new RuntimeList(lines.FirstOrDefault()?.ToList() ?? []),
+            lines[1..]
         );
     }
 

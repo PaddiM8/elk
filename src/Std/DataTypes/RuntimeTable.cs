@@ -15,39 +15,40 @@ namespace Elk.Std.DataTypes;
 [ElkType("Table")]
 public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public List<RuntimeTableRow> Rows
-    {
-        get
-        {
-            if (_collectedRows == null)
-            {
-                _collectedRows = _uncollectedRows!.ToList();
-                _uncollectedRows = null;
-            }
-
-            return _collectedRows;
-        }
-    }
+    public List<RuntimeTableRow> Rows { get; }
 
     public List<string> Header { get; }
 
-    private List<RuntimeTableRow>? _collectedRows;
-    private IEnumerable<RuntimeTableRow>? _uncollectedRows;
-
-    public RuntimeTable(List<string> header, IEnumerable<IEnumerable<RuntimeObject>> rows)
+    public RuntimeTable(List<string> header, List<List<RuntimeObject>> rows)
     {
         Header = header;
-        _uncollectedRows = rows.Select(x => new RuntimeTableRow(this, x));
+        Rows = rows
+            .Select(x => new RuntimeTableRow(this, x))
+            .ToList();
     }
 
-    public RuntimeTable(RuntimeList header, IEnumerable<IEnumerable<RuntimeObject>> rows)
+    public RuntimeTable(List<string> header, List<RuntimeTableRow> rows)
+    {
+        Header = header;
+        Rows = rows;
+    }
+
+    public RuntimeTable(RuntimeList header, List<List<RuntimeObject>> rows)
     {
         Header = header.Values.Select(x => x.ToString() ?? "").ToList();
-        _uncollectedRows = rows.Select(x => new RuntimeTableRow(this, x));
+        Rows = rows
+            .Select(x => new RuntimeTableRow(this, x))
+            .ToList();
+    }
+
+    public RuntimeTable(RuntimeList header, List<RuntimeTableRow> rows)
+    {
+        Header = header.Values.Select(x => x.ToString() ?? "").ToList();
+        Rows = rows;
     }
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => (_uncollectedRows ?? _collectedRows!).GetEnumerator();
+        => Rows.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -59,7 +60,9 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
             if (index is RuntimeRange range)
             {
                 return new RuntimeTable(
-                    new RuntimeList(Header.Select(x => new RuntimeString(x))),
+                    new RuntimeList(
+                        Header.Select<string, RuntimeObject>(x => new RuntimeString(x)).ToList()
+                    ),
                     Rows.GetRange(range)
                 );
             }
@@ -93,7 +96,7 @@ public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexabl
             _ when toType == typeof(RuntimeTable)
                 => this,
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(Rows.Select(x => new RuntimeList(x))),
+                => new RuntimeList(Rows.Cast<RuntimeObject>().ToList()),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Rows.Any()),
             _ when toType == typeof(RuntimeString)

@@ -69,7 +69,7 @@ public class CsvParser : IEnumerable<RuntimeObject>
         if (row.Length > finalSeparatorEnd)
             columns.Add(new RuntimeString(row[finalSeparatorEnd..row.Length]));
 
-        return new RuntimeList(columns);
+        return new RuntimeList(columns.Cast<RuntimeObject>().ToList());
     }
 
     IEnumerator IEnumerable.GetEnumerator()

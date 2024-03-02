@@ -168,8 +168,8 @@ public class ShellSession
         arguments ??= new List<string>();
 
         var argumentValues = arguments.Prepend(filePath)
-            .Select(literal => new RuntimeString(literal));
-        var argv = new RuntimeList(argumentValues);
+            .Select<string, RuntimeObject>(literal => new RuntimeString(literal));
+        var argv = new RuntimeList(argumentValues.ToList());
         interpreter.ShellEnvironment.Argv = argv;
 
         if (!File.Exists(filePath))

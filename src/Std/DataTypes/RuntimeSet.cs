@@ -38,7 +38,7 @@ public class RuntimeSet : RuntimeObject, IEnumerable<RuntimeObject>
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Entries.Any()),
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(Entries.Values),
+                => new RuntimeList(Entries.Values.ToList()),
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _

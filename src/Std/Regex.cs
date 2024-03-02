@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Elk.Std.Attributes;
@@ -25,7 +24,7 @@ public class Regex
     /// <param name="value"></param>
     /// <returns>The values of the groups of the first match.</returns>
     [ElkFunction("groups")]
-    public static RuntimeList Groups(RuntimeString value, RuntimeRegex pattern)
+    public static RuntimeGenerator Groups(RuntimeString value, RuntimeRegex pattern)
     {
         var result = pattern.Value
             .Matches(value.Value)
@@ -35,8 +34,8 @@ public class Regex
             .Select(x => new RuntimeString(x.Value));
 
         return result == null
-            ? new RuntimeList(new List<RuntimeObject>())
-            : new RuntimeList(result);
+            ? new RuntimeGenerator([])
+            : new RuntimeGenerator(result);
     }
 
     /// <param name="pattern"></param>
@@ -70,7 +69,7 @@ public class Regex
     /// <param name="value"></param>
     /// <returns>All the occurrences of the given pattern in the given value.</returns>
     [ElkFunction("findAll")]
-    public static RuntimeList FindAll(RuntimeString value, RuntimeRegex pattern)
+    public static RuntimeGenerator FindAll(RuntimeString value, RuntimeRegex pattern)
         => new(pattern.Value.Matches(value.Value).Select(x => new RuntimeString(x.Value)));
 
     /// <param name="value">The entire string</param>
@@ -96,7 +95,7 @@ public class Regex
                 var runtimeMatch = new RuntimeDictionary
                 {
                     ["value"] = new RuntimeString(match.Value),
-                    ["groups"] = new RuntimeList(
+                    ["groups"] = new RuntimeGenerator(
                         match.Groups.Values
                             .Select(x => new RuntimeString(x.Value))
                     )

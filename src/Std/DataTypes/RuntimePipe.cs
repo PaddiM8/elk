@@ -74,7 +74,8 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
                 return new RuntimeList(
                     Values
                         .GetRange(range)
-                        .Select(x => new RuntimeString(x))
+                        .Select<string, RuntimeObject>(x => new RuntimeString(x))
+                        .ToList()
                 );
             }
 
@@ -99,7 +100,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(StringValue),
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(this),
+                => new RuntimeList(this.ToList()),
             _ when toType == typeof(RuntimeInteger) && int.TryParse(StringValue, out var number)
                 => new RuntimeInteger(number),
             _ when toType == typeof(RuntimeFloat) && double.TryParse(StringValue, out var number)

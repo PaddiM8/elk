@@ -272,7 +272,7 @@ static class Cli
     }
 
     [ElkFunction("getCompletions")]
-    public static RuntimeList GetCompletions(RuntimeCliParser parser, RuntimeString partialCommand)
+    public static RuntimeGenerator GetCompletions(RuntimeCliParser parser, RuntimeString partialCommand)
         => new(
             parser
                 .GetCompletions(partialCommand.Value)

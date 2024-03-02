@@ -5,7 +5,7 @@ fn parse(lines) {
 
         let crates = line
             | iter::chunks 4
-            | map => x: x[1]
+            | map => &iter::at(1)
         for (crate, stackIndex) in crates | withIndex {
             stacks | push([]) if len(stacks) <= stackIndex
             stacks[stackIndex] | insert(0, crate) if crate != " "
