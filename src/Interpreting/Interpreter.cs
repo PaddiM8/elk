@@ -649,9 +649,6 @@ partial class Interpreter
 
     private RuntimeObject EvaluateCall(CallExpr expr, RuntimeClosureFunction? runtimeClosure = null)
     {
-        if (expr is { IsReference: false, CallType: CallType.BuiltInTime })
-            return EvaluateBuiltInTime(expr.Arguments);
-
         var partlyEvaluatedArguments = expr.Arguments.Select(Next);
         List<RuntimeObject> evaluatedArguments;
         if (expr.CallStyle == CallStyle.TextArguments)

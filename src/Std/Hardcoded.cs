@@ -51,10 +51,4 @@ public class HardCoded
     [ElkFunction("call", Reachability.Everywhere)]
     public static RuntimeObject Call(RuntimeFunction function, [ElkVariadic] IEnumerable<RuntimeObject> callArguments)
         => throw new NotSupportedException();
-
-    /// <param name="command">The command to measure.</param>
-    /// <summary>Measures the amount of time it takes to evaluate the given command. Note: You may want to call this parenthesized.</summary>
-    [ElkFunction("time", Reachability.Everywhere)]
-    public static RuntimeObject Time(RuntimeObject command)
-        => throw new NotSupportedException();
 }

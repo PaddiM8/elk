@@ -177,21 +177,4 @@ partial class Interpreter
 
         return result;
     }
-
-    private RuntimeObject EvaluateBuiltInTime(IList<Expr> arguments)
-    {
-        if (arguments.Count != 1)
-            throw new RuntimeWrongNumberOfArgumentsException(1, arguments.Count);
-
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
-        var result = Next(arguments.Single());
-        stopWatch.Stop();
-
-        var milliseconds = Math.Max(0, stopWatch.ElapsedMilliseconds - 1);
-        var paddedMilliseconds = milliseconds.ToString().PadLeft(3, '0');
-        Console.WriteLine($"time: {stopWatch.Elapsed.Minutes}m{stopWatch.Elapsed.Seconds}.{paddedMilliseconds}\n");
-
-        return result;
-    }
 }

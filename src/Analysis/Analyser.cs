@@ -680,7 +680,6 @@ class Analyser(RootModuleScope rootModule)
             "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
-            "time" => CallType.BuiltInTime,
             _ => null,
         };
 

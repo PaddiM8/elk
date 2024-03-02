@@ -1,6 +1,8 @@
 #region
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Analysis;
@@ -122,6 +124,35 @@ static class Environment
             : "/" + shortenedPath;
 
         return new(shortenedPath + directoryNames.Last()[1..]);
+    }
+
+    /// <returns>
+    /// The a human-readable string showing the amount of time it took to evaluate the given closure.
+    /// </returns>
+    [ElkFunction("time", Reachability.Everywhere)]
+    public static RuntimeString Time(Func<RuntimeObject> closure)
+    {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        closure();
+        stopwatch.Stop();
+
+        var milliseconds = Math.Max(0, stopwatch.ElapsedMilliseconds - stopwatch.Elapsed.Seconds * 1000);
+        var paddedMilliseconds = milliseconds.ToString().PadLeft(2, '0');
+
+        return new ($"elapsed: {stopwatch.Elapsed.Minutes}m{stopwatch.Elapsed.Seconds}.{paddedMilliseconds}");
+    }
+
+    /// <returns>The amount of time it took to evaluate the given closure, in milliseconds.</returns>
+    [ElkFunction("timeMs", Reachability.Everywhere)]
+    public static RuntimeInteger TimeMs(Func<RuntimeObject> closure)
+    {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        closure();
+        stopwatch.Stop();
+
+        return new(stopwatch.ElapsedMilliseconds);
     }
 
     private static List<string> GetDirectoryNames(string path)

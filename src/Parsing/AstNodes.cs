@@ -443,7 +443,6 @@ public enum CallType
     BuiltInScriptPath,
     BuiltInClosure,
     BuiltInCall,
-    BuiltInTime,
 }
 
 public enum RedirectionKind
