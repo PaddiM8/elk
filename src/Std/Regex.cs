@@ -24,18 +24,18 @@ public class Regex
     /// <param name="value"></param>
     /// <returns>The values of the groups of the first match.</returns>
     [ElkFunction("groups")]
-    public static RuntimeGenerator Groups(RuntimeString value, RuntimeRegex pattern)
+    public static RuntimeList Groups(RuntimeString value, RuntimeRegex pattern)
     {
         var result = pattern.Value
             .Matches(value.Value)
             .FirstOrDefault()?
             .Groups
             .Values
-            .Select(x => new RuntimeString(x.Value));
+            .Select<Group, RuntimeObject>(x => new RuntimeString(x.Value));
 
         return result == null
-            ? new RuntimeGenerator([])
-            : new RuntimeGenerator(result);
+            ? new RuntimeList([])
+            : new RuntimeList(result.ToList());
     }
 
     /// <param name="pattern"></param>
@@ -95,9 +95,10 @@ public class Regex
                 var runtimeMatch = new RuntimeDictionary
                 {
                     ["value"] = new RuntimeString(match.Value),
-                    ["groups"] = new RuntimeGenerator(
+                    ["groups"] = new RuntimeList(
                         match.Groups.Values
-                            .Select(x => new RuntimeString(x.Value))
+                            .Select<Group, RuntimeObject>(x => new RuntimeString(x.Value))
+                            .ToList()
                     )
                 };
 

@@ -146,16 +146,40 @@ static class Iteration
     public static RuntimeObject Find(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue) ?? RuntimeNil.Value;
 
+    /// <summary>
+    /// Throws an error if the Iterable is empty.
+    /// </summary>
     /// <param name="items"></param>
     /// <returns>The first element of the given iterable object.</returns>
     [ElkFunction("first")]
     public static RuntimeObject First(IEnumerable<RuntimeObject> items)
+        => items.FirstOrDefault()
+           ?? throw new RuntimeStdException("Can not get the first item of an empty Iterable.");
+
+    /// <param name="items"></param>
+    /// <returns>The first element of the given iterable object, or nil if the Iterable is empty</returns>
+    [ElkFunction("firstOrNil")]
+    public static RuntimeObject FirstOrNil(IEnumerable<RuntimeObject> items)
         => items.FirstOrDefault() ?? RuntimeNil.Value;
 
+    /// <summary>
+    /// Throws an error if the Iterable is empty.
+    /// </summary>
     /// <returns>The first element of the given iterable object where the closure returns true.</returns>
     [ElkFunction("firstOf")]
     public static RuntimeObject FirstOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
-        => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue) ?? RuntimeNil.Value;
+        => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue)
+           ?? throw new RuntimeStdException("Can not get the first item of an empty Iterable.");
+
+    /// <returns>
+    /// The first element of the given iterable object where the closure returns true,
+    /// or nil if the Iterable is empty
+    /// </returns>
+    [ElkFunction("firstOfOrNil")]
+    public static RuntimeObject FirstOfOrNil(IEnumerable<RuntimeObject> items,
+        Func<RuntimeObject, RuntimeObject> closure)
+        => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue)
+           ?? RuntimeNil.Value;
 
     /// <param name="items"></param>
     /// <param name="closure"></param>
