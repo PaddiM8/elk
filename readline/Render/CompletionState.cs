@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.ReadLine.Render.Formatting;
 
 namespace Elk.ReadLine.Render;
 

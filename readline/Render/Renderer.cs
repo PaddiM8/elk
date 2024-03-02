@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Elk.ReadLine.Render.Formatting;
 using Wcwidth;
@@ -267,21 +268,7 @@ internal class Renderer : IRenderer
 
         var newPos = Caret + input.Length;
         RenderText(hasHint);
-        if (input.Length == 1)
-        {
-            Caret = newPos;
-
-            return;
-        }
-
-        // I've tried flushing stdout and all but this is
-        // the only thing I've found that works. Very hacky
-        // though.
-        System.Threading.Tasks.Task.Run(() =>
-        {
-            System.Threading.Thread.Sleep(1);
-            Caret = newPos;
-        });
+        Caret = newPos;
     }
 
     public void RemoveLeft(int count, bool render = true)
@@ -402,6 +389,7 @@ internal class Renderer : IRenderer
 
     public void WriteRaw(params string[] values)
     {
+        File.AppendAllText("/tmp/log.txt", string.Concat(values).Replace("\x1b", "\\e") + "\n");
         WriteRaw(string.Concat(values));
     }
 
@@ -414,6 +402,7 @@ internal class Renderer : IRenderer
             return;
         }
 
+        File.AppendAllText("/tmp/log.txt", value.Replace("\x1b", "\\e") + "\n");
         Console.Write(value);
     }
 

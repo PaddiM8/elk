@@ -45,7 +45,13 @@ class SelectionListing(IRenderer renderer)
         _hasDescriptions = false;
         _lastBottomRowIndex = 0;
         SelectedIndex = 0;
+
+        var pos = renderer.Caret;
+        renderer.StartTransaction();
+        renderer.Caret = renderer.Text.Length;
         renderer.WriteRaw(Ansi.ClearToEndOfScreen());
+        renderer.Caret = pos;
+        renderer.EndTransaction();
     }
 
     public void Render()

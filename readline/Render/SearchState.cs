@@ -72,8 +72,8 @@ class SearchState : IRenderable
 
     private void InsertSelected()
     {
-        FocusInputPrompt();
         _renderer.StartTransaction();
+        FocusInputPrompt();
         _renderer.Text = _listing.SelectedItem
             .Replace("\x1b", "")
             .Replace("\n", " ");
