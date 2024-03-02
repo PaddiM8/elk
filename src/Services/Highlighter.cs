@@ -11,15 +11,12 @@ public record ShellStyleInvocationInfo(
     string Name,
     TextArgumentsInfo TextArgumentsInfo,
     int StartIndex,
-    int EndIndex)
-{
-    public int TextArgumentStartIndex
-        => StartIndex + Name.Length + 1;
-}
+    int EndIndex);
 
 public record TextArgumentsInfo(
     IList<string> Arguments,
-    int ActiveArgumentIndex
+    int ActiveArgumentIndex,
+    int StartIndex
 );
 
 public class Highlighter(ModuleScope module, ShellSession? shell)
@@ -480,7 +477,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         _lastShellStyleInvocations.Add(
             new ShellStyleInvocationInfo(
                 textForCompletion,
-                new TextArgumentsInfo(Array.Empty<string>(), -1),
+                new TextArgumentsInfo(Array.Empty<string>(), -1, -1),
                 pos - textForCompletion.Length,
                 pos
             )
@@ -534,12 +531,13 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
     private TextArgumentsInfo NextTextArguments()
     {
         if (Current?.Kind != TokenKind.WhiteSpace)
-            return new TextArgumentsInfo(Array.Empty<string>(), -1);
+            return new TextArgumentsInfo(Array.Empty<string>(), -1, -1);
 
         var textArguments = new List<string>();
         var caretAtArgumentIndex = -1;
         var textArgumentTokens = new List<Token>();
         var startIndex = Current.Position.Index - 1;
+        int? initialWhiteSpaceLength = null;
         while (!ReachedTextEnd())
         {
             if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
@@ -567,7 +565,14 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
                     Push(kind, argumentString, textArgumentTokens.First().Position);
                 }
 
-                Push(Eat()!); // Whitespace
+                var whiteSpaceLength = 0;
+                while (Current?.Kind == TokenKind.WhiteSpace)
+                {
+                    Push(Eat()!); // Whitespace
+                    whiteSpaceLength++;
+                }
+
+                initialWhiteSpaceLength ??= whiteSpaceLength;
                 textArgumentTokens.Clear();
 
                 // If the caret is within this text argument,
@@ -595,7 +600,11 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         if (caretAtArgumentIndex == -1 && _caret >= startIndex)
             caretAtArgumentIndex = textArguments.Count - 1;
 
-        return new TextArgumentsInfo(textArguments, caretAtArgumentIndex);
+        return new TextArgumentsInfo(
+            textArguments,
+            caretAtArgumentIndex,
+            startIndex + (initialWhiteSpaceLength ?? 0) + 1
+        );
     }
 
     private void NextInterpolation()

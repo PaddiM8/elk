@@ -82,6 +82,7 @@ class CompletionState(IRenderer renderer) : IRenderable
 
     private void InsertCompletion()
     {
+        renderer.StartTransaction();
         renderer.RemoveLeft(renderer.Caret - _completionStart, render: true);
         var completion = _completions[_listing.SelectedIndex];
         var trailingSpace = completion.HasTrailingSpace
@@ -92,6 +93,7 @@ class CompletionState(IRenderer renderer) : IRenderable
             input,
             includeHint: false
         );
+        renderer.EndTransaction();
     }
 
 }

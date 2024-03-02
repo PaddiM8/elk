@@ -54,7 +54,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         if (completionParser != null)
         {
             var textArgumentStartIndex = Math.Min(
-                _currentInvocationInfo!.TextArgumentStartIndex,
+                _currentInvocationInfo!.TextArgumentsInfo.StartIndex,
                 text.Length
             );
 
@@ -68,7 +68,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         }
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
-        var atInvocationName = endPos < _currentInvocationInfo?.TextArgumentStartIndex;
+        var atInvocationName = endPos < _currentInvocationInfo?.TextArgumentsInfo.StartIndex;
         if (isColonColon || (!isRelativeIdentifier && atInvocationName))
         {
             return GetProgramCompletions(
