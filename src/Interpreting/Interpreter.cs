@@ -712,7 +712,7 @@ partial class Interpreter
                     expr.DisableRedirectionBuffering
                 ),
                 CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
-                CallType.BuiltInClosure => EvaluateBuiltInClosure((FunctionExpr)expr.EnclosingFunction!, arguments),
+                CallType.BuiltInClosure => EvaluateBuiltInClosure(expr.EnclosingClosureProvidingFunction!, arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 _ => throw new NotSupportedException(expr.CallType.ToString()),
             };

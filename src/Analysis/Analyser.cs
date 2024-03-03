@@ -683,11 +683,21 @@ class Analyser(RootModuleScope rootModule)
             _ => null,
         };
 
-        if (builtIn == CallType.BuiltInClosure && expr.EnclosingFunction is not FunctionExpr { HasClosure: true })
+        FunctionExpr? enclosingClosureProvidingFunction = null;
+        if (builtIn == CallType.BuiltInClosure)
         {
-            throw new RuntimeException(
-                "Unexpected call to 'closure'. This function can only be called within functions with a closure signature."
-            );
+            var enclosing = expr.EnclosingFunction;
+            while (enclosing is ClosureExpr enclosingClosure)
+                enclosing = enclosingClosure.Function.EnclosingFunction;
+
+            if (enclosing is not FunctionExpr { HasClosure: true } enclosingFunction)
+            {
+                throw new RuntimeException(
+                    "Unexpected call to 'closure'. This function can only be called within functions with a closure signature."
+                );
+            }
+
+            enclosingClosureProvidingFunction = enclosingFunction;
         }
 
         var stdFunction = !builtIn.HasValue
@@ -800,6 +810,7 @@ class Analyser(RootModuleScope rootModule)
             DisableRedirectionBuffering = expr.DisableRedirectionBuffering,
             IsReference = expr.IsReference,
             EnvironmentVariables = environmentVariables,
+            EnclosingClosureProvidingFunction = enclosingClosureProvidingFunction,
         };
     }
 

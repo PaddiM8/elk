@@ -25,10 +25,12 @@ public class RuntimeGenerator(IEnumerable<RuntimeObject> values) : RuntimeObject
                 => this,
             _ when toType == typeof(RuntimeList)
                 => new RuntimeList(Values.ToList()),
+            _ when toType == typeof(RuntimeString)
+                => new RuntimeString(ToString()),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
             _
-                => throw new RuntimeCastException<RuntimeRegex>(toType),
+                => throw new RuntimeCastException<RuntimeGenerator>(toType),
         };
 
     public override int GetHashCode()

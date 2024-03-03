@@ -496,6 +496,8 @@ public class CallExpr(
 
     public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();
 
+    public FunctionExpr? EnclosingClosureProvidingFunction { get; init; }
+
     public override IEnumerable<Expr> ChildExpressions
         => Arguments;
 }
