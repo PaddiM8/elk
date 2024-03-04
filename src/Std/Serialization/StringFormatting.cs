@@ -1,4 +1,4 @@
-namespace Elk.Std.DataTypes.Serialization;
+namespace Elk.Std.Serialization;
 
 public class StringFormatting
 {

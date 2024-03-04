@@ -1,4 +1,4 @@
-namespace Elk.Std.DataTypes.Serialization.CommandLine;
+namespace Elk.Std.Serialization.CommandLine;
 
 public enum CliValueKind
 {

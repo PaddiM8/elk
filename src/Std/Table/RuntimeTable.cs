@@ -7,10 +7,11 @@ using System.Linq;
 using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes;
 
 #endregion
 
-namespace Elk.Std.DataTypes;
+namespace Elk.Std.Table;
 
 [ElkType("Table")]
 public class RuntimeTable : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>

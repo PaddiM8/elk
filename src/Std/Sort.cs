@@ -4,6 +4,7 @@ using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Std.Table;
 
 namespace Elk.Std;
 

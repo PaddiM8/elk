@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
-using Elk.Std.DataTypes.Serialization;
+using Elk.Std.DataTypes;
+using Elk.Std.Serialization;
 
 #endregion
 
-namespace Elk.Std.DataTypes;
+namespace Elk.Std.Table;
 
 [ElkType("TableRow")]
 public class RuntimeTableRow : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>

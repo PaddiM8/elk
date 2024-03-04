@@ -2,7 +2,7 @@ using System.Linq;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
-namespace Elk.Std;
+namespace Elk.Std.Table;
 
 [ElkModule("table")]
 public class Table

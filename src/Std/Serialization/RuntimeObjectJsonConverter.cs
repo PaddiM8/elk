@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Std.DataTypes;
+using Elk.Std.Table;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Elk.Std.DataTypes.Serialization;
+namespace Elk.Std.Serialization;
 
 public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
 {

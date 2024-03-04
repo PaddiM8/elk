@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
-using Elk.Std.DataTypes.Serialization;
+using Elk.Std.Serialization;
 using Newtonsoft.Json;
 
 #endregion

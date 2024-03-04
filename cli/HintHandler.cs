@@ -4,7 +4,7 @@ using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
 using Elk.Services;
-using Elk.Std.DataTypes.Serialization.CommandLine;
+using Elk.Std.Serialization.CommandLine;
 
 namespace Elk.Cli;
 

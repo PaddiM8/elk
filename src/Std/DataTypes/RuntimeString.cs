@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Elk.Interpreting.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
-using Elk.Std.DataTypes.Serialization;
+using Elk.Std.Serialization;
 
 #endregion
 

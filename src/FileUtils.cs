@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.ReadLine;
-using Elk.Std.DataTypes.Serialization.CommandLine;
+using Elk.Std.Serialization.CommandLine;
 
 namespace Elk;
 

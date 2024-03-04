@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Elk.Std.DataTypes.Serialization.CommandLine;
+using Elk.Std.Serialization.CommandLine;
 
 namespace Elk.Cli;
 

@@ -6,8 +6,9 @@ using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.ReadLine;
 using Elk.Std.Attributes;
+using Elk.Std.DataTypes;
 
-namespace Elk.Std.DataTypes.Serialization.CommandLine;
+namespace Elk.Std.Serialization.CommandLine;
 
 public static class ParserStorage
 {

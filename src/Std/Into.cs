@@ -4,7 +4,8 @@ using System.Text;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
-using Elk.Std.DataTypes.Serialization;
+using Elk.Std.Serialization;
+using Elk.Std.Table;
 using Newtonsoft.Json;
 
 namespace Elk.Std;

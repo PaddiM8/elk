@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Elk.ReadLine;
 
-namespace Elk.Std.DataTypes.Serialization.CommandLine;
+namespace Elk.Std.Serialization.CommandLine;
 
 public class CliFlag
 {

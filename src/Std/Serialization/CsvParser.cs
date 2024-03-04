@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elk.Std.DataTypes;
 
-namespace Elk.Std.DataTypes.Serialization;
+namespace Elk.Std.Serialization;
 
 public class CsvParser : IEnumerable<RuntimeObject>
 {

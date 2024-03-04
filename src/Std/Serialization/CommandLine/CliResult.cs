@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Std.DataTypes;
 
-namespace Elk.Std.DataTypes.Serialization.CommandLine;
+namespace Elk.Std.Serialization.CommandLine;
 
 public class CliResult(Dictionary<string, object?> values, IEnumerable<int> argumentIndices)
     : IEnumerable<KeyValuePair<string, object?>>

@@ -5,9 +5,8 @@ using Elk.Interpreting;
 using Elk.ReadLine;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
-using Elk.Std.DataTypes.Serialization.CommandLine;
 
-namespace Elk.Std;
+namespace Elk.Std.Serialization.CommandLine;
 
 #pragma warning disable CS1573
 
