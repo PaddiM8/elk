@@ -35,7 +35,9 @@ public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObj
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.True,
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(AsEnumerable().Cast<RuntimeObject>().ToList()),
+                => new RuntimeList(this.ToList()),
+            _ when toType == typeof(RuntimeTuple)
+                => new RuntimeTuple(this.ToList()),
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
@@ -61,15 +63,6 @@ public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObj
 
     public bool Contains(long value)
         => value >= From && value < To;
-
-    private IEnumerable<RuntimeInteger> AsEnumerable()
-    {
-        var start = From ?? 0;
-        var count = (To ?? start) - start;
-
-        for (var i = start; i < start + count; i++)
-            yield return new RuntimeInteger(i);
-    }
 }
 
 class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
