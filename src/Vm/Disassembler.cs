@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using Elk.Interpreting.Scope;
 using Elk.ReadLine.Render.Formatting;
-using Elk.Std.DataTypes;
+using Elk.Std.Bindings;
 
 namespace Elk.Vm;
 
@@ -61,9 +61,9 @@ class Disassembler
     {
         var byteValue = _page.Instructions[_ip++];
         var obj = _page.ConstantTable.Get<T>(byteValue);
-        if (obj is RuntimeStdFunction stdFunction)
+        if (obj is StdFunction stdFunction)
         {
-            _builder.Append($" StdFunction[{stdFunction.StdFunction.Name}]");
+            _builder.Append($" StdFunction[{stdFunction.Name}]");
 
             return;
         }
@@ -83,7 +83,7 @@ class Disassembler
                 GetConstant<int>();
                 break;
             case InstructionKind.Const:
-                GetConstant<RuntimeObject>();
+                GetConstant<object>();
                 break;
             case InstructionKind.StructConst:
                 GetConstant<StructSymbol>();

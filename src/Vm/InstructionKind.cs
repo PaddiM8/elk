@@ -6,6 +6,7 @@ enum InstructionKind : byte
     Load,
     Store,
     Pop,
+    Unpack,
     Ret,
     Call,
     RootCall,

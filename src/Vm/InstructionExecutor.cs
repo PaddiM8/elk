@@ -116,6 +116,9 @@ class InstructionExecutor
             case InstructionKind.Pop:
                 Pop();
                 break;
+            case InstructionKind.Unpack:
+                Unpack(Eat());
+                break;
             case InstructionKind.Ret:
                 Ret();
                 break;
@@ -288,6 +291,23 @@ class InstructionExecutor
     private void Pop()
     {
         _stack.PopObject();
+    }
+
+    private void Unpack(byte count)
+    {
+        var container = _stack.Pop();
+        if (container is not IEnumerable<RuntimeObject> items)
+            throw new RuntimeException("Can only destructure Iterable values");
+
+        var actualCount = 0;
+        foreach (var item in items)
+        {
+            _stack.Push(item);
+            actualCount++;
+        }
+
+        if (actualCount != count)
+            throw new RuntimeException("The amount of items in the destructured Iterable is not the same as the amount of identifiers in the destructuring expressions");
     }
 
     private void Ret()

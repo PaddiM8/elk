@@ -138,7 +138,7 @@ class InstructionGenerator
 
         // TODO: Do the same for ReturnExpr (get the parameters
         // from expr.EnclosingFunction)
-        foreach (var parameter in expr.Parameters)
+        foreach (var _ in expr.Parameters)
             Emit(InstructionKind.Pop);
 
         Emit(InstructionKind.Ret);
@@ -148,8 +148,16 @@ class InstructionGenerator
 
     private void Visit(LetExpr expr)
     {
-        _locals.Push(new Variable(expr.IdentifierList[0], _scopeDepth));
+        foreach (var identifier in expr.IdentifierList)
+            _locals.Push(new Variable(identifier, _scopeDepth));
+
         Next(expr.Value);
+
+        if (expr.IdentifierList.Count > byte.MaxValue)
+            throw new RuntimeException("Too many identifiers in destructuring expression");
+
+        if (expr.IdentifierList.Count > 1)
+            Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
     }
 
     private void Visit(NewExpr expr)
@@ -163,11 +171,8 @@ class InstructionGenerator
 
     private void Visit(IfExpr expr)
     {
-        // TODO: Jumps dont seem to pop the value it uses. Should they?
-        // Otherwise, that needs to be done manually here and for ifs
-        // and whatever
         Next(expr.Condition);
-        var elseJump = EmitJump(InstructionKind.JumpIfNot);
+        var elseJump = EmitJump(InstructionKind.PopJumpIfNot);
         Next(expr.ThenBranch);
         if (expr.ElseBranch != null)
         {
@@ -180,19 +185,22 @@ class InstructionGenerator
 
     private void Visit(ForExpr expr)
     {
-        // TODO: Handle multiple identifiers (maybe there could
-        // be some function here to handle those? idk)
         Next(expr.Value);
 
         // Since the Enumerator is going to be kept as a temporary,
         // while the loop variable is underneath, there needs to be
         // a variable entry for the Enumerator as well.
         _locals.Push(new Variable(_emptyToken, _scopeDepth + 1));
-        _locals.Push(new Variable(expr.IdentifierList[0], _scopeDepth + 1));
+        foreach (var identifier in expr.IdentifierList)
+            _locals.Push(new Variable(identifier, _scopeDepth + 1));
 
         Emit(InstructionKind.GetIter);
         var loopBackIndex = CreateBackwardJumpPoint();
         var startIndex = EmitForIter();
+
+        if (expr.IdentifierList.Count > 1)
+            Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+
         Next(expr.Branch);
         EmitBackwardJump(loopBackIndex);
         EmitEndFor(startIndex);
@@ -206,6 +214,10 @@ class InstructionGenerator
         Next(expr.Branch);
         EmitBackwardJump(jumpBackPoint);
         PatchJump(endJump);
+
+        // TODO: when breaking with a value, it should push that instead
+        // ...and the same for for loops
+        EmitBig(InstructionKind.Const, RuntimeNil.Value);
     }
 
     private void Visit(TupleExpr expr)
@@ -508,20 +520,28 @@ class InstructionGenerator
         int? variadicStart = expr.FunctionSymbol == null && expr.StdFunction == null
             ? 0
             : null;
+        var argumentCount = 0;
         foreach (var ((argument, parameter), i) in expr.Arguments.ZipLongest(parameters).WithIndex())
         {
             if (argument == null)
             {
                 if (parameter.defaultValue != null)
+                {
                     Next(parameter.defaultValue);
+                    argumentCount++;
+                }
 
                 continue;
             }
+
+            if (!variadicStart.HasValue)
+                argumentCount++;
 
             if (parameter.isVariadic)
                 variadicStart = i;
 
             Next(argument);
+
             if (variadicStart.HasValue && argument is StringInterpolationExpr { IsTextArgument: true })
                 Emit(InstructionKind.Glob);
         }
@@ -541,7 +561,7 @@ class InstructionGenerator
 
         if (expr.StdFunction != null)
         {
-            EmitStdCall(expr);
+            EmitStdCall(expr, argumentCount);
 
             return;
         }
@@ -570,12 +590,15 @@ class InstructionGenerator
         Emit(kind);
     }
 
-    private void EmitStdCall(CallExpr expr)
+    private void EmitStdCall(CallExpr expr, int argumentCount)
     {
         Debug.Assert(expr.StdFunction != null);
 
+        if (argumentCount > byte.MaxValue)
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+
         EmitBig(InstructionKind.Const, expr.StdFunction);
-        Emit(InstructionKind.CallStd, (byte)expr.Arguments.Count);
+        Emit(InstructionKind.CallStd, (byte)argumentCount);
     }
 
     private void EmitProgramCall(CallExpr expr, bool isMaybeRoot = false)
