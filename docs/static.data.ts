@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 
 export const elkGrammar = {
   load() {
-      return JSON.parse(readFileSync("../highlight/textmate/syntaxes/elk.tmLanguage.json"))
+      return JSON.parse(readFileSync("../editors/vscode/syntaxes/elk.tmLanguage.json"))
   }
 }
 
