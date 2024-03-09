@@ -2,6 +2,7 @@ namespace Elk.Vm;
 
 enum InstructionKind : byte
 {
+    Nop,
     Load,
     Store,
     Pop,
@@ -16,11 +17,17 @@ enum InstructionKind : byte
 
     Index,
     IndexStore,
-    ConstIndex,
-    ConstIndexStore,
-
+    New,
+    BuildTuple,
+    BuildList,
+    BuildListBig,
+    BuildSet,
+    BuildDict,
+    BuildRange,
+    BuildString,
     Const,
-    Dict,
+    StructConst,
+    Glob,
 
     Add,
     Sub,
@@ -36,6 +43,7 @@ enum InstructionKind : byte
     LessEqual,
     And,
     Or,
+    Contains,
 
     Jump,
     JumpBackward,

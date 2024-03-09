@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
-using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -39,6 +37,9 @@ class InstructionGenerator
                 generator.Emit(InstructionKind.Pop);
         }
 
+        foreach (var _ in generator._locals)
+            generator.Emit(InstructionKind.Pop);
+
         return generator._pages;
     }
 
@@ -47,11 +48,16 @@ class InstructionGenerator
         switch (expr)
         {
             // TODO: For modules, _scopeDepth should probably be set to 0?
+            case StructExpr:
+                break;
             case FunctionExpr functionExpr:
                 Visit(functionExpr);
                 break;
             case LetExpr letExpr:
                 Visit(letExpr);
+                break;
+            case NewExpr newExpr:
+                Visit(newExpr);
                 break;
             case IfExpr ifExpr:
                 Visit(ifExpr);
@@ -61,6 +67,15 @@ class InstructionGenerator
                 break;
             case WhileExpr whileExpr:
                 Visit(whileExpr);
+                break;
+            case TupleExpr tupleExpr:
+                Visit(tupleExpr);
+                break;
+            case ListExpr listExpr:
+                Visit(listExpr);
+                break;
+            case SetExpr setExpr:
+                Visit(setExpr);
                 break;
             case DictionaryExpr dictionaryExpr:
                 Visit(dictionaryExpr);
@@ -80,8 +95,14 @@ class InstructionGenerator
             case FieldAccessExpr fieldAccessExpr:
                 Visit(fieldAccessExpr);
                 break;
+            case RangeExpr rangeExpr:
+                Visit(rangeExpr);
+                break;
             case IndexerExpr indexerExpr:
                 Visit(indexerExpr);
+                break;
+            case TypeExpr typeExpr:
+                Visit(typeExpr);
                 break;
             case VariableExpr variableExpr:
                 Visit(variableExpr);
@@ -131,6 +152,15 @@ class InstructionGenerator
         Next(expr.Value);
     }
 
+    private void Visit(NewExpr expr)
+    {
+        foreach (var argument in expr.Arguments)
+            Next(argument);
+
+        EmitBig(InstructionKind.StructConst, expr.StructSymbol!);
+        Emit(InstructionKind.New, (byte)expr.Arguments.Count);
+    }
+
     private void Visit(IfExpr expr)
     {
         // TODO: Jumps dont seem to pop the value it uses. Should they?
@@ -178,6 +208,33 @@ class InstructionGenerator
         PatchJump(endJump);
     }
 
+    private void Visit(TupleExpr expr)
+    {
+        foreach (var value in expr.Values)
+            Next(value);
+
+        Emit(InstructionKind.BuildTuple);
+        Emit((ushort)expr.Values.Count);
+    }
+
+    private void Visit(ListExpr expr)
+    {
+        foreach (var value in expr.Values)
+            Next(value);
+
+        Emit(InstructionKind.BuildList);
+        Emit((ushort)expr.Values.Count);
+    }
+
+    private void Visit(SetExpr expr)
+    {
+        foreach (var value in expr.Entries)
+            Next(value);
+
+        Emit(InstructionKind.BuildSet);
+        Emit((ushort)expr.Entries.Count);
+    }
+
     private void Visit(DictionaryExpr expr)
     {
         foreach (var entry in expr.Entries)
@@ -186,7 +243,8 @@ class InstructionGenerator
             Next(entry.Item2);
         }
 
-        EmitBig(InstructionKind.Dict, expr.Entries.Count);
+        Emit(InstructionKind.BuildDict);
+        Emit((ushort)expr.Entries.Count);
     }
 
     private void Visit(BlockExpr expr)
@@ -290,6 +348,7 @@ class InstructionGenerator
             OperationKind.LessEquals => InstructionKind.LessEqual,
             OperationKind.Greater => InstructionKind.Greater,
             OperationKind.GreaterEquals => InstructionKind.GreaterEqual,
+            OperationKind.In => InstructionKind.Contains,
             _ => throw new NotImplementedException(expr.Operator.ToString()),
         };
 
@@ -351,11 +410,44 @@ class InstructionGenerator
         Emit(InstructionKind.Index);
     }
 
+    private void Visit(RangeExpr expr)
+    {
+        if (expr.From == null)
+        {
+            EmitBig(InstructionKind.Const, RuntimeNil.Value);
+        }
+        else
+        {
+            Next(expr.From);
+        }
+
+        if (expr.To == null)
+        {
+            EmitBig(InstructionKind.Const, RuntimeNil.Value);
+        }
+        else
+        {
+            Next(expr.To);
+        }
+
+        Emit(
+            InstructionKind.BuildRange,
+            expr.Inclusive
+                ? (byte)1
+                : (byte)0
+        );
+    }
+
     private void Visit(IndexerExpr expr)
     {
         Next(expr.Value);
         Next(expr.Index);
         Emit(InstructionKind.Index);
+    }
+
+    private void Visit(TypeExpr expr)
+    {
+        EmitBig(InstructionKind.Const, expr.RuntimeValue!);
     }
 
     private void Visit(VariableExpr expr)
@@ -384,6 +476,62 @@ class InstructionGenerator
 
     private void Visit(CallExpr expr, bool isMaybeRoot = false)
     {
+        IEnumerable<(Expr? defaultValue, bool isVariadic)> parameters = Array.Empty<(Expr?, bool)>();
+        if (expr.FunctionSymbol != null)
+        {
+            parameters = expr
+                .FunctionSymbol
+                .Expr
+                .Parameters
+                .Select(x => (x.DefaultValue, x.IsVariadic));
+        }
+        else if (expr.StdFunction != null)
+        {
+            Expr nilExpr = new KeywordExpr(
+                new Token(TokenKind.Nil, "nil", TextPos.Default),
+                null,
+                expr.Scope
+            );
+
+            parameters = expr
+                .StdFunction
+                .Parameters
+                .WithIndex()
+                .Where(x => !x.item.IsClosure)
+                .Select(x => (
+                    defaultValues: x.item.IsNullable ? nilExpr : null,
+                    isVariadic: x.index == expr.StdFunction.VariadicStart
+                ));
+        }
+
+        // Program calls are always variadic
+        int? variadicStart = expr.FunctionSymbol == null && expr.StdFunction == null
+            ? 0
+            : null;
+        foreach (var ((argument, parameter), i) in expr.Arguments.ZipLongest(parameters).WithIndex())
+        {
+            if (argument == null)
+            {
+                if (parameter.defaultValue != null)
+                    Next(parameter.defaultValue);
+
+                continue;
+            }
+
+            if (parameter.isVariadic)
+                variadicStart = i;
+
+            Next(argument);
+            if (variadicStart.HasValue && argument is StringInterpolationExpr { IsTextArgument: true })
+                Emit(InstructionKind.Glob);
+        }
+
+        if (variadicStart.HasValue)
+        {
+            Emit(InstructionKind.BuildList);
+            Emit((ushort)(expr.Arguments.Count - variadicStart));
+        }
+
         if (expr.FunctionSymbol != null)
         {
             EmitCall(expr, isMaybeRoot);
@@ -404,9 +552,6 @@ class InstructionGenerator
     private void EmitCall(CallExpr expr, bool isMaybeRoot = false)
     {
         Debug.Assert(expr.FunctionSymbol != null);
-
-        foreach (var argument in expr.Arguments)
-            Next(argument);
 
         // TODO: Instead of having a constant, simply pass two
         // bytes to the Call instruction immediately.
@@ -429,86 +574,14 @@ class InstructionGenerator
     {
         Debug.Assert(expr.StdFunction != null);
 
-        foreach (var argument in expr.Arguments)
-            Next(argument);
-
-        var runtimeFunction = new RuntimeStdFunction(
-            expr.StdFunction,
-            null,
-            Plurality.Singular,
-            BuildRuntimeFunctionInvoker
-        );
-        EmitBig(InstructionKind.Const, runtimeFunction);
+        EmitBig(InstructionKind.Const, expr.StdFunction);
         Emit(InstructionKind.CallStd, (byte)expr.Arguments.Count);
-    }
-
-    private Invoker BuildRuntimeFunctionInvoker(RuntimeFunction function)
-    {
-        return (invokerArguments, invokerIsRoot)
-            => EvaluateStdCall(invokerArguments, ((RuntimeStdFunction)function).StdFunction);
-    }
-
-    private RuntimeObject EvaluateStdCall(
-        List<RuntimeObject> arguments,
-        StdFunction stdFunction,
-        RuntimeClosureFunction? runtimeClosure = null)
-    {
-        var allArguments = new List<object?>(arguments.Count + 2);
-        if (stdFunction.VariadicStart.HasValue)
-        {
-            var variadicArguments = arguments.GetRange(
-                stdFunction.VariadicStart.Value,
-                arguments.Count - stdFunction.VariadicStart.Value
-            );
-            allArguments.AddRange(arguments.GetRange(0, stdFunction.VariadicStart.Value));
-            allArguments.Add(variadicArguments);
-        }
-        else
-        {
-            allArguments.AddRange(arguments);
-        }
-
-        var additionalsIndex = allArguments.Count;
-        foreach (var parameter in stdFunction.Parameters.Reverse())
-        {
-            if (parameter.IsNullable && allArguments.Count < stdFunction.Parameters.Length)
-                allArguments.Insert(additionalsIndex, null);
-            else if (parameter.Type == typeof(ShellEnvironment))
-                throw new NotImplementedException();
-                //allArguments.Insert(additionalsIndex, ShellEnvironment);
-            else if (parameter.IsClosure)
-                throw new NotImplementedException();
-        }
-
-        try
-        {
-            return stdFunction.Invoke(allArguments);
-        }
-        catch (RuntimeException e)
-        {
-            throw new RuntimeStdException(e.Message)
-            {
-                ElkStackTrace = e.ElkStackTrace,
-            };
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeStdException(e.Message);
-        }
     }
 
     private void EmitProgramCall(CallExpr expr, bool isMaybeRoot = false)
     {
-        // TODO: Generate code for this:
-        // if (expr is { RedirectionKind: RedirectionKind.None, IsRoot: false })
-        //     expr.RedirectionKind = RedirectionKind.Output;
-
         // Program name
         EmitBig(InstructionKind.Const, new RuntimeString(expr.Identifier.Value));
-
-        // Arguments
-        foreach (var argument in expr.Arguments)
-            Next(argument);
 
         // Piped value
         if (expr.PipedToProgram != null)
@@ -540,7 +613,7 @@ class InstructionGenerator
             Next(value);
         }
 
-        // CallProgram [argumentCount] [props] [environmentVariableCount]
+        // CallProgram [props] [environmentVariableCount]
         var kind = (expr.IsRoot, isMaybeRoot) switch
         {
             (_, true) => InstructionKind.MaybeRootCallProgram,
@@ -548,7 +621,7 @@ class InstructionGenerator
             _ => InstructionKind.CallProgram,
         };
 
-        Emit(kind, (byte)expr.Arguments.Count);
+        Emit(kind);
         Emit((ushort)props);
         Emit((byte)expr.EnvironmentVariables.Count);
     }
@@ -560,17 +633,11 @@ class InstructionGenerator
 
     private void Visit(StringInterpolationExpr expr)
     {
-        if (expr.Parts.Count == 1 && expr.Parts.First() is LiteralExpr literal)
-        {
-            Next(literal);
+        foreach (var part in expr.Parts)
+            Next(part);
 
-            return;
-        }
-
-        // TODO: When a RuntimeString is created (well, in the executor),
-        // the IsTextArgument property needs to be set to expr.IsTextArgument.
-        // See Interpreter.cs -> Visit(StringInterpolationExpr)
-        throw new NotImplementedException();
+        Emit(InstructionKind.BuildString);
+        Emit((ushort)expr.Parts.Count);
     }
 
     private void Emit(InstructionKind kind, params byte[] arguments)

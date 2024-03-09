@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -88,7 +90,6 @@ class InstructionExecutor
             Console.WriteLine(ex);
         }
 
-        Console.WriteLine(string.Join(", ", executor._stack));
         Debug.Assert(!executor._stack.Any());
 
         return RuntimeNil.Value;
@@ -104,6 +105,8 @@ class InstructionExecutor
     {
         switch ((InstructionKind)Eat())
         {
+            case InstructionKind.Nop:
+                break;
             case InstructionKind.Load:
                 Load(GetConstant<int>());
                 break;
@@ -130,21 +133,18 @@ class InstructionExecutor
                 break;
             case InstructionKind.CallProgram:
                 CallProgram(
-                    Eat(),
                     (ProgramCallProps)Eat().ToUshort(Eat()),
                     Eat()
                 );
                 break;
             case InstructionKind.RootCallProgram:
                 RootCallProgram(
-                    Eat(),
                     (ProgramCallProps)Eat().ToUshort(Eat()),
                     Eat()
                 );
                 break;
             case InstructionKind.MaybeRootCallProgram:
                 MaybeRootCallProgram(
-                    Eat(),
                     (ProgramCallProps)Eat().ToUshort(Eat()),
                     Eat()
                 );
@@ -156,10 +156,37 @@ class InstructionExecutor
                 IndexStore();
                 break;
             case InstructionKind.Const:
-                Const(GetConstant<RuntimeObject>());
+                Const(GetConstant<object>());
                 break;
-            case InstructionKind.Dict:
-                Dict(GetConstant<int>());
+            case InstructionKind.StructConst:
+                StructConst(GetConstant<StructSymbol>());
+                break;
+            case InstructionKind.Glob:
+                Glob();
+                break;
+            case InstructionKind.New:
+                New(Eat());
+                break;
+            case InstructionKind.BuildTuple:
+                BuildTuple(Eat().ToUshort(Eat()));
+                break;
+            case InstructionKind.BuildList:
+                BuildList(Eat().ToUshort(Eat()));
+                break;
+            case InstructionKind.BuildListBig:
+                BuildListBig(GetConstant<int>());
+                break;
+            case InstructionKind.BuildSet:
+                BuildSet(Eat().ToUshort(Eat()));
+                break;
+            case InstructionKind.BuildDict:
+                BuildDict(Eat().ToUshort(Eat()));
+                break;
+            case InstructionKind.BuildRange:
+                BuildRange(Eat() == 1);
+                break;
+            case InstructionKind.BuildString:
+                BuildString(Eat().ToUshort(Eat()));
                 break;
             case InstructionKind.Add:
                 Add();
@@ -202,6 +229,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.Or:
                 Or();
+                break;
+            case InstructionKind.Contains:
+                Contains();
                 break;
             case InstructionKind.Jump:
                 Jump(Eat().ToUshort(Eat()));
@@ -291,20 +321,32 @@ class InstructionExecutor
 
     private void CallStd(byte argumentCount)
     {
-        var function = (RuntimeStdFunction)_stack.Pop();
-        var arguments = new RuntimeObject[argumentCount];
-        for (var i = 0; i < argumentCount; i++)
+        var function = (StdFunction)_stack.PopObject();
+        var arguments = new object?[argumentCount];
+        for (byte i = 0; i < argumentCount; i++)
             arguments[argumentCount - i - 1] = _stack.Pop();
 
         // TODO: Get rid of .ToList. The invoker could probably just take an
         // array, after the tree walking interpreter is gone.
-        // TODO: Is IsRoot fine like this? Probably?
-        var result = function.Invoker(arguments.ToList(), isRoot: false);
-        _stack.Push(result);
+        try
+        {
+            var result = function.Invoke(arguments.ToList());
+            _stack.Push(result);
+        }
+        catch (RuntimeException e)
+        {
+            throw new RuntimeStdException(e.Message)
+            {
+                ElkStackTrace = e.ElkStackTrace,
+            };
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeStdException(e.Message);
+        }
     }
 
     private void CallProgram(
-        byte argumentCount,
         ProgramCallProps props,
         byte environmentVariableCount,
         bool isRoot = false)
@@ -313,7 +355,7 @@ class InstructionExecutor
         var environmentVariables = environmentVariableCount > 0
             ? new (string, RuntimeObject)[environmentVariableCount]
             : null;
-        for (var i = 0; i < environmentVariableCount; i++)
+        for (byte i = 0; i < environmentVariableCount; i++)
         {
             var value = _stack.Pop();
             var key = _stack.Pop().ToString()!;
@@ -324,16 +366,6 @@ class InstructionExecutor
         var pipedValue = props.HasFlag(ProgramCallProps.HasPipedValue)
             ? _stack.Pop()
             : null;
-
-        // Arguments
-        var arguments = new string[argumentCount];
-        for (var i = 0; i < argumentCount; i++)
-        {
-            var argument = _stack.Pop();
-            arguments[argumentCount - i - 1] = argument is RuntimeNil
-                ? string.Empty
-                : argument.ToString() ?? "";
-        }
 
         // Program name
         var fileName = _stack.Pop().As<RuntimeString>().Value;
@@ -349,14 +381,10 @@ class InstructionExecutor
             WorkingDirectory = ShellEnvironment.WorkingDirectory,
         };
 
-        if (environmentVariables != null)
-        {
-            foreach (var (key, value) in environmentVariables)
-                process.StartInfo.EnvironmentVariables.Add(key, value.ToString());
-        }
-
+        // Arguments
+        var arguments = (RuntimeList)_stack.Pop();
         foreach (var arg in arguments)
-            process.StartInfo.ArgumentList.Add(arg);
+            process.StartInfo.ArgumentList.Add(arg.ToString() ?? "");
 
         var processContext = new ProcessContext(
             process,
@@ -380,20 +408,18 @@ class InstructionExecutor
         _stack.Push(pipe);
     }
 
-    private void RootCallProgram(byte argumentCount, ProgramCallProps props, byte environmentVariableCount)
+    private void RootCallProgram(ProgramCallProps props, byte environmentVariableCount)
     {
         CallProgram(
-            argumentCount,
             props,
             environmentVariableCount,
             isRoot: true
         );
     }
 
-    private void MaybeRootCallProgram(byte argumentCount, ProgramCallProps props, byte environmentVariableCount)
+    private void MaybeRootCallProgram(ProgramCallProps props, byte environmentVariableCount)
     {
         CallProgram(
-            argumentCount,
             props,
             environmentVariableCount,
             isRoot: _callStack.Peek().IsRoot
@@ -423,15 +449,118 @@ class InstructionExecutor
         _stack.Push(value);
     }
 
-    private void Const(RuntimeObject value)
+    private void Const(object value)
     {
-        _stack.Push(value);
+        _stack.PushObject(value);
     }
 
-    private void Dict(int size)
+    private void StructConst(StructSymbol symbol)
+    {
+        _stack.PushObject(symbol);
+    }
+
+    private void Glob()
+    {
+        // The glob instruction should only be used for variadic arguments
+        var value = _stack[^1].As<RuntimeString>().Value;
+        var matches = Globbing.Glob(ShellEnvironment.WorkingDirectory, value).ToList();
+        if (!matches.Any())
+            return;
+
+        // Find the list containing the variadic arguments
+        var instructions = CurrentPage.Instructions;
+        var buildListIndex = _ip;
+        while (instructions[buildListIndex] is not
+            ((byte)InstructionKind.BuildList or (byte)InstructionKind.BuildListBig))
+        {
+            buildListIndex++;
+        }
+
+        // If it's a regular BuildList instruction, turn it into a BuildListBig
+        // instruction and add the amount of matches.
+        // Otherwise, if it's a BuildListBig instruction already, find the list
+        // size constant in the ConstantTable and increase it.
+        if (instructions[buildListIndex] == (byte)InstructionKind.BuildList)
+        {
+            int count = instructions[buildListIndex + 1].ToUshort(instructions[buildListIndex + 2]);
+            instructions[buildListIndex] = (byte)InstructionKind.BuildListBig;
+            instructions[buildListIndex + 1] = CurrentPage.ConstantTable.Add(
+                count + matches.Count - 1
+            );
+            instructions[buildListIndex + 2] = (byte)InstructionKind.Nop;
+        }
+        else
+        {
+            var constantAddress = instructions[buildListIndex + 1];
+            var count = CurrentPage.ConstantTable.Get<int>(constantAddress);
+            CurrentPage.ConstantTable.Update(
+                constantAddress,
+                count + matches.Count - 1
+            );
+        }
+
+        _stack.Pop();
+        foreach (var match in matches)
+            _stack.Push(new RuntimeString(match));
+    }
+
+    private void New(byte argumentCount)
+    {
+        var symbol = (StructSymbol)_stack.PopObject();
+        var arguments = new Dictionary<string, RuntimeObject>();
+        for (byte i = 0; i < argumentCount; i++)
+        {
+            var index = argumentCount - i - 1;
+            arguments[symbol.Expr!.Parameters[index].Identifier.Value] = _stack.Pop();
+        }
+
+        _stack.Push(new RuntimeStruct(symbol, arguments));
+    }
+
+    private void BuildTuple(ushort size)
+    {
+        var values = new RuntimeObject[size];
+        for (ushort i = 0; i < size; i++)
+            values[size - i - 1] = _stack.Pop();
+
+        _stack.Push(new RuntimeTuple(values));
+    }
+
+    private void BuildList(ushort size)
+    {
+        var values = new RuntimeObject[size];
+        for (ushort i = 0; i < size; i++)
+            values[size - i - 1] = _stack.Pop();
+
+        _stack.Push(new RuntimeList(values.ToList()));
+    }
+
+    private void BuildListBig(int size)
+    {
+        var values = new RuntimeObject[size];
+        for (var i = 0; i < size; i++)
+            values[size - i - 1] = _stack.Pop();
+
+        _stack.Push(new RuntimeList(values.ToList()));
+    }
+
+    private void BuildSet(ushort size)
+    {
+        var dict = new Dictionary<int, RuntimeObject>(size);
+        for (ushort i = 0; i < size; i++)
+        {
+            var value = _stack.Pop();
+            if (!dict.TryAdd(value.GetHashCode(), value))
+                throw new RuntimeException("Duplicate value in set");
+        }
+
+        _stack.Push(new RuntimeSet(dict));
+    }
+
+    private void BuildDict(ushort size)
     {
         var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>(size);
-        for (var i = 0; i < size; i++)
+        for (ushort i = 0; i < size; i++)
         {
             var value = _stack.Pop();
             var key = _stack.Pop();
@@ -440,6 +569,34 @@ class InstructionExecutor
         }
 
         _stack.Push(new RuntimeDictionary(dict));
+    }
+
+    private void BuildRange(bool isInclusive)
+    {
+        var to = _stack.Pop().As<RuntimeInteger>().Value;
+        var from = _stack.Pop().As<RuntimeInteger>().Value;
+        if (isInclusive)
+        {
+            if (to >= from)
+            {
+                to++;
+            }
+            else
+            {
+                from++;
+            }
+        }
+
+        _stack.Push(new RuntimeRange(from, to));
+    }
+
+    private void BuildString(ushort count)
+    {
+        var parts = new string[count];
+        for (ushort i = 0; i < count; i++)
+            parts[count - i - 1] = _stack.Pop().As<RuntimeString>().Value;
+
+        _stack.Push(new RuntimeString(string.Concat(parts)));
     }
 
     private void Add()
@@ -566,6 +723,24 @@ class InstructionExecutor
         var right = _stack.Pop().As<RuntimeBoolean>().IsTrue;
         var left = _stack.Pop().As<RuntimeBoolean>().IsTrue;
         _stack.Push(RuntimeBoolean.From(left || right));
+    }
+
+    private void Contains()
+    {
+        var right = _stack.Pop();
+        var left = _stack.Pop();
+        var result = right switch
+        {
+            RuntimeList list => list.Values
+                .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
+            RuntimeRange range => range.Contains(left.As<RuntimeInteger>().Value),
+            RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
+            RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
+            RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
+            _ => throw new RuntimeInvalidOperationException("in", right.GetType()),
+        };
+
+        _stack.Push(RuntimeBoolean.From(result));
     }
 
     private void Jump(ushort offset)

@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Elk.Interpreting.Scope;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Std.DataTypes;
 
@@ -84,8 +85,24 @@ class Disassembler
             case InstructionKind.Const:
                 GetConstant<RuntimeObject>();
                 break;
-            case InstructionKind.Dict:
+            case InstructionKind.StructConst:
+                GetConstant<StructSymbol>();
+                break;
+            case InstructionKind.New:
+                Eat();
+                break;
+            case InstructionKind.BuildTuple:
+            case InstructionKind.BuildList:
+            case InstructionKind.BuildSet:
+            case InstructionKind.BuildDict:
+            case InstructionKind.BuildString:
+                EatShort();
+                break;
+            case InstructionKind.BuildListBig:
                 GetConstant<int>();
+                break;
+            case InstructionKind.BuildRange:
+                Eat();
                 break;
             case InstructionKind.Call:
             case InstructionKind.RootCall:
@@ -98,7 +115,6 @@ class Disassembler
             case InstructionKind.CallProgram:
             case InstructionKind.RootCallProgram:
             case InstructionKind.MaybeRootCallProgram:
-                Eat();
                 EatShort("B");
                 Eat();
                 break;
