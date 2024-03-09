@@ -10,6 +10,7 @@ using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Services;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 namespace Elk;
 
@@ -40,7 +41,8 @@ public static class ElkProgram
         string input,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter)
+        Interpreter? interpreter,
+        bool useVm = false)
     {
         Ast ast;
         try
@@ -84,7 +86,7 @@ public static class ElkProgram
 
         try
         {
-            var result = Evaluate(ast, scope, analysisScope, interpreter);
+            var result = Evaluate(ast, scope, analysisScope, interpreter, useVm);
             result.SemanticTokens = semanticTokens;
 
             return result;
@@ -129,7 +131,8 @@ public static class ElkProgram
         Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter)
+        Interpreter? interpreter,
+        bool useVm = false)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
@@ -144,8 +147,11 @@ public static class ElkProgram
         );
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = interpreter?.Interpret(analysedAst.Expressions, scope);
-        EvaluateModules(scope.ModuleScope.Modules, interpreter);
+        var result = useVm
+            ? InstructionExecutor.Execute(InstructionGenerator.Generate(analysedAst))
+            : interpreter?.Interpret(analysedAst.Expressions, scope);
+
+        EvaluateModules(scope.ModuleScope.Modules, interpreter, useVm);
 
         return new EvaluationResult
         {
@@ -154,7 +160,10 @@ public static class ElkProgram
         };
     }
 
-    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter? interpreter)
+    private static void EvaluateModules(
+        IEnumerable<ModuleScope> modules,
+        Interpreter? interpreter,
+        bool useVm = false)
     {
         foreach (var module in modules)
         {
@@ -162,7 +171,7 @@ public static class ElkProgram
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter);
+            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, useVm);
         }
     }
 }

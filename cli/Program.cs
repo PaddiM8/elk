@@ -44,6 +44,12 @@ var cliParser = new RuntimeCliParser("elk")
         LongName = "lsp",
         Description = "Start the language server.",
     })
+    .AddFlag(new CliFlag
+    {
+        Identifier = "vm",
+        LongName = "vm",
+        Description = "Run code with the experimental VM",
+    })
     .SetAction(result =>
     {
         if (result.Contains("command"))
@@ -83,7 +89,7 @@ var cliParser = new RuntimeCliParser("elk")
         {
             try
             {
-                Repl.Run();
+                Repl.Run(useVm: result.Contains("vm"));
             }
             catch (Exception ex)
             {
@@ -95,7 +101,8 @@ var cliParser = new RuntimeCliParser("elk")
 
         ShellSession.RunFile(
             filePath,
-            result.GetList("arguments")
+            result.GetList("arguments"),
+            useVm: result.Contains("vm")
         );
     });
 

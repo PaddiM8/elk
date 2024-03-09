@@ -12,6 +12,7 @@ using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
@@ -104,7 +105,8 @@ public class ShellSession
         string command,
         bool ownScope = false,
         bool printReturnedValue = true,
-        bool printErrorLineNumbers = true)
+        bool printErrorLineNumbers = true,
+        bool useVm = false)
     {
         var textWriter = Console.Out;
         var resultBuilder = new StringBuilder();
@@ -114,7 +116,8 @@ public class ShellSession
                 ? new LocalScope(_interpreter.CurrentModule)
                 : _interpreter.CurrentModule,
             AnalysisScope.AppendToModule,
-            _interpreter
+            _interpreter,
+            useVm
         );
 
         if (evaluationResult.Diagnostics.Any())
@@ -158,12 +161,16 @@ public class ShellSession
         Console.ResetColor();
     }
 
-    public static void RunFile(string filePath, IEnumerable<string>? arguments)
+    public static void RunFile(string filePath, IEnumerable<string>? arguments, bool useVm = false)
     {
-        RunFile(new Interpreter(filePath), filePath, arguments);
+        RunFile(new Interpreter(filePath), filePath, arguments, useVm);
     }
 
-    private static void RunFile(Interpreter interpreter, string filePath, IEnumerable<string>? arguments = null)
+    private static void RunFile(
+        Interpreter interpreter,
+        string filePath,
+        IEnumerable<string>? arguments = null,
+        bool useVm = false)
     {
         arguments ??= new List<string>();
 
@@ -195,7 +202,8 @@ public class ShellSession
             File.ReadAllText(filePath),
             new RootModuleScope(filePath, null),
             AnalysisScope.OncePerModule,
-            interpreter
+            interpreter,
+            useVm
         );
 
         CallOnExit();

@@ -10,9 +10,9 @@ using Elk.Cli.Database;
 
 namespace Elk.Cli;
 
-class Repl
+static class Repl
 {
-    public static void Run()
+    public static void Run(bool useVm = false)
     {
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
@@ -66,7 +66,8 @@ class Repl
                 input,
                 ownScope: false,
                 printReturnedValue: true,
-                printErrorLineNumbers: false
+                printErrorLineNumbers: false,
+                useVm
             );
         }
     }

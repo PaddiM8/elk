@@ -1,0 +1,2 @@
+false and assert(false)
+true or assert(false)
