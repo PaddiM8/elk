@@ -29,32 +29,21 @@ class InstructionExecutor
         => _callStack.Peek().Page;
 
     private const bool DUMP_PAGES = true;
-    private readonly List<Page> _pages;
     private readonly IndexableStack<RuntimeObject> _stack = new();
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
+    private RuntimeObject? _returnedValue;
 
-    private InstructionExecutor(List<Page> pages)
+    public static RuntimeObject Execute(Page page)
     {
-        _pages = pages;
-    }
-
-    public static RuntimeObject Execute(List<Page> pages)
-    {
-        if (!pages.Any())
-            return RuntimeNil.Value;
-
-        var executor = new InstructionExecutor(pages);
-        executor._callStack.Push(new Frame(pages.First(), 0, 0, IsRoot: false));
+        var executor = new InstructionExecutor();
+        executor._callStack.Push(new Frame(page, 0, 0, IsRoot: false));
 
         if (DUMP_PAGES)
         {
-            foreach (var (page, i) in pages.WithIndex())
-            {
-                Console.Write($"Page {i}:");
-                page.Dump();
-                Console.WriteLine();
-            }
+            Console.Write($"Page {executor.CurrentPage.GetHashCode()}:");
+            page.Dump();
+            Console.WriteLine();
         }
 
         try
@@ -72,7 +61,7 @@ class InstructionExecutor
         {
             var ipString = Ansi.Format(executor._ip.ToString(), AnsiForeground.DarkYellow);
             var pageString = Ansi.Format(
-                executor._pages.IndexOf(executor._callStack.Peek().Page).ToString(),
+                executor.CurrentPage.GetHashCode().ToString(),
                 AnsiForeground.DarkYellow
             );
             Console.WriteLine(
@@ -115,6 +104,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.Pop:
                 Pop();
+                break;
+            case InstructionKind.PopArgs:
+                PopArgs(Eat());
                 break;
             case InstructionKind.Unpack:
                 Unpack(Eat());
@@ -293,6 +285,15 @@ class InstructionExecutor
         _stack.PopObject();
     }
 
+    private void PopArgs(byte count)
+    {
+        for (byte i = 0; i < count; i++)
+            Pop();
+
+        _stack.Push(_returnedValue!);
+        _returnedValue = null;
+    }
+
     private void Unpack(byte count)
     {
         var container = _stack.Pop();
@@ -313,13 +314,14 @@ class InstructionExecutor
     private void Ret()
     {
         _ip = CurrentPage.Instructions.Count;
+        _returnedValue = _stack.Pop();
     }
 
     private void Call(bool isRoot = false)
     {
-        var pageIndex = (int)_stack.Pop().As<RuntimeInteger>().Value;
+        var page = (Page)_stack.PopObject();
         var frame = new Frame(
-            _pages[pageIndex],
+            page,
             _ip,
             _stack.Count - 1,
             isRoot

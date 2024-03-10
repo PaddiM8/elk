@@ -85,7 +85,7 @@ public class ShellSession
     public bool ProgramExists(string name)
         => FileUtils.ExecutableExists(name, WorkingDirectory);
 
-    public string GetPrompt()
+    public string GetPrompt(bool useVm = false)
     {
         var previousExitCode = Environment.GetEnvironmentVariable("?");
 
@@ -95,7 +95,7 @@ public class ShellSession
         if (!_interpreter.CurrentModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
+        var prompt = CallFunction(_interpreter, "elkPrompt", useVm)?.ToString() ?? " >> ";
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
         return prompt;
@@ -194,7 +194,7 @@ public class ShellSession
         void CallOnExit()
         {
             if (interpreter.CurrentModule.FunctionExists("__onExit"))
-                CallFunction(interpreter, "__onExit");
+                CallFunction(interpreter, "__onExit", useVm);
         }
 
         Console.CancelKeyPress += (_, _) => CallOnExit();
@@ -217,7 +217,7 @@ public class ShellSession
         }
     }
 
-    private static RuntimeObject? CallFunction(Interpreter interpreter, string identifier)
+    private static RuntimeObject? CallFunction(Interpreter interpreter, string identifier, bool useVm = false)
     {
         var call = new CallExpr(
             new Token(TokenKind.Identifier, identifier, TextPos.Default),
@@ -239,7 +239,9 @@ public class ShellSession
                 new Ast(new List<Expr> { call }),
                 interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
-                interpreter
+                interpreter,
+                new FunctionTable(),
+                useVm
             ).Value;
         }
         catch (RuntimeException e)

@@ -86,7 +86,14 @@ public static class ElkProgram
 
         try
         {
-            var result = Evaluate(ast, scope, analysisScope, interpreter, useVm);
+            var result = Evaluate(
+                ast,
+                scope,
+                analysisScope,
+                interpreter,
+                new FunctionTable(),
+                useVm
+            );
             result.SemanticTokens = semanticTokens;
 
             return result;
@@ -132,6 +139,7 @@ public static class ElkProgram
         Scope scope,
         AnalysisScope analysisScope,
         Interpreter? interpreter,
+        FunctionTable functionTable,
         bool useVm = false)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
@@ -143,15 +151,39 @@ public static class ElkProgram
                     x.AnalysisStatus != AnalysisStatus.Failed &&
                         x.AnalysisStatus != AnalysisStatus.Evaluated
                 ),
-            interpreter
+            interpreter,
+            functionTable,
+            useVm
         );
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = useVm
-            ? InstructionExecutor.Execute(InstructionGenerator.Generate(analysedAst))
-            : interpreter?.Interpret(analysedAst.Expressions, scope);
+        RuntimeObject? result;
+        if (useVm)
+        {
+            var page = InstructionGenerator.Generate(analysedAst, functionTable);
 
-        EvaluateModules(scope.ModuleScope.Modules, interpreter, useVm);
+            // TODO: This is just for debugging. Create a command line flag for this
+            foreach (var function in analysedAst.Expressions.Where(x => x is FunctionExpr).Cast<FunctionExpr>())
+            {
+                var symbol = function.Module.FindFunction(function.Identifier.Value, lookInImports: false)!;
+                var functionPage = functionTable.Get(symbol);
+                Console.Write($"Page {functionPage.GetHashCode()} [{function.Identifier.Value}]");
+                functionPage.Dump();
+                Console.WriteLine();
+            }
+
+            // TODO: Is this right? Now it will execute some modules before generating
+            // the instructions for others. Might work, might not? Maybe it needs to
+            // first traverse the modules and generate instructions, and then traverse
+            // and execute them? Maybe even do it lazily somehow?
+            EvaluateModules(scope.ModuleScope.Modules, interpreter, functionTable, useVm);
+            result = InstructionExecutor.Execute(page);
+        }
+        else
+        {
+            EvaluateModules(scope.ModuleScope.Modules, interpreter, functionTable, useVm);
+            result = interpreter?.Interpret(analysedAst.Expressions, scope);
+        }
 
         return new EvaluationResult
         {
@@ -163,6 +195,7 @@ public static class ElkProgram
     private static void EvaluateModules(
         IEnumerable<ModuleScope> modules,
         Interpreter? interpreter,
+        FunctionTable functionTable,
         bool useVm = false)
     {
         foreach (var module in modules)
@@ -171,7 +204,7 @@ public static class ElkProgram
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, useVm);
+            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, functionTable, useVm);
         }
     }
 }

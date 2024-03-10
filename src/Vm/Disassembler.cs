@@ -68,6 +68,13 @@ class Disassembler
             return;
         }
 
+        if (obj is Page page)
+        {
+            _builder.Append($" Page[{page.GetHashCode()}]");
+
+            return;
+        }
+
         var stringValue = obj?.ToString() ?? "???";
         _builder.Append(" " + stringValue);
     }
@@ -104,9 +111,10 @@ class Disassembler
             case InstructionKind.BuildRange:
                 Eat();
                 break;
-            case InstructionKind.Call:
-            case InstructionKind.RootCall:
-            case InstructionKind.MaybeRootCall:
+            case InstructionKind.PopArgs:
+                Eat();
+                break;
+            case InstructionKind.Unpack:
                 Eat();
                 break;
             case InstructionKind.CallStd:

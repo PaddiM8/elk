@@ -11,25 +11,33 @@ namespace Elk.Vm;
 
 class InstructionGenerator
 {
-    private Page CurrentPage
-        => _pages[_currentPageIndex];
 
-    private readonly List<Page> _pages;
+    //private readonly List<Page> _pages;
     private readonly Stack<Variable> _locals = new();
-    private readonly Dictionary<string, int> _functions = new();
+    private readonly FunctionTable _functionTable;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
-    private int _currentPageIndex;
+    private Page _currentPage = new();
     private int _currentBasePointer;
     private int _scopeDepth;
 
-    private InstructionGenerator()
+    private InstructionGenerator(FunctionTable functionTable)
     {
-        _pages = [new Page()];
+        //_pages = [new Page()];
+        _functionTable = functionTable;
     }
 
-    public static List<Page> Generate(Ast ast)
+    public static Page Generate(Ast ast, FunctionTable functionTable)
     {
-        var generator = new InstructionGenerator();
+        var generator = new InstructionGenerator(functionTable);
+        /*foreach (var function in ast.Expressions.Where(x => x is FunctionExpr))
+        {
+            generator._currentPageIndex = generator._pages.Count;
+
+            var functionExpr = (FunctionExpr)function;
+            var symbol = functionExpr.Module.FindFunction(functionExpr.Identifier.Value, lookInImports: false)!;
+            generator._pages.Add(generator._functionTable[symbol]);
+        }*/
+
         foreach (var expr in ast.Expressions)
         {
             generator.Next(expr);
@@ -40,7 +48,7 @@ class InstructionGenerator
         foreach (var _ in generator._locals)
             generator.Emit(InstructionKind.Pop);
 
-        return generator._pages;
+        return generator._currentPage;
     }
 
     private void Next(Expr expr)
@@ -48,6 +56,7 @@ class InstructionGenerator
         switch (expr)
         {
             // TODO: For modules, _scopeDepth should probably be set to 0?
+            case ModuleExpr:
             case StructExpr:
                 break;
             case FunctionExpr functionExpr:
@@ -123,10 +132,10 @@ class InstructionGenerator
 
     private void Visit(FunctionExpr expr)
     {
-        var previousPage = _currentPageIndex;
-        _pages.Add(new Page());
-        _currentPageIndex = _pages.Count - 1;
-        _functions.Add(expr.Identifier.Value, _currentPageIndex);
+        var previousPage = _currentPage;
+        _currentPage = _functionTable.Get(
+            expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
+        );
 
         foreach (var parameter in expr.Parameters)
             _locals.Push(new Variable(parameter.Identifier, 0));
@@ -136,14 +145,11 @@ class InstructionGenerator
         Next(expr.Block);
         _currentBasePointer = previousBasePointer;
 
-        // TODO: Do the same for ReturnExpr (get the parameters
-        // from expr.EnclosingFunction)
-        foreach (var _ in expr.Parameters)
-            Emit(InstructionKind.Pop);
-
         Emit(InstructionKind.Ret);
+        _currentPage = previousPage;
 
-        _currentPageIndex = previousPage;
+        foreach (var _ in expr.Parameters)
+            _locals.Pop();
     }
 
     private void Visit(LetExpr expr)
@@ -573,12 +579,9 @@ class InstructionGenerator
     {
         Debug.Assert(expr.FunctionSymbol != null);
 
-        // TODO: Instead of having a constant, simply pass two
-        // bytes to the Call instruction immediately.
-        // TODO: Modules
         EmitBig(
             InstructionKind.Const,
-            new RuntimeInteger(_functions[expr.Identifier.Value])
+            _functionTable.Get(expr.FunctionSymbol)
         );
         var kind = (expr.IsRoot, isMaybeRoot) switch
         {
@@ -588,6 +591,7 @@ class InstructionGenerator
         };
 
         Emit(kind);
+        Emit(InstructionKind.PopArgs, (byte)expr.Arguments.Count);
     }
 
     private void EmitStdCall(CallExpr expr, int argumentCount)
@@ -665,28 +669,28 @@ class InstructionGenerator
 
     private void Emit(InstructionKind kind, params byte[] arguments)
     {
-        CurrentPage.Instructions.Add((byte)kind);
+        _currentPage.Instructions.Add((byte)kind);
         Emit(arguments);
     }
 
     private void Emit(params byte[] arguments)
     {
         foreach (var argument in arguments)
-            CurrentPage.Instructions.Add(argument);
+            _currentPage.Instructions.Add(argument);
     }
 
     private void Emit(ushort argument)
     {
         var (left, right) = argument.ToBytePair();
-        CurrentPage.Instructions.Add(left);
-        CurrentPage.Instructions.Add(right);
+        _currentPage.Instructions.Add(left);
+        _currentPage.Instructions.Add(right);
     }
 
     private void EmitBig(InstructionKind kind, object argument)
     {
-        CurrentPage.Instructions.Add((byte)kind);
-        CurrentPage.Instructions.Add(
-            CurrentPage.ConstantTable.Add(argument)
+        _currentPage.Instructions.Add((byte)kind);
+        _currentPage.Instructions.Add(
+            _currentPage.ConstantTable.Add(argument)
         );
     }
 
@@ -695,17 +699,17 @@ class InstructionGenerator
         Emit(instruction);
 
         // The offset will be set later on using PatchJump
-        CurrentPage.Instructions.Add(0);
-        CurrentPage.Instructions.Add(0);
+        _currentPage.Instructions.Add(0);
+        _currentPage.Instructions.Add(0);
 
         // Return the offset of the first part of the argument,
         // since that is the value that is going to be modified later
-        return CurrentPage.Instructions.Count - 2;
+        return _currentPage.Instructions.Count - 2;
     }
 
     private void PatchJump(int offset)
     {
-        var currentOffset = CurrentPage.Instructions.Count - 1;
+        var currentOffset = _currentPage.Instructions.Count - 1;
 
         // Need to subtract by one, because the actual jump is going
         // to happen after the argument bytes have been consumed,
@@ -716,34 +720,34 @@ class InstructionGenerator
             throw new RuntimeException("Execution error: Too many instructions to jump over.");
 
         var (left, right) = ((ushort)jump).ToBytePair();
-        CurrentPage.Instructions[offset] = left;
-        CurrentPage.Instructions[offset + 1] = right;
+        _currentPage.Instructions[offset] = left;
+        _currentPage.Instructions[offset + 1] = right;
     }
 
     private int CreateBackwardJumpPoint()
     {
-        return CurrentPage.Instructions.Count - 2;
+        return _currentPage.Instructions.Count - 2;
     }
 
     private void EmitBackwardJump(int jumpPoint)
     {
         Emit(InstructionKind.JumpBackward);
-        Emit((ushort)(CurrentPage.Instructions.Count - jumpPoint));
+        Emit((ushort)(_currentPage.Instructions.Count - jumpPoint));
     }
 
     private int EmitForIter()
     {
         Emit(InstructionKind.ForIter, 0, 0);
 
-        return CurrentPage.Instructions.Count - 2;
+        return _currentPage.Instructions.Count - 2;
     }
 
     private void EmitEndFor(int startIndex)
     {
-        var offset = CurrentPage.Instructions.Count - startIndex - 1;
+        var offset = _currentPage.Instructions.Count - startIndex - 1;
         var (left, right) = ((ushort)offset).ToBytePair();
-        CurrentPage.Instructions[startIndex] = left;
-        CurrentPage.Instructions[startIndex + 1] = right;
+        _currentPage.Instructions[startIndex] = left;
+        _currentPage.Instructions[startIndex + 1] = right;
         Emit(InstructionKind.EndFor);
     }
 }
