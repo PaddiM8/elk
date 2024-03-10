@@ -22,26 +22,26 @@ record struct Frame(
 
 class InstructionExecutor
 {
-    // TODO: Micro-optimisation... keep this as a field instead and
-    // have some helper methods for dealing with the call stack, that
-    // make sure _currentPage gets updated.
-    private Page CurrentPage
-        => _callStack.Peek().Page;
-
     private const bool DUMP_PAGES = true;
     private readonly IndexableStack<RuntimeObject> _stack = new();
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
+    private Page _currentPage;
     private RuntimeObject? _returnedValue;
+
+    private InstructionExecutor(Page page)
+    {
+        _currentPage = page;
+        PushFrame(new Frame(page, 0, page.Instructions.Count, IsRoot: false));
+    }
 
     public static RuntimeObject Execute(Page page)
     {
-        var executor = new InstructionExecutor();
-        executor._callStack.Push(new Frame(page, 0, 0, IsRoot: false));
+        var executor = new InstructionExecutor(page);
 
         if (DUMP_PAGES)
         {
-            Console.Write($"Page {executor.CurrentPage.GetHashCode()}:");
+            Console.Write($"Page {executor._currentPage.GetHashCode()}:");
             page.Dump();
             Console.WriteLine();
         }
@@ -50,18 +50,17 @@ class InstructionExecutor
         {
             while (executor._callStack.Any())
             {
-                while (executor._ip < executor.CurrentPage.Instructions.Count)
+                while (executor._ip < executor._currentPage.Instructions.Count)
                     executor.Next();
 
-                var frame = executor._callStack.Pop();
-                executor._ip = frame.ReturnAddress;
+                executor.PopFrame();
             }
         }
         catch (Exception ex)
         {
             var ipString = Ansi.Format(executor._ip.ToString(), AnsiForeground.DarkYellow);
             var pageString = Ansi.Format(
-                executor.CurrentPage.GetHashCode().ToString(),
+                executor._currentPage.GetHashCode().ToString(),
                 AnsiForeground.DarkYellow
             );
             Console.WriteLine(
@@ -85,10 +84,10 @@ class InstructionExecutor
     }
 
     private T GetConstant<T>()
-        => CurrentPage.ConstantTable.Get<T>(Eat());
+        => _currentPage.ConstantTable.Get<T>(Eat());
 
     private byte Eat()
-        => CurrentPage.Instructions[_ip++];
+        => _currentPage.Instructions[_ip++];
 
     private void Next()
     {
@@ -256,7 +255,7 @@ class InstructionExecutor
                 EndFor();
                 break;
             default:
-                throw new NotImplementedException(((InstructionKind)CurrentPage.Instructions[_ip - 1]).ToString());
+                throw new NotImplementedException(((InstructionKind)_currentPage.Instructions[_ip - 1]).ToString());
         }
     }
 
@@ -313,7 +312,7 @@ class InstructionExecutor
 
     private void Ret()
     {
-        _ip = CurrentPage.Instructions.Count;
+        _ip = _currentPage.Instructions.Count;
         _returnedValue = _stack.Pop();
     }
 
@@ -327,8 +326,7 @@ class InstructionExecutor
             isRoot
         );
 
-        _callStack.Push(frame);
-        _ip = 0;
+        PushFrame(frame);
     }
 
     private void RootCall()
@@ -490,7 +488,7 @@ class InstructionExecutor
             return;
 
         // Find the list containing the variadic arguments
-        var instructions = CurrentPage.Instructions;
+        var instructions = _currentPage.Instructions;
         var buildListIndex = _ip;
         while (instructions[buildListIndex] is not
             ((byte)InstructionKind.BuildList or (byte)InstructionKind.BuildListBig))
@@ -506,7 +504,7 @@ class InstructionExecutor
         {
             int count = instructions[buildListIndex + 1].ToUshort(instructions[buildListIndex + 2]);
             instructions[buildListIndex] = (byte)InstructionKind.BuildListBig;
-            instructions[buildListIndex + 1] = CurrentPage.ConstantTable.Add(
+            instructions[buildListIndex + 1] = _currentPage.ConstantTable.Add(
                 count + matches.Count - 1
             );
             instructions[buildListIndex + 2] = (byte)InstructionKind.Nop;
@@ -514,8 +512,8 @@ class InstructionExecutor
         else
         {
             var constantAddress = instructions[buildListIndex + 1];
-            var count = CurrentPage.ConstantTable.Get<int>(constantAddress);
-            CurrentPage.ConstantTable.Update(
+            var count = _currentPage.ConstantTable.Get<int>(constantAddress);
+            _currentPage.ConstantTable.Update(
                 constantAddress,
                 count + matches.Count - 1
             );
@@ -826,5 +824,23 @@ class InstructionExecutor
     {
         var generator = (IEnumerator<RuntimeObject>)_stack.PeekObject();
         generator.Dispose();
+    }
+
+    private void PushFrame(Frame frame)
+    {
+        _callStack.Push(frame);
+        _currentPage = frame.Page;
+        _ip = 0;
+    }
+
+    private Frame PopFrame()
+    {
+        var frame = _callStack.Pop();
+        if (_callStack.Count > 0)
+            _currentPage = _callStack.Peek().Page;
+
+        _ip = frame.ReturnAddress;
+
+        return frame;
     }
 }
