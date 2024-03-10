@@ -32,7 +32,7 @@ class InstructionExecutor
     private InstructionExecutor(Page page)
     {
         _currentPage = page;
-        PushFrame(new Frame(page, 0, page.Instructions.Count, IsRoot: false));
+        PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
     }
 
     public static RuntimeObject Execute(Page page)
@@ -622,133 +622,125 @@ class InstructionExecutor
     private void Add()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        _stack.Push(left.Operation(OperationKind.Addition, right));
+        _stack[^1] = _stack[^1].Operation(OperationKind.Addition, right);
     }
 
     private void Sub()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        _stack.Push(left.Operation(OperationKind.Subtraction, right));
+        _stack[^1] = _stack[^1].Operation(OperationKind.Subtraction, right);
     }
 
     private void Mul()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        _stack.Push(left.Operation(OperationKind.Multiplication, right));
+        _stack[^1] = _stack[^1].Operation(OperationKind.Multiplication, right);
     }
 
     private void Div()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        _stack.Push(left.Operation(OperationKind.Division, right));
+        _stack[^1] = _stack[^1].Operation(OperationKind.Division, right);
     }
 
     private void Negate()
     {
-        var value = _stack.Pop();
-        _stack.Push(value.Operation(OperationKind.Subtraction));
+        _stack[^1] = _stack[^1].Operation(OperationKind.Subtraction);
     }
 
     private void Not()
     {
-        var value = _stack.Pop();
-        _stack.Push(
-            RuntimeBoolean.From(
-                !value.As<RuntimeBoolean>().IsTrue
-            )
+        _stack[^1] = RuntimeBoolean.From(
+            !_stack[^1].As<RuntimeBoolean>().IsTrue
         );
     }
 
     private void Equal()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
+        var left = _stack[^1];
 
         // TODO: Copied over from interpreter... but this is not efficient enough
         var isLeftNil = left is RuntimeNil;
         var isRightNil = right is RuntimeNil;
         if (isLeftNil != isRightNil && (isLeftNil || isRightNil))
         {
-            _stack.Push(RuntimeBoolean.False);
+            _stack[^1] = RuntimeBoolean.False;
 
             return;
         }
 
-        _stack.Push(RuntimeBoolean.From(left.Equals(right)));
+        _stack[^1] = RuntimeBoolean.From(left.Equals(right));
     }
 
     private void NotEqual()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
+        var left = _stack[^1];
 
         // TODO: Copied over from interpreter... but this is not efficient enough
         var isLeftNil = left is RuntimeNil;
         var isRightNil = right is RuntimeNil;
         if (isLeftNil != isRightNil && (isLeftNil || isRightNil))
         {
-            _stack.Push(RuntimeBoolean.True);
+            _stack[^1] = RuntimeBoolean.True;
 
             return;
         }
 
-        _stack.Push(RuntimeBoolean.From(!left.Equals(right)));
+        _stack[^1] = RuntimeBoolean.From(!left.Equals(right));
     }
 
     private void Less()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        var isLess = left.CompareTo(right) < 0;
-        _stack.Push(RuntimeBoolean.From(isLess));
+        _stack[^1] = RuntimeBoolean.From(
+            _stack[^1].CompareTo(right) < 0
+        );
     }
 
     private void LessEqual()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        var isLess = left.CompareTo(right) <= 0;
-        _stack.Push(RuntimeBoolean.From(isLess));
+        _stack[^1] = RuntimeBoolean.From(
+            _stack[^1].CompareTo(right) <= 0
+        );
     }
 
     private void Greater()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        var isLess = left.CompareTo(right) > 0;
-        _stack.Push(RuntimeBoolean.From(isLess));
+        _stack[^1] = RuntimeBoolean.From(
+            _stack[^1].CompareTo(right) > 0
+        );
     }
 
     private void GreaterEqual()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
-        var isLess = left.CompareTo(right) >= 0;
-        _stack.Push(RuntimeBoolean.From(isLess));
+        _stack[^1] = RuntimeBoolean.From(
+            _stack[^1].CompareTo(right) >= 0
+        );
     }
 
     private void And()
     {
         var right = _stack.Pop().As<RuntimeBoolean>().IsTrue;
-        var left = _stack.Pop().As<RuntimeBoolean>().IsTrue;
-        _stack.Push(RuntimeBoolean.From(left && right));
+        var left = _stack[^1].As<RuntimeBoolean>().IsTrue;
+        _stack[^1] = RuntimeBoolean.From(left && right);
     }
 
     private void Or()
     {
         var right = _stack.Pop().As<RuntimeBoolean>().IsTrue;
-        var left = _stack.Pop().As<RuntimeBoolean>().IsTrue;
-        _stack.Push(RuntimeBoolean.From(left || right));
+        var left = _stack[^1].As<RuntimeBoolean>().IsTrue;
+        _stack[^1] = RuntimeBoolean.From(left || right);
     }
 
     private void Contains()
     {
         var right = _stack.Pop();
-        var left = _stack.Pop();
+        var left = _stack[^1];
         var result = right switch
         {
             RuntimeList list => list.Values
@@ -760,7 +752,7 @@ class InstructionExecutor
             _ => throw new RuntimeInvalidOperationException("in", right.GetType()),
         };
 
-        _stack.Push(RuntimeBoolean.From(result));
+        _stack[^1] = RuntimeBoolean.From(result);
     }
 
     private void Jump(ushort offset)
