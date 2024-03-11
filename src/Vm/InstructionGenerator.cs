@@ -11,8 +11,6 @@ namespace Elk.Vm;
 
 class InstructionGenerator
 {
-
-    //private readonly List<Page> _pages;
     private readonly Stack<Variable> _locals = new();
     private readonly FunctionTable _functionTable;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
@@ -22,22 +20,12 @@ class InstructionGenerator
 
     private InstructionGenerator(FunctionTable functionTable)
     {
-        //_pages = [new Page()];
         _functionTable = functionTable;
     }
 
     public static Page Generate(Ast ast, FunctionTable functionTable)
     {
         var generator = new InstructionGenerator(functionTable);
-        /*foreach (var function in ast.Expressions.Where(x => x is FunctionExpr))
-        {
-            generator._currentPageIndex = generator._pages.Count;
-
-            var functionExpr = (FunctionExpr)function;
-            var symbol = functionExpr.Module.FindFunction(functionExpr.Identifier.Value, lookInImports: false)!;
-            generator._pages.Add(generator._functionTable[symbol]);
-        }*/
-
         foreach (var expr in ast.Expressions)
         {
             generator.Next(expr);
@@ -125,6 +113,10 @@ class InstructionGenerator
             case StringInterpolationExpr stringInterpolationExpr:
                 Visit(stringInterpolationExpr);
                 break;
+            case ClosureExpr closureExpr:
+                Visit(closureExpr);
+                break;
+            // TODO: Try
             default:
                 throw new NotImplementedException();
         }
@@ -665,6 +657,29 @@ class InstructionGenerator
 
         Emit(InstructionKind.BuildString);
         Emit((ushort)expr.Parts.Count);
+    }
+
+    private void Visit(ClosureExpr expr)
+    {
+        var previousPage = _currentPage;
+        _currentPage = new Page();
+        expr.RuntimeValue!.Page = _currentPage;
+
+        foreach (var parameter in expr.Parameters)
+            _locals.Push(new Variable(parameter, 0));
+
+        var previousBasePointer = _currentBasePointer;
+        _currentBasePointer = _locals.Count - 1;
+        Next(expr.Body);
+        _currentBasePointer = previousBasePointer;
+
+        Emit(InstructionKind.Ret);
+        _currentPage = previousPage;
+
+        foreach (var _ in expr.Parameters)
+            _locals.Pop();
+
+        EmitBig(InstructionKind.Const, expr.RuntimeValue!);
     }
 
     private void Emit(InstructionKind kind, params byte[] arguments)

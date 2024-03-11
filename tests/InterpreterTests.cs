@@ -7,6 +7,7 @@ using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 using NUnit.Framework;
 using static Elk.Tests.AstBuilder;
 
@@ -24,7 +25,8 @@ internal class InterpreterTests
             new Ast(ast),
             scope ?? interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
-            interpreter
+            interpreter,
+            new FunctionTable()
         ).Value ?? RuntimeNil.Value;
     }
 

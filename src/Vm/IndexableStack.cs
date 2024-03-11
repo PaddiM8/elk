@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ class IndexableStack<T> : IEnumerable<object>
     public int Count
         => _items.Count;
 
-    private readonly List<object> _items = new();
+    private readonly List<object> _items = [];
 
     public T this[int index]
     {

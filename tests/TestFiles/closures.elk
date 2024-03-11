@@ -55,6 +55,9 @@ fn a(x): x + 1
 assert(([1, 2, 3] | map => &a | join) == "234")
 assert(([1, 2, 3] | iter::reduce => &op::mul) == 6)
 
+let addFn = &op::add
+assertEqual(call(addFn, 2, 3), 5)
+
 fn b(x, y): x + y
 assert(([1, 2, 3] | map => &b(10) | join ", ") == "11, 12, 13")
 assert(([1, 2, 3] | map => &op::mul(3) | math::sum) == 18)

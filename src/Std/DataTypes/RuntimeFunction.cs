@@ -7,6 +7,7 @@ using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.Std.Attributes;
 using Elk.Std.Bindings;
+using Elk.Vm;
 
 #endregion
 
@@ -21,7 +22,10 @@ public abstract class RuntimeFunction : RuntimeObject
 
     public Plurality Plurality { get; }
 
+    internal Page? Page { get; set; }
+
     public Invoker Invoker { get; }
+
 
     internal RuntimeFunction(
         IEnumerable<RuntimeObject>? arguments,

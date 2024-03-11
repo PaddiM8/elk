@@ -825,14 +825,12 @@ class InstructionExecutor
         _ip = 0;
     }
 
-    private Frame PopFrame()
+    private void PopFrame()
     {
         var frame = _callStack.Pop();
         if (_callStack.Count > 0)
             _currentPage = _callStack.Peek().Page;
 
         _ip = frame.ReturnAddress;
-
-        return frame;
     }
 }
