@@ -298,6 +298,14 @@ class Analyser(RootModuleScope rootModule)
             }
             else
             {
+                var isLiteral = parameter.DefaultValue is
+                    LiteralExpr or
+                    ListExpr { Values.Count: 0 } or
+                    DictionaryExpr { Entries.Count: 0 } or
+                    StringInterpolationExpr { Parts: [LiteralExpr] };
+                if (!isLiteral)
+                    throw new RuntimeException("Expected literal or empty collection as default parameter");
+
                 newParameters.Add(
                     parameter with { DefaultValue = Next(parameter.DefaultValue) }
                 );
@@ -572,12 +580,15 @@ class Analyser(RootModuleScope rootModule)
     {
         if (expr.Left is VariableExpr variableExpr)
         {
-            if (!_scope.HasVariable(variableExpr.Identifier.Value))
-                throw new RuntimeNotFoundException(variableExpr.Identifier.Value);
+            AnalyseVariable(variableExpr);
         }
         else if (expr.Left is not (IndexerExpr or FieldAccessExpr))
         {
-            throw new RuntimeException("Invalid assignment");
+            var message = expr.Left is CallExpr
+                ? "Invalid assignment. The left expression was parsed as a call, but a variable was expected"
+                : "Invalid assignment";
+
+            throw new RuntimeException(message);
         }
 
         return new BinaryExpr(Next(expr.Left), expr.Operator, Next(expr.Right), _scope)
@@ -646,21 +657,27 @@ class Analyser(RootModuleScope rootModule)
 
     private VariableExpr Visit(VariableExpr expr)
     {
+        return AnalyseVariable(expr);
+    }
+
+    private VariableExpr AnalyseVariable(VariableExpr expr)
+    {
         var variableExpr = new VariableExpr(expr.Identifier, _scope)
         {
             IsRoot = expr.IsRoot,
         };
 
-        if (!expr.Identifier.Value.StartsWith('$'))
-        {
-            if (!_scope.HasVariable(expr.Identifier.Value))
+        if (!expr.Identifier.Value.StartsWith('$') && !_scope.HasVariable(expr.Identifier.Value))
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
-        }
 
-        if (expr.EnclosingFunction is ClosureExpr closure &&
-            closure.Body.Scope.Parent?.HasVariable(expr.Identifier.Value) is true)
+        if (expr.EnclosingFunction is not ClosureExpr closure)
+            return variableExpr;
+
+        var capturedVariable = closure.Body.Scope.Parent?.FindVariable(expr.Identifier.Value);
+        if (capturedVariable != null)
         {
             closure.CapturedVariables.Add(expr.Identifier.Value);
+            capturedVariable.IsCaptured = true;
         }
 
         return variableExpr;
@@ -824,26 +841,6 @@ class Analyser(RootModuleScope rootModule)
 
         if (tooManyArguments || tooFewArguments)
             throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
-
-        if (parameters.LastOrDefault()?.IsVariadic is true)
-        {
-            var variadicStart = parameters.Count - 1;
-            var variadicArguments = new Expr[arguments.Count - variadicStart];
-            for (var i = 0; i < variadicArguments.Length; i++)
-            {
-                variadicArguments[^(i + 1)] = arguments.Last();
-                arguments.RemoveAt(arguments.Count - 1);
-            }
-
-            arguments.Add(
-                new ListExpr(
-                    variadicArguments,
-                    _scope,
-                    variadicArguments.FirstOrDefault()?.StartPosition ?? TextPos.Default,
-                    variadicArguments.LastOrDefault()?.EndPosition ?? TextPos.Default
-                )
-            );
-        }
     }
 
     private LiteralExpr Visit(LiteralExpr expr)

@@ -8,7 +8,6 @@ using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
-using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -23,44 +22,52 @@ record struct Frame(
 class InstructionExecutor
 {
     private const bool DUMP_PAGES = true;
-    private readonly IndexableStack<RuntimeObject> _stack = new();
+    private readonly IndexableStack<RuntimeObject> _stack;
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
-    private Page _currentPage;
+    private Page _currentPage = null!;
+    private readonly Dictionary<VariableSymbol, RuntimeObject> _variables;
     private RuntimeObject? _returnedValue;
 
-    private InstructionExecutor(Page page)
+    internal InstructionExecutor(
+        IndexableStack<RuntimeObject> stack,
+        Dictionary<VariableSymbol, RuntimeObject> variables)
     {
-        _currentPage = page;
-        PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
+        _stack = stack;
+        _variables = variables;
     }
 
-    public static RuntimeObject Execute(Page page)
+    public RuntimeObject Execute(Page page)
     {
-        var executor = new InstructionExecutor(page);
+        PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
 
         if (DUMP_PAGES)
         {
-            Console.Write($"Page {executor._currentPage.GetHashCode()}:");
+            Console.Write($"Page {_currentPage.GetHashCode()}:");
             page.Dump();
             Console.WriteLine();
         }
 
         try
         {
-            while (executor._callStack.Any())
+            while (_callStack.Any())
             {
-                while (executor._ip < executor._currentPage.Instructions.Count)
-                    executor.Next();
+                while (_ip < _currentPage.Instructions.Count)
+                    Next();
 
-                executor.PopFrame();
+                PopFrame();
             }
         }
         catch (Exception ex)
         {
-            var ipString = Ansi.Format(executor._ip.ToString(), AnsiForeground.DarkYellow);
+            // If it's an anonymous function, it won't have been dumped
+            // before, so dump it now instead
+            if (_currentPage.Name == null)
+                _currentPage.Dump();
+
+            var ipString = Ansi.Format(_ip.ToString(), AnsiForeground.DarkYellow);
             var pageString = Ansi.Format(
-                executor._currentPage.GetHashCode().ToString(),
+                _currentPage.GetHashCode().ToString(),
                 AnsiForeground.DarkYellow
             );
             Console.WriteLine(
@@ -71,16 +78,82 @@ class InstructionExecutor
             );
 
             Console.WriteLine("Stack:");
-            foreach (var item in executor._stack)
+            foreach (var item in _stack)
                 Console.WriteLine(item);
 
             Console.WriteLine();
             Console.WriteLine(ex);
         }
 
-        Debug.Assert(!executor._stack.Any());
+        Debug.Assert(!_stack.Any());
 
         return RuntimeNil.Value;
+    }
+
+    public RuntimeObject ExecuteFunction(
+        RuntimeUserFunction function,
+        ICollection<RuntimeObject> arguments,
+        bool isRoot)
+    {
+        if (function.VariadicStart.HasValue)
+        {
+            ((RuntimeList)_stack.Peek()).Values.InsertRange(0, arguments);
+        }
+        else
+        {
+            foreach (var argument in arguments.AsEnumerable().Reverse())
+                _stack.Push(argument);
+        }
+
+        _stack.Push(function);
+
+        var originalCallStackSize = _callStack.Count;
+        Call(isRoot);
+
+        while (_callStack.Count > originalCallStackSize)
+        {
+            while (_ip < _currentPage.Instructions.Count)
+                Next();
+
+            PopFrame();
+        }
+
+        PopArgs((byte)arguments.Count);
+
+        return _stack.Pop();
+    }
+
+    public RuntimeObject ExecuteFunction(
+        RuntimeStdFunction function,
+        ICollection<RuntimeObject> arguments)
+    {
+        if (function.VariadicStart.HasValue)
+        {
+            ((RuntimeList)_stack.Peek()).Values.InsertRange(0, arguments);
+        }
+        else
+        {
+            foreach (var argument in arguments.AsEnumerable().Reverse())
+                _stack.Push(argument);
+        }
+
+        _stack.Push(function);
+        CallStd(function.ParameterCount);
+
+        return _stack.Pop();
+    }
+
+    public RuntimeObject ExecuteFunction(
+        RuntimeProgramFunction function,
+        ICollection<RuntimeObject> arguments,
+        bool isRoot)
+    {
+        ((RuntimeList)_stack.Peek()).Values.InsertRange(0, arguments);
+
+        _stack.Push(function);
+        CallProgram(ProgramCallProps.None, 0, isRoot);
+
+        return _stack.Pop();
     }
 
     private T GetConstant<T>()
@@ -101,6 +174,12 @@ class InstructionExecutor
             case InstructionKind.Store:
                 Store(GetConstant<int>());
                 break;
+            case InstructionKind.LoadUpper:
+                LoadUpper(GetConstant<VariableSymbol>());
+                break;
+            case InstructionKind.StoreUpper:
+                StoreUpper(GetConstant<VariableSymbol>());
+                break;
             case InstructionKind.Pop:
                 Pop();
                 break;
@@ -109,6 +188,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.Unpack:
                 Unpack(Eat());
+                break;
+            case InstructionKind.UnpackUpper:
+                UnpackUpper(Eat());
                 break;
             case InstructionKind.Ret:
                 Ret();
@@ -142,6 +224,18 @@ class InstructionExecutor
                     (ProgramCallProps)Eat().ToUshort(Eat()),
                     Eat()
                 );
+                break;
+            case InstructionKind.DynamicCall:
+                DynamicCall(Eat());
+                break;
+            case InstructionKind.PushArgsToRef:
+                PushArgsToRef(Eat());
+                break;
+            case InstructionKind.PushClosureToRef:
+                PushClosureToRef(GetConstant<RuntimeFunction>());
+                break;
+            case InstructionKind.ResolveArgumentsDynamically:
+                ResolveArgumentsDynamically(Eat());
                 break;
             case InstructionKind.Index:
                 Index();
@@ -259,24 +353,26 @@ class InstructionExecutor
         }
     }
 
-    private void Store(int index)
-    {
-        _stack[index] = _stack.Pop();
-    }
-
     private void Load(int index)
     {
-        // This should probably be its own instruction, to make it
-        // more efficient.
-        if (index == -1)
-        {
-            _stack.Push(_stack[0]);
-
-            return;
-        }
-
         var pointer = index + _callStack.Peek().BasePointer;
         _stack.Push(_stack[pointer]);
+    }
+
+    private void Store(int index)
+    {
+        var pointer = index + _callStack.Peek().BasePointer;
+        _stack[pointer] = _stack.Peek();
+    }
+
+    private void LoadUpper(VariableSymbol symbol)
+    {
+        _stack.Push(_variables[symbol]);
+    }
+
+    private void StoreUpper(VariableSymbol symbol)
+    {
+        _variables[symbol] = _stack.Peek();
     }
 
     private void Pop()
@@ -310,6 +406,27 @@ class InstructionExecutor
             throw new RuntimeException("The amount of items in the destructured Iterable is not the same as the amount of identifiers in the destructuring expressions");
     }
 
+    private void UnpackUpper(byte count)
+    {
+        var symbols = new VariableSymbol[count];
+        for (byte i = 0; i < count; i++)
+            symbols[count - i - 1] = (VariableSymbol)_stack.PopObject();
+
+        var container = _stack.Peek();
+        if (container is not IEnumerable<RuntimeObject> items)
+            throw new RuntimeException("Can only destructure Iterable values");
+
+        var actualCount = 0;
+        foreach (var (symbol, item) in symbols.Zip(items))
+        {
+            _variables[symbol] = item;
+            actualCount++;
+        }
+
+        if (actualCount != count)
+            throw new RuntimeException("The amount of items in the destructured Iterable is not the same as the amount of identifiers in the destructuring expressions");
+    }
+
     private void Ret()
     {
         _ip = _currentPage.Instructions.Count;
@@ -318,9 +435,9 @@ class InstructionExecutor
 
     private void Call(bool isRoot = false)
     {
-        var page = (Page)_stack.PopObject();
+        var function = (RuntimeUserFunction)_stack.Pop();
         var frame = new Frame(
-            page,
+            function.Page,
             _ip,
             _stack.Count - 1,
             isRoot
@@ -341,16 +458,16 @@ class InstructionExecutor
 
     private void CallStd(byte argumentCount)
     {
-        var function = (StdFunction)_stack.PopObject();
+        var function = (RuntimeStdFunction)_stack.PopObject();
         var arguments = new object?[argumentCount];
         for (byte i = 0; i < argumentCount; i++)
-            arguments[argumentCount - i - 1] = _stack.Pop();
+            arguments[i] = _stack.PopObject();
 
         // TODO: Get rid of .ToList. The invoker could probably just take an
         // array, after the tree walking interpreter is gone.
         try
         {
-            var result = function.Invoke(arguments.ToList());
+            var result = function.StdFunction.Invoke(arguments.ToList());
             _stack.Push(result);
         }
         catch (RuntimeException e)
@@ -375,6 +492,8 @@ class InstructionExecutor
         var environmentVariables = environmentVariableCount > 0
             ? new (string, RuntimeObject)[environmentVariableCount]
             : null;
+        // TODO: I guess these should be generated in reverse order and *not* be added
+        // in reverse here, to be consistent with how call arguments work now
         for (byte i = 0; i < environmentVariableCount; i++)
         {
             var value = _stack.Pop();
@@ -388,14 +507,15 @@ class InstructionExecutor
             : null;
 
         // Program name
-        var fileName = _stack.Pop().As<RuntimeString>().Value;
+        var fileName = ((RuntimeProgramFunction)_stack.Pop()).ProgramName;
         var process = new Process();
+        var shouldRedirectOutput = props.HasFlag(ProgramCallProps.RedirectOutput) || !isRoot;
         process.StartInfo = new ProcessStartInfo
         {
             FileName = fileName.StartsWith("./")
                 ? Path.Combine(ShellEnvironment.WorkingDirectory, fileName)
                 : fileName,
-            RedirectStandardOutput = props.HasFlag(ProgramCallProps.RedirectOutput) || !isRoot,
+            RedirectStandardOutput = shouldRedirectOutput,
             RedirectStandardError = props.HasFlag(ProgramCallProps.RedirectError),
             RedirectStandardInput = pipedValue != null,
             WorkingDirectory = ShellEnvironment.WorkingDirectory,
@@ -411,8 +531,7 @@ class InstructionExecutor
             pipedValue,
             waitForExit: !props.HasFlag(ProgramCallProps.DisableRedirectionBuffering)
         );
-        if (!props.HasFlag(ProgramCallProps.RedirectOutput) &&
-            !props.HasFlag(ProgramCallProps.RedirectError))
+        if (!shouldRedirectOutput && !props.HasFlag(ProgramCallProps.RedirectError))
         {
             processContext.Start();
             _stack.Push(RuntimeNil.Value);
@@ -423,7 +542,7 @@ class InstructionExecutor
         var pipe = new RuntimePipe(
             processContext,
             props.HasFlag(ProgramCallProps.DisableRedirectionBuffering),
-            props.HasFlag(ProgramCallProps.AutomaticStart)
+            !props.HasFlag(ProgramCallProps.NoAutomaticStart)
         );
         _stack.Push(pipe);
     }
@@ -444,6 +563,154 @@ class InstructionExecutor
             environmentVariableCount,
             isRoot: _callStack.Peek().IsRoot
         );
+    }
+
+    private void DynamicCall(byte isRootModifier)
+    {
+        var argumentCount = (byte)_stack.PopObject();
+        var runtimeFunction = _stack.Peek();
+        if (runtimeFunction is RuntimeUserFunction)
+        {
+            var originalCallStackSize = _callStack.Count;
+            switch (isRootModifier)
+            {
+                case 0:
+                    Call();
+                    break;
+                case 1:
+                    RootCall();
+                    break;
+                case 2:
+                    MaybeRootCall();
+                    break;
+            }
+
+            while (_callStack.Count > originalCallStackSize)
+            {
+                while (_ip < _currentPage.Instructions.Count)
+                    Next();
+
+                PopFrame();
+            }
+
+            PopArgs(argumentCount);
+        }
+        else if (runtimeFunction is RuntimeStdFunction)
+        {
+            CallStd(argumentCount);
+        }
+        else
+        {
+            switch (isRootModifier)
+            {
+                case 0:
+                    CallProgram(ProgramCallProps.None, 0);
+                    break;
+                case 1:
+                    RootCallProgram(ProgramCallProps.None, 0);
+                    break;
+                case 2:
+                    MaybeRootCallProgram(ProgramCallProps.None, 0);
+                    break;
+            }
+        }
+    }
+
+    private void PushArgsToRef(byte argumentCount)
+    {
+        var functionReference = (RuntimeFunction)_stack.Pop();
+        var arguments = new object[argumentCount];
+        for (byte i = 0; i < argumentCount; i++)
+            arguments[i] = _stack.PopObject();
+
+        functionReference.Arguments = arguments;
+        _stack.Push(functionReference);
+    }
+
+    // TODO: Remove this? Seems to be unsued
+    private void PushClosureToRef(RuntimeFunction closure)
+    {
+        var functionReference = (RuntimeFunction)_stack.Peek();
+        functionReference.Closure = closure;
+    }
+
+    private void ResolveArgumentsDynamically(byte argumentCount)
+    {
+        var runtimeFunction = _stack[^(argumentCount + 1)].As<RuntimeFunction>();
+        var existingArgumentCount = (byte)runtimeFunction.Arguments.Count;
+        var arguments = new object[argumentCount + existingArgumentCount];
+        for (byte i = 0; i < existingArgumentCount; i++)
+            arguments[i] = runtimeFunction.Arguments[i];
+
+        for (var i = existingArgumentCount; i < argumentCount + existingArgumentCount; i++)
+            arguments[i] = _stack.Pop();
+
+        // Pop the runtime function
+        _stack.Pop();
+
+        // TODO: Simplify this code
+        var actualArgumentCount = arguments.Length;
+        if (runtimeFunction.VariadicStart.HasValue)
+        {
+            actualArgumentCount = (byte)(runtimeFunction.VariadicStart.Value + 1);
+
+            // Closure
+            if (runtimeFunction.Closure != null)
+            {
+                _stack.PushObject(runtimeFunction.Closure);
+                actualArgumentCount++;
+            }
+
+            // Variadic
+            var variadic = new RuntimeList(
+                arguments[runtimeFunction.VariadicStart.Value..]
+                    .Cast<RuntimeObject>()
+                    .ToList()
+            );
+            _stack.Push(variadic);
+        }
+        else if (runtimeFunction.ParameterCount > arguments.Length)
+        {
+            actualArgumentCount = runtimeFunction.ParameterCount;
+
+            // Closure
+            if (runtimeFunction.Closure != null)
+            {
+                _stack.PushObject(runtimeFunction.Closure);
+                actualArgumentCount++;
+            }
+
+            // Default values
+            if (runtimeFunction.ParameterCount > actualArgumentCount)
+            {
+                var defaultValues = runtimeFunction.DefaultParameters?[arguments.Length..runtimeFunction.ParameterCount];
+                if (defaultValues != null)
+                {
+                    foreach (var defaultValue in defaultValues.AsEnumerable().Reverse())
+                        _stack.Push(defaultValue);
+                }
+            }
+        }
+        else
+        {
+            // Closure
+            if (runtimeFunction.Closure != null)
+            {
+                _stack.PushObject(runtimeFunction.Closure);
+                actualArgumentCount++;
+            }
+        }
+
+        // Regular arguments (they need to be in reverse order again now)
+        var end = runtimeFunction.VariadicStart ?? arguments.Length;
+        for (var i = end - 1; i >= 0; i--)
+            _stack.PushObject(arguments[i]);
+
+        // The function reference is later going to be popped after the argument count
+        _stack.Push(runtimeFunction);
+
+        // Return the actual argument count
+        _stack.PushObject((byte)actualArgumentCount);
     }
 
     private void Index()

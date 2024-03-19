@@ -280,7 +280,12 @@ public class StdBindingsGenerator : ISourceGenerator
                 if (string.IsNullOrEmpty(nullable))
                     arg += "!";
 
+                sourceBuilder.Append('(');
                 sourceBuilder.Append(arg);
+                if (!string.IsNullOrEmpty(nullable))
+                    sourceBuilder.Append($" is RuntimeNil ? null : {arg}");
+
+                sourceBuilder.Append(')');
 
                 if (isAdditionalType)
                 {
@@ -322,7 +327,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var additional = "";
 
             // Nullable
-            if (parameter.type.EndsWith("?"))
+            if (parameter.type.EndsWith('?'))
                 additional = ", true";
 
             // Closure

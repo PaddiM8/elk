@@ -726,22 +726,38 @@ partial class Interpreter
             {
                 CallType.Program => new RuntimeProgramFunction(
                     expr.Identifier.Value,
-                    arguments,
+                    arguments.Cast<object>().ToList(),
                     expr.Plurality,
                     BuildRuntimeFunctionInvoker
-                ),
+                )
+                {
+                    ParameterCount = 0,
+                    DefaultParameters = [],
+                    VariadicStart = null,
+                },
                 CallType.StdFunction => new RuntimeStdFunction(
                     expr.StdFunction!,
-                    arguments,
+                    arguments.Cast<object>().ToList(),
                     expr.Plurality,
                     BuildRuntimeFunctionInvoker
-                ),
-                CallType.Function => new RuntimeSymbolFunction(
+                )
+                {
+                    ParameterCount = 0,
+                    DefaultParameters = [],
+                    VariadicStart = null,
+                },
+                CallType.Function => new RuntimeUserFunction(
                     expr.FunctionSymbol!,
-                    arguments,
+                    null!,
+                    arguments.Cast<object>().ToList(),
                     expr.Plurality,
                     BuildRuntimeFunctionInvoker
-                ),
+                )
+                {
+                    ParameterCount = 0,
+                    DefaultParameters = [],
+                    VariadicStart = null,
+                },
                 _ => throw new RuntimeException("Cannot turn built-in functions (such as cd, exec, call) into function references."),
             };
         }
@@ -886,7 +902,7 @@ partial class Interpreter
                 {
                     var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
                     runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    var result = NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
                     runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
 
                     return result;
@@ -905,7 +921,7 @@ partial class Interpreter
 
                     var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
                     runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    var result = NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
                     runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
 
                     return result;
@@ -926,7 +942,7 @@ partial class Interpreter
 
                     var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
                     runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-                    var result = NextBlock(runtimeClosure.Expr.Body, scope);
+                    var result = NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
                     runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
 
                     return result;
@@ -946,7 +962,7 @@ partial class Interpreter
 
                     var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
                     runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-                    NextBlock(runtimeClosure.Expr.Body, scope);
+                    NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
                     runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
                 });
         }
@@ -966,7 +982,7 @@ partial class Interpreter
 
                     var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
                     runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-                    NextBlock(runtimeClosure.Expr.Body, scope);
+                    NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
                     runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
                 });
         }
@@ -980,7 +996,7 @@ partial class Interpreter
 
             var previousRuntimeValue = runtimeClosure.Expr.RuntimeValue;
             runtimeClosure.Expr.RuntimeValue = runtimeClosure;
-            var result = NextBlock(runtimeClosure.Expr.Body, scope);
+            var result = NextBlock((BlockExpr)runtimeClosure.Expr.Body, scope);
             runtimeClosure.Expr.RuntimeValue = previousRuntimeValue;
 
             return result;
@@ -1093,7 +1109,12 @@ partial class Interpreter
             expr,
             scope,
             BuildRuntimeFunctionInvoker
-        );
+        )
+        {
+            ParameterCount = 0,
+            DefaultParameters = [],
+            VariadicStart = null,
+        };
 
         var previousRuntimeValue = expr.RuntimeValue;
         expr.RuntimeValue = runtimeClosure;

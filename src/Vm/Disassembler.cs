@@ -3,6 +3,7 @@ using System.Text;
 using Elk.Interpreting.Scope;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Std.Bindings;
+using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
@@ -75,6 +76,13 @@ class Disassembler
             return;
         }
 
+        if (obj is VariableSymbol variableSymbol)
+        {
+            _builder.Append($" VariableSymbol[{variableSymbol.Name}]");
+
+            return;
+        }
+
         var stringValue = obj?.ToString() ?? "???";
         _builder.Append(" " + stringValue);
     }
@@ -86,8 +94,14 @@ class Disassembler
             case InstructionKind.Store:
                 GetConstant<int>();
                 break;
+            case InstructionKind.StoreUpper:
+                GetConstant<VariableSymbol>();
+                break;
             case InstructionKind.Load:
                 GetConstant<int>();
+                break;
+            case InstructionKind.LoadUpper:
+                GetConstant<VariableSymbol>();
                 break;
             case InstructionKind.Const:
                 GetConstant<object>();
@@ -115,6 +129,7 @@ class Disassembler
                 Eat();
                 break;
             case InstructionKind.Unpack:
+            case InstructionKind.UnpackUpper:
                 Eat();
                 break;
             case InstructionKind.CallStd:
@@ -124,6 +139,13 @@ class Disassembler
             case InstructionKind.RootCallProgram:
             case InstructionKind.MaybeRootCallProgram:
                 EatShort("B");
+                Eat();
+                break;
+            case InstructionKind.DynamicCall:
+                Eat();
+                break;
+            case InstructionKind.PushArgsToRef:
+            case InstructionKind.ResolveArgumentsDynamically:
                 Eat();
                 break;
             case InstructionKind.Jump:

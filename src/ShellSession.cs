@@ -240,8 +240,7 @@ public class ShellSession
                 interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
                 interpreter,
-                new FunctionTable(),
-                useVm
+                useVm ? new VirtualMachine() : null
             ).Value;
         }
         catch (RuntimeException e)

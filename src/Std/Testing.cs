@@ -1,5 +1,6 @@
 #region
 
+using System;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;

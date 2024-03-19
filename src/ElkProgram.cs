@@ -91,8 +91,7 @@ public static class ElkProgram
                 scope,
                 analysisScope,
                 interpreter,
-                new FunctionTable(),
-                useVm
+                useVm ? new VirtualMachine() : null
             );
             result.SemanticTokens = semanticTokens;
 
@@ -139,8 +138,7 @@ public static class ElkProgram
         Scope scope,
         AnalysisScope analysisScope,
         Interpreter? interpreter,
-        FunctionTable functionTable,
-        bool useVm = false)
+        VirtualMachine? virtualMachine)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
@@ -152,36 +150,25 @@ public static class ElkProgram
                         x.AnalysisStatus != AnalysisStatus.Evaluated
                 ),
             interpreter,
-            functionTable,
-            useVm
+            virtualMachine
         );
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
         RuntimeObject? result;
-        if (useVm)
+        if (virtualMachine != null)
         {
-            var page = InstructionGenerator.Generate(analysedAst, functionTable);
-
-            // TODO: This is just for debugging. Create a command line flag for this
-            foreach (var function in analysedAst.Expressions.Where(x => x is FunctionExpr).Cast<FunctionExpr>())
-            {
-                var symbol = function.Module.FindFunction(function.Identifier.Value, lookInImports: false)!;
-                var functionPage = functionTable.Get(symbol);
-                Console.Write($"Page {functionPage.GetHashCode()} [{function.Identifier.Value}]");
-                functionPage.Dump();
-                Console.WriteLine();
-            }
+            var page = virtualMachine.Generate(analysedAst);
 
             // TODO: Is this right? Now it will execute some modules before generating
             // the instructions for others. Might work, might not? Maybe it needs to
             // first traverse the modules and generate instructions, and then traverse
             // and execute them? Maybe even do it lazily somehow?
-            EvaluateModules(scope.ModuleScope.Modules, interpreter, functionTable, useVm);
-            result = InstructionExecutor.Execute(page);
+            EvaluateModules(scope.ModuleScope.Modules, interpreter, virtualMachine);
+            result = virtualMachine.Execute(page);
         }
         else
         {
-            EvaluateModules(scope.ModuleScope.Modules, interpreter, functionTable, useVm);
+            EvaluateModules(scope.ModuleScope.Modules, interpreter, virtualMachine);
             result = interpreter?.Interpret(analysedAst.Expressions, scope);
         }
 
@@ -195,8 +182,7 @@ public static class ElkProgram
     private static void EvaluateModules(
         IEnumerable<ModuleScope> modules,
         Interpreter? interpreter,
-        FunctionTable functionTable,
-        bool useVm = false)
+        VirtualMachine? virtualMachine)
     {
         foreach (var module in modules)
         {
@@ -204,7 +190,7 @@ public static class ElkProgram
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, functionTable, useVm);
+            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, virtualMachine);
         }
     }
 }

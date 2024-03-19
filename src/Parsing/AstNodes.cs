@@ -167,6 +167,11 @@ public class LetExpr(
 
     public Expr Value { get; } = value;
 
+    public IEnumerable<VariableSymbol> Symbols
+        => IdentifierList
+            .Select(x => Scope.FindVariable(x.Value))
+            .Where(x => x != null)!;
+
     public override IEnumerable<Expr> ChildExpressions
         => [Value];
 }

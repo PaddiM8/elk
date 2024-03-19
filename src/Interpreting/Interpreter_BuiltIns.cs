@@ -89,7 +89,7 @@ partial class Interpreter
             scope.AddVariable(parameter, argument);
         }
 
-        return NextBlock(givenClosure.Expr.Body);
+        return NextBlock((BlockExpr)givenClosure.Expr.Body);
     }
 
     private RuntimeObject EvaluateBuiltInCall(List<RuntimeObject> arguments, bool isRoot)
@@ -105,7 +105,7 @@ partial class Interpreter
             .Concat(functionReference.Arguments)
             .ToList();
 
-        return EvaluateBuiltInCall(functionReference, actualArguments, isRoot);
+        return EvaluateBuiltInCall(functionReference, actualArguments.Cast<RuntimeObject>().ToList(), isRoot);
     }
 
     private RuntimeObject EvaluateBuiltInCall(RuntimeFunction functionReference, List<RuntimeObject> arguments, bool isRoot)
@@ -117,7 +117,7 @@ partial class Interpreter
             => functionReference switch
             {
                 RuntimeStdFunction runtimeStdFunction => EvaluateStdCall(arguments, runtimeStdFunction.StdFunction),
-                RuntimeSymbolFunction runtimeSymbolFunction => EvaluateFunctionCall(
+                RuntimeUserFunction runtimeSymbolFunction => EvaluateFunctionCall(
                     arguments,
                     runtimeSymbolFunction.FunctionSymbol.Expr,
                     isRoot

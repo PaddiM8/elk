@@ -26,7 +26,7 @@ internal class InterpreterTests
             scope ?? interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
             interpreter,
-            new FunctionTable()
+            new VirtualMachine()
         ).Value ?? RuntimeNil.Value;
     }
 

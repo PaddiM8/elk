@@ -12,7 +12,7 @@ class FunctionTable
         if (_functions.TryGetValue(symbol, out var page))
             return page;
 
-        var newPage = new Page();
+        var newPage = new Page(symbol.Expr.Identifier.Value);
         _functions.Add(symbol, newPage);
 
         return newPage;

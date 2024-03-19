@@ -18,21 +18,26 @@ public delegate RuntimeObject Invoker(List<RuntimeObject> arguments, bool isRoot
 [ElkType("Function")]
 public abstract class RuntimeFunction : RuntimeObject
 {
-    public IEnumerable<RuntimeObject> Arguments { get; }
+    public IList<object> Arguments { get; set; }
+
+    public object? Closure { get; set; }
+
+    public required byte ParameterCount { get; init;  }
+
+    public required byte? VariadicStart { get; init;  }
+
+    public required List<RuntimeObject>? DefaultParameters { get; init; }
 
     public Plurality Plurality { get; }
 
-    internal Page? Page { get; set; }
-
     public Invoker Invoker { get; }
 
-
     internal RuntimeFunction(
-        IEnumerable<RuntimeObject>? arguments,
+        IList<object>? arguments,
         Plurality plurality,
         Func<RuntimeFunction, Invoker> createInvoker)
     {
-        Arguments = arguments ?? Array.Empty<RuntimeObject>();
+        Arguments = arguments ?? Array.Empty<object>();
         Plurality = plurality;
         Invoker = createInvoker(this);
     }
@@ -57,7 +62,7 @@ internal class RuntimeStdFunction : RuntimeFunction
 
     public RuntimeStdFunction(
         StdFunction stdFunction,
-        IEnumerable<RuntimeObject>? arguments,
+        IList<object>? arguments,
         Plurality plurality,
         Func<RuntimeFunction, Invoker> createInvoker)
         : base(arguments, plurality, createInvoker)
@@ -72,25 +77,29 @@ internal class RuntimeStdFunction : RuntimeFunction
         => StdFunction.Name;
 }
 
-internal class RuntimeSymbolFunction : RuntimeFunction
+internal class RuntimeUserFunction : RuntimeFunction
 {
     public FunctionSymbol FunctionSymbol { get; }
 
-    public RuntimeSymbolFunction(
+    internal Page Page { get; }
+
+    internal RuntimeUserFunction(
         FunctionSymbol functionSymbol,
-        IEnumerable<RuntimeObject>? arguments,
+        Page page,
+        IList<object>? arguments,
         Plurality plurality,
         Func<RuntimeFunction, Invoker> createInvoker)
         : base(arguments, plurality, createInvoker)
     {
         FunctionSymbol = functionSymbol;
+        Page = page;
     }
 
     public override int GetHashCode()
-        => FunctionSymbol.GetHashCode();
+        => FunctionSymbol?.GetHashCode() ?? Page.GetHashCode();
 
     public override string ToString()
-        => FunctionSymbol.Expr.Identifier.Value;
+        => FunctionSymbol?.Expr.Identifier.Value ?? "<function>";
 }
 
 internal class RuntimeProgramFunction : RuntimeFunction
@@ -99,7 +108,7 @@ internal class RuntimeProgramFunction : RuntimeFunction
 
     public RuntimeProgramFunction(
         string programName,
-        IEnumerable<RuntimeObject>? arguments,
+        IList<object>? arguments,
         Plurality plurality,
         Func<RuntimeFunction, Invoker> createInvoker)
         : base(arguments, plurality, createInvoker)

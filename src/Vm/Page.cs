@@ -4,8 +4,10 @@ using System.Linq;
 
 namespace Elk.Vm;
 
-class Page
+class Page(string? name)
 {
+    public string? Name { get; } = name;
+
     public List<byte> Instructions { get; } = [];
 
     public ConstantTable ConstantTable { get; } = new();

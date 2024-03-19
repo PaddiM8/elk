@@ -5,6 +5,7 @@ using System.Linq;
 using Elk.Interpreting.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -13,23 +14,27 @@ class InstructionGenerator
 {
     private readonly Stack<Variable> _locals = new();
     private readonly FunctionTable _functionTable;
+    private readonly InstructionExecutor _executor;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
-    private Page _currentPage = new();
+    private Page _currentPage = new("<root>");
     private int _currentBasePointer;
     private int _scopeDepth;
 
-    private InstructionGenerator(FunctionTable functionTable)
+    private InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
     {
         _functionTable = functionTable;
+        _executor = executor;
     }
 
-    public static Page Generate(Ast ast, FunctionTable functionTable)
+    public static Page Generate(Ast ast, FunctionTable functionTable, InstructionExecutor executor)
     {
-        var generator = new InstructionGenerator(functionTable);
+        var generator = new InstructionGenerator(functionTable, executor);
         foreach (var expr in ast.Expressions)
         {
             generator.Next(expr);
-            if (expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr))
+            var shouldPop = expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr) ||
+                (expr is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
+            if (shouldPop)
                 generator.Emit(InstructionKind.Pop);
         }
 
@@ -43,7 +48,6 @@ class InstructionGenerator
     {
         switch (expr)
         {
-            // TODO: For modules, _scopeDepth should probably be set to 0?
             case ModuleExpr:
             case StructExpr:
                 break;
@@ -129,8 +133,31 @@ class InstructionGenerator
             expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
         );
 
-        foreach (var parameter in expr.Parameters)
+        foreach (var (parameter, i) in expr.Parameters.WithIndex())
+        {
             _locals.Push(new Variable(parameter.Identifier, 0));
+
+            // If the parameter is captured, load it and store it as an upper
+            // variable as well. For simplicity, the regular variable is kept
+            // as well for now
+            var symbol = expr.Block.Scope.FindVariable(parameter.Identifier.Value);
+            if (symbol?.IsCaptured is true)
+            {
+                EmitBig(InstructionKind.Load, i);
+                EmitBig(InstructionKind.StoreUpper, symbol);
+                Emit(InstructionKind.Pop);
+            }
+        }
+
+        if (expr.HasClosure)
+        {
+            _locals.Push(
+                new Variable(
+                    new Token(TokenKind.Identifier, "closure", TextPos.Default),
+                    0
+                )
+            );
+        }
 
         var previousBasePointer = _currentBasePointer;
         _currentBasePointer = _locals.Count - 1;
@@ -142,20 +169,44 @@ class InstructionGenerator
 
         foreach (var _ in expr.Parameters)
             _locals.Pop();
+
+        if (expr.HasClosure)
+            _locals.Pop();
     }
 
     private void Visit(LetExpr expr)
     {
-        foreach (var identifier in expr.IdentifierList)
-            _locals.Push(new Variable(identifier, _scopeDepth));
-
-        Next(expr.Value);
-
         if (expr.IdentifierList.Count > byte.MaxValue)
             throw new RuntimeException("Too many identifiers in destructuring expression");
 
+        Next(expr.Value);
+
+        var symbols = expr.Symbols.ToList();
+        if (!symbols.Any(x => x.IsCaptured))
+        {
+            foreach (var identifier in expr.IdentifierList)
+                _locals.Push(new Variable(identifier, _scopeDepth));
+
+            if (expr.IdentifierList.Count > 1)
+                Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+
+            return;
+        }
+
+        foreach (var symbol in symbols)
+            symbol.IsCaptured = true;
+
         if (expr.IdentifierList.Count > 1)
-            Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+        {
+            foreach (var symbol in symbols)
+                EmitBig(InstructionKind.Const, symbol);
+
+            Emit(InstructionKind.UnpackUpper, (byte)expr.IdentifierList.Count);
+        }
+        else
+        {
+            EmitBig(InstructionKind.StoreUpper, symbols.First());
+        }
     }
 
     private void Visit(NewExpr expr)
@@ -172,13 +223,22 @@ class InstructionGenerator
         Next(expr.Condition);
         var elseJump = EmitJump(InstructionKind.PopJumpIfNot);
         Next(expr.ThenBranch);
-        if (expr.ElseBranch != null)
+
+        // TODO: Only emit the else branch and nil if the expr.IsRoot is true
+        // (or if it might be root). Maybe this could even be optimised away
+        // in a future optimisation pass?
+        var elseEndJump = EmitJump(InstructionKind.Jump);
+        PatchJump(elseJump);
+        if (expr.ElseBranch == null)
         {
-            var elseEndJump = EmitJump(InstructionKind.Jump);
-            PatchJump(elseJump);
-            Next(expr.ElseBranch);
-            PatchJump(elseEndJump);
+            EmitBig(InstructionKind.Const, RuntimeNil.Value);
         }
+        else
+        {
+            Next(expr.ElseBranch);
+        }
+
+        PatchJump(elseEndJump);
     }
 
     private void Visit(ForExpr expr)
@@ -189,15 +249,48 @@ class InstructionGenerator
         // while the loop variable is underneath, there needs to be
         // a variable entry for the Enumerator as well.
         _locals.Push(new Variable(_emptyToken, _scopeDepth + 1));
-        foreach (var identifier in expr.IdentifierList)
-            _locals.Push(new Variable(identifier, _scopeDepth + 1));
+
+        var symbols = expr.IdentifierList
+            .Select(x => expr.Branch.Scope.FindVariable(x.Value))
+            .Where(x => x != null)
+            .ToList();
+        var isCaptured = symbols.Any(x => x?.IsCaptured is true);
+        if (!isCaptured)
+        {
+            foreach (var identifier in expr.IdentifierList)
+                _locals.Push(new Variable(identifier, _scopeDepth + 1));
+        }
 
         Emit(InstructionKind.GetIter);
         var loopBackIndex = CreateBackwardJumpPoint();
         var startIndex = EmitForIter();
 
-        if (expr.IdentifierList.Count > 1)
-            Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+        if (isCaptured)
+        {
+            // If just one variable in the identifier list is captured,
+            // the other ones will be treated as captured variables too,
+            // for simplicity
+            foreach (var symbol in symbols)
+                symbol!.IsCaptured = true;
+
+            if (expr.IdentifierList.Count > 1)
+            {
+                foreach (var symbol in symbols)
+                    EmitBig(InstructionKind.Const, symbol!);
+
+                Emit(InstructionKind.UnpackUpper, (byte)expr.IdentifierList.Count);
+                Emit(InstructionKind.Pop);
+            }
+            else
+            {
+                EmitBig(InstructionKind.StoreUpper, symbols.First()!);
+            }
+        }
+        else
+        {
+            if (expr.IdentifierList.Count > 1)
+                Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+        }
 
         Next(expr.Branch);
         EmitBackwardJump(loopBackIndex);
@@ -266,9 +359,9 @@ class InstructionGenerator
         foreach (var child in expr.Expressions.SkipLast(1))
         {
             Next(child);
-            // TODO: Is this right? Probably need to pop values that aren't
-            // used (and should never pop variables). Idk
-            if (child is not (VariableExpr or KeywordExpr))
+            var shouldPop = child is not (LetExpr or KeywordExpr) ||
+                (child is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
+            if (shouldPop)
                 Emit(InstructionKind.Pop);
         }
 
@@ -279,6 +372,10 @@ class InstructionGenerator
             if (last is CallExpr call)
             {
                 Visit(call, isMaybeRoot: true);
+            }
+            else if (last is ClosureExpr closure)
+            {
+                Visit(closure, isMaybeRoot: true);
             }
             else
             {
@@ -311,7 +408,7 @@ class InstructionGenerator
                 Emit(InstructionKind.Ret);
                 break;
             default:
-                throw new NotImplementedException();
+                throw new NotImplementedException("Keyword not implemented: " + expr.Keyword);
         }
     }
 
@@ -373,7 +470,16 @@ class InstructionGenerator
         if (left is VariableExpr leftValue)
         {
             Next(right);
-            EmitBig(InstructionKind.Store, ResolveVariable(leftValue.Identifier.Value));
+
+            var symbol = leftValue.Scope.FindVariable(leftValue.Identifier.Value);
+            if (symbol?.IsCaptured is true)
+            {
+                EmitBig(InstructionKind.StoreUpper, leftValue.Scope.FindVariable(leftValue.Identifier.Value)!);
+            }
+            else
+            {
+                EmitBig(InstructionKind.Store, ResolveVariable(leftValue.Identifier.Value));
+            }
         }
         else if (left is IndexerExpr indexer)
         {
@@ -462,7 +568,15 @@ class InstructionGenerator
 
     private void Visit(VariableExpr expr)
     {
-        EmitBig(InstructionKind.Load, ResolveVariable(expr.Identifier.Value));
+        var symbol = expr.Scope.FindVariable(expr.Identifier.Value);
+        if (symbol?.IsCaptured is true)
+        {
+            EmitBig(InstructionKind.LoadUpper, expr.Scope.FindVariable(expr.Identifier.Value)!);
+        }
+        else
+        {
+            EmitBig(InstructionKind.Load, ResolveVariable(expr.Identifier.Value));
+        }
     }
 
     private int ResolveVariable(string name)
@@ -484,7 +598,29 @@ class InstructionGenerator
         return -1;
     }
 
-    private void Visit(CallExpr expr, bool isMaybeRoot = false)
+    private void Visit(CallExpr expr, bool isMaybeRoot = false, RuntimeFunction? closure = null)
+    {
+        switch (expr.CallType)
+        {
+            case CallType.Function:
+                EmitCall(expr, isMaybeRoot, closure);
+                break;
+            case CallType.StdFunction:
+                EmitStdCall(expr, closure);
+                break;
+            case CallType.BuiltInCall:
+                EmitBuiltInCall(expr, isMaybeRoot);
+                break;
+            case CallType.BuiltInClosure:
+                EmitBuiltInClosure(expr, isMaybeRoot);
+                break;
+            default:
+                EmitProgramCall(expr, isMaybeRoot);
+                break;
+        }
+    }
+
+    private int EmitArguments(CallExpr expr, bool skipFirst = false)
     {
         IEnumerable<(Expr? defaultValue, bool isVariadic)> parameters = Array.Empty<(Expr?, bool)>();
         if (expr.FunctionSymbol != null)
@@ -497,11 +633,13 @@ class InstructionGenerator
         }
         else if (expr.StdFunction != null)
         {
-            Expr nilExpr = new KeywordExpr(
-                new Token(TokenKind.Nil, "nil", TextPos.Default),
-                null,
+            Expr nilExpr = new LiteralExpr(
+                new Token(TokenKind.Nil, "nil", expr.EndPosition),
                 expr.Scope
-            );
+            )
+            {
+                RuntimeValue = RuntimeNil.Value,
+            };
 
             parameters = expr
                 .StdFunction
@@ -515,66 +653,120 @@ class InstructionGenerator
         }
 
         // Program calls are always variadic
-        int? variadicStart = expr.FunctionSymbol == null && expr.StdFunction == null
-            ? 0
+        var skipCount = skipFirst ? 1 : 0;
+        var arguments = new List<Expr>();
+        var variadicArguments = expr.FunctionSymbol == null && expr.StdFunction == null
+            ? new List<(Expr expr, bool isGlob)>()
             : null;
-        var argumentCount = 0;
-        foreach (var ((argument, parameter), i) in expr.Arguments.ZipLongest(parameters).WithIndex())
+        foreach (var (argument, parameter) in expr.Arguments.ZipLongest(parameters).Skip(skipCount))
         {
             if (argument == null)
             {
                 if (parameter.defaultValue != null)
-                {
-                    Next(parameter.defaultValue);
-                    argumentCount++;
-                }
+                    arguments.Add(parameter.defaultValue);
 
                 continue;
             }
 
-            if (!variadicStart.HasValue)
-                argumentCount++;
-
             if (parameter.isVariadic)
-                variadicStart = i;
+                variadicArguments = new List<(Expr expr, bool isGlob)>();
 
+            if (variadicArguments != null)
+            {
+                var isGlob = argument is StringInterpolationExpr { IsTextArgument: true };
+                variadicArguments.Add((argument, isGlob));
+
+                continue;
+            }
+
+            arguments.Add(argument);
+        }
+
+        // The arguments should be emitted in reverse, meaning the variadic arguments
+        // come first. However, the variadic arguments will be in their own list, in
+        // non-reversed order.
+        if (variadicArguments != null)
+        {
+            foreach (var (variadicArgument, isGlob) in variadicArguments)
+            {
+                Next(variadicArgument);
+                if (isGlob)
+                    Emit(InstructionKind.Glob);
+            }
+
+            // Dynamic function calls do this on the fly
+            if (!expr.IsReference)
+            {
+                Emit(InstructionKind.BuildList);
+                Emit((ushort)variadicArguments.Count);
+            }
+        }
+
+        foreach (var argument in arguments.AsEnumerable().Reverse())
             Next(argument);
 
-            if (variadicStart.HasValue && argument is StringInterpolationExpr { IsTextArgument: true })
-                Emit(InstructionKind.Glob);
-        }
-
-        if (variadicStart.HasValue)
-        {
-            Emit(InstructionKind.BuildList);
-            Emit((ushort)(expr.Arguments.Count - variadicStart));
-        }
-
-        if (expr.FunctionSymbol != null)
-        {
-            EmitCall(expr, isMaybeRoot);
-
-            return;
-        }
-
-        if (expr.StdFunction != null)
-        {
-            EmitStdCall(expr, argumentCount);
-
-            return;
-        }
-
-        EmitProgramCall(expr, isMaybeRoot);
+        return arguments.Count + (variadicArguments == null ? 0 : 1);
     }
 
-    private void EmitCall(CallExpr expr, bool isMaybeRoot = false)
+    private void EmitCall(CallExpr expr, bool isMaybeRoot = false, RuntimeFunction? closure = null)
     {
         Debug.Assert(expr.FunctionSymbol != null);
 
-        EmitBig(
-            InstructionKind.Const,
-            _functionTable.Get(expr.FunctionSymbol)
-        );
+        var argumentCount = EmitArguments(expr);
+
+        // TODO: Why isn't this above the line with EmitArguments?
+        // It seems to work... but this is inconsistent with how it's
+        // done in other places
+        if (closure != null && !expr.IsReference)
+        {
+            EmitBig(InstructionKind.Const, closure);
+            argumentCount++;
+        }
+
+        Func<RuntimeFunction, Invoker> invoker = function =>
+        {
+            return (arguments, isRoot) => _executor.ExecuteFunction(
+                (RuntimeUserFunction)function,
+                arguments,
+                isRoot
+            );
+        };
+
+        if (expr.FunctionSymbol.Expr.Parameters.Count > byte.MaxValue)
+            throw new RuntimeException("Too many parameters. A function can have at most 255 parameters.");
+
+        var variadicStart = expr.FunctionSymbol.Expr.Parameters
+            .FindIndex(x => x.IsVariadic);
+        var runtimeFunction = new RuntimeUserFunction(
+            null!,
+            _functionTable.Get(expr.FunctionSymbol),
+            null,
+            expr.Plurality,
+            invoker
+        )
+        {
+            ParameterCount = (byte)expr.FunctionSymbol.Expr.Parameters.Count,
+            DefaultParameters = expr.FunctionSymbol.Expr.Parameters
+                .Where(x => x.DefaultValue != null)
+                .Select(x => GetExprRuntimeValue(x.DefaultValue!))
+                .ToList(),
+            VariadicStart = variadicStart == -1
+                ? null
+                : (byte)variadicStart,
+            Closure = expr.IsReference
+                ? closure
+                : null
+        };
+
+        EmitBig(InstructionKind.Const, runtimeFunction);
+
+        if (expr.IsReference)
+        {
+            Emit(InstructionKind.PushArgsToRef, (byte)argumentCount);
+
+            return;
+        }
+
         var kind = (expr.IsRoot, isMaybeRoot) switch
         {
             (_, true) => InstructionKind.MaybeRootCall,
@@ -583,24 +775,218 @@ class InstructionGenerator
         };
 
         Emit(kind);
-        Emit(InstructionKind.PopArgs, (byte)expr.Arguments.Count);
+        Emit(InstructionKind.PopArgs, (byte)argumentCount);
     }
 
-    private void EmitStdCall(CallExpr expr, int argumentCount)
+    private static RuntimeObject GetExprRuntimeValue(Expr expr)
+    {
+        return expr switch
+        {
+            LiteralExpr literal => literal.RuntimeValue ?? RuntimeNil.Value,
+            ListExpr => new RuntimeList([]),
+            DictionaryExpr => new RuntimeDictionary(),
+            StringInterpolationExpr interpolation =>
+                (interpolation.Parts.FirstOrDefault() as LiteralExpr)?.RuntimeValue ?? RuntimeNil.Value,
+            _ => RuntimeNil.Value,
+        };
+    }
+
+    private void EmitStdCall(CallExpr expr, RuntimeFunction? closure = null)
     {
         Debug.Assert(expr.StdFunction != null);
+
+        Func<RuntimeFunction, Invoker> invoker = function =>
+        {
+            return (arguments, _) => _executor.ExecuteFunction(
+                (RuntimeStdFunction)function,
+                arguments
+            );
+        };
+
+        var functionReference = new RuntimeStdFunction(
+            expr.StdFunction,
+            null,
+            expr.Plurality,
+            invoker
+        )
+        {
+            ParameterCount = (byte)expr.StdFunction.Parameters.Length,
+            DefaultParameters = expr.StdFunction.Parameters
+                .Where(x => x.IsNullable)
+                .Select<StdFunctionParameter, RuntimeObject>(_ => RuntimeNil.Value)
+                .ToList(),
+            VariadicStart = (byte?)expr.StdFunction.VariadicStart,
+        };
+
+        // TODO: If the std function takes a ShellEnvironment, add that as an argument here too
+        if (expr.IsReference)
+        {
+            var referenceArgumentCount = EmitArguments(expr);
+            if (referenceArgumentCount > byte.MaxValue)
+                throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+
+            EmitBig(InstructionKind.Const, functionReference);
+
+            if (referenceArgumentCount > 0)
+                Emit(InstructionKind.PushArgsToRef, (byte)referenceArgumentCount);
+
+            if (closure != null)
+            {
+                var closureFuncType = expr.StdFunction.Parameters.First(x => x.IsClosure).Type;
+                functionReference.Closure = ConstructClosureFunc(closureFuncType, closure);
+            }
+
+            return;
+        }
+
+        var argumentCount = 0;
+        if (closure != null)
+        {
+            var closureFuncType = expr.StdFunction.Parameters.First(x => x.IsClosure).Type;
+            EmitBig(InstructionKind.Const, ConstructClosureFunc(closureFuncType, closure));
+            argumentCount++;
+        }
+
+        argumentCount += EmitArguments(expr);
 
         if (argumentCount > byte.MaxValue)
             throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
 
-        EmitBig(InstructionKind.Const, expr.StdFunction);
+        EmitBig(InstructionKind.Const, functionReference);
         Emit(InstructionKind.CallStd, (byte)argumentCount);
+    }
+
+    private object ConstructClosureFunc(Type closureFuncType, RuntimeFunction runtimeFunction)
+    {
+        if (closureFuncType == typeof(Func<RuntimeObject>))
+        {
+            // TODO: Set isRoot
+            return new Func<RuntimeObject>(() =>
+                runtimeFunction.Invoker([], isRoot: false)
+            );
+        }
+
+        if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject>))
+        {
+            return new Func<RuntimeObject, RuntimeObject>(a =>
+                runtimeFunction.Invoker([a], isRoot: false)
+            );
+        }
+
+        if (closureFuncType == typeof(Func<RuntimeObject, RuntimeObject, RuntimeObject>))
+        {
+            return new Func<RuntimeObject, RuntimeObject, RuntimeObject>((a, b) =>
+                runtimeFunction.Invoker([a, b], isRoot: false)
+            );
+        }
+
+        // Action
+        if (closureFuncType == typeof(Action<RuntimeObject>))
+        {
+            return new Action<RuntimeObject>(a =>
+                runtimeFunction.Invoker([a], isRoot: false)
+            );
+        }
+
+        if (closureFuncType == typeof(Action<RuntimeObject, RuntimeObject>))
+        {
+            return new Action<RuntimeObject, RuntimeObject>((a, b) =>
+                runtimeFunction.Invoker([a, b], isRoot: false)
+            );
+        }
+
+        // Fallback, variadic
+        return new Func<IEnumerable<RuntimeObject>, RuntimeObject>(args =>
+            runtimeFunction.Invoker(args.ToList(), isRoot: false)
+        );
+    }
+
+    private void EmitBuiltInCall(CallExpr expr, bool isMaybeRoot = false)
+    {
+        if (expr.Arguments.Count == 0)
+            throw new RuntimeWrongNumberOfArgumentsException(1, 0, variadic: true);
+
+        // The function reference
+        Next(expr.Arguments.First());
+
+        // The first argument should be the function reference, so that shouldn't be emitted
+        // as an argument to the actual call.
+        foreach (var argument in expr.Arguments.Skip(1).Reverse())
+            Next(argument);
+
+        var argumentCount = expr.Arguments.Count - 1;
+        if (argumentCount > byte.MaxValue)
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+
+        Emit(InstructionKind.ResolveArgumentsDynamically, (byte)argumentCount);
+
+        byte isRootModifier = (expr.IsRoot, isMaybeRoot) switch
+        {
+            (_, true) => 2, // Maybe
+            (true, _) => 1, // Yes
+            _ => 0, // No
+        };
+        Emit(InstructionKind.DynamicCall, isRootModifier);
+    }
+
+    private void EmitBuiltInClosure(CallExpr expr, bool isMaybeRoot = false)
+    {
+        // The function reference
+        EmitBig(InstructionKind.Load, ResolveVariable("closure"));
+
+        // Arguments
+        foreach (var argument in expr.Arguments.AsEnumerable().Reverse())
+            Next(argument);
+
+        if (expr.Arguments.Count > byte.MaxValue)
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+
+        Emit(InstructionKind.ResolveArgumentsDynamically, (byte)expr.Arguments.Count);
+
+        byte isRootModifier = (expr.IsRoot, isMaybeRoot) switch
+        {
+            (_, true) => 2, // Maybe
+            (true, _) => 1, // Yes
+            _ => 0, // No
+        };
+        Emit(InstructionKind.DynamicCall, isRootModifier);
     }
 
     private void EmitProgramCall(CallExpr expr, bool isMaybeRoot = false)
     {
-        // Program name
-        EmitBig(InstructionKind.Const, new RuntimeString(expr.Identifier.Value));
+        // Arguments
+        var argumentCount = EmitArguments(expr);
+
+        Func<RuntimeFunction, Invoker> invoker = function =>
+        {
+            return (arguments, isRoot) => _executor.ExecuteFunction(
+                (RuntimeProgramFunction)function,
+                arguments,
+                isRoot
+            );
+        };
+
+        // Program reference
+        var runtimeFunction = new RuntimeProgramFunction(
+            expr.Identifier.Value,
+            null,
+            expr.Plurality,
+            invoker
+        )
+        {
+            ParameterCount = 1,
+            DefaultParameters = [],
+            VariadicStart = 0,
+        };
+
+        EmitBig(InstructionKind.Const, runtimeFunction);
+
+        if (expr.IsReference)
+        {
+            Emit(InstructionKind.PushArgsToRef, (byte)argumentCount);
+
+            return;
+        }
 
         // Piped value
         if (expr.PipedToProgram != null)
@@ -614,8 +1000,8 @@ class InstructionGenerator
         if (expr.DisableRedirectionBuffering)
             props |= ProgramCallProps.DisableRedirectionBuffering;
 
-        if (expr.AutomaticStart)
-            props |= ProgramCallProps.AutomaticStart;
+        if (!expr.AutomaticStart)
+            props |= ProgramCallProps.NoAutomaticStart;
 
         props |= expr.RedirectionKind switch
         {
@@ -624,7 +1010,6 @@ class InstructionGenerator
             RedirectionKind.Error => ProgramCallProps.RedirectError,
             _ => ProgramCallProps.None,
         };
-
         // Environment variables
         foreach (var (key, value) in expr.EnvironmentVariables)
         {
@@ -659,17 +1044,31 @@ class InstructionGenerator
         Emit((ushort)expr.Parts.Count);
     }
 
-    private void Visit(ClosureExpr expr)
+    private void Visit(ClosureExpr expr, bool isMaybeRoot = false)
     {
         var previousPage = _currentPage;
-        _currentPage = new Page();
-        expr.RuntimeValue!.Page = _currentPage;
+        var page = new Page(name: null);
+        _currentPage = page;
 
-        foreach (var parameter in expr.Parameters)
+        foreach (var (parameter, i) in expr.Parameters.WithIndex())
+        {
             _locals.Push(new Variable(parameter, 0));
+
+            // If the parameter is captured, load it and store it as an upper
+            // variable as well. For simplicity, the regular variable is kept
+            // as well for now
+            var symbol = expr.Body.Scope.FindVariable(parameter.Value);
+            if (symbol?.IsCaptured is true)
+            {
+                EmitBig(InstructionKind.Load, i);
+                EmitBig(InstructionKind.StoreUpper, symbol);
+                Emit(InstructionKind.Pop);
+            }
+        }
 
         var previousBasePointer = _currentBasePointer;
         _currentBasePointer = _locals.Count - 1;
+
         Next(expr.Body);
         _currentBasePointer = previousBasePointer;
 
@@ -679,7 +1078,33 @@ class InstructionGenerator
         foreach (var _ in expr.Parameters)
             _locals.Pop();
 
-        EmitBig(InstructionKind.Const, expr.RuntimeValue!);
+        if (expr.Parameters.Count > byte.MaxValue)
+            throw new RuntimeException("Too many parameters. A function can have at most 255 parameters");
+
+        // TODO: Remove unused parts of RuntimeFunction after removing the interpreter
+        Func<RuntimeFunction, Invoker> invoker = function =>
+        {
+            return (arguments, isRoot) => _executor.ExecuteFunction(
+                (RuntimeUserFunction)function,
+                arguments,
+                isRoot
+            );
+        };
+
+        var runtimeFunction = new RuntimeUserFunction(
+            null!,
+            page,
+            null,
+            Plurality.Singular,
+            invoker
+        )
+        {
+            ParameterCount = (byte)expr.Parameters.Count,
+            DefaultParameters = [],
+            VariadicStart = null,
+        };
+
+        Visit(expr.Function, isMaybeRoot, runtimeFunction);
     }
 
     private void Emit(InstructionKind kind, params byte[] arguments)
