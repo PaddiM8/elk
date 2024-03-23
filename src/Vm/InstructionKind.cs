@@ -20,6 +20,9 @@ enum InstructionKind : byte
     CallProgram,
     RootCallProgram,
     MaybeRootCallProgram,
+    /// <summary>
+    /// `ResolveArgumentsDynamically` should be used before this
+    /// </summary>
     DynamicCall,
     PushArgsToRef,
     PushClosureToRef,

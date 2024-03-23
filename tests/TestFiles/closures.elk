@@ -16,11 +16,16 @@ let ints = ["1", "2"] | sel => &into::int
 assertEqual(ints[0], 1)
 assertEqual(ints[1], 2)
 
+let modified = false
 fn thing() => closure {
     closure()
 }
 
-thing =>: assert(true)
+thing =>: {
+    modified = true
+}
+
+assert(modified)
 
 # independent closure
 let f = &Fn => x: x + "!"
