@@ -934,7 +934,6 @@ class InstructionGenerator
     {
         if (closureFuncType == typeof(Func<RuntimeObject>))
         {
-            // TODO: Set isRoot
             return new Func<RuntimeObject>(() =>
                 runtimeFunction.Invoker([], isRoot: false)
             );
@@ -958,14 +957,14 @@ class InstructionGenerator
         if (closureFuncType == typeof(Action<RuntimeObject>))
         {
             return new Action<RuntimeObject>(a =>
-                runtimeFunction.Invoker([a], isRoot: false)
+                runtimeFunction.Invoker([a], isRoot: true)
             );
         }
 
         if (closureFuncType == typeof(Action<RuntimeObject, RuntimeObject>))
         {
             return new Action<RuntimeObject, RuntimeObject>((a, b) =>
-                runtimeFunction.Invoker([a, b], isRoot: false)
+                runtimeFunction.Invoker([a, b], isRoot: true)
             );
         }
 
