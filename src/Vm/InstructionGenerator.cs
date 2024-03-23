@@ -19,6 +19,7 @@ class InstructionGenerator
     private Page _currentPage = new("<root>");
     private int _currentBasePointer;
     private int _scopeDepth;
+    private (int startPosition, List<int> breakPositions, int scopeDepth) _currentLoop = (0, [], 0);
 
     private InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
     {
@@ -221,6 +222,7 @@ class InstructionGenerator
     private void Visit(IfExpr expr)
     {
         Next(expr.Condition);
+
         var elseJump = EmitJump(InstructionKind.PopJumpIfNot);
         Next(expr.ThenBranch);
 
@@ -248,7 +250,7 @@ class InstructionGenerator
         // Since the Enumerator is going to be kept as a temporary,
         // while the loop variable is underneath, there needs to be
         // a variable entry for the Enumerator as well.
-        _locals.Push(new Variable(_emptyToken, _scopeDepth + 1));
+        _locals.Push(new Variable(_emptyToken, _scopeDepth));
 
         var symbols = expr.IdentifierList
             .Select(x => expr.Branch.Scope.FindVariable(x.Value))
@@ -263,6 +265,8 @@ class InstructionGenerator
 
         Emit(InstructionKind.GetIter);
         var loopBackIndex = CreateBackwardJumpPoint();
+        _currentLoop.startPosition = loopBackIndex;
+
         var startIndex = EmitForIter();
 
         if (isCaptured)
@@ -286,29 +290,41 @@ class InstructionGenerator
                 EmitBig(InstructionKind.StoreUpper, symbols.First()!);
             }
         }
-        else
+        else if (expr.IdentifierList.Count > 1)
         {
-            if (expr.IdentifierList.Count > 1)
-                Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
+            Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
         }
 
+        _currentLoop.scopeDepth = _scopeDepth + 1;
         Next(expr.Branch);
         EmitBackwardJump(loopBackIndex);
+        EmitBig(InstructionKind.Const, RuntimeNil.Value);
         EmitEndFor(startIndex);
+
+        foreach (var breakPosition in _currentLoop.breakPositions)
+            PatchJump(breakPosition);
+
+        _currentLoop.breakPositions.Clear();
     }
 
     private void Visit(WhileExpr expr)
     {
         var jumpBackPoint = CreateBackwardJumpPoint();
+        _currentLoop.startPosition = jumpBackPoint;
+
         Next(expr.Condition);
         var endJump = EmitJump(InstructionKind.PopJumpIfNot);
+
+        _currentLoop.scopeDepth = _scopeDepth + 1;
         Next(expr.Branch);
         EmitBackwardJump(jumpBackPoint);
         PatchJump(endJump);
-
-        // TODO: when breaking with a value, it should push that instead
-        // ...and the same for for loops
         EmitBig(InstructionKind.Const, RuntimeNil.Value);
+
+        foreach (var breakPosition in _currentLoop.breakPositions)
+            PatchJump(breakPosition);
+
+        _currentLoop.breakPositions.Clear();
     }
 
     private void Visit(TupleExpr expr)
@@ -356,12 +372,14 @@ class InstructionGenerator
 
         // Skip the last expression, and deal with that later, since
         // a Pop instruction should not be generated for it.
+        bool ShouldPop(Expr child) =>
+            child is not (LetExpr or KeywordExpr) ||
+            (child is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
+
         foreach (var child in expr.Expressions.SkipLast(1))
         {
             Next(child);
-            var shouldPop = child is not (LetExpr or KeywordExpr) ||
-                (child is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
-            if (shouldPop)
+            if (ShouldPop(child))
                 Emit(InstructionKind.Pop);
         }
 
@@ -381,14 +399,50 @@ class InstructionGenerator
             {
                 Next(last);
             }
+
+            if (expr.ParentStructureKind == StructureKind.Loop && ShouldPop(last))
+                Emit(InstructionKind.Pop);
         }
 
-        _scopeDepth--;
-        while (_locals.TryPeek(out var local) && local.Depth > _scopeDepth)
+        if (expr.ParentStructureKind == StructureKind.Loop)
         {
-            Emit(InstructionKind.Pop);
-            _locals.Pop();
+            ClearBlock(isPrimaryExitPoint: true);
+
+            return;
         }
+
+        ExitBlock(isPrimaryExitPoint: true);
+    }
+
+    private void ExitBlock(bool isPrimaryExitPoint, int? newScopeDepth = null)
+    {
+        var popCount = ConsumeBlockLocals(isPrimaryExitPoint, newScopeDepth);
+        if (popCount > byte.MaxValue)
+            throw new RuntimeException("Too many variables in block");
+
+        Emit(InstructionKind.ExitBlock, (byte)popCount);
+    }
+
+    private void ClearBlock(bool isPrimaryExitPoint, int? newScopeDepth = null)
+    {
+        var popCount = ConsumeBlockLocals(isPrimaryExitPoint, newScopeDepth);
+        for (var i = 0; i < popCount; i++)
+            Emit(InstructionKind.Pop);
+    }
+
+    private int ConsumeBlockLocals(bool isPrimaryExitPoint, int? newScopeDepth = null)
+    {
+        var scopeDepth = newScopeDepth ?? _scopeDepth;
+        var popCount = _locals.TakeWhile(x => x.Depth >= scopeDepth).Count();
+        if (isPrimaryExitPoint)
+        {
+            for (var i = 0; i < popCount; i++)
+                _locals.Pop();
+
+            _scopeDepth--;
+        }
+
+        return popCount;
     }
 
     private void Visit(KeywordExpr expr)
@@ -406,6 +460,25 @@ class InstructionGenerator
                 }
 
                 Emit(InstructionKind.Ret);
+                break;
+            case TokenKind.Break:
+                if (expr.Value != null)
+                {
+                    Next(expr.Value);
+                }
+                else
+                {
+                    EmitBig(InstructionKind.Const, RuntimeNil.Value);
+                }
+
+                ExitBlock(isPrimaryExitPoint: false, _currentLoop.scopeDepth);
+
+                var jump = EmitJump(InstructionKind.Jump);
+                _currentLoop.breakPositions.Add(jump);
+                break;
+            case TokenKind.Continue:
+                ClearBlock(isPrimaryExitPoint: false, _currentLoop.scopeDepth);
+                EmitBackwardJump(_currentLoop.startPosition);
                 break;
             default:
                 throw new NotImplementedException("Keyword not implemented: " + expr.Keyword);
@@ -449,6 +522,7 @@ class InstructionGenerator
             OperationKind.Subtraction => InstructionKind.Sub,
             OperationKind.Multiplication => InstructionKind.Mul,
             OperationKind.Division => InstructionKind.Div,
+            OperationKind.Modulo => InstructionKind.Mod,
             OperationKind.EqualsEquals => InstructionKind.Equal,
             OperationKind.NotEquals => InstructionKind.NotEqual,
             OperationKind.Less => InstructionKind.Less,
@@ -1184,7 +1258,10 @@ class InstructionGenerator
 
     private void EmitEndFor(int startIndex)
     {
-        var offset = _currentPage.Instructions.Count - startIndex - 1;
+        // It should jump to the instruction right above EndFor,
+        // since that instruction pushes Nil to the stack, which
+        // is necessary
+        var offset = _currentPage.Instructions.Count - startIndex - 4;
         var (left, right) = ((ushort)offset).ToBytePair();
         _currentPage.Instructions[startIndex] = left;
         _currentPage.Instructions[startIndex + 1] = right;

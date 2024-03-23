@@ -85,6 +85,7 @@ class InstructionExecutor
             Console.WriteLine(ex);
         }
 
+        Console.WriteLine(string.Join(", ", _stack));
         Debug.Assert(!_stack.Any());
 
         return RuntimeNil.Value;
@@ -192,6 +193,9 @@ class InstructionExecutor
             case InstructionKind.UnpackUpper:
                 UnpackUpper(Eat());
                 break;
+            case InstructionKind.ExitBlock:
+                ExitBlock(Eat());
+                break;
             case InstructionKind.Ret:
                 Ret();
                 break;
@@ -287,6 +291,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.Div:
                 Div();
+                break;
+            case InstructionKind.Mod:
+                Mod();
                 break;
             case InstructionKind.Negate:
                 Negate();
@@ -425,6 +432,15 @@ class InstructionExecutor
 
         if (actualCount != count)
             throw new RuntimeException("The amount of items in the destructured Iterable is not the same as the amount of identifiers in the destructuring expressions");
+    }
+
+    private void ExitBlock(byte popCount)
+    {
+        var returnValue = _stack.Pop();
+        for (byte i = 0; i < popCount; i++)
+            Pop();
+
+        _stack.Push(returnValue);
     }
 
     private void Ret()
@@ -910,6 +926,12 @@ class InstructionExecutor
         _stack[^1] = _stack[^1].Operation(OperationKind.Division, right);
     }
 
+    private void Mod()
+    {
+        var right = _stack.Pop();
+        _stack[^1] = _stack[^1].Operation(OperationKind.Modulo, right);
+    }
+
     private void Negate()
     {
         _stack[^1] = _stack[^1].Operation(OperationKind.Subtraction);
@@ -1081,8 +1103,10 @@ class InstructionExecutor
 
     private void EndFor()
     {
+        var returnedValue = _stack.Pop();
         var generator = (IEnumerator<RuntimeObject>)_stack.PeekObject();
         generator.Dispose();
+        _stack.Push(returnedValue);
     }
 
     private void PushFrame(Frame frame)

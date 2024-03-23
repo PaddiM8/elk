@@ -1,6 +1,12 @@
 let i = 0
-while i < 10 {
+let sum = 0
+let result = while i < 10 {
     i += 1
+    if i == 9: break "broke"
+    if i % 2 == 0: continue
+    sum += i
 }
 
-assert(i == 10)
+assertEqual(result, "broke")
+assertEqual(i, 9)
+assertEqual(sum, 16)

@@ -132,6 +132,9 @@ class Disassembler
             case InstructionKind.UnpackUpper:
                 Eat();
                 break;
+            case InstructionKind.ExitBlock:
+                Eat();
+                break;
             case InstructionKind.CallStd:
                 Eat();
                 break;
