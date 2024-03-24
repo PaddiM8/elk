@@ -750,6 +750,7 @@ class InstructionGenerator
                 .Parameters
                 .WithIndex()
                 .Where(x => !x.item.IsClosure)
+                .Where(x => x.item.Type != typeof(ShellEnvironment))
                 .Select(x => (
                     defaultValues: x.item.IsNullable ? nilExpr : null,
                     isVariadic: x.index == expr.StdFunction.VariadicStart
@@ -1172,7 +1173,10 @@ class InstructionGenerator
         if (expr.Parts.Count > byte.MaxValue)
             throw new RuntimeException($"Too many string interpolation parts. There can be at most {ushort.MaxValue}");
 
-        if (expr.Parts is not [LiteralExpr { Value.Kind: TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral }])
+        if (expr.Parts is not [LiteralExpr { Value.Kind:
+            TokenKind.DoubleQuoteStringLiteral or
+            TokenKind.SingleQuoteStringLiteral or
+            TokenKind.TextArgumentStringLiteral }])
         {
             Emit(InstructionKind.BuildString);
             Emit((ushort)expr.Parts.Count);

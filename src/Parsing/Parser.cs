@@ -1413,7 +1413,7 @@ internal class Parser
                 Current!.Value.StartsWith('$') &&
                 Previous?.Value != "\\";
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
-                (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
+                (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace or TokenKind.NewLine))
             {
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));

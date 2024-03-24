@@ -705,7 +705,6 @@ partial class Interpreter
                 CallType.StdFunction => EvaluateStdCall(arguments, expr.StdFunction!, runtimeClosure),
                 CallType.Function => EvaluateFunctionCall(arguments, expr.FunctionSymbol!.Expr, expr.IsRoot, runtimeClosure),
                 // Interpreter_BuiltIns.cs
-                CallType.BuiltInCd => EvaluateBuiltInCd(arguments),
                 CallType.BuiltInExec => EvaluateBuiltInExec(
                     arguments,
                     expr.RedirectionKind,

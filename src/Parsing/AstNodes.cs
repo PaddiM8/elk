@@ -445,7 +445,6 @@ public enum CallType
     Program,
     StdFunction,
     Function,
-    BuiltInCd,
     BuiltInExec,
     BuiltInScriptPath,
     BuiltInClosure,

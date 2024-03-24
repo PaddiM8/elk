@@ -13,12 +13,6 @@ namespace Elk.Std;
 [ElkModule("elk")]
 public class HardCoded
 {
-    /// <summary>Changes the current directory.</summary>
-    /// <param name="directory">The path of the directory to navigate to.</param>
-    [ElkFunction("cd", Reachability.Everywhere)]
-    public static void Cd(RuntimeString directory)
-        => throw new NotSupportedException();
-
     /// <summary>
     /// Executes a program.
     /// </summary>

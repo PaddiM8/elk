@@ -13,16 +13,10 @@ class ShellEnvironment
 {
     public static string WorkingDirectory
     {
-        get
-        {
-            return Environment.GetEnvironmentVariable("PWD")
-                ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        }
+        get => Environment.GetEnvironmentVariable("PWD")
+            ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        set
-        {
-            Environment.SetEnvironmentVariable("PWD", value);
-        }
+        set => Environment.SetEnvironmentVariable("PWD", value);
     }
 
     public string GetAbsolutePath(string relativePath)
