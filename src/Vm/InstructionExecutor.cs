@@ -235,9 +235,6 @@ class InstructionExecutor
             case InstructionKind.PushArgsToRef:
                 PushArgsToRef(Eat());
                 break;
-            case InstructionKind.PushClosureToRef:
-                PushClosureToRef(GetConstant<RuntimeFunction>());
-                break;
             case InstructionKind.ResolveArgumentsDynamically:
                 ResolveArgumentsDynamically(Eat());
                 break;
@@ -641,13 +638,6 @@ class InstructionExecutor
 
         functionReference.Arguments = arguments;
         _stack.Push(functionReference);
-    }
-
-    // TODO: Remove this? Seems to be unsued
-    private void PushClosureToRef(RuntimeFunction closure)
-    {
-        var functionReference = (RuntimeFunction)_stack.Peek();
-        functionReference.Closure = closure;
     }
 
     private void ResolveArgumentsDynamically(byte argumentCount)

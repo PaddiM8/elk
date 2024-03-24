@@ -25,7 +25,6 @@ enum InstructionKind : byte
     /// </summary>
     DynamicCall,
     PushArgsToRef,
-    PushClosureToRef,
     ResolveArgumentsDynamically,
 
     Index,

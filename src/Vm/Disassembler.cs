@@ -3,7 +3,6 @@ using System.Text;
 using Elk.Interpreting.Scope;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Std.Bindings;
-using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
