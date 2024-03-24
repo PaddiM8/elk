@@ -1,19 +1,19 @@
 fn confirmParamCount(expectedCount, params...) {
-    assert(expectedCount == len(params))
+    assertEqual(len(params), expectedCount)
 }
 
 confirmParamCount(1, "a")
 confirmParamCount(2, "a", "b")
 
-assert((simple test) == "test")
-assert(simple("test") == "test")
+assertEqual((simple test), "test")
+assertEqual(simple("test"), "test")
 
 fn simple(a) {
     a
 }
 
-assert((empty) == "empty")
-assert(empty() == "empty")
+assertEqual((empty), "empty")
+assertEqual(empty(), "empty")
 
 fn empty() {
     "empty"
@@ -24,7 +24,7 @@ fn rec(x) {
     if x > 0: rec(x - 1) else x
 }
 
-assert(rec(10) == 0)
+assertEqual(rec(10), 0)
 
 # does it return?
 fn ret() {
@@ -33,4 +33,12 @@ fn ret() {
     return 2
 }
 
-assert(ret() == 1)
+assertEqual(ret(), 1)
+
+# globs
+fn count(args...) {
+    args | len
+}
+
+let counted = count *
+assert(counted > 0)

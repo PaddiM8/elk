@@ -134,7 +134,7 @@ class InstructionGenerator
             expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
         );
 
-        foreach (var (parameter, i) in expr.Parameters.WithIndex())
+        foreach (var (parameter, i) in expr.Parameters.AsEnumerable().Reverse().WithIndex())
         {
             _locals.Push(new Variable(parameter.Identifier, 0));
 

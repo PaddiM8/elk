@@ -74,6 +74,9 @@ fn concat(values...) {
 let greeter = &concat("Hello")
 greeter | call("world") | assertEqual("Hello world")
 
+let greeter = &op::add("Hello ")
+greeter | call("world") | assertEqual("Hello world")
+
 let greeter = &echo("Hello")
 greeter | call("world") | assertEqual("Hello world")
 
