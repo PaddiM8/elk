@@ -11,30 +11,22 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
-class InstructionGenerator
+class InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
 {
     private readonly Stack<Variable> _locals = new();
-    private readonly FunctionTable _functionTable;
-    private readonly InstructionExecutor _executor;
-    private readonly ShellEnvironment _shellEnvironment;
+    private ShellEnvironment _shellEnvironment = null!;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
     private Page _currentPage = new("<root>");
     private int _currentBasePointer;
     private int _scopeDepth;
     private (int startPosition, List<int> breakPositions, int scopeDepth) _currentLoop = (0, [], 0);
 
-    public InstructionGenerator(
-        FunctionTable functionTable,
-        InstructionExecutor executor,
-        ShellEnvironment shellEnvironment)
-    {
-        _functionTable = functionTable;
-        _executor = executor;
-        _shellEnvironment = shellEnvironment;
-    }
-
     public Page Generate(Ast ast)
     {
+        _shellEnvironment = new ShellEnvironment(
+            ast.Expressions.FirstOrDefault()?.StartPosition.FilePath
+        );
+
         foreach (var expr in ast.Expressions)
         {
             Next(expr);
@@ -135,7 +127,7 @@ class InstructionGenerator
     private void Visit(FunctionExpr expr)
     {
         var previousPage = _currentPage;
-        _currentPage = _functionTable.Get(
+        _currentPage = functionTable.Get(
             expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
         );
 
@@ -830,7 +822,7 @@ class InstructionGenerator
 
         Func<RuntimeFunction, Invoker> invoker = function =>
         {
-            return (arguments, isRoot) => _executor.ExecuteFunction(
+            return (arguments, isRoot) => executor.ExecuteFunction(
                 (RuntimeUserFunction)function,
                 arguments,
                 isRoot
@@ -844,7 +836,7 @@ class InstructionGenerator
             .FindIndex(x => x.IsVariadic);
         var runtimeFunction = new RuntimeUserFunction(
             null!,
-            _functionTable.Get(expr.FunctionSymbol),
+            functionTable.Get(expr.FunctionSymbol),
             null,
             expr.Plurality,
             invoker
@@ -902,7 +894,7 @@ class InstructionGenerator
 
         Func<RuntimeFunction, Invoker> invoker = function =>
         {
-            return (arguments, _) => _executor.ExecuteFunction(
+            return (arguments, _) => executor.ExecuteFunction(
                 (RuntimeStdFunction)function,
                 arguments
             );
@@ -1083,7 +1075,7 @@ class InstructionGenerator
 
         Func<RuntimeFunction, Invoker> invoker = function =>
         {
-            return (arguments, isRoot) => _executor.ExecuteFunction(
+            return (arguments, isRoot) => executor.ExecuteFunction(
                 (RuntimeProgramFunction)function,
                 arguments,
                 isRoot
@@ -1223,7 +1215,7 @@ class InstructionGenerator
         // TODO: Remove unused parts of RuntimeFunction after removing the interpreter
         Func<RuntimeFunction, Invoker> invoker = function =>
         {
-            return (arguments, isRoot) => _executor.ExecuteFunction(
+            return (arguments, isRoot) => executor.ExecuteFunction(
                 (RuntimeUserFunction)function,
                 arguments,
                 isRoot

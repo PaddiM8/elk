@@ -37,7 +37,7 @@ partial class Interpreter
 
     public Interpreter(string? filePath)
     {
-        ShellEnvironment = new ShellEnvironment();
+        ShellEnvironment = new ShellEnvironment(filePath);
         _rootModule = new RootModuleScope(filePath, new Ast(Array.Empty<Expr>()));
         _scope = _rootModule;
     }
@@ -710,7 +710,6 @@ partial class Interpreter
                     expr.RedirectionKind,
                     expr.DisableRedirectionBuffering
                 ),
-                CallType.BuiltInScriptPath => EvaluateBuiltInScriptPath(arguments),
                 CallType.BuiltInClosure => EvaluateBuiltInClosure(expr.EnclosingClosureProvidingFunction!, arguments),
                 CallType.BuiltInCall => EvaluateBuiltInCall(arguments, expr.IsRoot),
                 _ => throw new NotSupportedException(expr.CallType.ToString()),

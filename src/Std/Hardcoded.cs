@@ -21,11 +21,6 @@ public class HardCoded
     public static RuntimeObject Exec(RuntimeString programName)
         => throw new NotSupportedException();
 
-    /// <returns>The file path of the script that is currently being evaluated.</returns>
-    [ElkFunction("scriptPath", Reachability.Everywhere)]
-    public static RuntimeString ScriptPath()
-        => throw new NotSupportedException();
-
     /// <summary>
     /// Calls the closure given to the function call used to call
     /// the containing function. This function can only be called

@@ -15,12 +15,11 @@ class VirtualMachine
     private readonly Dictionary<VariableSymbol, WeakReference<RuntimeObject>> _variables = new();
     private readonly InstructionExecutor _executor;
     private readonly InstructionGenerator _generator;
-    private readonly ShellEnvironment _shellEnvironment = new();
 
     public VirtualMachine()
     {
         _executor = new InstructionExecutor(_stack, _variables);
-        _generator = new InstructionGenerator(_functions, _executor, _shellEnvironment);
+        _generator = new InstructionGenerator(_functions, _executor);
     }
 
     public Page Generate(Ast ast)

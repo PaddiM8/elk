@@ -696,7 +696,6 @@ class Analyser(RootModuleScope rootModule)
         CallType? builtIn = name switch
         {
             "exec" => CallType.BuiltInExec,
-            "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
             _ => null,

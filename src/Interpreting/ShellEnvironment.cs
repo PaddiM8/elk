@@ -9,7 +9,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Interpreting;
 
-class ShellEnvironment
+class ShellEnvironment(string? scriptPath)
 {
     public static string WorkingDirectory
     {
@@ -19,8 +19,11 @@ class ShellEnvironment
         set => Environment.SetEnvironmentVariable("PWD", value);
     }
 
+    public IEnumerable<RuntimeObject> Argv { get; set; } = Array.Empty<RuntimeObject>();
+
+    public string? ScriptPath { get; } = scriptPath;
+
     public string GetAbsolutePath(string relativePath)
         => Path.GetFullPath(Path.Combine(WorkingDirectory, relativePath));
 
-    public IEnumerable<RuntimeObject> Argv { get; set; } = Array.Empty<RuntimeObject>();
 }

@@ -446,7 +446,6 @@ public enum CallType
     StdFunction,
     Function,
     BuiltInExec,
-    BuiltInScriptPath,
     BuiltInClosure,
     BuiltInCall,
 }
