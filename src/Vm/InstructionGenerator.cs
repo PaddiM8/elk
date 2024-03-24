@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Bindings;
@@ -16,34 +16,38 @@ class InstructionGenerator
     private readonly Stack<Variable> _locals = new();
     private readonly FunctionTable _functionTable;
     private readonly InstructionExecutor _executor;
+    private readonly ShellEnvironment _shellEnvironment;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
     private Page _currentPage = new("<root>");
     private int _currentBasePointer;
     private int _scopeDepth;
     private (int startPosition, List<int> breakPositions, int scopeDepth) _currentLoop = (0, [], 0);
 
-    private InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
+    public InstructionGenerator(
+        FunctionTable functionTable,
+        InstructionExecutor executor,
+        ShellEnvironment shellEnvironment)
     {
         _functionTable = functionTable;
         _executor = executor;
+        _shellEnvironment = shellEnvironment;
     }
 
-    public static Page Generate(Ast ast, FunctionTable functionTable, InstructionExecutor executor)
+    public Page Generate(Ast ast)
     {
-        var generator = new InstructionGenerator(functionTable, executor);
         foreach (var expr in ast.Expressions)
         {
-            generator.Next(expr);
+            Next(expr);
             var shouldPop = expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr) ||
                 (expr is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
             if (shouldPop)
-                generator.Emit(InstructionKind.Pop);
+                Emit(InstructionKind.Pop);
         }
 
-        foreach (var _ in generator._locals)
-            generator.Emit(InstructionKind.Pop);
+        foreach (var _ in _locals)
+            Emit(InstructionKind.Pop);
 
-        return generator._currentPage;
+        return _currentPage;
     }
 
     private void Next(Expr expr)
@@ -921,7 +925,14 @@ class InstructionGenerator
         // TODO: If the std function takes a ShellEnvironment, add that as an argument here too
         if (expr.IsReference)
         {
-            var referenceArgumentCount = EmitArguments(expr);
+            var referenceArgumentCount = 0;
+            if (expr.StdFunction.Parameters.LastOrDefault()?.Type == typeof(ShellEnvironment))
+            {
+                EmitBig(InstructionKind.Const, _shellEnvironment);
+                referenceArgumentCount++;
+            }
+
+            referenceArgumentCount += EmitArguments(expr);
             if (referenceArgumentCount > byte.MaxValue)
                 throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
 
@@ -944,6 +955,12 @@ class InstructionGenerator
         {
             var closureFuncType = expr.StdFunction.Parameters.First(x => x.IsClosure).Type;
             EmitBig(InstructionKind.Const, ConstructClosureFunc(closureFuncType, closure));
+            argumentCount++;
+        }
+
+        if (expr.StdFunction.Parameters.LastOrDefault()?.Type == typeof(ShellEnvironment))
+        {
+            EmitBig(InstructionKind.Const, _shellEnvironment);
             argumentCount++;
         }
 
