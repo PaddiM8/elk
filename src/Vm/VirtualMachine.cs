@@ -11,7 +11,7 @@ class VirtualMachine
 {
     private readonly FunctionTable _functions = new();
     private readonly IndexableStack<RuntimeObject> _stack = new();
-    private readonly Dictionary<VariableSymbol, RuntimeObject> _variables = new();
+    private readonly Dictionary<VariableSymbol, WeakReference<RuntimeObject>> _variables = new();
     private readonly InstructionExecutor _executor;
 
     public VirtualMachine()

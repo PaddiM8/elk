@@ -26,12 +26,12 @@ class InstructionExecutor
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
     private Page _currentPage = null!;
-    private readonly Dictionary<VariableSymbol, RuntimeObject> _variables;
+    private readonly Dictionary<VariableSymbol, WeakReference<RuntimeObject>> _variables;
     private RuntimeObject? _returnedValue;
 
     internal InstructionExecutor(
         IndexableStack<RuntimeObject> stack,
-        Dictionary<VariableSymbol, RuntimeObject> variables)
+        Dictionary<VariableSymbol, WeakReference<RuntimeObject>> variables)
     {
         _stack = stack;
         _variables = variables;
@@ -371,12 +371,15 @@ class InstructionExecutor
 
     private void LoadUpper(VariableSymbol symbol)
     {
-        _stack.Push(_variables[symbol]);
+        if (!_variables[symbol].TryGetTarget(out var value))
+            throw new RuntimeException($"Failed to load captured variable {symbol.Name}");
+
+        _stack.Push(value);
     }
 
     private void StoreUpper(VariableSymbol symbol)
     {
-        _variables[symbol] = _stack.Peek();
+        _variables[symbol] = new WeakReference<RuntimeObject>(_stack.Peek());
     }
 
     private void Pop()
@@ -423,7 +426,7 @@ class InstructionExecutor
         var actualCount = 0;
         foreach (var (symbol, item) in symbols.Zip(items))
         {
-            _variables[symbol] = item;
+            _variables[symbol] = new WeakReference<RuntimeObject>(item);
             actualCount++;
         }
 
