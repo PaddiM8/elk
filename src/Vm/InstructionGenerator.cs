@@ -1140,8 +1140,11 @@ class InstructionGenerator
         if (expr.Parts.Count > byte.MaxValue)
             throw new RuntimeException($"Too many string interpolation parts. There can be at most {ushort.MaxValue}");
 
-        Emit(InstructionKind.BuildString);
-        Emit((ushort)expr.Parts.Count);
+        if (expr.Parts is not [LiteralExpr { Value.Kind: TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral }])
+        {
+            Emit(InstructionKind.BuildString);
+            Emit((ushort)expr.Parts.Count);
+        }
     }
 
     private void Visit(ClosureExpr expr, bool isMaybeRoot = false)
