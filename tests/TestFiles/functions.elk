@@ -19,6 +19,18 @@ fn empty() {
     "empty"
 }
 
+# default argument
+fn withDefault(a, b=[]) {
+    assertEqual(a, "a")
+    assertEqual(len(b), 0)
+    b | push(1)
+    assertEqual(len(b), 1)
+}
+
+withDefault("a")
+withDefault("a")
+withDefault("a", [])
+
 # recursion
 fn rec(x) {
     if x > 0: rec(x - 1) else x
