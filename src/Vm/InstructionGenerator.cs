@@ -1228,10 +1228,10 @@ class InstructionGenerator
 
     private void EmitBig(InstructionKind kind, object argument)
     {
+        var (key1, key2) = _currentPage.ConstantTable.Add(argument).ToBytePair();
         _currentPage.Instructions.Add((byte)kind);
-        _currentPage.Instructions.Add(
-            _currentPage.ConstantTable.Add(argument)
-        );
+        _currentPage.Instructions.Add(key1);
+        _currentPage.Instructions.Add(key2);
     }
 
     private int EmitJump(InstructionKind instruction)
@@ -1287,7 +1287,7 @@ class InstructionGenerator
         // It should jump to the instruction right above EndFor,
         // since that instruction pushes Nil to the stack, which
         // is necessary
-        var offset = _currentPage.Instructions.Count - startIndex - 4;
+        var offset = _currentPage.Instructions.Count - startIndex - 5;
         var (left, right) = ((ushort)offset).ToBytePair();
         _currentPage.Instructions[startIndex] = left;
         _currentPage.Instructions[startIndex + 1] = right;

@@ -59,8 +59,9 @@ class Disassembler
 
     private void GetConstant<T>()
     {
-        var byteValue = _page.Instructions[_ip++];
-        var obj = _page.ConstantTable.Get<T>(byteValue);
+        var key1 = _page.Instructions[_ip++];
+        var key2 = _page.Instructions[_ip++];
+        var obj = _page.ConstantTable.Get<T>(key1.ToUshort(key2));
         if (obj is StdFunction stdFunction)
         {
             _builder.Append($" StdFunction[{stdFunction.Name}]");

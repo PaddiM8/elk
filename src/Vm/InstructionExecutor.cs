@@ -158,7 +158,7 @@ class InstructionExecutor
     }
 
     private T GetConstant<T>()
-        => _currentPage.ConstantTable.Get<T>(Eat());
+        => _currentPage.ConstantTable.Get<T>(Eat().ToUshort(Eat()));
 
     private byte Eat()
         => _currentPage.Instructions[_ip++];
@@ -777,10 +777,10 @@ class InstructionExecutor
         {
             int count = instructions[buildListIndex + 1].ToUshort(instructions[buildListIndex + 2]);
             instructions[buildListIndex] = (byte)InstructionKind.BuildListBig;
-            instructions[buildListIndex + 1] = _currentPage.ConstantTable.Add(
-                count + matches.Count - 1
-            );
-            instructions[buildListIndex + 2] = (byte)InstructionKind.Nop;
+
+            var (key1, key2) = _currentPage.ConstantTable.Add(count + matches.Count - 1).ToBytePair();
+            instructions[buildListIndex + 1] = key1;
+            instructions[buildListIndex + 2] = key2;
         }
         else
         {
