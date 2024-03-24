@@ -257,6 +257,9 @@ class Analyser(RootModuleScope rootModule)
         {
             IsRoot = expr.IsRoot,
             AnalysisStatus = AnalysisStatus.Analysed,
+            ClosureSymbol = expr.HasClosure
+                ? new VariableSymbol("closure", RuntimeNil.Value)
+                : null,
         };
 
         // Need to set _enclosingFunction *before* analysing the block
@@ -715,6 +718,8 @@ class Analyser(RootModuleScope rootModule)
             }
 
             enclosingClosureProvidingFunction = enclosingFunction;
+            if (expr.EnclosingFunction is ClosureExpr && enclosingClosureProvidingFunction.ClosureSymbol != null)
+                enclosingClosureProvidingFunction.ClosureSymbol.IsCaptured = true;
         }
 
         var stdFunction = !builtIn.HasValue

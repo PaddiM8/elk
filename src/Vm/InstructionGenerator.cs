@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Std.Bindings;
@@ -162,6 +163,13 @@ class InstructionGenerator
 
         var previousBasePointer = _currentBasePointer;
         _currentBasePointer = _locals.Count - 1;
+        if (expr.ClosureSymbol?.IsCaptured is true)
+        {
+            EmitBig(InstructionKind.Load, ResolveVariable("closure"));
+            EmitBig(InstructionKind.StoreUpper, expr.ClosureSymbol);
+            Emit(InstructionKind.Pop);
+        }
+
         Next(expr.Block);
         _currentBasePointer = previousBasePointer;
 
@@ -1023,7 +1031,14 @@ class InstructionGenerator
     private void EmitBuiltInClosure(CallExpr expr, bool isMaybeRoot = false)
     {
         // The function reference
-        EmitBig(InstructionKind.Load, ResolveVariable("closure"));
+        if (expr.EnclosingClosureProvidingFunction?.ClosureSymbol?.IsCaptured is true)
+        {
+            EmitBig(InstructionKind.LoadUpper, expr.EnclosingClosureProvidingFunction.ClosureSymbol);
+        }
+        else
+        {
+            EmitBig(InstructionKind.Load, ResolveVariable("closure"));
+        }
 
         // Arguments
         foreach (var argument in expr.Arguments.AsEnumerable().Reverse())

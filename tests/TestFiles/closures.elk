@@ -12,6 +12,13 @@ let result = ["this", "is", "a", "test"]
 assertEqual(result[0], "this!!")
 assertEqual(result[3], "test!!")
 
+let ending = "!"
+let result = ["this", "is", "a", "test"]
+    | sel => &op::add(ending)
+    | sel => &op::add(ending)
+assertEqual(result[0], "this!!")
+assertEqual(result[3], "test!!")
+
 let ints = ["1", "2"] | sel => &into::int
 assertEqual(ints[0], 1)
 assertEqual(ints[1], 2)
@@ -88,6 +95,14 @@ x | assertEqual(6)
 f | call | assertEqual(7)
 assertEqual(a, 1)
 assertEqual(b, 2)
+
+# `closure()` inside a closure
+fn nestedClosure() => closure {
+    &Fn => x: closure(x) * 2
+}
+
+let f = nestedClosure => x: x + 1
+assertEqual(call(f, 3), 8)
 
 # nested with captured variable
 fn nested_with_captured_variable(captured) {

@@ -148,6 +148,8 @@ public class FunctionExpr(
 
     public bool HasClosure { get; } = hasClosure;
 
+    public VariableSymbol? ClosureSymbol { get; init; }
+
     public override IEnumerable<Expr> ChildExpressions
         => [Block];
 
