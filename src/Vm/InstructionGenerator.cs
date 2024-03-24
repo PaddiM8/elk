@@ -215,6 +215,9 @@ class InstructionGenerator
         foreach (var argument in expr.Arguments)
             Next(argument);
 
+        if (expr.Arguments.Count > byte.MaxValue)
+            throw new RuntimeException("Too many parameters. A struct can have at most 255 parameters");
+
         EmitBig(InstructionKind.StructConst, expr.StructSymbol!);
         Emit(InstructionKind.New, (byte)expr.Arguments.Count);
     }
@@ -268,6 +271,9 @@ class InstructionGenerator
         _currentLoop.startPosition = loopBackIndex;
 
         var startIndex = EmitForIter();
+
+        if (expr.IdentifierList.Count > byte.MaxValue)
+            throw new RuntimeException("Too many identifiers in destructuring expression");
 
         if (isCaptured)
         {
@@ -332,6 +338,9 @@ class InstructionGenerator
         foreach (var value in expr.Values)
             Next(value);
 
+        if (expr.Values.Count > byte.MaxValue)
+            throw new RuntimeException($"Too many tuple values. There can be at most {ushort.MaxValue}");
+
         Emit(InstructionKind.BuildTuple);
         Emit((ushort)expr.Values.Count);
     }
@@ -341,6 +350,9 @@ class InstructionGenerator
         foreach (var value in expr.Values)
             Next(value);
 
+        if (expr.Values.Count > byte.MaxValue)
+            throw new RuntimeException($"Too many list values. There can be at most {ushort.MaxValue}");
+
         Emit(InstructionKind.BuildList);
         Emit((ushort)expr.Values.Count);
     }
@@ -349,6 +361,9 @@ class InstructionGenerator
     {
         foreach (var value in expr.Entries)
             Next(value);
+
+        if (expr.Entries.Count > byte.MaxValue)
+            throw new RuntimeException($"Too many set entries. There can be at most {ushort.MaxValue}");
 
         Emit(InstructionKind.BuildSet);
         Emit((ushort)expr.Entries.Count);
@@ -361,6 +376,9 @@ class InstructionGenerator
             Next(entry.Item1);
             Next(entry.Item2);
         }
+
+        if (expr.Entries.Count > byte.MaxValue)
+            throw new RuntimeException($"Too many dictionary entries. There can be at most {ushort.MaxValue}");
 
         Emit(InstructionKind.BuildDict);
         Emit((ushort)expr.Entries.Count);
@@ -897,7 +915,7 @@ class InstructionGenerator
         {
             var referenceArgumentCount = EmitArguments(expr);
             if (referenceArgumentCount > byte.MaxValue)
-                throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+                throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
 
             EmitBig(InstructionKind.Const, functionReference);
 
@@ -924,7 +942,7 @@ class InstructionGenerator
         argumentCount += EmitArguments(expr);
 
         if (argumentCount > byte.MaxValue)
-            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
 
         EmitBig(InstructionKind.Const, functionReference);
         Emit(InstructionKind.CallStd, (byte)argumentCount);
@@ -989,7 +1007,7 @@ class InstructionGenerator
 
         var argumentCount = expr.Arguments.Count - 1;
         if (argumentCount > byte.MaxValue)
-            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
 
         Emit(InstructionKind.ResolveArgumentsDynamically, (byte)argumentCount);
 
@@ -1012,7 +1030,7 @@ class InstructionGenerator
             Next(argument);
 
         if (expr.Arguments.Count > byte.MaxValue)
-            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments.");
+            throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
 
         Emit(InstructionKind.ResolveArgumentsDynamically, (byte)expr.Arguments.Count);
 
@@ -1056,6 +1074,9 @@ class InstructionGenerator
 
         if (expr.IsReference)
         {
+            if (expr.Arguments.Count > byte.MaxValue)
+                throw new RuntimeException("Too many arguments. A call can have at most 255 function arguments");
+
             Emit(InstructionKind.PushArgsToRef, (byte)argumentCount);
 
             return;
@@ -1098,6 +1119,9 @@ class InstructionGenerator
             _ => InstructionKind.CallProgram,
         };
 
+        if (expr.EnvironmentVariables.Count > byte.MaxValue)
+            throw new RuntimeException("Too many environment variables. A program invocation can have at most 255 environment variables");
+
         Emit(kind);
         Emit((ushort)props);
         Emit((byte)expr.EnvironmentVariables.Count);
@@ -1112,6 +1136,9 @@ class InstructionGenerator
     {
         foreach (var part in expr.Parts)
             Next(part);
+
+        if (expr.Parts.Count > byte.MaxValue)
+            throw new RuntimeException($"Too many string interpolation parts. There can be at most {ushort.MaxValue}");
 
         Emit(InstructionKind.BuildString);
         Emit((ushort)expr.Parts.Count);
