@@ -537,6 +537,12 @@ class InstructionExecutor
             WorkingDirectory = ShellEnvironment.WorkingDirectory,
         };
 
+        if (environmentVariables != null)
+        {
+            foreach (var (key, value) in environmentVariables)
+                process.StartInfo.EnvironmentVariables.Add(key, value.ToString());
+        }
+
         // Arguments
         var arguments = (RuntimeList)_stack.Pop();
         foreach (var arg in arguments)
