@@ -565,7 +565,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             // This needs to be done at runtime of course, when exception
             // handling has been implemented.
             Next(expr.Left);
-            Next(expr.Right);
+            //Next(expr.Right);
 
             return;
         }
