@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 
@@ -198,7 +198,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         }
 
         var symbols = expr.Symbols.ToList();
-        if (!symbols.Any(x => x.IsCaptured))
+        if (!symbols.Any(x => x.IsCaptured) && expr.Scope is not ModuleScope)
         {
             foreach (var identifier in expr.IdentifierList)
                 _locals.Push(new Variable(identifier, _scopeDepth));
@@ -701,7 +701,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         {
             EmitBig(InstructionKind.LoadEnvironmentVariable, expr.Identifier.Value[1..]);
         }
-        else if (symbol?.IsCaptured is true)
+        else if (symbol?.IsCaptured is true || expr.Scope is ModuleScope)
         {
             EmitBig(InstructionKind.LoadUpper, expr.Scope.FindVariable(expr.Identifier.Value)!);
         }

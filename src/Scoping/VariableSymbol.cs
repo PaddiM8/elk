@@ -1,6 +1,6 @@
 using Elk.Std.DataTypes;
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 public class VariableSymbol(string name, RuntimeObject value) : ISymbol
 {

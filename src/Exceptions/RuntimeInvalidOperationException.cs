@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 public class RuntimeInvalidOperationException : RuntimeException
 {

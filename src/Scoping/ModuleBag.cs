@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 #endregion
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 class ModuleBag : IEnumerable<ModuleScope>
 {

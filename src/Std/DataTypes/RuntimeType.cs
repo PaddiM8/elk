@@ -2,9 +2,9 @@
 
 using System;
 using System.Reflection;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.Attributes;
 
 #endregion

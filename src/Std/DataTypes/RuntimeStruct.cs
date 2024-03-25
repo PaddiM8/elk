@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
+using Elk.Scoping;
 using Elk.Std.Attributes;
 
 #endregion

@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -905,8 +904,16 @@ class InstructionExecutor
 
     private void BuildRange(bool isInclusive)
     {
-        var to = _stack.Pop().As<RuntimeInteger>().Value;
-        var from = _stack.Pop().As<RuntimeInteger>().Value;
+        var toObject = _stack.Pop();
+        long? to = toObject is RuntimeNil
+            ? null
+            : toObject.As<RuntimeInteger>().Value;
+
+        var fromObject = _stack.Pop();
+        long? from = fromObject is RuntimeNil
+            ? null
+            : fromObject.As<RuntimeInteger>().Value;
+
         if (isInclusive)
         {
             if (to >= from)

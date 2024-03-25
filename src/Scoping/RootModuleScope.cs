@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Elk.Parsing;
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 public class RootModuleScope : ModuleScope
 {

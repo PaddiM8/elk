@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Exceptions;
 using Elk.Std.Bindings;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Services;
 using Elk.Std.DataTypes;
 

@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Lexing;
 
 #endregion

@@ -6,11 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
-using Elk.Lexing;
-using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
 using Elk.Vm;
 
@@ -90,10 +86,10 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         if (!_virtualMachine.RootModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var prompt = CallFunction(_virtualMachine, "elkPrompt")?.ToString() ?? " >> ";
+        var prompt = _virtualMachine.ExecuteFunction("elkPrompt", [], isRoot: false);
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
-        return prompt;
+        return prompt.ToString() ?? " >> ";
     }
 
     public void RunCommand(
@@ -197,42 +193,6 @@ public class ShellSession(VirtualMachineOptions vmOptions)
                 Console.Error.WriteLine(diagnostic.ToString().Trim());
 
             Environment.Exit(1);
-        }
-    }
-
-    private RuntimeObject? CallFunction(VirtualMachine virtualMachine, string identifier)
-    {
-        var call = new CallExpr(
-            new Token(TokenKind.Identifier, identifier, TextPos.Default),
-            Array.Empty<Token>(),
-            Array.Empty<Expr>(),
-            CallStyle.Parenthesized,
-            Plurality.Singular,
-            CallType.Function,
-            _virtualMachine.RootModule,
-            TextPos.Default
-        )
-        {
-            IsRoot = true,
-        };
-
-        try
-        {
-            return ElkProgram.Evaluate(
-                new Ast(new List<Expr> { call }),
-                _virtualMachine.RootModule,
-                AnalysisScope.AppendToModule,
-                virtualMachine
-            ).Value;
-        }
-        catch (RuntimeException e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.Write($"Error evaluating {identifier}: ");
-            Console.ResetColor();
-            Console.WriteLine(e);
-
-            return null;
         }
     }
 }

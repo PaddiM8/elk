@@ -1,7 +1,7 @@
 using System;
 using System.Text;
-using Elk.Interpreting.Scope;
 using Elk.ReadLine.Render.Formatting;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 
 namespace Elk.Vm;

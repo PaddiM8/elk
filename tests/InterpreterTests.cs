@@ -2,9 +2,9 @@
 
 using System.Collections.Generic;
 using Elk.Analysis;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
 using Elk.Vm;
 using NUnit.Framework;

@@ -4,7 +4,7 @@ using System.Reflection;
 
 #endregion
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 class RuntimeCastException<T> : RuntimeException
 {

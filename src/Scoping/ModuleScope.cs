@@ -9,7 +9,7 @@ using Elk.Std.Bindings;
 
 #endregion
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 public record Alias(string Name, IEnumerable<LiteralExpr> Arguments);
 

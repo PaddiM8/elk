@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Elk.Interpreting;
+namespace Elk.Vm;
 
 public static class Globbing
 {

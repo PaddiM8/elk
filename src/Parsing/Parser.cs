@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Lexing;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 

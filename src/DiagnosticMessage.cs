@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Lexing;
 using Elk.ReadLine.Render.Formatting;
 

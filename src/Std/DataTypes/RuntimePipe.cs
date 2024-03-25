@@ -4,10 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
+using Elk.Vm;
 
 #endregion
 

@@ -2,15 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Elk.Lexing;
 using Elk.Parsing;
-using Elk.ReadLine.Render.Formatting;
 
 #endregion
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 public record Trace(TextPos Position, Token? FunctionIdentifier = null)
 {

@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting;
 using Elk.ReadLine;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 

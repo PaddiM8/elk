@@ -2,9 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.Attributes;
 using Elk.Std.Bindings;
 using Elk.Vm;

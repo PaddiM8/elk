@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 public static class ExceptionFormatting
 {

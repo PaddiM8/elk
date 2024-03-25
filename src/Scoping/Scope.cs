@@ -8,7 +8,7 @@ using Elk.Std.DataTypes;
 
 #endregion
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 public abstract class Scope
 {

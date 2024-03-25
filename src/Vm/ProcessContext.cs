@@ -6,10 +6,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Std.DataTypes;
 
-namespace Elk.Interpreting;
+namespace Elk.Vm;
 
 public class ProcessContext(Process process, RuntimeObject? pipedValue, bool waitForExit)
     : IEnumerable<string>

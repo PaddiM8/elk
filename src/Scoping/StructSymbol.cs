@@ -1,7 +1,7 @@
 using Elk.Parsing;
 using Elk.Std.Bindings;
 
-namespace Elk.Interpreting.Scope;
+namespace Elk.Scoping;
 
 public class StructSymbol : ISymbol
 {

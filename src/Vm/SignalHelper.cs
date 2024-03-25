@@ -1,4 +1,4 @@
-namespace Elk.Interpreting;
+namespace Elk.Vm;
 
 public class SignalHelper
 {

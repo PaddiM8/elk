@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 using Newtonsoft.Json;

@@ -1,4 +1,4 @@
-using Elk.Interpreting.Scope;
+using Elk.Scoping;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Elk.LanguageServer.Data;

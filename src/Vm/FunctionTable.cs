@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elk.Interpreting.Scope;
+using Elk.Scoping;
 
 namespace Elk.Vm;
 

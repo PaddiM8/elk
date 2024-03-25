@@ -1,6 +1,6 @@
 using Elk.Parsing;
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 class RuntimeAccessLevelException(AccessLevel accessLevel, string symbolName)
     : RuntimeException($"Cannot access {accessLevel.ToString().ToLower()} symbol '{symbolName}'");

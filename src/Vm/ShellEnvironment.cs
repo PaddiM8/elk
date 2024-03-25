@@ -7,7 +7,7 @@ using Elk.Std.DataTypes;
 
 #endregion
 
-namespace Elk.Interpreting;
+namespace Elk.Vm;
 
 class ShellEnvironment(string? scriptPath)
 {

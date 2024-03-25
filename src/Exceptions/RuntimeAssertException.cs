@@ -1,6 +1,6 @@
 using Elk.Std.DataTypes;
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 class RuntimeAssertException : RuntimeException
 {

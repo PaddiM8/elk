@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
@@ -46,4 +46,42 @@ class VirtualMachine
 
     public RuntimeObject Execute(Page page)
         => _executor.Execute(page);
+
+    public RuntimeObject ExecuteFunction(
+        string identifier,
+        ICollection<RuntimeObject> arguments,
+        bool isRoot)
+    {
+        var symbol = RootModule.FindFunction(identifier, lookInImports: true);
+        if (symbol == null)
+            throw new RuntimeNotFoundException(identifier);
+
+        var page = _functions.Get(symbol);
+        var function = new RuntimeUserFunction(
+            symbol,
+            page,
+            null,
+            Plurality.Singular,
+            _ => (_, _) => RuntimeNil.Value
+        )
+        {
+            ParameterCount = (byte)symbol.Expr.Parameters.Count,
+            DefaultParameters = null,
+            VariadicStart = null,
+        };
+
+        try
+        {
+            return _executor.ExecuteFunction(function, arguments, isRoot);
+        }
+        catch (RuntimeException e)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.Write($"Error evaluating {identifier}: ");
+            Console.ResetColor();
+            Console.WriteLine(e);
+
+            return RuntimeNil.Value;
+        }
+    }
 }

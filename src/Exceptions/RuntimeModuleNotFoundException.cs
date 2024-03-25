@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elk.Lexing;
 
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 class RuntimeModuleNotFoundException : RuntimeException
 {

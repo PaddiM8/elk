@@ -1,4 +1,4 @@
-namespace Elk.Interpreting.Exceptions;
+namespace Elk.Exceptions;
 
 class RuntimeUnableToHashException<T> : RuntimeException
 {

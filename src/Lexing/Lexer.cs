@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 
 #endregion
 
