@@ -173,8 +173,8 @@ public class ShellSession(VirtualMachineOptions vmOptions)
 
         void CallOnExit()
         {
-            //if (interpreter.CurrentModule.FunctionExists("__onExit"))
-            //    CallFunction(interpreter, "__onExit", useVm);
+            if (_virtualMachine.RootModule.FunctionExists("__onExit"))
+                _virtualMachine.ExecuteFunction("__onExit", [], isRoot: true);
         }
 
         Console.CancelKeyPress += (_, _) => CallOnExit();
