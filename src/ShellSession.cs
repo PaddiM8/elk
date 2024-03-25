@@ -180,7 +180,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         Console.CancelKeyPress += (_, _) => CallOnExit();
         var evaluationResult = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
-            new RootModuleScope(filePath, null),
+            _virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
             _virtualMachine
         );
