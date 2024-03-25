@@ -5,6 +5,8 @@ enum InstructionKind : byte
     Nop,
     Load,
     Store,
+    LoadEnvironmentVariable,
+    StoreEnvironmentVariable,
     LoadUpper,
     StoreUpper,
     Pop,

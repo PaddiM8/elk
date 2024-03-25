@@ -186,6 +186,17 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
         Next(expr.Value);
 
+        if (expr.IdentifierList.SingleOrDefault()?.Value.StartsWith('$') is true)
+        {
+            EmitBig(
+                InstructionKind.StoreEnvironmentVariable,
+                expr.IdentifierList.First().Value[1..]
+            );
+            Emit(InstructionKind.Pop);
+
+            return;
+        }
+
         var symbols = expr.Symbols.ToList();
         if (!symbols.Any(x => x.IsCaptured))
         {
@@ -509,6 +520,8 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
     private void Visit(BinaryExpr expr)
     {
+        Debug.Assert(expr.Operator is not (OperationKind.Pipe or OperationKind.PipeErr or OperationKind.PipeAll));
+
         if (expr.Operator == OperationKind.Equals)
         {
             NextEquals(expr.Left, expr.Right);
@@ -534,6 +547,25 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             Emit(InstructionKind.Pop);
             Next(expr.Right);
             PatchJump(jump);
+
+            return;
+        }
+
+        if (expr.Operator == OperationKind.NonRedirectingAnd)
+        {
+            Next(expr.Left);
+            Next(expr.Right);
+
+            return;
+        }
+
+        if (expr.Operator == OperationKind.NonRedirectingOr)
+        {
+            // TODO: Try running expr.Left. If it fails, run expr.Right.
+            // This needs to be done at runtime of course, when exception
+            // handling has been implemented.
+            Next(expr.Left);
+            Next(expr.Right);
 
             return;
         }
@@ -665,7 +697,11 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     private void Visit(VariableExpr expr)
     {
         var symbol = expr.Scope.FindVariable(expr.Identifier.Value);
-        if (symbol?.IsCaptured is true)
+        if (expr.Identifier.Value.StartsWith('$'))
+        {
+            EmitBig(InstructionKind.LoadEnvironmentVariable, expr.Identifier.Value[1..]);
+        }
+        else if (symbol?.IsCaptured is true)
         {
             EmitBig(InstructionKind.LoadUpper, expr.Scope.FindVariable(expr.Identifier.Value)!);
         }

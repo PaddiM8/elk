@@ -183,6 +183,12 @@ class InstructionExecutor
             case InstructionKind.Store:
                 Store(GetConstant<int>());
                 break;
+            case InstructionKind.LoadEnvironmentVariable:
+                LoadEnvironmentVariable(GetConstant<string>());
+                break;
+            case InstructionKind.StoreEnvironmentVariable:
+                StoreEnvironmentVariable(GetConstant<string>());
+                break;
             case InstructionKind.LoadUpper:
                 LoadUpper(GetConstant<VariableSymbol>());
                 break;
@@ -378,6 +384,19 @@ class InstructionExecutor
     {
         var pointer = index + _callStack.Peek().BasePointer;
         _stack[pointer] = _stack.Peek();
+    }
+
+    private void LoadEnvironmentVariable(string name)
+    {
+        _stack.Push(new RuntimeString(Environment.GetEnvironmentVariable(name) ?? ""));
+    }
+
+    private void StoreEnvironmentVariable(string name)
+    {
+        Environment.SetEnvironmentVariable(
+            name,
+            _stack.Peek().As<RuntimeString>().Value
+        );
     }
 
     private void LoadUpper(VariableSymbol symbol)

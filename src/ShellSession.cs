@@ -50,7 +50,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
 
         if (File.Exists(CommonPaths.InitFile))
         {
-            RunFile(CommonPaths.InitFile, null);
+            //RunFile(CommonPaths.InitFile, null);
 
             return;
         }

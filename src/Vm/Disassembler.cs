@@ -94,13 +94,15 @@ class Disassembler
             case InstructionKind.Store:
                 GetConstant<int>();
                 break;
-            case InstructionKind.StoreUpper:
-                GetConstant<VariableSymbol>();
-                break;
             case InstructionKind.Load:
                 GetConstant<int>();
                 break;
+            case InstructionKind.LoadEnvironmentVariable:
+            case InstructionKind.StoreEnvironmentVariable:
+                GetConstant<string>();
+                break;
             case InstructionKind.LoadUpper:
+            case InstructionKind.StoreUpper:
                 GetConstant<VariableSymbol>();
                 break;
             case InstructionKind.Const:

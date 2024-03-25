@@ -329,6 +329,9 @@ class Analyser(RootModuleScope rootModule)
 
     private LetExpr Visit(LetExpr expr)
     {
+        if (expr.IdentifierList.Count > 1 && expr.IdentifierList.Any(x => x.Value.StartsWith('$')))
+            throw new RuntimeException("Cannot destructure into an environment variable");
+
         return new LetExpr(
             expr.IdentifierList,
             Next(expr.Value),
