@@ -1299,14 +1299,11 @@ internal class Parser
             while (AdvanceIf(TokenKind.Comma));
 
             var endPos = EatExpected(TokenKind.ClosedParenthesis).EndPosition;
-            var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
-
             var call = new CallExpr(
-                modifiedIdentifier,
+                identifier,
                 modulePath,
                 arguments,
                 CallStyle.Parenthesized,
-                functionPlurality,
                 CallType.Unknown,
                 _scope,
                 endPos
@@ -1336,14 +1333,11 @@ internal class Parser
             textArguments.InsertRange(0, aliasResult.Arguments);
         }
 
-        var plurality = ParsePlurality(identifier, out var newIdentifier);
-
         var textCall = new CallExpr(
-            newIdentifier,
+            identifier,
             modulePath,
             textArguments,
             CallStyle.TextArguments,
-            plurality,
             CallType.Unknown,
             _scope,
             textArguments.LastOrDefault()?.EndPosition ?? identifier.EndPosition
@@ -1355,20 +1349,6 @@ internal class Parser
         return Match(TokenKind.EqualsGreater)
             ? ParseClosure(textCall)
             : textCall;
-    }
-
-    private Plurality ParsePlurality(Token identifier, out Token newToken)
-    {
-        if (identifier.Value.EndsWith('!'))
-        {
-            newToken = identifier with { Value = identifier.Value[..^1] };
-
-            return Plurality.Plural;
-        }
-
-        newToken = identifier;
-
-        return Plurality.Singular;
     }
 
     private List<Expr> ParseTextArguments()

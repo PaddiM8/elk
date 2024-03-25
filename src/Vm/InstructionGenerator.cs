@@ -874,10 +874,8 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         var variadicStart = expr.FunctionSymbol.Expr.Parameters
             .FindIndex(x => x.IsVariadic);
         var runtimeFunction = new RuntimeUserFunction(
-            null!,
             functionTable.Get(expr.FunctionSymbol),
             null,
-            expr.Plurality,
             invoker
         )
         {
@@ -942,7 +940,6 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         var functionReference = new RuntimeStdFunction(
             expr.StdFunction,
             null,
-            expr.Plurality,
             invoker
         )
         {
@@ -1156,7 +1153,6 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         var runtimeFunction = new RuntimeProgramFunction(
             expr.Identifier.Value,
             null,
-            expr.Plurality,
             invoker
         )
         {
@@ -1282,7 +1278,6 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         if (expr.Parameters.Count > byte.MaxValue)
             throw new RuntimeException("Too many parameters. A function can have at most 255 parameters");
 
-        // TODO: Remove unused parts of RuntimeFunction after removing the interpreter
         Func<RuntimeFunction, Invoker> invoker = function =>
         {
             return (arguments, isRoot) => executor.ExecuteFunction(
@@ -1293,10 +1288,8 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         };
 
         var runtimeFunction = new RuntimeUserFunction(
-            null!,
             page,
             null,
-            Plurality.Singular,
             invoker
         )
         {

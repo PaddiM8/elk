@@ -2,6 +2,6 @@ scriptPath() + "/input.txt"
     | read
     | split "\n\n"
     | str::lines!
-    | math::sum!
+    | map => &math::sum
     | iter::max
     | assertEqual(63071)

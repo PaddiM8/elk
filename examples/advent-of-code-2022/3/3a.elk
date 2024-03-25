@@ -16,6 +16,6 @@ fn getMisplacedPriority(rucksack) {
 }
 
 cat(scriptPath() + "/input.txt")
-    | getMisplacedPriority!
+    | map => &getMisplacedPriority
     | math::sum
     | assertEqual(856)

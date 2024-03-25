@@ -57,7 +57,6 @@ static class AstBuilder
             Array.Empty<Token>(),
             arguments,
             CallStyle.Parenthesized,
-            Plurality.Singular,
             CallType.Unknown,
             _scope,
             TextPos.Default

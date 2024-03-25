@@ -1,7 +1,7 @@
 scriptPath() + "/input.txt"
     | read
     | split "\n\n"
-    | str::lines!
+    | map => &str::lines
     | math::sum!
     | sort::desc
     | iter::take 3

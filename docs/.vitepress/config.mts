@@ -59,7 +59,6 @@ export default defineConfig({
             { text: "Data Types", link: "/basics/data-types" },
             { text: "Imports", link: "/basics/imports" },
             { text: "Error Handling", link: "/basics/error-handling" },
-            { text: "Plurality", link: "/basics/plurality" },
             { text: "Function References", link: "/basics/function-references" },
             { text: "Closures", link: "/basics/closures" },
           ]

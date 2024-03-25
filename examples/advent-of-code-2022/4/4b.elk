@@ -3,8 +3,11 @@ fn overlap(a, b) {
 }
 
 cat(scriptPath() + "/input.txt")
-    | map => x: (x | split "," | split! "-")
-    | map! => range: (range[0]..=range[1])
-    | iter::collect!
+    | map => x: (x | split "," | map => &split "-")
+    | map => x {
+        x
+            | map => range: (range[0]..=range[1])
+            | iter::collect
+    }
     | iter::count => pair: overlap(pair[0], pair[1])
     | assertEqual(45)

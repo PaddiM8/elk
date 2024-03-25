@@ -3,8 +3,6 @@
 using System;
 using System.Collections.Generic;
 using Elk.Exceptions;
-using Elk.Parsing;
-using Elk.Scoping;
 using Elk.Std.Attributes;
 using Elk.Std.Bindings;
 using Elk.Vm;
@@ -28,17 +26,13 @@ public abstract class RuntimeFunction : RuntimeObject
 
     public required List<RuntimeObject>? DefaultParameters { get; init; }
 
-    public Plurality Plurality { get; }
-
     public Invoker Invoker { get; }
 
     internal RuntimeFunction(
         IList<object>? arguments,
-        Plurality plurality,
         Func<RuntimeFunction, Invoker> createInvoker)
     {
         Arguments = arguments ?? Array.Empty<object>();
-        Plurality = plurality;
         Invoker = createInvoker(this);
     }
 
@@ -56,19 +50,13 @@ public abstract class RuntimeFunction : RuntimeObject
         };
 }
 
-internal class RuntimeStdFunction : RuntimeFunction
+internal class RuntimeStdFunction(
+    StdFunction stdFunction,
+    IList<object>? arguments,
+    Func<RuntimeFunction, Invoker> createInvoker)
+    : RuntimeFunction(arguments, createInvoker)
 {
-    public StdFunction StdFunction { get; }
-
-    public RuntimeStdFunction(
-        StdFunction stdFunction,
-        IList<object>? arguments,
-        Plurality plurality,
-        Func<RuntimeFunction, Invoker> createInvoker)
-        : base(arguments, plurality, createInvoker)
-    {
-        StdFunction = stdFunction;
-    }
+    public StdFunction StdFunction { get; } = stdFunction;
 
     public override int GetHashCode()
         => StdFunction.GetHashCode();
@@ -77,71 +65,32 @@ internal class RuntimeStdFunction : RuntimeFunction
         => StdFunction.Name;
 }
 
-internal class RuntimeUserFunction : RuntimeFunction
+internal class RuntimeUserFunction(
+    Page page,
+    IList<object>? arguments,
+    Func<RuntimeFunction, Invoker> createInvoker)
+    : RuntimeFunction(arguments, createInvoker)
 {
-    public FunctionSymbol FunctionSymbol { get; }
-
-    internal Page Page { get; }
-
-    internal RuntimeUserFunction(
-        FunctionSymbol functionSymbol,
-        Page page,
-        IList<object>? arguments,
-        Plurality plurality,
-        Func<RuntimeFunction, Invoker> createInvoker)
-        : base(arguments, plurality, createInvoker)
-    {
-        FunctionSymbol = functionSymbol;
-        Page = page;
-    }
+    internal Page Page { get; } = page;
 
     public override int GetHashCode()
-        => FunctionSymbol?.GetHashCode() ?? Page.GetHashCode();
+        => Page.GetHashCode();
 
     public override string ToString()
-        => FunctionSymbol?.Expr.Identifier.Value ?? "<function>";
+        => "<function>";
 }
 
-internal class RuntimeProgramFunction : RuntimeFunction
+internal class RuntimeProgramFunction(
+    string programName,
+    IList<object>? arguments,
+    Func<RuntimeFunction, Invoker> createInvoker)
+    : RuntimeFunction(arguments, createInvoker)
 {
-    public string ProgramName { get; }
-
-    public RuntimeProgramFunction(
-        string programName,
-        IList<object>? arguments,
-        Plurality plurality,
-        Func<RuntimeFunction, Invoker> createInvoker)
-        : base(arguments, plurality, createInvoker)
-    {
-        ProgramName = programName;
-    }
+    public string ProgramName { get; } = programName;
 
     public override int GetHashCode()
         => ProgramName.GetHashCode();
 
     public override string ToString()
         => ProgramName;
-}
-
-internal class RuntimeClosureFunction : RuntimeFunction
-{
-    public ClosureExpr Expr { get; }
-
-    public LocalScope Environment { get; }
-
-    public RuntimeClosureFunction(
-        ClosureExpr expr,
-        LocalScope environment,
-        Func<RuntimeFunction, Invoker> createInvoker)
-        : base(null, Plurality.Singular, createInvoker)
-    {
-        Expr = expr;
-        Environment = environment;
-    }
-
-    public override int GetHashCode()
-        => Expr.GetHashCode();
-
-    public override string ToString()
-        => "<closure>";
 }

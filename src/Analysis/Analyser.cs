@@ -817,7 +817,6 @@ class Analyser(RootModuleScope rootModule)
             expr.ModulePath,
             evaluatedArguments,
             expr.CallStyle,
-            expr.Plurality,
             callType,
             _scope,
             expr.EndPosition

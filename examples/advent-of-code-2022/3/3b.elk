@@ -7,7 +7,7 @@ fn getItemPriority(letter) {
 }
 
 fn getBadgePriority(group) {
-    let rucksacks = group | into::set!
+    let rucksacks = group | map => &into::set
     rucksacks[0]
         | iter::intersect(rucksacks[1])
         | iter::intersect(rucksacks[2])
@@ -17,6 +17,6 @@ fn getBadgePriority(group) {
 
 cat(scriptPath() + "/input.txt")
     | iter::chunks 3
-    | getBadgePriority!
+    | map => &getBadgePriority
     | math::sum
     | assertEqual(232)

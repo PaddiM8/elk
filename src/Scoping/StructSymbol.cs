@@ -10,7 +10,7 @@ public class StructSymbol : ISymbol
 
     public StructExpr? Expr { get; set; }
 
-    public StdStruct? StdStruct { get; set; }
+    public StdStruct? StdStruct { get; }
 
     public StructSymbol(StructExpr expr)
     {

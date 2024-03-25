@@ -58,10 +58,8 @@ class VirtualMachine
 
         var page = _functions.Get(symbol);
         var function = new RuntimeUserFunction(
-            symbol,
             page,
             null,
-            Plurality.Singular,
             _ => (_, _) => RuntimeNil.Value
         )
         {

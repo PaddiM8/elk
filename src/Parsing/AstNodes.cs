@@ -426,12 +426,6 @@ public enum CallStyle
     TextArguments,
 }
 
-public enum Plurality
-{
-    Singular,
-    Plural,
-}
-
 public enum CallType
 {
     Unknown,
@@ -456,7 +450,6 @@ public class CallExpr(
     IList<Token> modulePath,
     IList<Expr> arguments,
     CallStyle callStyle,
-    Plurality plurality,
     CallType callType,
     Scope scope,
     TextPos endPos)
@@ -473,8 +466,6 @@ public class CallExpr(
     public IList<Expr> Arguments { get; set; } = arguments;
 
     public CallStyle CallStyle { get; } = callStyle;
-
-    public Plurality Plurality { get; } = plurality;
 
     public CallType CallType { get; } = callType;
 

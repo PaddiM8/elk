@@ -1,12 +1,12 @@
 fn rangeInRange(a, b) {
-    a = a | into::int!
-    b = b | into::int!
+    a = a | map => &into::int
+    b = b | map => &into::int
     
     a[0] >= b[0] and a[1] <= b[1] or
     b[0] >= a[0] and b[1] <= a[1]
 }
 
 cat(scriptPath() + "/input.txt")
-    | map => x: (x | split "," | split! "-")
+    | map => x: (x | split "," | map => &split "-")
     | iter::count => x: rangeInRange(x[0], x[1])
     | assertEqual(17)

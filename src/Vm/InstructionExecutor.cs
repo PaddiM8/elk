@@ -952,7 +952,6 @@ class InstructionExecutor
         var function = new RuntimeProgramFunction(
             _stack.Pop().As<RuntimeString>().Value,
             null,
-            Plurality.Singular,
             invoker
         )
         {

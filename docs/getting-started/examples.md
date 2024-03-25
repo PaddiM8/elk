@@ -70,13 +70,8 @@ VAR1=value1, VAR2="another value": ./some-script.sh
 
 ## Misc
 
-::: info
-Putting a `!` after a function call makes it run for every item of
-the Iterable that was given as an argument. This is called [Plurality](/basics/plurality).
-:::
-
 ```elk
-let sizes = du | str::column 0 | int!
+let sizes = du | str::column 0 | map => &into::int
 println Sizes:
 sizes | map => x: x / 1000 | join ", " | println
 ```
