@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.Analysis;
-using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Interpreting.Scope;
 using Elk.Lexing;
@@ -33,7 +32,6 @@ public static class ElkProgram
             input,
             scope,
             AnalysisScope.OverwriteExistingModule,
-            null,
             null
         );
     }
@@ -42,8 +40,7 @@ public static class ElkProgram
         string input,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter,
-        VirtualMachineOptions? vmOptions)
+        VirtualMachine? virtualMachine)
     {
         Ast ast;
         try
@@ -91,8 +88,7 @@ public static class ElkProgram
                 ast,
                 scope,
                 analysisScope,
-                interpreter,
-                vmOptions != null ? new VirtualMachine(vmOptions) : null
+                virtualMachine
             );
             result.SemanticTokens = semanticTokens;
 
@@ -120,10 +116,11 @@ public static class ElkProgram
         }
         catch (Exception e)
         {
+            // TODO: Is this even needed anymore
             var message = new DiagnosticMessage(
                 e.Message,
-                interpreter?.Position ?? TextPos.Default,
-                interpreter?.Position ?? TextPos.Default
+                TextPos.Default,
+                TextPos.Default
             );
 
             return new EvaluationResult
@@ -138,7 +135,6 @@ public static class ElkProgram
         Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter,
         VirtualMachine? virtualMachine)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
@@ -150,12 +146,11 @@ public static class ElkProgram
                     x.AnalysisStatus != AnalysisStatus.Failed &&
                         x.AnalysisStatus != AnalysisStatus.Evaluated
                 ),
-            interpreter,
             virtualMachine
         );
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        RuntimeObject? result;
+        RuntimeObject? result = null;
         if (virtualMachine != null)
         {
             var page = virtualMachine.Generate(analysedAst);
@@ -164,13 +159,8 @@ public static class ElkProgram
             // the instructions for others. Might work, might not? Maybe it needs to
             // first traverse the modules and generate instructions, and then traverse
             // and execute them? Maybe even do it lazily somehow?
-            EvaluateModules(scope.ModuleScope.Modules, interpreter, virtualMachine);
+            EvaluateModules(scope.ModuleScope.Modules, virtualMachine);
             result = virtualMachine.Execute(page);
-        }
-        else
-        {
-            EvaluateModules(scope.ModuleScope.Modules, interpreter, virtualMachine);
-            result = interpreter?.Interpret(analysedAst.Expressions, scope);
         }
 
         return new EvaluationResult
@@ -180,10 +170,7 @@ public static class ElkProgram
         };
     }
 
-    private static void EvaluateModules(
-        IEnumerable<ModuleScope> modules,
-        Interpreter? interpreter,
-        VirtualMachine? virtualMachine)
+    private static void EvaluateModules(IEnumerable<ModuleScope> modules, VirtualMachine? virtualMachine)
     {
         foreach (var module in modules)
         {
@@ -191,7 +178,7 @@ public static class ElkProgram
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter, virtualMachine);
+            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, virtualMachine);
         }
     }
 }

@@ -20,8 +20,8 @@ namespace Elk;
 
 public class ShellSession(VirtualMachineOptions vmOptions)
 {
-    public ModuleScope CurrentModule
-        => _interpreter.CurrentModule;
+    public RootModuleScope RootModule
+        => _virtualMachine.RootModule;
 
     public string WorkingDirectory
         => ShellEnvironment.WorkingDirectory;
@@ -38,7 +38,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         }
     }
 
-    private readonly Interpreter _interpreter = new(null);
+    private readonly VirtualMachine _virtualMachine = new(vmOptions);
 
     public void InitInteractive()
     {
@@ -80,17 +80,17 @@ public class ShellSession(VirtualMachineOptions vmOptions)
     public bool ProgramExists(string name)
         => FileUtils.ExecutableExists(name, WorkingDirectory);
 
-    public string GetPrompt(bool useVm = false)
+    public string GetPrompt()
     {
         var previousExitCode = Environment.GetEnvironmentVariable("?");
 
         // The 'elkPrompt' function should have been created
         // automatically. This is simply a fallback in case
         // something goes wrong.
-        if (!_interpreter.CurrentModule.FunctionExists("elkPrompt"))
+        if (!_virtualMachine.RootModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
+        var prompt = CallFunction(_virtualMachine, "elkPrompt")?.ToString() ?? " >> ";
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
         return prompt;
@@ -107,11 +107,10 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         var evaluationResult = ElkProgram.Evaluate(
             command,
             ownScope
-                ? new LocalScope(_interpreter.CurrentModule)
-                : _interpreter.CurrentModule,
+                ? new LocalScope(_virtualMachine.RootModule)
+                : _virtualMachine.RootModule,
             AnalysisScope.AppendToModule,
-            _interpreter,
-            vmOptions
+            _virtualMachine
         );
 
         if (evaluationResult.Diagnostics.Any())
@@ -155,9 +154,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         Console.ResetColor();
     }
 
-    public void RunFile(
-        string filePath,
-        IEnumerable<string>? arguments)
+    public void RunFile(string filePath, IEnumerable<string>? arguments)
     {
         arguments ??= new List<string>();
 
@@ -189,8 +186,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
             File.ReadAllText(filePath),
             new RootModuleScope(filePath, null),
             AnalysisScope.OncePerModule,
-            null,
-            vmOptions
+            _virtualMachine
         );
 
         CallOnExit();
@@ -204,7 +200,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         }
     }
 
-    private RuntimeObject? CallFunction(Interpreter interpreter, string identifier)
+    private RuntimeObject? CallFunction(VirtualMachine virtualMachine, string identifier)
     {
         var call = new CallExpr(
             new Token(TokenKind.Identifier, identifier, TextPos.Default),
@@ -213,7 +209,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
             CallStyle.Parenthesized,
             Plurality.Singular,
             CallType.Function,
-            interpreter.CurrentModule,
+            _virtualMachine.RootModule,
             TextPos.Default
         )
         {
@@ -224,10 +220,9 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         {
             return ElkProgram.Evaluate(
                 new Ast(new List<Expr> { call }),
-                interpreter.CurrentModule,
+                _virtualMachine.RootModule,
                 AnalysisScope.AppendToModule,
-                interpreter,
-                new VirtualMachine(vmOptions)
+                virtualMachine
             ).Value;
         }
         catch (RuntimeException e)

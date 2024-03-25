@@ -8,6 +8,7 @@ using System.Linq;
 using Elk.Analysis;
 using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
+using Elk.Interpreting.Scope;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Vm;
@@ -51,24 +52,12 @@ static class Environment
     [ElkFunction("eval", Reachability.Everywhere)]
     public static RuntimeObject Eval(RuntimeString input, RuntimeDictionary? env = null)
     {
-        var interpreter = new Interpreter(null);
-        if (env != null)
-        {
-            foreach (var (key, value) in env.Entries.Select(x => x.Value))
-            {
-                interpreter.CurrentModule.AddVariable(
-                    key.As<RuntimeString>().Value,
-                    value
-                );
-            }
-        }
-
+        // TODO: Add the variables from the environment
         var result = ElkProgram.Evaluate(
             input.Value,
-            interpreter.CurrentModule,
+            new RootModuleScope(null, null),
             AnalysisScope.OncePerModule,
-            interpreter,
-            new VirtualMachineOptions()
+            new VirtualMachine(new VirtualMachineOptions())
         );
         if (result.Diagnostics.Any())
             throw new RuntimeException(result.Diagnostics.FirstOrDefault()?.Message ?? "Eval error.");

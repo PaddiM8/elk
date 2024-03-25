@@ -63,11 +63,6 @@ public abstract class Expr(TextPos startPos, TextPos endPos, Scope scope)
     public Scope Scope { get; } = scope;
 
     public abstract IEnumerable<Expr> ChildExpressions { get; }
-
-    internal RuntimeClosureFunction? EnclosingClosureValue
-        => EnclosingFunction is ClosureExpr closureExpr
-            ? closureExpr.RuntimeValue
-            : null;
 }
 
 public class EmptyExpr(Scope scope) : Expr(TextPos.Default, TextPos.Default, scope)
@@ -152,8 +147,6 @@ public class FunctionExpr(
 
     public override IEnumerable<Expr> ChildExpressions
         => [Block];
-
-    internal RuntimeClosureFunction? GivenClosure { get; set; }
 
     internal AnalysisStatus AnalysisStatus { get; set; }
 }
@@ -557,8 +550,6 @@ public class ClosureExpr(
 
     public override IEnumerable<Expr> ChildExpressions
         => [Function, Body];
-
-    internal RuntimeClosureFunction? RuntimeValue { get; set; }
 }
 
 public class TryExpr(

@@ -10,6 +10,8 @@ namespace Elk.Vm;
 
 class VirtualMachine
 {
+    public RootModuleScope RootModule { get; } = new(null, null);
+
     private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
     private readonly IndexableStack<RuntimeObject> _stack = new();
