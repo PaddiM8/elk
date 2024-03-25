@@ -33,6 +33,7 @@ public static class ElkProgram
             input,
             scope,
             AnalysisScope.OverwriteExistingModule,
+            null,
             null
         );
     }
@@ -42,7 +43,7 @@ public static class ElkProgram
         Scope scope,
         AnalysisScope analysisScope,
         Interpreter? interpreter,
-        bool useVm = false)
+        VirtualMachineOptions? vmOptions)
     {
         Ast ast;
         try
@@ -91,7 +92,7 @@ public static class ElkProgram
                 scope,
                 analysisScope,
                 interpreter,
-                useVm ? new VirtualMachine() : null
+                vmOptions != null ? new VirtualMachine(vmOptions) : null
             );
             result.SemanticTokens = semanticTokens;
 

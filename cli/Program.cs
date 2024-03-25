@@ -6,6 +6,7 @@ using Elk;
 using Elk.Cli;
 using Elk.LanguageServer;
 using Elk.Std.Serialization.CommandLine;
+using Elk.Vm;
 
 #endregion
 
@@ -46,15 +47,20 @@ var cliParser = new RuntimeCliParser("elk")
     })
     .AddFlag(new CliFlag
     {
-        Identifier = "vm",
-        LongName = "vm",
-        Description = "Run code with the experimental VM",
+        Identifier = "dump",
+        LongName = "dump",
+        Description = "Dump instructions",
     })
     .SetAction(result =>
     {
+        var vmOptions = new VirtualMachineOptions
+        {
+            DumpInstructions = result.Contains("dump"),
+        };
+
         if (result.Contains("command"))
         {
-            new ShellSession().RunCommand(result.GetRequiredString("command"));
+            new ShellSession(vmOptions).RunCommand(result.GetRequiredString("command"));
 
             return;
         }
@@ -69,7 +75,7 @@ var cliParser = new RuntimeCliParser("elk")
             }
 
             var content = File.ReadAllText(highlightFile);
-            var highlighted = new HighlightHandler(new ShellSession()).Highlight(content, 0);
+            var highlighted = new HighlightHandler(new ShellSession(vmOptions)).Highlight(content, 0);
             Console.WriteLine(highlighted);
 
             return;
@@ -89,7 +95,7 @@ var cliParser = new RuntimeCliParser("elk")
         {
             try
             {
-                Repl.Run(useVm: result.Contains("vm"));
+                Repl.Run(vmOptions);
             }
             catch (Exception ex)
             {
@@ -99,10 +105,10 @@ var cliParser = new RuntimeCliParser("elk")
             return;
         }
 
-        ShellSession.RunFile(
+        var session = new ShellSession(vmOptions);
+        session.RunFile(
             filePath,
-            result.GetList("arguments"),
-            useVm: result.Contains("vm")
+            result.GetList("arguments")
         );
     });
 

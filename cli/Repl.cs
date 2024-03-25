@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
+using Elk.Vm;
 
 #endregion
 
@@ -12,12 +13,14 @@ namespace Elk.Cli;
 
 static class Repl
 {
-    public static void Run(bool useVm = false)
+    public static void Run(VirtualMachineOptions vmOptions)
     {
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
-        var shell = new ShellSession();
+        var shell = new ShellSession(vmOptions);
+        shell.InitInteractive();
+
         const int maxEntries = 50000;
         var historyRepository = new HistoryRepository(maxEntries);
         var historyHandler = HistoryHandler.Init(maxEntries, historyRepository);
@@ -66,8 +69,7 @@ static class Repl
                 input,
                 ownScope: false,
                 printReturnedValue: true,
-                printErrorLineNumbers: false,
-                useVm
+                printErrorLineNumbers: false
             );
         }
     }

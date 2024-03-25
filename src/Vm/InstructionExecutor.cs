@@ -21,7 +21,7 @@ record struct Frame(
 
 class InstructionExecutor
 {
-    private const bool DUMP_PAGES = true;
+    private readonly VirtualMachineOptions _vmOptions;
     private readonly IndexableStack<RuntimeObject> _stack;
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
@@ -30,9 +30,11 @@ class InstructionExecutor
     private RuntimeObject? _returnedValue;
 
     internal InstructionExecutor(
+        VirtualMachineOptions vmOptions,
         IndexableStack<RuntimeObject> stack,
         Dictionary<VariableSymbol, WeakReference<RuntimeObject>> variables)
     {
+        _vmOptions = vmOptions;
         _stack = stack;
         _variables = variables;
     }
@@ -41,7 +43,7 @@ class InstructionExecutor
     {
         PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
 
-        if (DUMP_PAGES)
+        if (_vmOptions.DumpInstructions)
         {
             Console.Write($"Page {_currentPage.GetHashCode()}:");
             page.Dump();
@@ -60,6 +62,13 @@ class InstructionExecutor
         }
         catch (Exception ex)
         {
+            if (!_vmOptions.DumpInstructions)
+            {
+                Console.WriteLine(ex);
+
+                return RuntimeNil.Value;
+            }
+
             // If it's an anonymous function, it won't have been dumped
             // before, so dump it now instead
             if (_currentPage.Name == null)
@@ -85,7 +94,6 @@ class InstructionExecutor
             Console.WriteLine(ex);
         }
 
-        Console.WriteLine(string.Join(", ", _stack));
         Debug.Assert(!_stack.Any());
 
         return RuntimeNil.Value;

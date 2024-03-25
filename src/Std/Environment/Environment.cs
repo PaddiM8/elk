@@ -10,6 +10,7 @@ using Elk.Interpreting;
 using Elk.Interpreting.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
@@ -66,7 +67,8 @@ static class Environment
             input.Value,
             interpreter.CurrentModule,
             AnalysisScope.OncePerModule,
-            interpreter
+            interpreter,
+            new VirtualMachineOptions()
         );
         if (result.Diagnostics.Any())
             throw new RuntimeException(result.Diagnostics.FirstOrDefault()?.Message ?? "Eval error.");

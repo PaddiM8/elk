@@ -18,7 +18,7 @@ using Elk.Vm;
 
 namespace Elk;
 
-public class ShellSession
+public class ShellSession(VirtualMachineOptions vmOptions)
 {
     public ModuleScope CurrentModule
         => _interpreter.CurrentModule;
@@ -40,12 +40,7 @@ public class ShellSession
 
     private readonly Interpreter _interpreter = new(null);
 
-    public ShellSession()
-    {
-        Init();
-    }
-
-    private void Init()
+    public void InitInteractive()
     {
         LoadPaths();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
@@ -55,7 +50,7 @@ public class ShellSession
 
         if (File.Exists(CommonPaths.InitFile))
         {
-            RunFile(_interpreter, CommonPaths.InitFile);
+            RunFile(CommonPaths.InitFile, null);
 
             return;
         }
@@ -95,7 +90,7 @@ public class ShellSession
         if (!_interpreter.CurrentModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var prompt = CallFunction(_interpreter, "elkPrompt", useVm)?.ToString() ?? " >> ";
+        var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
         return prompt;
@@ -105,8 +100,7 @@ public class ShellSession
         string command,
         bool ownScope = false,
         bool printReturnedValue = true,
-        bool printErrorLineNumbers = true,
-        bool useVm = false)
+        bool printErrorLineNumbers = true)
     {
         var textWriter = Console.Out;
         var resultBuilder = new StringBuilder();
@@ -117,7 +111,7 @@ public class ShellSession
                 : _interpreter.CurrentModule,
             AnalysisScope.AppendToModule,
             _interpreter,
-            useVm
+            vmOptions
         );
 
         if (evaluationResult.Diagnostics.Any())
@@ -161,23 +155,16 @@ public class ShellSession
         Console.ResetColor();
     }
 
-    public static void RunFile(string filePath, IEnumerable<string>? arguments, bool useVm = false)
-    {
-        RunFile(new Interpreter(filePath), filePath, arguments, useVm);
-    }
-
-    private static void RunFile(
-        Interpreter interpreter,
+    public void RunFile(
         string filePath,
-        IEnumerable<string>? arguments = null,
-        bool useVm = false)
+        IEnumerable<string>? arguments)
     {
         arguments ??= new List<string>();
 
         var argumentValues = arguments.Prepend(filePath)
             .Select<string, RuntimeObject>(literal => new RuntimeString(literal));
         var argv = new RuntimeList(argumentValues.ToList());
-        interpreter.ShellEnvironment.Argv = argv;
+        //interpreter.ShellEnvironment.Argv = argv;
 
         if (!File.Exists(filePath))
         {
@@ -193,8 +180,8 @@ public class ShellSession
 
         void CallOnExit()
         {
-            if (interpreter.CurrentModule.FunctionExists("__onExit"))
-                CallFunction(interpreter, "__onExit", useVm);
+            //if (interpreter.CurrentModule.FunctionExists("__onExit"))
+            //    CallFunction(interpreter, "__onExit", useVm);
         }
 
         Console.CancelKeyPress += (_, _) => CallOnExit();
@@ -202,8 +189,8 @@ public class ShellSession
             File.ReadAllText(filePath),
             new RootModuleScope(filePath, null),
             AnalysisScope.OncePerModule,
-            interpreter,
-            useVm
+            null,
+            vmOptions
         );
 
         CallOnExit();
@@ -217,7 +204,7 @@ public class ShellSession
         }
     }
 
-    private static RuntimeObject? CallFunction(Interpreter interpreter, string identifier, bool useVm = false)
+    private RuntimeObject? CallFunction(Interpreter interpreter, string identifier)
     {
         var call = new CallExpr(
             new Token(TokenKind.Identifier, identifier, TextPos.Default),
@@ -240,7 +227,7 @@ public class ShellSession
                 interpreter.CurrentModule,
                 AnalysisScope.AppendToModule,
                 interpreter,
-                useVm ? new VirtualMachine() : null
+                new VirtualMachine(vmOptions)
             ).Value;
         }
         catch (RuntimeException e)
