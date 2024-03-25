@@ -37,6 +37,7 @@ enum InstructionKind : byte
     BuildDict,
     BuildRange,
     BuildString,
+    BuildProgramCallReference,
     Const,
     StructConst,
     Glob,

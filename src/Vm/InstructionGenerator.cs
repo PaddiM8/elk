@@ -710,6 +710,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             case CallType.BuiltInClosure:
                 EmitBuiltInClosure(expr, isMaybeRoot);
                 break;
+            case CallType.BuiltInExec:
+                EmitBuiltInExec(expr, isMaybeRoot);
+                break;
             default:
                 EmitProgramCall(expr, isMaybeRoot);
                 break;
@@ -1040,6 +1043,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
     private void EmitBuiltInClosure(CallExpr expr, bool isMaybeRoot = false)
     {
+        if (expr.IsReference)
+            throw new RuntimeException("Can't get the reference of 'closure' (yet)");
+
         // The function reference
         if (expr.EnclosingClosureProvidingFunction?.ClosureSymbol?.IsCaptured is true)
         {
@@ -1066,6 +1072,34 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             _ => 0, // No
         };
         Emit(InstructionKind.DynamicCall, isRootModifier);
+    }
+
+    private void EmitBuiltInExec(CallExpr expr, bool isMaybeRoot = false)
+    {
+        if (expr.IsReference)
+            throw new RuntimeException("Can't get the reference of 'exec' (yet)");
+
+        if (expr.Arguments.Count == 0)
+            throw new RuntimeWrongNumberOfArgumentsException(1, 0, variadic: true);
+
+        // Arguments
+        EmitArguments(expr, skipFirst: true);
+
+        // Program reference
+        Next(expr.Arguments.First());
+        Emit(InstructionKind.BuildProgramCallReference);
+
+        // CallProgram [props] [environmentVariableCount]
+        var kind = (expr.IsRoot, isMaybeRoot) switch
+        {
+            (_, true) => InstructionKind.MaybeRootCallProgram,
+            (true, _) => InstructionKind.RootCallProgram,
+            _ => InstructionKind.CallProgram,
+        };
+
+        Emit(kind);
+        Emit((ushort)ProgramCallProps.None);
+        Emit((byte)0);
     }
 
     private void EmitProgramCall(CallExpr expr, bool isMaybeRoot = false)

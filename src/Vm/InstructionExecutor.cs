@@ -277,6 +277,9 @@ class InstructionExecutor
             case InstructionKind.BuildString:
                 BuildString(Eat().ToUshort(Eat()));
                 break;
+            case InstructionKind.BuildProgramCallReference:
+                BuildProgramCallReference();
+                break;
             case InstructionKind.Add:
                 Add();
                 break;
@@ -899,6 +902,32 @@ class InstructionExecutor
             parts[count - i - 1] = _stack.Pop().As<RuntimeString>().Value;
 
         _stack.Push(new RuntimeString(string.Concat(parts)));
+    }
+
+    private void BuildProgramCallReference()
+    {
+        Func<RuntimeFunction, Invoker> invoker = function =>
+        {
+            return (arguments, isRoot) => ExecuteFunction(
+                (RuntimeProgramFunction)function,
+                arguments,
+                isRoot
+            );
+        };
+
+        var function = new RuntimeProgramFunction(
+            _stack.Pop().As<RuntimeString>().Value,
+            null,
+            Plurality.Singular,
+            invoker
+        )
+        {
+            ParameterCount = 1,
+            DefaultParameters = [],
+            VariadicStart = 0,
+        };
+
+        _stack.Push(function);
     }
 
     private void Add()
