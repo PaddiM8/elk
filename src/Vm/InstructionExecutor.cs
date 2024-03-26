@@ -93,9 +93,12 @@ class InstructionExecutor
             Console.WriteLine(ex);
         }
 
-        Debug.Assert(!_stack.Any());
+        var returnValue = _stack.Any()
+            ? _stack.Pop()
+            : RuntimeNil.Value;
+        Debug.Assert(page.Name == "<root>" || !_stack.Any());
 
-        return RuntimeNil.Value;
+        return returnValue;
     }
 
     public RuntimeObject ExecuteFunction(

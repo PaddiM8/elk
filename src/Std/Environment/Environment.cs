@@ -51,12 +51,23 @@ static class Environment
     [ElkFunction("eval", Reachability.Everywhere)]
     public static RuntimeObject Eval(RuntimeString input, RuntimeDictionary? env = null)
     {
-        // TODO: Add the variables from the environment
+        var virtualMachine = new VirtualMachine(new VirtualMachineOptions());
+        if (env != null)
+        {
+            foreach (var (_, (key, value)) in env.Entries)
+            {
+                virtualMachine.AddGlobalVariable(
+                    key.As<RuntimeString>().Value,
+                    value
+                );
+            }
+        }
+
         var result = ElkProgram.Evaluate(
             input.Value,
-            new RootModuleScope(null, null),
+            virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
-            new VirtualMachine(new VirtualMachineOptions())
+            virtualMachine
         );
         if (result.Diagnostics.Any())
             throw new RuntimeException(result.Diagnostics.FirstOrDefault()?.Message ?? "Eval error.");

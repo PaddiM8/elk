@@ -29,12 +29,17 @@ public abstract class Scope
         Parent = parent;
     }
 
-    public void AddVariable(string name, RuntimeObject value)
+    public VariableSymbol AddVariable(string name, RuntimeObject value)
     {
-        if (!_variables.TryAdd(name, new VariableSymbol(name, value)))
+        var symbol = new VariableSymbol(name, value);
+        if (!_variables.TryAdd(name, symbol))
         {
             UpdateVariable(name, value);
+
+            return _variables[name];
         }
+
+        return symbol;
     }
 
     public void ClearVariables()

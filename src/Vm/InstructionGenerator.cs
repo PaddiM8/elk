@@ -27,7 +27,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             ast.Expressions.FirstOrDefault()?.StartPosition.FilePath
         );
 
-        foreach (var expr in ast.Expressions)
+        // Deal with the last one outside of the loop, since it
+        // should never be popped
+        foreach (var expr in ast.Expressions.SkipLast(1))
         {
             Next(expr);
             var shouldPop = expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr) ||
@@ -36,8 +38,12 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                 Emit(InstructionKind.Pop);
         }
 
-        foreach (var _ in _locals)
-            Emit(InstructionKind.Pop);
+        if (ast.Expressions.Count > 0)
+            Next(ast.Expressions.Last());
+
+        // TODO: What if there are more than 255 locals
+        if (_locals.Any())
+            Emit(InstructionKind.ExitBlock, (byte)_locals.Count);
 
         return _currentPage;
     }

@@ -26,6 +26,12 @@ class VirtualMachine
         _generator = new InstructionGenerator(_functions, _executor);
     }
 
+    public void AddGlobalVariable(string name, RuntimeObject value)
+    {
+        var symbol = RootModule.AddVariable(name, value);
+        _variables.Add(symbol, new WeakReference<RuntimeObject>(value));
+    }
+
     public Page Generate(Ast ast)
     {
         var page = _generator.Generate(ast);
