@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Exceptions;
+using Elk.Lexing;
 using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Scoping;
@@ -61,13 +62,57 @@ class InstructionExecutor
         }
         catch (Exception ex)
         {
-            if (!_vmOptions.DumpInstructions)
+            if (_vmOptions.DumpInstructions && ex is not RuntimeException)
             {
+                DumpState();
+                Console.WriteLine();
                 Console.WriteLine(ex);
-
-                return RuntimeNil.Value;
             }
 
+            var lineNumber = FindCurrentLineNumber();
+            var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
+
+            throw new RuntimeException(ex.Message, textPos, textPos);
+        }
+
+        var returnValue = _stack.Any()
+            ? _stack.Pop()
+            : RuntimeNil.Value;
+        Debug.Assert(page.Name == "<root>" || !_stack.Any());
+
+        return returnValue;
+    }
+
+    private int FindCurrentLineNumber()
+    {
+        if (_currentPage.LineNumbers.Count == 0)
+            return 0;
+
+        var target = _ip;
+        var min = 0;
+        var max = _currentPage.LineNumbers.Count - 1;
+        while (max - min > 1)
+        {
+            var middle = (min + max) / 2;
+            if (target > _currentPage.LineNumbers[middle].instructionIndex)
+            {
+                min = middle;
+            }
+            else
+            {
+                max = middle;
+            }
+        }
+
+        var maxEntry = _currentPage.LineNumbers[max];
+
+        return maxEntry.instructionIndex <= _ip
+            ? maxEntry.lineNumber
+            : _currentPage.LineNumbers[min].lineNumber;
+    }
+
+    private void DumpState()
+    {
             // If it's an anonymous function, it won't have been dumped
             // before, so dump it now instead
             if (_currentPage.Name == null)
@@ -88,17 +133,6 @@ class InstructionExecutor
             Console.WriteLine("Stack:");
             foreach (var item in _stack)
                 Console.WriteLine(item);
-
-            Console.WriteLine();
-            Console.WriteLine(ex);
-        }
-
-        var returnValue = _stack.Any()
-            ? _stack.Pop()
-            : RuntimeNil.Value;
-        Debug.Assert(page.Name == "<root>" || !_stack.Any());
-
-        return returnValue;
     }
 
     public RuntimeObject ExecuteFunction(

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
+using Elk.Scoping;
 using Elk.Vm;
 
 #endregion
@@ -18,7 +19,10 @@ static class Repl
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
-        var shell = new ShellSession(vmOptions);
+        var shell = new ShellSession(
+            new RootModuleScope(null, null),
+            vmOptions
+        );
         shell.InitInteractive();
 
         const int maxEntries = 50000;

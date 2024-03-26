@@ -10,7 +10,7 @@ namespace Elk.Vm;
 
 class VirtualMachine
 {
-    public RootModuleScope RootModule { get; } = new(null, null);
+    public RootModuleScope RootModule { get; }
 
     private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
@@ -19,8 +19,9 @@ class VirtualMachine
     private readonly InstructionExecutor _executor;
     private readonly InstructionGenerator _generator;
 
-    public VirtualMachine(VirtualMachineOptions options)
+    public VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
     {
+        RootModule = rootModule;
         _options = options;
         _executor = new InstructionExecutor(options, _stack, _variables);
         _generator = new InstructionGenerator(_functions, _executor);

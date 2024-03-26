@@ -5,6 +5,7 @@ using System.IO;
 using Elk;
 using Elk.Cli;
 using Elk.LanguageServer;
+using Elk.Scoping;
 using Elk.Std.Serialization.CommandLine;
 using Elk.Vm;
 
@@ -60,7 +61,8 @@ var cliParser = new RuntimeCliParser("elk")
 
         if (result.Contains("command"))
         {
-            new ShellSession(vmOptions).RunCommand(result.GetRequiredString("command"));
+            var scope = new RootModuleScope(null, null);
+            new ShellSession(scope, vmOptions).RunCommand(result.GetRequiredString("command"));
 
             return;
         }
@@ -75,7 +77,9 @@ var cliParser = new RuntimeCliParser("elk")
             }
 
             var content = File.ReadAllText(highlightFile);
-            var highlighted = new HighlightHandler(new ShellSession(vmOptions)).Highlight(content, 0);
+            var scope = new RootModuleScope(null, null);
+            var shellSession = new ShellSession(scope, vmOptions);
+            var highlighted = new HighlightHandler(shellSession).Highlight(content, 0);
             Console.WriteLine(highlighted);
 
             return;
@@ -105,7 +109,10 @@ var cliParser = new RuntimeCliParser("elk")
             return;
         }
 
-        var session = new ShellSession(vmOptions);
+        var session = new ShellSession(
+            new RootModuleScope(filePath, null),
+            vmOptions
+        );
         session.RunFile(
             filePath,
             result.GetList("arguments")

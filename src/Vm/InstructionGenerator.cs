@@ -16,16 +16,17 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     private readonly Stack<Variable> _locals = new();
     private ShellEnvironment _shellEnvironment = null!;
     private readonly Token _emptyToken = new(TokenKind.Identifier, string.Empty, TextPos.Default);
-    private Page _currentPage = new("<root>");
+    private Page _currentPage = null!;
     private int _currentBasePointer;
     private int _scopeDepth;
+    private Expr? _lastExpr;
     private (int startPosition, List<int> breakPositions, int scopeDepth) _currentLoop = (0, [], 0);
 
     public Page Generate(Ast ast)
     {
-        _shellEnvironment = new ShellEnvironment(
-            ast.Expressions.FirstOrDefault()?.StartPosition.FilePath
-        );
+        var filePath = ast.Expressions.FirstOrDefault()?.StartPosition.FilePath;
+        _currentPage = new Page("<root>", filePath);
+        _shellEnvironment = new ShellEnvironment(filePath);
 
         // Deal with the last one outside of the loop, since it
         // should never be popped
@@ -50,6 +51,11 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
     private void Next(Expr expr)
     {
+        if (_lastExpr == null || expr.StartPosition.Line > _lastExpr.StartPosition.Line)
+            _currentPage.AddLine(expr.StartPosition.Line);
+
+        _lastExpr = expr;
+
         switch (expr)
         {
             case ModuleExpr:
@@ -1251,7 +1257,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     private void Visit(ClosureExpr expr, bool isMaybeRoot = false)
     {
         var previousPage = _currentPage;
-        var page = new Page(name: null);
+        var page = new Page(name: null, expr.StartPosition.FilePath);
         _currentPage = page;
 
         foreach (var (parameter, i) in expr.Parameters.WithIndex())

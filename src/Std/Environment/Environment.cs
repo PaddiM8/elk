@@ -51,7 +51,10 @@ static class Environment
     [ElkFunction("eval", Reachability.Everywhere)]
     public static RuntimeObject Eval(RuntimeString input, RuntimeDictionary? env = null)
     {
-        var virtualMachine = new VirtualMachine(new VirtualMachineOptions());
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(null, null),
+            new VirtualMachineOptions()
+        );
         if (env != null)
         {
             foreach (var (_, (key, value)) in env.Entries)

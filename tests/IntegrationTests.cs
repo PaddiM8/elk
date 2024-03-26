@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Analysis;
+using Elk.Scoping;
 using Elk.Vm;
 using NUnit.Framework;
 using Path = System.IO.Path;
@@ -17,7 +18,10 @@ public class IntegrationTests
     [TestCaseSource(nameof(ElkFiles))]
     public void RunIntegrationTests(string filePath)
     {
-        var virtualMachine = new VirtualMachine(new VirtualMachineOptions());
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(filePath, null),
+            new VirtualMachineOptions()
+        );
         var result = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
             virtualMachine.RootModule,

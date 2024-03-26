@@ -114,21 +114,6 @@ public static class ElkProgram
                 Diagnostics = diagnostics,
             };
         }
-        catch (Exception e)
-        {
-            // TODO: Is this even needed anymore
-            var message = new DiagnosticMessage(
-                e.Message,
-                TextPos.Default,
-                TextPos.Default
-            );
-
-            return new EvaluationResult
-            {
-                SemanticTokens = semanticTokens,
-                Diagnostics = [message],
-            };
-        }
     }
 
     internal static EvaluationResult Evaluate(

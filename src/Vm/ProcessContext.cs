@@ -221,10 +221,10 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
                 ? new RuntimeString("Program returned a non-zero exit code.")
                 : RuntimeNil.Value;
             // TODO: Somehow get the actual signal rather than relying on exit codes
-            if (ExitCode >= 128 && ExitCode <= 128 + SignalHelper.SignalNames.Length)
+            if (ExitCode >= 128 && ExitCode <= 128 + SignalHelper.SignalNames.Length - 1)
             {
                 message = new RuntimeString(
-                    SignalHelper.SignalNames[ExitCode ?? 0 - 128]
+                    SignalHelper.SignalNames[(ExitCode ?? 128) - 128]
                 );
             }
 

@@ -14,7 +14,7 @@ using Elk.Vm;
 
 namespace Elk;
 
-public class ShellSession(VirtualMachineOptions vmOptions)
+public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOptions)
 {
     public RootModuleScope RootModule
         => _virtualMachine.RootModule;
@@ -34,7 +34,7 @@ public class ShellSession(VirtualMachineOptions vmOptions)
         }
     }
 
-    private readonly VirtualMachine _virtualMachine = new(vmOptions);
+    private readonly VirtualMachine _virtualMachine = new(rootModule, vmOptions);
 
     public void InitInteractive()
     {

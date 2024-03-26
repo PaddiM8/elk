@@ -18,7 +18,10 @@ internal class InterpreterTests
 {
     private RuntimeObject Interpret(IList<Expr> ast, Scope? scope = null)
     {
-        var virtualMachine = new VirtualMachine(new VirtualMachineOptions());
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(null, null),
+            new VirtualMachineOptions()
+        );
         var result = ElkProgram.Evaluate(
             new Ast(ast),
             scope ?? virtualMachine.RootModule,
