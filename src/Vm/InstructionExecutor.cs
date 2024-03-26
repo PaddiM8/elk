@@ -344,6 +344,9 @@ class InstructionExecutor
             case InstructionKind.Contains:
                 Contains();
                 break;
+            case InstructionKind.Coalesce:
+                Coalesce();
+                break;
             case InstructionKind.Jump:
                 Jump(Eat().ToUshort(Eat()));
                 break;
@@ -1106,6 +1109,19 @@ class InstructionExecutor
         };
 
         _stack[^1] = RuntimeBoolean.From(result);
+    }
+
+    private void Coalesce()
+    {
+        if (_stack[^2] is RuntimeNil)
+        {
+            _stack[^2] = _stack.Peek();
+            _stack.Pop();
+
+            return;
+        }
+
+        _stack.Pop();
     }
 
     private void Jump(ushort offset)

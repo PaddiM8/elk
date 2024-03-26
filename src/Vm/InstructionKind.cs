@@ -60,6 +60,7 @@ enum InstructionKind : byte
     And,
     Or,
     Contains,
+    Coalesce,
 
     Jump,
     JumpBackward,

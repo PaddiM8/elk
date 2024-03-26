@@ -590,6 +590,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             OperationKind.Greater => InstructionKind.Greater,
             OperationKind.GreaterEquals => InstructionKind.GreaterEqual,
             OperationKind.In => InstructionKind.Contains,
+            OperationKind.Coalescing => InstructionKind.Coalesce,
             _ => throw new NotImplementedException(expr.Operator.ToString()),
         };
 
