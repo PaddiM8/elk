@@ -599,6 +599,26 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             return;
         }
 
+        if (expr.Operator == OperationKind.If)
+        {
+            // If
+            Next(expr.Right);
+            var elseJump = EmitJump(InstructionKind.PopJumpIfNot);
+
+            // Then
+            Next(expr.Left);
+            var endJump = EmitJump(InstructionKind.Jump);
+
+            // Else
+            PatchJump(elseJump);
+            EmitBig(InstructionKind.Const, RuntimeNil.Value);
+
+            // End
+            PatchJump(endJump);
+
+            return;
+        }
+
         var instructionKind = expr.Operator switch
         {
             OperationKind.Addition => InstructionKind.Add,
