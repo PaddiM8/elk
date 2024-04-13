@@ -7,7 +7,7 @@ fn getItemPriority(letter) {
 }
 
 fn getBadgePriority(group) {
-    let rucksacks = group | map => &into::set
+    let rucksacks = group | map => &into::set | iter::collect
     rucksacks[0]
         | iter::intersect(rucksacks[1])
         | iter::intersect(rucksacks[2])
