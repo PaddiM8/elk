@@ -4,6 +4,10 @@ for i in 0..10 {
     sum += i
 }
 
+for _ in [] {
+    assert(false)
+}
+
 assert(sum == 25)
 
 let result = for i in 0..5 {

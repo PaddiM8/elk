@@ -14,7 +14,7 @@ public abstract class Scope
 {
     public ModuleScope ModuleScope { get; protected init; }
 
-    public Scope? Parent { get; }
+    public Scope? Parent { get; set; }
 
     private readonly Dictionary<string, VariableSymbol> _variables = new();
 

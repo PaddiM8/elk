@@ -10,3 +10,7 @@ let result = while i < 10 {
 assertEqual(result, "broke")
 assertEqual(i, 9)
 assertEqual(sum, 16)
+
+while false {
+    assert(false)
+}

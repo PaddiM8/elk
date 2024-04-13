@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -849,17 +850,20 @@ internal class Parser
 
         if (Match(TokenKind.Ampersand))
         {
+            _scope = new LocalScope(_scope);
             var call = ParseIdentifier();
+
             if (call is not CallExpr { IsReference: true } functionReference)
                 throw Error("Expected function or function reference to the right of closure.");
 
             var block = new BlockExpr(
                 [functionReference],
                 StructureKind.Function,
-                new LocalScope(_scope),
+                _scope,
                 Previous!.Position,
                 Previous!.EndPosition
             );
+            _scope = _scope.Parent!;
 
             return new ClosureExpr(left, [], block, _scope);
         }

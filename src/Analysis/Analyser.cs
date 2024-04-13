@@ -945,7 +945,7 @@ class Analyser(RootModuleScope rootModule)
             _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
         };
         var implicitArguments = closureParameters
-            .Select(x => new VariableExpr(x, _scope)
+            .Select(x => new VariableExpr(x, expr.Body.Scope)
             {
                 EnclosingFunction = closure,
             });

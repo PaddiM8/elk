@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,6 +12,15 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
+class LoopState
+{
+    public int StartPosition { get; set; }
+
+    public readonly Stack<List<int>> BreakPositions = [];
+
+    public int ScopeDepth { get; set; }
+}
+
 class InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
 {
     private readonly Stack<Variable> _locals = new();
@@ -20,7 +30,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     private int _currentBasePointer;
     private int _scopeDepth;
     private Expr? _lastExpr;
-    private (int startPosition, List<int> breakPositions, int scopeDepth) _currentLoop = (0, [], 0);
+    private readonly LoopState _currentLoop = new();
 
     public Page Generate(Ast ast)
     {
@@ -155,7 +165,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             var symbol = expr.Block.Scope.FindVariable(parameter.Identifier.Value);
             if (symbol?.IsCaptured is true)
             {
-                EmitBig(InstructionKind.Load, i);
+                // Arguments are pushed *before* calling, so the variable index needs to be
+                // offset by the parameter count
+                EmitBig(InstructionKind.Load, i - expr.Parameters.Count + 1);
                 EmitBig(InstructionKind.StoreUpper, symbol);
                 Emit(InstructionKind.Pop);
             }
@@ -300,7 +312,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
         Emit(InstructionKind.GetIter);
         var loopBackIndex = CreateBackwardJumpPoint();
-        _currentLoop.startPosition = loopBackIndex;
+        _currentLoop.StartPosition = loopBackIndex;
 
         var startIndex = EmitForIter();
 
@@ -333,36 +345,34 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
         }
 
-        _currentLoop.scopeDepth = _scopeDepth + 1;
+        _currentLoop.ScopeDepth = _scopeDepth + 1;
+        _currentLoop.BreakPositions.Push([]);
         Next(expr.Branch);
         EmitBackwardJump(loopBackIndex);
         EmitBig(InstructionKind.Const, RuntimeNil.Value);
         EmitEndFor(startIndex);
 
-        foreach (var breakPosition in _currentLoop.breakPositions)
+        foreach (var breakPosition in _currentLoop.BreakPositions.Pop())
             PatchJump(breakPosition);
-
-        _currentLoop.breakPositions.Clear();
     }
 
     private void Visit(WhileExpr expr)
     {
         var jumpBackPoint = CreateBackwardJumpPoint();
-        _currentLoop.startPosition = jumpBackPoint;
+        _currentLoop.StartPosition = jumpBackPoint;
 
         Next(expr.Condition);
         var endJump = EmitJump(InstructionKind.PopJumpIfNot);
 
-        _currentLoop.scopeDepth = _scopeDepth + 1;
+        _currentLoop.ScopeDepth = _scopeDepth + 1;
+        _currentLoop.BreakPositions.Push([]);
         Next(expr.Branch);
         EmitBackwardJump(jumpBackPoint);
         PatchJump(endJump);
         EmitBig(InstructionKind.Const, RuntimeNil.Value);
 
-        foreach (var breakPosition in _currentLoop.breakPositions)
+        foreach (var breakPosition in _currentLoop.BreakPositions.Pop())
             PatchJump(breakPosition);
-
-        _currentLoop.breakPositions.Clear();
     }
 
     private void Visit(TupleExpr expr)
@@ -420,12 +430,12 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     {
         _scopeDepth++;
 
-        // Skip the last expression, and deal with that later, since
-        // a Pop instruction should not be generated for it.
         bool ShouldPop(Expr child) =>
             child is not (LetExpr or KeywordExpr) ||
             (child is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
 
+        // Skip the last expression, and deal with that later, since
+        // a Pop instruction should not be generated for it.
         foreach (var child in expr.Expressions.SkipLast(1))
         {
             Next(child);
@@ -454,8 +464,12 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                 Emit(InstructionKind.Pop);
         }
 
-        if (expr.Expressions.Count == 0)
+        if (expr.Expressions.Count == 0 || expr.Expressions.Last() is LetExpr)
+        {
             EmitBig(InstructionKind.Const, RuntimeNil.Value);
+            if (expr.ParentStructureKind == StructureKind.Loop)
+                Emit(InstructionKind.Pop);
+        }
 
         if (expr.ParentStructureKind == StructureKind.Loop)
         {
@@ -524,14 +538,14 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                     EmitBig(InstructionKind.Const, RuntimeNil.Value);
                 }
 
-                ExitBlock(isPrimaryExitPoint: false, _currentLoop.scopeDepth);
+                ExitBlock(isPrimaryExitPoint: false, _currentLoop.ScopeDepth);
 
                 var jump = EmitJump(InstructionKind.Jump);
-                _currentLoop.breakPositions.Add(jump);
+                _currentLoop.BreakPositions.Peek().Add(jump);
                 break;
             case TokenKind.Continue:
-                ClearBlock(isPrimaryExitPoint: false, _currentLoop.scopeDepth);
-                EmitBackwardJump(_currentLoop.startPosition);
+                ClearBlock(isPrimaryExitPoint: false, _currentLoop.ScopeDepth);
+                EmitBackwardJump(_currentLoop.StartPosition);
                 break;
             case TokenKind.Throw:
                 if (expr.Value != null)
@@ -1298,6 +1312,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     {
         var previousPage = _currentPage;
         var page = new Page(name: null, expr.StartPosition.FilePath);
+        page.AddLine(expr.StartPosition.Line);
         _currentPage = page;
 
         foreach (var (parameter, i) in expr.Parameters.WithIndex())
