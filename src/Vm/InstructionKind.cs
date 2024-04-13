@@ -61,6 +61,7 @@ enum InstructionKind : byte
     Or,
     Contains,
     Coalesce,
+    ErrorIsType,
 
     Jump,
     JumpBackward,
@@ -71,4 +72,7 @@ enum InstructionKind : byte
     GetIter,
     ForIter,
     EndFor,
+    Try,
+    EndTry,
+    Throw,
 }

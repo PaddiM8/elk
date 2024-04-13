@@ -22,21 +22,18 @@ record struct Frame(
 class InstructionExecutor
 {
     private readonly VirtualMachineOptions _vmOptions;
+    private readonly VirtualMachineContext _context;
     private readonly IndexableStack<RuntimeObject> _stack;
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
     private Page _currentPage = null!;
-    private readonly Dictionary<VariableSymbol, WeakReference<RuntimeObject>> _variables;
     private RuntimeObject? _returnedValue;
 
-    internal InstructionExecutor(
-        VirtualMachineOptions vmOptions,
-        IndexableStack<RuntimeObject> stack,
-        Dictionary<VariableSymbol, WeakReference<RuntimeObject>> variables)
+    internal InstructionExecutor(VirtualMachineOptions vmOptions,VirtualMachineContext context)
     {
         _vmOptions = vmOptions;
-        _stack = stack;
-        _variables = variables;
+        _context = context;
+        _stack = context.Stack;
     }
 
     public RuntimeObject Execute(Page page)
@@ -54,9 +51,7 @@ class InstructionExecutor
         {
             while (_callStack.Any())
             {
-                while (_ip < _currentPage.Instructions.Count)
-                    Next();
-
+                ExecuteCurrentPage();
                 PopFrame();
             }
         }
@@ -135,6 +130,36 @@ class InstructionExecutor
                 Console.WriteLine(item);
     }
 
+    private void ExecuteCurrentPage()
+    {
+        while (_ip < _currentPage.Instructions.Count)
+        {
+            try
+            {
+                Next();
+            }
+            catch (RuntimeException ex)
+            {
+                if (!_context.ExceptionStack.Any())
+                    throw;
+
+                var exceptionFrame = _context.ExceptionStack.Pop();
+                while (_currentPage != exceptionFrame.Page)
+                    PopFrame();
+
+                while (_stack.Count > exceptionFrame.StackSize)
+                    _stack.Pop();
+
+                _ip = exceptionFrame.Ip;
+
+                var value = (ex as RuntimeUserException)?.Value
+                    ?? new RuntimeError(new RuntimeString(ex.Message));
+
+                _stack.Push(value);
+            }
+        }
+    }
+
     public RuntimeObject ExecuteFunction(
         RuntimeUserFunction function,
         ICollection<RuntimeObject> arguments,
@@ -157,9 +182,7 @@ class InstructionExecutor
 
         while (_callStack.Count > originalCallStackSize)
         {
-            while (_ip < _currentPage.Instructions.Count)
-                Next();
-
+            ExecuteCurrentPage();
             PopFrame();
         }
 
@@ -381,6 +404,9 @@ class InstructionExecutor
             case InstructionKind.Coalesce:
                 Coalesce();
                 break;
+            case InstructionKind.ErrorIsType:
+                ErrorIsType();
+                break;
             case InstructionKind.Jump:
                 Jump(Eat().ToUshort(Eat()));
                 break;
@@ -407,6 +433,15 @@ class InstructionExecutor
                 break;
             case InstructionKind.EndFor:
                 EndFor();
+                break;
+            case InstructionKind.Try:
+                Try(Eat().ToUshort(Eat()));
+                break;
+            case InstructionKind.EndTry:
+                EndTry();
+                break;
+            case InstructionKind.Throw:
+                Throw();
                 break;
             default:
                 throw new NotImplementedException(((InstructionKind)_currentPage.Instructions[_ip - 1]).ToString());
@@ -440,7 +475,7 @@ class InstructionExecutor
 
     private void LoadUpper(VariableSymbol symbol)
     {
-        if (!_variables[symbol].TryGetTarget(out var value))
+        if (!_context.Variables[symbol].TryGetTarget(out var value))
             throw new RuntimeException($"Failed to load captured variable {symbol.Name}");
 
         _stack.Push(value);
@@ -448,7 +483,7 @@ class InstructionExecutor
 
     private void StoreUpper(VariableSymbol symbol)
     {
-        _variables[symbol] = new WeakReference<RuntimeObject>(_stack.Peek());
+        _context.Variables[symbol] = new WeakReference<RuntimeObject>(_stack.Peek());
     }
 
     private void Pop()
@@ -495,7 +530,7 @@ class InstructionExecutor
         var actualCount = 0;
         foreach (var (symbol, item) in symbols.Zip(items))
         {
-            _variables[symbol] = new WeakReference<RuntimeObject>(item);
+            _context.Variables[symbol] = new WeakReference<RuntimeObject>(item);
             actualCount++;
         }
 
@@ -1158,6 +1193,16 @@ class InstructionExecutor
         _stack.Pop();
     }
 
+    private void ErrorIsType()
+    {
+        var value = ((RuntimeError)_stack[^2]).Value;
+        var result = _stack[^1]
+            .As<RuntimeType>()
+            .IsAssignableTo(value);
+
+        _stack[^1] = RuntimeBoolean.From(result);
+    }
+
     private void Jump(ushort offset)
     {
         _ip += offset;
@@ -1221,6 +1266,29 @@ class InstructionExecutor
         var generator = (IEnumerator<RuntimeObject>)_stack.PeekObject();
         generator.Dispose();
         _stack.Push(returnedValue);
+    }
+
+    private void Try(ushort endOffset)
+    {
+        var frame = new ExceptionFrame(
+            _currentPage,
+            _ip + endOffset,
+            _stack.Count
+        );
+        _context.ExceptionStack.Push(frame);
+    }
+
+    private void EndTry()
+    {
+        _context.ExceptionStack.Pop();
+    }
+
+    private void Throw()
+    {
+        var value = _stack.Pop();
+        var error = value as RuntimeError ?? new RuntimeError(value);
+
+        throw new RuntimeUserException(error);
     }
 
     private void PushFrame(Frame frame)

@@ -168,6 +168,7 @@ class Disassembler
                 EatShort();
                 break;
             case InstructionKind.ForIter:
+            case InstructionKind.Try:
                 EatShort();
                 break;
         }

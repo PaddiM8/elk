@@ -8,14 +8,15 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
+record struct ExceptionFrame(Page Page, int Ip, int StackSize);
+
 class VirtualMachine
 {
     public RootModuleScope RootModule { get; }
 
     private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
-    private readonly IndexableStack<RuntimeObject> _stack = new();
-    private readonly Dictionary<VariableSymbol, WeakReference<RuntimeObject>> _variables = new();
+    private readonly VirtualMachineContext _context = new();
     private readonly InstructionExecutor _executor;
     private readonly InstructionGenerator _generator;
 
@@ -23,14 +24,14 @@ class VirtualMachine
     {
         RootModule = rootModule;
         _options = options;
-        _executor = new InstructionExecutor(options, _stack, _variables);
+        _executor = new InstructionExecutor(options, _context);
         _generator = new InstructionGenerator(_functions, _executor);
     }
 
     public void AddGlobalVariable(string name, RuntimeObject value)
     {
         var symbol = RootModule.AddVariable(name, value);
-        _variables.Add(symbol, new WeakReference<RuntimeObject>(value));
+        _context.Variables.Add(symbol, new WeakReference<RuntimeObject>(value));
     }
 
     public Page Generate(Ast ast)

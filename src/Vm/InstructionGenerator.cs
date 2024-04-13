@@ -130,7 +130,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             case ClosureExpr closureExpr:
                 Visit(closureExpr);
                 break;
-            // TODO: Try
+            case TryExpr tryExpr:
+                Visit(tryExpr);
+                break;
             default:
                 throw new NotImplementedException();
         }
@@ -449,6 +451,9 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                 Emit(InstructionKind.Pop);
         }
 
+        if (expr.Expressions.Count == 0)
+            EmitBig(InstructionKind.Const, RuntimeNil.Value);
+
         if (expr.ParentStructureKind == StructureKind.Loop)
         {
             ClearBlock(isPrimaryExitPoint: true);
@@ -524,6 +529,18 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             case TokenKind.Continue:
                 ClearBlock(isPrimaryExitPoint: false, _currentLoop.scopeDepth);
                 EmitBackwardJump(_currentLoop.startPosition);
+                break;
+            case TokenKind.Throw:
+                if (expr.Value != null)
+                {
+                    Next(expr.Value);
+                }
+                else
+                {
+                    EmitBig(InstructionKind.Const, RuntimeNil.Value);
+                }
+
+                Emit(InstructionKind.Throw);
                 break;
             default:
                 throw new NotImplementedException("Keyword not implemented: " + expr.Keyword);
@@ -1314,6 +1331,50 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         Visit(expr.Function, isMaybeRoot, runtimeFunction);
     }
 
+    private void Visit(TryExpr expr)
+    {
+        var tryOffset = EmitTry();
+        Next(expr.Body);
+        Emit(InstructionKind.EndTry);
+        var tryEndJump = EmitJump(InstructionKind.Jump);
+        PatchJump(tryOffset);
+
+        int? lastJump = null;
+        List<int> endJumps = [];
+        foreach (var catchExpression in expr.CatchExpressions)
+        {
+            if (lastJump.HasValue)
+            {
+                PatchJump(lastJump.Value);
+                lastJump = null;
+            }
+
+            if (catchExpression.Type != null)
+            {
+                Next(catchExpression.Type);
+                Emit(InstructionKind.ErrorIsType);
+                lastJump = EmitJump(InstructionKind.PopJumpIfNot);
+            }
+
+            if (catchExpression.Identifier?.Value != null)
+                _locals.Push(new Variable(catchExpression.Identifier!, _scopeDepth + 1));
+
+            Next(catchExpression.Body);
+
+            endJumps.Add(EmitJump(InstructionKind.Jump));
+        }
+
+        if (lastJump.HasValue)
+        {
+            PatchJump(lastJump.Value);
+        }
+
+        foreach (var jump in endJumps)
+            PatchJump(jump);
+
+        PatchJump(tryEndJump);
+    }
+
     private void Emit(InstructionKind kind, params byte[] arguments)
     {
         _currentPage.Instructions.Add((byte)kind);
@@ -1399,5 +1460,12 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         _currentPage.Instructions[startIndex] = left;
         _currentPage.Instructions[startIndex + 1] = right;
         Emit(InstructionKind.EndFor);
+    }
+
+    private int EmitTry()
+    {
+        Emit(InstructionKind.Try, 0, 0);
+
+        return _currentPage.Instructions.Count - 2;
     }
 }
