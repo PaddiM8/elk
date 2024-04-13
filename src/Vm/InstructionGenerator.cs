@@ -200,8 +200,11 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
         Next(expr.Value);
 
-        if (expr.IdentifierList.SingleOrDefault()?.Value.StartsWith('$') is true)
+        if (expr.IdentifierList.FirstOrDefault()?.Value.StartsWith('$') is true)
         {
+            if (expr.IdentifierList.Count > 1)
+                throw new RuntimeException("Cannot destructure into environment variables (yet)");
+
             EmitBig(
                 InstructionKind.StoreEnvironmentVariable,
                 expr.IdentifierList.First().Value[1..]
