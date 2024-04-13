@@ -21,7 +21,7 @@ public class RuntimeInteger(long value) : RuntimeObject
     public override int CompareTo(RuntimeObject? other)
     {
         if (other is RuntimeFloat otherFloat)
-            return Value.CompareTo(otherFloat.Value);
+            return ((double)Value).CompareTo(otherFloat.Value);
 
         return other is null or RuntimeNil
             ? 1
