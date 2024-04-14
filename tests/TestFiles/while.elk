@@ -14,3 +14,5 @@ assertEqual(sum, 16)
 while false {
     assert(false)
 }
+
+while false {}

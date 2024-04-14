@@ -5,3 +5,5 @@ let dict = {
 
 assert(dict->a == 1)
 assert(dict["b"] == "yes")
+
+assertEqual({} | into::type, Dictionary)

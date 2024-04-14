@@ -8,6 +8,9 @@ for _ in [] {
     assert(false)
 }
 
+for _ in [1] {
+}
+
 assert(sum == 25)
 
 let result = for i in 0..5 {

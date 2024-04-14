@@ -2,6 +2,9 @@ fn confirmParamCount(expectedCount, params...) {
     assertEqual(len(params), expectedCount)
 }
 
+fn nothing() {}
+assertEqual(nothing(), nil)
+
 confirmParamCount(1, "a")
 confirmParamCount(2, "a", "b")
 
