@@ -124,46 +124,57 @@ public static class ElkProgram
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
-        EvaluateModules(
-            scope.ModuleScope.ImportedModules
-                .Where(x => x != scope)
-                .Where(x =>
-                    x.AnalysisStatus != AnalysisStatus.Failed &&
-                        x.AnalysisStatus != AnalysisStatus.Evaluated
-                ),
-            virtualMachine
-        );
-
-        var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        RuntimeObject? result = null;
-        if (virtualMachine != null)
-        {
-            var page = virtualMachine.Generate(analysedAst);
-
-            // TODO: Is this right? Now it will execute some modules before generating
-            // the instructions for others. Might work, might not? Maybe it needs to
-            // first traverse the modules and generate instructions, and then traverse
-            // and execute them? Maybe even do it lazily somehow?
-            EvaluateModules(scope.ModuleScope.Modules, virtualMachine);
-            result = virtualMachine.Execute(page);
-        }
+        var generated = GeneratePages(ast, scope, analysisScope, virtualMachine).ToList();
+        var result = generated
+            .Select(pair => virtualMachine?.Execute(pair.page))
+            .LastOrDefault();
 
         return new EvaluationResult
         {
-            Ast = analysedAst,
+            Ast = generated.LastOrDefault().analysedAst,
             Value = result,
         };
     }
 
-    private static void EvaluateModules(IEnumerable<ModuleScope> modules, VirtualMachine? virtualMachine)
+    private static IEnumerable<(Ast analysedAst, Page page)> GeneratePages(
+        Ast ast,
+        Scope scope,
+        AnalysisScope analysisScope,
+        VirtualMachine? virtualMachine)
     {
-        foreach (var module in modules)
+        Debug.Assert(scope.ModuleScope is not { Ast: null });
+
+        var importedModules = scope.ModuleScope.ImportedModules
+            .Where(x => x != scope)
+            .Where(x =>
+                x.AnalysisStatus != AnalysisStatus.Failed &&
+                    x.AnalysisStatus != AnalysisStatus.Evaluated
+            );
+        var pages = EvaluateModules(importedModules, virtualMachine)
+            .Concat(EvaluateModules(scope.ModuleScope.Modules, virtualMachine));
+
+        var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
+        if (virtualMachine != null)
+        {
+            var result = virtualMachine.Generate(analysedAst);
+            pages = pages.Append((analysedAst, result));
+        }
+
+        return pages;
+    }
+
+    private static IEnumerable<(Ast, Page)> EvaluateModules(
+        IEnumerable<ModuleScope> modules,
+        VirtualMachine? virtualMachine)
+    {
+        return modules.SelectMany(module =>
         {
             if (module.AnalysisStatus == AnalysisStatus.None)
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, virtualMachine);
-        }
+
+            return GeneratePages(module.Ast, module, AnalysisScope.OncePerModule, virtualMachine);
+        });
     }
 }
