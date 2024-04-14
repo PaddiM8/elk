@@ -606,11 +606,19 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
 
         if (expr.Operator == OperationKind.NonRedirectingOr)
         {
-            // TODO: Try running expr.Left. If it fails, run expr.Right.
-            // This needs to be done at runtime of course, when exception
-            // handling has been implemented.
+            // Try
+            var tryOffset = EmitTry();
             Next(expr.Left);
-            //Next(expr.Right);
+            Emit(InstructionKind.EndTry);
+            var tryEndJump = EmitJump(InstructionKind.Jump);
+
+            // Catch
+            PatchJump(tryOffset);
+            Emit(InstructionKind.Pop);
+            Next(expr.Right);
+
+            // End
+            PatchJump(tryEndJump);
 
             return;
         }

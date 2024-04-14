@@ -71,3 +71,7 @@ let result = try {
 }
 
 assertEqual(result, "hello")
+
+# non-redirecting or
+("try" || "else") | assertEqual("try")
+({ "str" / 2 } || "else") | assertEqual("else")
