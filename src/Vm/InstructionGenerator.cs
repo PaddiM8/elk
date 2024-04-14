@@ -143,7 +143,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                 Visit(tryExpr);
                 break;
             default:
-                throw new NotImplementedException();
+                throw new ArgumentOutOfRangeException();
         }
     }
 
@@ -559,7 +559,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
                 Emit(InstructionKind.Throw);
                 break;
             default:
-                throw new NotImplementedException("Keyword not implemented: " + expr.Keyword);
+                throw new ArgumentException("Invalid keyword: " + expr.Keyword);
         }
     }
 
@@ -658,7 +658,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             OperationKind.GreaterEquals => InstructionKind.GreaterEqual,
             OperationKind.In => InstructionKind.Contains,
             OperationKind.Coalescing => InstructionKind.Coalesce,
-            _ => throw new NotImplementedException(expr.Operator.ToString()),
+            _ => throw new ArgumentOutOfRangeException(expr.Operator.ToString()),
         };
 
         Next(expr.Left);
@@ -717,7 +717,7 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
         }
         else
         {
-            throw new NotImplementedException();
+            throw new ArgumentOutOfRangeException();
         }
     }
 

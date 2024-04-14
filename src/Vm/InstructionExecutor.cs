@@ -444,7 +444,7 @@ class InstructionExecutor
                 Throw();
                 break;
             default:
-                throw new NotImplementedException(((InstructionKind)_currentPage.Instructions[_ip - 1]).ToString());
+                throw new ArgumentOutOfRangeException(((InstructionKind)_currentPage.Instructions[_ip - 1]).ToString());
         }
     }
 
