@@ -14,6 +14,8 @@ class VirtualMachine
 {
     public RootModuleScope RootModule { get; }
 
+    public ShellEnvironment ShellEnvironment { get; } = new(null);
+
     private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
     private readonly VirtualMachineContext _context = new();
@@ -25,7 +27,7 @@ class VirtualMachine
         RootModule = rootModule;
         _options = options;
         _executor = new InstructionExecutor(options, _context);
-        _generator = new InstructionGenerator(_functions, _executor);
+        _generator = new InstructionGenerator(_functions, ShellEnvironment, _executor);
     }
 
     public void AddGlobalVariable(string name, RuntimeObject value)

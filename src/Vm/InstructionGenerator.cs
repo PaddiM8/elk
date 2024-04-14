@@ -20,7 +20,10 @@ class LoopState
     public int ScopeDepth { get; set; }
 }
 
-class InstructionGenerator(FunctionTable functionTable, InstructionExecutor executor)
+class InstructionGenerator(
+    FunctionTable functionTable,
+    ShellEnvironment shellEnvironment,
+    InstructionExecutor executor)
 {
     private readonly Stack<Variable> _locals = new();
     private ShellEnvironment _shellEnvironment = null!;
@@ -35,7 +38,8 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
     {
         var filePath = ast.Expressions.FirstOrDefault()?.StartPosition.FilePath;
         _currentPage = new Page("<root>", filePath);
-        _shellEnvironment = new ShellEnvironment(filePath);
+        _shellEnvironment = shellEnvironment;
+        _shellEnvironment.ScriptPath = filePath;
 
         // Deal with the last one outside of the loop, since it
         // should never be popped
@@ -1025,7 +1029,6 @@ class InstructionGenerator(FunctionTable functionTable, InstructionExecutor exec
             VariadicStart = (byte?)expr.StdFunction.VariadicStart,
         };
 
-        // TODO: If the std function takes a ShellEnvironment, add that as an argument here too
         if (expr.IsReference)
         {
             var referenceArgumentCount = 0;

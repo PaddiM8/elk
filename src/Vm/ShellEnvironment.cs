@@ -21,7 +21,7 @@ class ShellEnvironment(string? scriptPath)
 
     public IEnumerable<RuntimeObject> Argv { get; set; } = Array.Empty<RuntimeObject>();
 
-    public string? ScriptPath { get; } = scriptPath;
+    public string? ScriptPath { get; set; } = scriptPath;
 
     public string GetAbsolutePath(string relativePath)
         => Path.GetFullPath(Path.Combine(WorkingDirectory, relativePath));

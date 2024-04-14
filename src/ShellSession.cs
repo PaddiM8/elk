@@ -157,7 +157,7 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         var argumentValues = arguments.Prepend(filePath)
             .Select<string, RuntimeObject>(literal => new RuntimeString(literal));
         var argv = new RuntimeList(argumentValues.ToList());
-        //interpreter.ShellEnvironment.Argv = argv;
+        _virtualMachine.ShellEnvironment.Argv = argv;
 
         if (!File.Exists(filePath))
         {
