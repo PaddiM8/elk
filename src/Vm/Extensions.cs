@@ -9,5 +9,5 @@ static class Extensions
         );
 
     public static ushort ToUshort(this byte left, byte right)
-        => (ushort)((ushort)((left << 8) & 0xff) | (ushort)(right & 0xff));
+        => (ushort)((ushort)(left << 8) | (ushort)(right & 0xff));
 }

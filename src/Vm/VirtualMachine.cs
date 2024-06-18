@@ -33,7 +33,7 @@ class VirtualMachine
     public void AddGlobalVariable(string name, RuntimeObject value)
     {
         var symbol = RootModule.AddVariable(name, value);
-        _context.Variables.Add(symbol, new WeakReference<RuntimeObject>(value));
+        _context.Variables.Add(symbol, value);
     }
 
     public Page Generate(Ast ast)

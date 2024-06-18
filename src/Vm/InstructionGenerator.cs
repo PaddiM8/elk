@@ -158,23 +158,8 @@ class InstructionGenerator(
             expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
         );
 
-        foreach (var (parameter, i) in expr.Parameters.AsEnumerable().Reverse().WithIndex())
-        {
+        foreach (var parameter in expr.Parameters.AsEnumerable().Reverse())
             _locals.Push(new Variable(parameter.Identifier, 0));
-
-            // If the parameter is captured, load it and store it as an upper
-            // variable as well. For simplicity, the regular variable is kept
-            // as well for now
-            var symbol = expr.Block.Scope.FindVariable(parameter.Identifier.Value);
-            if (symbol?.IsCaptured is true)
-            {
-                // Arguments are pushed *before* calling, so the variable index needs to be
-                // offset by the parameter count
-                EmitBig(InstructionKind.Load, i - expr.Parameters.Count + 1);
-                EmitBig(InstructionKind.StoreUpper, symbol);
-                Emit(InstructionKind.Pop);
-            }
-        }
 
         if (expr.HasClosure)
         {
@@ -188,13 +173,6 @@ class InstructionGenerator(
 
         var previousBasePointer = _currentBasePointer;
         _currentBasePointer = _locals.Count - 1;
-        if (expr.ClosureSymbol?.IsCaptured is true)
-        {
-            EmitBig(InstructionKind.Load, ResolveVariable("closure"));
-            EmitBig(InstructionKind.StoreUpper, expr.ClosureSymbol);
-            Emit(InstructionKind.Pop);
-        }
-
         Next(expr.Block);
         _currentBasePointer = previousBasePointer;
 
@@ -230,7 +208,7 @@ class InstructionGenerator(
         }
 
         var symbols = expr.Symbols.ToList();
-        if (!symbols.Any(x => x.IsCaptured) && expr.Scope is not ModuleScope)
+        if (expr.Scope is not ModuleScope)
         {
             foreach (var identifier in expr.IdentifierList)
                 _locals.Push(new Variable(identifier, _scopeDepth));
@@ -302,16 +280,8 @@ class InstructionGenerator(
         // a variable entry for the Enumerator as well.
         _locals.Push(new Variable(_emptyToken, _scopeDepth));
 
-        var symbols = expr.IdentifierList
-            .Select(x => expr.Branch.Scope.FindVariable(x.Value))
-            .Where(x => x != null)
-            .ToList();
-        var isCaptured = symbols.Any(x => x?.IsCaptured is true);
-        if (!isCaptured)
-        {
-            foreach (var identifier in expr.IdentifierList)
-                _locals.Push(new Variable(identifier, _scopeDepth + 1));
-        }
+        foreach (var identifier in expr.IdentifierList)
+            _locals.Push(new Variable(identifier, _scopeDepth + 1));
 
         Emit(InstructionKind.GetIter);
         var loopBackIndex = CreateBackwardJumpPoint();
@@ -322,31 +292,8 @@ class InstructionGenerator(
         if (expr.IdentifierList.Count > byte.MaxValue)
             throw new RuntimeException("Too many identifiers in destructuring expression");
 
-        if (isCaptured)
-        {
-            // If just one variable in the identifier list is captured,
-            // the other ones will be treated as captured variables too,
-            // for simplicity
-            foreach (var symbol in symbols)
-                symbol!.IsCaptured = true;
-
-            if (expr.IdentifierList.Count > 1)
-            {
-                foreach (var symbol in symbols)
-                    EmitBig(InstructionKind.Const, symbol!);
-
-                Emit(InstructionKind.UnpackUpper, (byte)expr.IdentifierList.Count);
-                Emit(InstructionKind.Pop);
-            }
-            else
-            {
-                EmitBig(InstructionKind.StoreUpper, symbols.First()!);
-            }
-        }
-        else if (expr.IdentifierList.Count > 1)
-        {
+        if (expr.IdentifierList.Count > 1)
             Emit(InstructionKind.Unpack, (byte)expr.IdentifierList.Count);
-        }
 
         _currentLoop.ScopeDepth = _scopeDepth + 1;
         _currentLoop.BreakPositions.Push([]);
@@ -434,8 +381,7 @@ class InstructionGenerator(
         _scopeDepth++;
 
         bool ShouldPop(Expr child) =>
-            child is not (LetExpr or KeywordExpr) ||
-            (child is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
+            child is not (LetExpr or KeywordExpr);
 
         // Skip the last expression, and deal with that later, since
         // a Pop instruction should not be generated for it.
@@ -496,6 +442,7 @@ class InstructionGenerator(
     private void ClearBlock(bool isPrimaryExitPoint, int? newScopeDepth = null)
     {
         var popCount = ConsumeBlockLocals(isPrimaryExitPoint, newScopeDepth);
+        Console.WriteLine(popCount);
         for (var i = 0; i < popCount; i++)
             Emit(InstructionKind.Pop);
     }
@@ -677,15 +624,24 @@ class InstructionGenerator(
         {
             Next(right);
 
-            var symbol = leftValue.Scope.FindVariable(leftValue.Identifier.Value);
-            if (symbol?.IsCaptured is true)
+            if (leftValue.IsCaptured)
             {
-                EmitBig(InstructionKind.StoreUpper, leftValue.Scope.FindVariable(leftValue.Identifier.Value)!);
+                EmitBig(InstructionKind.StoreCaptured, leftValue.Identifier.Value);
+                return;
             }
-            else
+
+            var local = TryResolveVariable(leftValue.Identifier.Value);
+            if (local.HasValue)
             {
-                EmitBig(InstructionKind.Store, ResolveVariable(leftValue.Identifier.Value));
+                EmitBig(InstructionKind.Store, local);
+                return;
             }
+
+            var symbol = leftValue.Scope.ModuleScope.FindVariable(leftValue.Identifier.Value);
+            if (symbol == null)
+                throw new RuntimeNotFoundException(leftValue.Identifier.Value);
+
+            EmitBig(InstructionKind.StoreUpper, symbol);
         }
         else if (left is IndexerExpr indexer)
         {
@@ -774,22 +730,40 @@ class InstructionGenerator(
 
     private void Visit(VariableExpr expr)
     {
-        var symbol = expr.Scope.FindVariable(expr.Identifier.Value);
         if (expr.Identifier.Value.StartsWith('$'))
         {
             EmitBig(InstructionKind.LoadEnvironmentVariable, expr.Identifier.Value[1..]);
+
+            return;
         }
-        else if (symbol?.IsCaptured is true || expr.Scope is ModuleScope)
+
+        if (expr.IsCaptured)
         {
-            EmitBig(InstructionKind.LoadUpper, expr.Scope.FindVariable(expr.Identifier.Value)!);
+            EmitBig(InstructionKind.LoadCaptured, expr.Identifier.Value);
+
+            return;
         }
-        else
+
+        var local = TryResolveVariable(expr.Identifier.Value);
+        if (local.HasValue)
         {
-            EmitBig(InstructionKind.Load, ResolveVariable(expr.Identifier.Value));
+            EmitBig(InstructionKind.Load, local);
+
+            return;
         }
+
+        EmitBig(InstructionKind.LoadUpper, expr.Scope.FindVariable(expr.Identifier.Value)!);
     }
 
     private int ResolveVariable(string name)
+    {
+        var result = TryResolveVariable(name);
+        Debug.Assert(result.HasValue);
+
+        return result.Value;
+    }
+
+    private int? TryResolveVariable(string name)
     {
         // Since _locals is a stack, this is going to start at the top
         foreach (var (local, i) in _locals.WithIndex())
@@ -803,9 +777,7 @@ class InstructionGenerator(
             }
         }
 
-        Debug.Assert(false);
-
-        return -1;
+        return null;
     }
 
     private void Visit(CallExpr expr, bool isMaybeRoot = false, RuntimeFunction? closure = null)
@@ -1159,7 +1131,7 @@ class InstructionGenerator(
         // The function reference
         if (expr.EnclosingClosureProvidingFunction?.ClosureSymbol?.IsCaptured is true)
         {
-            EmitBig(InstructionKind.LoadUpper, expr.EnclosingClosureProvidingFunction.ClosureSymbol);
+            EmitBig(InstructionKind.LoadCaptured, "closure");
         }
         else
         {
@@ -1325,29 +1297,16 @@ class InstructionGenerator(
         page.AddLine(expr.StartPosition.Line);
         _currentPage = page;
 
-        foreach (var (parameter, i) in expr.Parameters.WithIndex())
-        {
+        foreach (var parameter in expr.Parameters)
             _locals.Push(new Variable(parameter, 0));
-
-            // If the parameter is captured, load it and store it as an upper
-            // variable as well. For simplicity, the regular variable is kept
-            // as well for now
-            var symbol = expr.Body.Scope.FindVariable(parameter.Value);
-            if (symbol?.IsCaptured is true)
-            {
-                EmitBig(InstructionKind.Load, i);
-                EmitBig(InstructionKind.StoreUpper, symbol);
-                Emit(InstructionKind.Pop);
-            }
-        }
 
         var previousBasePointer = _currentBasePointer;
         _currentBasePointer = _locals.Count - 1;
 
         Next(expr.Body);
-        _currentBasePointer = previousBasePointer;
-
         Emit(InstructionKind.Ret);
+
+        _currentBasePointer = previousBasePointer;
         _currentPage = previousPage;
 
         foreach (var _ in expr.Parameters)
@@ -1365,8 +1324,13 @@ class InstructionGenerator(
             );
         };
 
-        var runtimeFunction = new RuntimeUserFunction(
+        var environment = new LocalScope(expr.Scope);
+        foreach (var captured in expr.CapturedVariables)
+            environment.AddVariable(captured, RuntimeNil.Value);
+
+        var runtimeFunction = new RuntimeClosureFunction(
             page,
+            environment,
             null,
             invoker
         )
@@ -1375,6 +1339,39 @@ class InstructionGenerator(
             DefaultParameters = [],
             VariadicStart = null,
         };
+
+        foreach (var captured in expr.CapturedVariables)
+        {
+            if (expr.EnclosingFunction is ClosureExpr parentClosure &&
+                parentClosure.CapturedVariables.Contains(captured))
+            {
+                EmitBig(InstructionKind.LoadCaptured, captured);
+                EmitBig(InstructionKind.Const, captured);
+
+                continue;
+            }
+
+            var localIndex = TryResolveVariable(captured);
+            if (localIndex.HasValue)
+            {
+                EmitBig(InstructionKind.Load, localIndex.Value);
+                EmitBig(InstructionKind.Const, captured);
+
+                continue;
+            }
+
+            EmitBig(InstructionKind.LoadUpper, expr.Scope.ModuleScope.FindVariable(captured)!);
+            EmitBig(InstructionKind.Const, captured);
+        }
+
+        if (expr.CapturedVariables.Count > byte.MaxValue)
+            throw new RuntimeException("Too many captured variables. Can capture at most 255");
+
+        if (expr.CapturedVariables.Count > 0)
+        {
+            EmitBig(InstructionKind.Const, runtimeFunction);
+            Emit(InstructionKind.Capture, (byte)expr.CapturedVariables.Count);
+        }
 
         Visit(expr.Function, isMaybeRoot, runtimeFunction);
     }

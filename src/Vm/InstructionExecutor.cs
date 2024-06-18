@@ -14,6 +14,7 @@ namespace Elk.Vm;
 
 record struct Frame(
     Page Page,
+    RuntimeUserFunction? Function,
     int ReturnAddress,
     int BasePointer,
     bool IsRoot
@@ -29,7 +30,7 @@ class InstructionExecutor
     private Page _currentPage = null!;
     private RuntimeObject? _returnedValue;
 
-    internal InstructionExecutor(VirtualMachineOptions vmOptions,VirtualMachineContext context)
+    internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
     {
         _vmOptions = vmOptions;
         _context = context;
@@ -38,7 +39,7 @@ class InstructionExecutor
 
     public RuntimeObject Execute(Page page)
     {
-        PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
+        PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
 
         if (_vmOptions.DumpInstructions)
         {
@@ -148,7 +149,7 @@ class InstructionExecutor
                     PopFrame();
 
                 while (_stack.Count > exceptionFrame.StackSize)
-                    _stack.Pop();
+                    _stack.PopObject();
 
                 _ip = exceptionFrame.Ip;
 
@@ -253,6 +254,15 @@ class InstructionExecutor
                 break;
             case InstructionKind.StoreUpper:
                 StoreUpper(GetConstant<VariableSymbol>());
+                break;
+            case InstructionKind.LoadCaptured:
+                LoadCaptured(GetConstant<string>());
+                break;
+            case InstructionKind.StoreCaptured:
+                StoreCaptured(GetConstant<string>());
+                break;
+            case InstructionKind.Capture:
+                Capture(Eat());
                 break;
             case InstructionKind.Pop:
                 Pop();
@@ -475,15 +485,37 @@ class InstructionExecutor
 
     private void LoadUpper(VariableSymbol symbol)
     {
-        if (!_context.Variables[symbol].TryGetTarget(out var value))
-            throw new RuntimeException($"Failed to load captured variable {symbol.Name}");
-
-        _stack.Push(value);
+        _context.Variables.TryGetValue(symbol, out var value);
+        _stack.Push(value ?? RuntimeNil.Value);
     }
 
     private void StoreUpper(VariableSymbol symbol)
     {
-        _context.Variables[symbol] = new WeakReference<RuntimeObject>(_stack.Peek());
+        _context.Variables[symbol] = _stack.Peek();
+    }
+
+    private void LoadCaptured(string name)
+    {
+        var function = (RuntimeClosureFunction)_callStack.Peek().Function!;
+        _stack.Push(function.Environment.FindVariable(name)!.Value);
+    }
+
+    private void StoreCaptured(string name)
+    {
+        var function = (RuntimeClosureFunction)_callStack.Peek().Function!;
+        function.Environment.FindVariable(name)!.Value = _stack.Peek();
+    }
+
+    private void Capture(byte count)
+    {
+        var function = (RuntimeClosureFunction)_stack.PopObject();
+        for (byte i = 0; i < count; i++)
+        {
+            function.Environment.AddVariable(
+                (string)_stack.PopObject(),
+                _stack.Pop()
+            );
+        }
     }
 
     private void Pop()
@@ -530,7 +562,7 @@ class InstructionExecutor
         var actualCount = 0;
         foreach (var (symbol, item) in symbols.Zip(items))
         {
-            _context.Variables[symbol] = new WeakReference<RuntimeObject>(item);
+            _context.Variables[symbol] = item;
             actualCount++;
         }
 
@@ -558,6 +590,7 @@ class InstructionExecutor
         var function = (RuntimeUserFunction)_stack.Pop();
         var frame = new Frame(
             function.Page,
+            function,
             _ip,
             _stack.Count - 1,
             isRoot
@@ -590,16 +623,16 @@ class InstructionExecutor
             var result = function.StdFunction.Invoke(arguments.ToList());
             _stack.Push(result);
         }
-        catch (RuntimeException e)
+        catch (RuntimeException ex)
         {
-            throw new RuntimeStdException(e.Message)
+            throw new RuntimeStdException(ex.Message)
             {
-                ElkStackTrace = e.ElkStackTrace,
+                ElkStackTrace = ex.ElkStackTrace,
             };
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            throw new RuntimeStdException(e.Message);
+            throw new RuntimeStdException(ex.Message);
         }
     }
 

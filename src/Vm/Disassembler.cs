@@ -105,6 +105,13 @@ class Disassembler
             case InstructionKind.StoreUpper:
                 GetConstant<VariableSymbol>();
                 break;
+            case InstructionKind.LoadCaptured:
+            case InstructionKind.StoreCaptured:
+                GetConstant<string>();
+                break;
+            case InstructionKind.Capture:
+                Eat();
+                break;
             case InstructionKind.Const:
                 GetConstant<object>();
                 break;
