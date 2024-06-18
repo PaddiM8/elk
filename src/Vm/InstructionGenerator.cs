@@ -57,7 +57,11 @@ class InstructionGenerator(
 
         // TODO: What if there are more than 255 locals
         if (_locals.Any())
-            Emit(InstructionKind.ExitBlock, (byte)_locals.Count);
+        {
+            var localCount = _locals.Count;
+            _locals.Clear();
+            Emit(InstructionKind.ExitBlock, (byte)localCount);
+        }
 
         return _currentPage;
     }
