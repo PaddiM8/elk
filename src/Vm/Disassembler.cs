@@ -118,6 +118,9 @@ class Disassembler
             case InstructionKind.StructConst:
                 GetConstant<StructSymbol>();
                 break;
+            case InstructionKind.Glob:
+                EatShort();
+                break;
             case InstructionKind.New:
                 Eat();
                 break;

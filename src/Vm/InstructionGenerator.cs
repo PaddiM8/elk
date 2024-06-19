@@ -877,18 +877,29 @@ class InstructionGenerator(
         // non-reversed order.
         if (variadicArguments != null)
         {
+            var globOffsets = new List<int>();
             foreach (var (variadicArgument, isGlob) in variadicArguments)
             {
                 Next(variadicArgument);
                 if (isGlob)
-                    Emit(InstructionKind.Glob);
+                    globOffsets.Add(EmitJump(InstructionKind.Glob));
             }
 
             // Dynamic function calls do this on the fly
             if (!expr.IsReference)
             {
-                Emit(InstructionKind.BuildList);
-                Emit((ushort)variadicArguments.Count);
+                foreach (var offset in globOffsets)
+                    PatchJump(offset);
+
+                if (globOffsets.Any())
+                {
+                    EmitBig(InstructionKind.BuildListBig, variadicArguments.Count);
+                }
+                else
+                {
+                    Emit(InstructionKind.BuildList);
+                    Emit((ushort)variadicArguments.Count);
+                }
             }
         }
 

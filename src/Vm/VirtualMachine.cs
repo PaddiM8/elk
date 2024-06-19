@@ -19,15 +19,11 @@ class VirtualMachine
     private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
     private readonly VirtualMachineContext _context = new();
-    private readonly InstructionExecutor _executor;
-    private readonly InstructionGenerator _generator;
 
     public VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
     {
         RootModule = rootModule;
         _options = options;
-        _executor = new InstructionExecutor(options, _context);
-        _generator = new InstructionGenerator(_functions, ShellEnvironment, _executor);
     }
 
     public void AddGlobalVariable(string name, RuntimeObject value)
@@ -38,7 +34,9 @@ class VirtualMachine
 
     public Page Generate(Ast ast)
     {
-        var page = _generator.Generate(ast);
+        var executor = new InstructionExecutor(_options, _context);
+        var generator = new InstructionGenerator(_functions, ShellEnvironment, executor);
+        var page = generator.Generate(ast);
         if (!_options.DumpInstructions)
             return page;
 
@@ -55,7 +53,11 @@ class VirtualMachine
     }
 
     public RuntimeObject Execute(Page page)
-        => _executor.Execute(page);
+    {
+        var executor = new InstructionExecutor(_options, _context);
+
+        return executor.Execute(page);
+    }
 
     public RuntimeObject ExecuteFunction(
         string identifier,
@@ -80,7 +82,9 @@ class VirtualMachine
 
         try
         {
-            return _executor.ExecuteFunction(function, arguments, isRoot);
+            var executor = new InstructionExecutor(_options, _context);
+
+            return executor.ExecuteFunction(function, arguments, isRoot);
         }
         catch (RuntimeException e)
         {

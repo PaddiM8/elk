@@ -25,64 +25,71 @@ class InstructionExecutor
     private readonly VirtualMachineOptions _vmOptions;
     private readonly VirtualMachineContext _context;
     private readonly IndexableStack<RuntimeObject> _stack;
+    private readonly int _initialStackSize;
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
     private Page _currentPage = null!;
     private RuntimeObject? _returnedValue;
 
-    internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
+internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
+{
+    _vmOptions = vmOptions;
+    _context = context;
+    _stack = context.Stack;
+    _initialStackSize = context.Stack.Count;
+}
+
+public RuntimeObject Execute(Page page)
+{
+    PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
+
+    if (_vmOptions.DumpInstructions)
     {
-        _vmOptions = vmOptions;
-        _context = context;
-        _stack = context.Stack;
+        Console.Write($"Page {_currentPage.GetHashCode()}:");
+        page.Dump();
+        Console.WriteLine();
     }
 
-    public RuntimeObject Execute(Page page)
+    try
     {
-        PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
-
+        while (_callStack.Any())
+        {
+            ExecuteCurrentPage();
+            PopFrame();
+        }
+    }
+    catch (Exception ex)
+    {
         if (_vmOptions.DumpInstructions)
         {
-            Console.Write($"Page {_currentPage.GetHashCode()}:");
-            page.Dump();
-            Console.WriteLine();
-        }
-
-        try
-        {
-            while (_callStack.Any())
-            {
-                ExecuteCurrentPage();
-                PopFrame();
-            }
-        }
-        catch (Exception ex)
-        {
-            if (_vmOptions.DumpInstructions && ex is not RuntimeException)
-            {
+            if (ex is not RuntimeException)
                 DumpState();
-                Console.WriteLine();
-                Console.WriteLine(ex);
-            }
 
-            var lineNumber = FindCurrentLineNumber();
-            var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
-
-            throw new RuntimeException(ex.Message, textPos, textPos);
+            Console.WriteLine();
+            Console.WriteLine(ex);
         }
 
-        var returnValue = _stack.Any()
-            ? _stack.Pop()
-            : RuntimeNil.Value;
-        Debug.Assert(page.Name == "<root>" || !_stack.Any());
+        while (_stack.Count > _initialStackSize)
+            _stack.PopObject();
 
-        return returnValue;
+        var lineNumber = FindCurrentLineNumber();
+        var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
+
+        throw new RuntimeException(ex.Message, textPos, textPos);
     }
 
-    private int FindCurrentLineNumber()
-    {
-        if (_currentPage.LineNumbers.Count == 0)
-            return 0;
+    var returnValue = _stack.Any()
+        ? _stack.Pop()
+        : RuntimeNil.Value;
+    Debug.Assert(page.Name == "<root>" || !_stack.Any());
+
+    return returnValue;
+}
+
+private int FindCurrentLineNumber()
+{
+    if (_currentPage.LineNumbers.Count == 0)
+        return 0;
 
         var target = _ip;
         var min = 0;
@@ -334,7 +341,7 @@ class InstructionExecutor
                 StructConst(GetConstant<StructSymbol>());
                 break;
             case InstructionKind.Glob:
-                Glob();
+                Glob(Eat().ToUshort(Eat()));
                 break;
             case InstructionKind.New:
                 New(Eat());
@@ -898,7 +905,7 @@ class InstructionExecutor
         _stack.PushObject(symbol);
     }
 
-    private void Glob()
+    private void Glob(ushort offset)
     {
         // The glob instruction should only be used for variadic arguments
         var value = _stack[^1].As<RuntimeString>().Value;
@@ -908,35 +915,13 @@ class InstructionExecutor
 
         // Find the list containing the variadic arguments
         var instructions = _currentPage.Instructions;
-        var buildListIndex = _ip;
-        while (instructions[buildListIndex] is not
-            ((byte)InstructionKind.BuildList or (byte)InstructionKind.BuildListBig))
-        {
-            buildListIndex++;
-        }
-
-        // If it's a regular BuildList instruction, turn it into a BuildListBig
-        // instruction and add the amount of matches.
-        // Otherwise, if it's a BuildListBig instruction already, find the list
-        // size constant in the ConstantTable and increase it.
-        if (instructions[buildListIndex] == (byte)InstructionKind.BuildList)
-        {
-            int count = instructions[buildListIndex + 1].ToUshort(instructions[buildListIndex + 2]);
-            instructions[buildListIndex] = (byte)InstructionKind.BuildListBig;
-
-            var (key1, key2) = _currentPage.ConstantTable.Add(count + matches.Count - 1).ToBytePair();
-            instructions[buildListIndex + 1] = key1;
-            instructions[buildListIndex + 2] = key2;
-        }
-        else
-        {
-            var constantAddress = instructions[buildListIndex + 1];
-            var count = _currentPage.ConstantTable.Get<int>(constantAddress);
-            _currentPage.ConstantTable.Update(
-                constantAddress,
-                count + matches.Count - 1
-            );
-        }
+        var buildListBigIndex = _ip + offset;
+        var constantAddress = instructions[buildListBigIndex + 1].ToUshort(instructions[buildListBigIndex + 2]);
+        var count = _currentPage.ConstantTable.Get<int>(constantAddress);
+        _currentPage.ConstantTable.Update(
+            constantAddress,
+            count + matches.Count - 1
+        );
 
         _stack.Pop();
         foreach (var match in matches)
