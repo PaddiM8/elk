@@ -341,7 +341,7 @@ private int FindCurrentLineNumber()
                 StructConst(GetConstant<StructSymbol>());
                 break;
             case InstructionKind.Glob:
-                Glob(Eat().ToUshort(Eat()));
+                Glob(GetConstant<GlobbedArgumentCount>());
                 break;
             case InstructionKind.New:
                 New(Eat());
@@ -354,6 +354,9 @@ private int FindCurrentLineNumber()
                 break;
             case InstructionKind.BuildListBig:
                 BuildListBig(GetConstant<int>());
+                break;
+            case InstructionKind.BuildGlobbedArgumentList:
+                BuildGlobbedArgumentList(GetConstant<GlobbedArgumentCount>());
                 break;
             case InstructionKind.BuildSet:
                 BuildSet(Eat().ToUshort(Eat()));
@@ -905,7 +908,7 @@ private int FindCurrentLineNumber()
         _stack.PushObject(symbol);
     }
 
-    private void Glob(ushort offset)
+    private void Glob(GlobbedArgumentCount globbedArgumentCount)
     {
         // The glob instruction should only be used for variadic arguments
         var value = _stack[^1].As<RuntimeString>().Value;
@@ -913,15 +916,7 @@ private int FindCurrentLineNumber()
         if (!matches.Any())
             return;
 
-        // Find the list containing the variadic arguments
-        var instructions = _currentPage.Instructions;
-        var buildListBigIndex = _ip + offset;
-        var constantAddress = instructions[buildListBigIndex + 1].ToUshort(instructions[buildListBigIndex + 2]);
-        var count = _currentPage.ConstantTable.Get<int>(constantAddress);
-        _currentPage.ConstantTable.Update(
-            constantAddress,
-            count + matches.Count - 1
-        );
+        globbedArgumentCount.GlobbedCount += matches.Count - 1;
 
         _stack.Pop();
         foreach (var match in matches)
@@ -966,6 +961,12 @@ private int FindCurrentLineNumber()
             values[size - i - 1] = _stack.Pop();
 
         _stack.Push(new RuntimeList(values.ToList()));
+    }
+
+    private void BuildGlobbedArgumentList(GlobbedArgumentCount globbedArgumentCount)
+    {
+        BuildListBig(globbedArgumentCount.NonGlobbedCount + globbedArgumentCount.GlobbedCount);
+        globbedArgumentCount.GlobbedCount = 0;
     }
 
     private void BuildSet(ushort size)

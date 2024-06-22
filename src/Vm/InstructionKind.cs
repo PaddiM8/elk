@@ -38,6 +38,7 @@ enum InstructionKind : byte
     BuildTuple,
     BuildList,
     BuildListBig,
+    BuildGlobbedArgumentList,
     BuildSet,
     BuildDict,
     BuildRange,

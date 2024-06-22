@@ -46,6 +46,7 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
 
         if (File.Exists(CommonPaths.InitFile))
         {
+            // TODO: Fix this
             //RunFile(CommonPaths.InitFile, null);
 
             return;

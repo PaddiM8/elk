@@ -119,7 +119,7 @@ class Disassembler
                 GetConstant<StructSymbol>();
                 break;
             case InstructionKind.Glob:
-                EatShort();
+                GetConstant<GlobbedArgumentCount>();
                 break;
             case InstructionKind.New:
                 Eat();
@@ -130,6 +130,9 @@ class Disassembler
             case InstructionKind.BuildDict:
             case InstructionKind.BuildString:
                 EatShort();
+                break;
+            case InstructionKind.BuildGlobbedArgumentList:
+                GetConstant<GlobbedArgumentCount>();
                 break;
             case InstructionKind.BuildListBig:
                 GetConstant<int>();

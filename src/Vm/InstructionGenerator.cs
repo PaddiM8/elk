@@ -63,6 +63,8 @@ class InstructionGenerator(
             Emit(InstructionKind.ExitBlock, (byte)localCount);
         }
 
+        _currentPage.ConstantTable.ClearCache();
+
         return _currentPage;
     }
 
@@ -181,6 +183,7 @@ class InstructionGenerator(
         _currentBasePointer = previousBasePointer;
 
         Emit(InstructionKind.Ret);
+        _currentPage.ConstantTable.ClearCache();
         _currentPage = previousPage;
 
         foreach (var _ in expr.Parameters)
@@ -877,23 +880,24 @@ class InstructionGenerator(
         // non-reversed order.
         if (variadicArguments != null)
         {
-            var globOffsets = new List<int>();
+            var globbedArgumentCount = new GlobbedArgumentCount(variadicArguments.Count);
+            var hasGlobs = false;
             foreach (var (variadicArgument, isGlob) in variadicArguments)
             {
                 Next(variadicArgument);
                 if (isGlob)
-                    globOffsets.Add(EmitJump(InstructionKind.Glob));
+                {
+                    EmitBig(InstructionKind.Glob, globbedArgumentCount);
+                    hasGlobs = true;
+                }
             }
 
             // Dynamic function calls do this on the fly
             if (!expr.IsReference)
             {
-                foreach (var offset in globOffsets)
-                    PatchJump(offset);
-
-                if (globOffsets.Any())
+                if (hasGlobs)
                 {
-                    EmitBig(InstructionKind.BuildListBig, variadicArguments.Count);
+                    EmitBig(InstructionKind.BuildGlobbedArgumentList, globbedArgumentCount);
                 }
                 else
                 {
