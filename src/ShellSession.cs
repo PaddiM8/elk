@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Analysis;
+using Elk.Parsing;
 using Elk.Scoping;
 using Elk.Std.DataTypes;
 using Elk.Vm;
@@ -46,7 +47,7 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
 
         if (File.Exists(CommonPaths.InitFile))
         {
-            //RunFile(CommonPaths.InitFile, null);
+            RunFile(CommonPaths.InitFile, null);
 
             return;
         }
@@ -178,6 +179,8 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         }
 
         Console.CancelKeyPress += (_, _) => CallOnExit();
+
+        _virtualMachine.RootModule.AnalysisStatus = AnalysisStatus.None;
         var evaluationResult = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
             _virtualMachine.RootModule,

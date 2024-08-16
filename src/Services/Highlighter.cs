@@ -533,11 +533,26 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         if (Current?.Kind != TokenKind.WhiteSpace)
             return new TextArgumentsInfo(Array.Empty<string>(), -1, -1);
 
+
         var textArguments = new List<string>();
         var caretAtArgumentIndex = -1;
         var textArgumentTokens = new List<Token>();
         var startIndex = Current.Position.Index - 1;
         int? initialWhiteSpaceLength = null;
+
+        void AppendTextArgumentTokens()
+        {
+            var argumentString = string.Join("", textArgumentTokens.Select(x => x.Value));
+            if (textArgumentTokens.Any())
+            {
+                var kind = shell != null && FileUtils.IsValidStartOfPath(argumentString, shell.WorkingDirectory)
+                    ? SemanticTokenKind.Path
+                    : SemanticTokenKind.TextArgument;
+                Push(kind, argumentString, textArgumentTokens.First().Position);
+                textArgumentTokens.Clear();
+            }
+        }
+
         while (!ReachedTextEnd())
         {
             if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
@@ -545,9 +560,10 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
                 NextStringLiteral();
             }
             else if (Previous?.Kind != TokenKind.Backslash &&
-                     Current!.Value == "$" &&
-                     Peek?.Kind == TokenKind.OpenBrace)
+                 Current!.Value == "$" &&
+                 Peek?.Kind == TokenKind.OpenBrace)
             {
+                AppendTextArgumentTokens();
                 NextInterpolation();
             }
             else if (Current?.Kind == TokenKind.Backslash)
@@ -556,14 +572,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             }
             else if (Current?.Kind == TokenKind.WhiteSpace)
             {
-                var argumentString = string.Join("", textArgumentTokens.Select(x => x.Value));
-                if (textArgumentTokens.Any())
-                {
-                    var kind = shell != null && FileUtils.IsValidStartOfPath(argumentString, shell.WorkingDirectory)
-                        ? SemanticTokenKind.Path
-                        : SemanticTokenKind.TextArgument;
-                    Push(kind, argumentString, textArgumentTokens.First().Position);
-                }
+                AppendTextArgumentTokens();
 
                 var whiteSpaceLength = 0;
                 while (Current?.Kind == TokenKind.WhiteSpace)
@@ -573,7 +582,6 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
                 }
 
                 initialWhiteSpaceLength ??= whiteSpaceLength;
-                textArgumentTokens.Clear();
 
                 // If the caret is within this text argument,
                 // save the index of the argument.

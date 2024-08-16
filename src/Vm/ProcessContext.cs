@@ -161,7 +161,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         }
         else
         {
-            _buffer.Add(eventArgs.Data);
+            _buffer.TryAdd(eventArgs.Data);
         }
     }
 

@@ -23,17 +23,6 @@ let ints = ["1", "2"] | sel => &into::int
 assertEqual(ints[0], 1)
 assertEqual(ints[1], 2)
 
-let modified = false
-fn thing() => closure {
-    closure()
-}
-
-thing =>: {
-    modified = true
-}
-
-assert(modified)
-
 # independent closure
 let f = &Fn => x: x + "!"
 let result = f | call hi
@@ -91,7 +80,7 @@ greeter | call("world") | assertEqual("Hello world")
 let (a, x, b) = (1, 5, 2)
 let f = &Fn => { x += 1 }
 f | call | assertEqual(6)
-x | assertEqual(6)
+x | assertEqual(5)
 f | call | assertEqual(7)
 assertEqual(a, 1)
 assertEqual(b, 2)

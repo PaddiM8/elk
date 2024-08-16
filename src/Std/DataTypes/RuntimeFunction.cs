@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Elk.Exceptions;
+using Elk.Scoping;
 using Elk.Std.Attributes;
 using Elk.Std.Bindings;
 using Elk.Vm;
@@ -78,6 +79,22 @@ internal class RuntimeUserFunction(
 
     public override string ToString()
         => "<function>";
+}
+
+internal class RuntimeClosureFunction(
+    Page page,
+    Scope environment,
+    IList<object>? arguments,
+    Func<RuntimeFunction, Invoker> createInvoker)
+    : RuntimeUserFunction(page, arguments, createInvoker)
+{
+    public Scope Environment { get; } = environment;
+
+    public override int GetHashCode()
+        => Page.GetHashCode();
+
+    public override string ToString()
+        => "<closure>";
 }
 
 internal class RuntimeProgramFunction(

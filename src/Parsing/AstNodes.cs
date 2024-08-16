@@ -416,6 +416,8 @@ public class VariableExpr(Token identifier, Scope scope)
 {
     public Token Identifier { get; } = identifier;
 
+    public bool IsCaptured { get; set; }
+
     public override IEnumerable<Expr> ChildExpressions
         => Array.Empty<Expr>();
 }

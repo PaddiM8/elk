@@ -680,13 +680,31 @@ class Analyser(RootModuleScope rootModule)
             return variableExpr;
 
         var capturedVariable = closure.Body.Scope.Parent?.FindVariable(expr.Identifier.Value);
-        if (capturedVariable != null)
+        if (capturedVariable != null && !IsVariableDeclaredInClosure(expr.Identifier.Value, _scope, closure.Body.Scope))
         {
             closure.CapturedVariables.Add(expr.Identifier.Value);
             capturedVariable.IsCaptured = true;
+            variableExpr.IsCaptured = true;
         }
 
         return variableExpr;
+    }
+
+    private bool IsVariableDeclaredInClosure(string name, Scope startScope, Scope closureScope)
+    {
+        if (startScope.HasDeclarationOfVariable(name))
+            return true;
+
+        var currentScope = startScope;
+        while (currentScope != closureScope && currentScope != null)
+        {
+            if (currentScope.HasDeclarationOfVariable(name))
+                return true;
+
+            currentScope = currentScope.Parent;
+        }
+
+        return false;
     }
 
     private CallExpr Visit(
@@ -719,8 +737,12 @@ class Analyser(RootModuleScope rootModule)
             }
 
             enclosingClosureProvidingFunction = enclosingFunction;
-            if (expr.EnclosingFunction is ClosureExpr && enclosingClosureProvidingFunction.ClosureSymbol != null)
+            if (expr.EnclosingFunction is ClosureExpr nearestEnclosingClosure &&
+                enclosingClosureProvidingFunction.ClosureSymbol != null)
+            {
                 enclosingClosureProvidingFunction.ClosureSymbol.IsCaptured = true;
+                nearestEnclosingClosure.CapturedVariables.Add(enclosingClosureProvidingFunction.ClosureSymbol.Name);
+            }
         }
 
         var stdFunction = !builtIn.HasValue
@@ -917,16 +939,18 @@ class Analyser(RootModuleScope rootModule)
         _enclosingFunction = closure;
         closure.Body = (BlockExpr)Next(expr.Body);
         _enclosingFunction = previousEnclosingFunction;
+        expr.EnclosingFunction = previousEnclosingFunction;
 
         // If closure inside a closure captures a variable that is outside its parent,
         // the parent needs to capture it as well, in order to pass it on to the child.
         if (_enclosingFunction is ClosureExpr enclosingClosure)
         {
-            foreach (var captured in expr.CapturedVariables
-                .Where(x => enclosingClosure.Body.Scope.HasVariable(x)))
-            {
+            var captures = expr.CapturedVariables
+                .Where(x => enclosingClosure.Body.Scope.HasVariable(x))
+                .Where(x => !expr.Body.Scope.HasDeclarationOfVariable(x))
+                .Where(x => enclosingClosure.Parameters.All(param => param.Value != x));
+            foreach (var captured in captures)
                 enclosingClosure.CapturedVariables.Add(captured);
-            }
         }
 
         if (closure.Body.Expressions.Count != 1 ||

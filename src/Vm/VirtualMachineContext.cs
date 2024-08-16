@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Elk.Scoping;
 using Elk.Std.DataTypes;
@@ -9,7 +8,7 @@ class VirtualMachineContext
 {
     public IndexableStack<RuntimeObject> Stack { get; } = new();
 
-    public Dictionary<VariableSymbol, WeakReference<RuntimeObject>> Variables { get; } = new();
+    public Dictionary<VariableSymbol, RuntimeObject> Variables { get; } = new();
 
     public Stack<ExceptionFrame> ExceptionStack { get; } = new();
 }

@@ -51,6 +51,9 @@ public abstract class Scope
     public bool HasVariable(string name)
         => _variables.ContainsKey(name) || (Parent?.HasVariable(name) ?? false);
 
+    public bool HasDeclarationOfVariable(string name)
+        => _variables.ContainsKey(name);
+
     public VariableSymbol? FindVariable(string name)
     {
         _variables.TryGetValue(name, out var result);

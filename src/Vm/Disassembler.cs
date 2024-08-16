@@ -105,11 +105,21 @@ class Disassembler
             case InstructionKind.StoreUpper:
                 GetConstant<VariableSymbol>();
                 break;
+            case InstructionKind.LoadCaptured:
+            case InstructionKind.StoreCaptured:
+                GetConstant<string>();
+                break;
+            case InstructionKind.Capture:
+                Eat();
+                break;
             case InstructionKind.Const:
                 GetConstant<object>();
                 break;
             case InstructionKind.StructConst:
                 GetConstant<StructSymbol>();
+                break;
+            case InstructionKind.Glob:
+                GetConstant<GlobbedArgumentCount>();
                 break;
             case InstructionKind.New:
                 Eat();
@@ -120,6 +130,9 @@ class Disassembler
             case InstructionKind.BuildDict:
             case InstructionKind.BuildString:
                 EatShort();
+                break;
+            case InstructionKind.BuildGlobbedArgumentList:
+                GetConstant<GlobbedArgumentCount>();
                 break;
             case InstructionKind.BuildListBig:
                 GetConstant<int>();

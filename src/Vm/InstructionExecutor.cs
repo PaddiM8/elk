@@ -14,6 +14,7 @@ namespace Elk.Vm;
 
 record struct Frame(
     Page Page,
+    RuntimeUserFunction? Function,
     int ReturnAddress,
     int BasePointer,
     bool IsRoot
@@ -24,64 +25,71 @@ class InstructionExecutor
     private readonly VirtualMachineOptions _vmOptions;
     private readonly VirtualMachineContext _context;
     private readonly IndexableStack<RuntimeObject> _stack;
+    private readonly int _initialStackSize;
     private readonly Stack<Frame> _callStack = new();
     private int _ip;
     private Page _currentPage = null!;
     private RuntimeObject? _returnedValue;
 
-    internal InstructionExecutor(VirtualMachineOptions vmOptions,VirtualMachineContext context)
+internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
+{
+    _vmOptions = vmOptions;
+    _context = context;
+    _stack = context.Stack;
+    _initialStackSize = context.Stack.Count;
+}
+
+public RuntimeObject Execute(Page page)
+{
+    PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
+
+    if (_vmOptions.DumpInstructions)
     {
-        _vmOptions = vmOptions;
-        _context = context;
-        _stack = context.Stack;
+        Console.Write($"Page {_currentPage.GetHashCode()}:");
+        page.Dump();
+        Console.WriteLine();
     }
 
-    public RuntimeObject Execute(Page page)
+    try
     {
-        PushFrame(new Frame(page, page.Instructions.Count, 0, IsRoot: false));
-
+        while (_callStack.Any())
+        {
+            ExecuteCurrentPage();
+            PopFrame();
+        }
+    }
+    catch (Exception ex)
+    {
         if (_vmOptions.DumpInstructions)
         {
-            Console.Write($"Page {_currentPage.GetHashCode()}:");
-            page.Dump();
-            Console.WriteLine();
-        }
-
-        try
-        {
-            while (_callStack.Any())
-            {
-                ExecuteCurrentPage();
-                PopFrame();
-            }
-        }
-        catch (Exception ex)
-        {
-            if (_vmOptions.DumpInstructions && ex is not RuntimeException)
-            {
+            if (ex is not RuntimeException)
                 DumpState();
-                Console.WriteLine();
-                Console.WriteLine(ex);
-            }
 
-            var lineNumber = FindCurrentLineNumber();
-            var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
-
-            throw new RuntimeException(ex.Message, textPos, textPos);
+            Console.WriteLine();
+            Console.WriteLine(ex);
         }
 
-        var returnValue = _stack.Any()
-            ? _stack.Pop()
-            : RuntimeNil.Value;
-        Debug.Assert(page.Name == "<root>" || !_stack.Any());
+        while (_stack.Count > _initialStackSize)
+            _stack.PopObject();
 
-        return returnValue;
+        var lineNumber = FindCurrentLineNumber();
+        var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
+
+        throw new RuntimeException(ex.Message, textPos, textPos);
     }
 
-    private int FindCurrentLineNumber()
-    {
-        if (_currentPage.LineNumbers.Count == 0)
-            return 0;
+    var returnValue = _stack.Any()
+        ? _stack.Pop()
+        : RuntimeNil.Value;
+    Debug.Assert(page.Name == "<root>" || !_stack.Any());
+
+    return returnValue;
+}
+
+private int FindCurrentLineNumber()
+{
+    if (_currentPage.LineNumbers.Count == 0)
+        return 0;
 
         var target = _ip;
         var min = 0;
@@ -148,7 +156,7 @@ class InstructionExecutor
                     PopFrame();
 
                 while (_stack.Count > exceptionFrame.StackSize)
-                    _stack.Pop();
+                    _stack.PopObject();
 
                 _ip = exceptionFrame.Ip;
 
@@ -254,6 +262,15 @@ class InstructionExecutor
             case InstructionKind.StoreUpper:
                 StoreUpper(GetConstant<VariableSymbol>());
                 break;
+            case InstructionKind.LoadCaptured:
+                LoadCaptured(GetConstant<string>());
+                break;
+            case InstructionKind.StoreCaptured:
+                StoreCaptured(GetConstant<string>());
+                break;
+            case InstructionKind.Capture:
+                Capture(Eat());
+                break;
             case InstructionKind.Pop:
                 Pop();
                 break;
@@ -324,7 +341,7 @@ class InstructionExecutor
                 StructConst(GetConstant<StructSymbol>());
                 break;
             case InstructionKind.Glob:
-                Glob();
+                Glob(GetConstant<GlobbedArgumentCount>());
                 break;
             case InstructionKind.New:
                 New(Eat());
@@ -337,6 +354,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.BuildListBig:
                 BuildListBig(GetConstant<int>());
+                break;
+            case InstructionKind.BuildGlobbedArgumentList:
+                BuildGlobbedArgumentList(GetConstant<GlobbedArgumentCount>());
                 break;
             case InstructionKind.BuildSet:
                 BuildSet(Eat().ToUshort(Eat()));
@@ -475,15 +495,37 @@ class InstructionExecutor
 
     private void LoadUpper(VariableSymbol symbol)
     {
-        if (!_context.Variables[symbol].TryGetTarget(out var value))
-            throw new RuntimeException($"Failed to load captured variable {symbol.Name}");
-
-        _stack.Push(value);
+        _context.Variables.TryGetValue(symbol, out var value);
+        _stack.Push(value ?? RuntimeNil.Value);
     }
 
     private void StoreUpper(VariableSymbol symbol)
     {
-        _context.Variables[symbol] = new WeakReference<RuntimeObject>(_stack.Peek());
+        _context.Variables[symbol] = _stack.Peek();
+    }
+
+    private void LoadCaptured(string name)
+    {
+        var function = (RuntimeClosureFunction)_callStack.Peek().Function!;
+        _stack.Push(function.Environment.FindVariable(name)!.Value);
+    }
+
+    private void StoreCaptured(string name)
+    {
+        var function = (RuntimeClosureFunction)_callStack.Peek().Function!;
+        function.Environment.FindVariable(name)!.Value = _stack.Peek();
+    }
+
+    private void Capture(byte count)
+    {
+        var function = (RuntimeClosureFunction)_stack.PopObject();
+        for (byte i = 0; i < count; i++)
+        {
+            function.Environment.AddVariable(
+                (string)_stack.PopObject(),
+                _stack.Pop()
+            );
+        }
     }
 
     private void Pop()
@@ -530,7 +572,7 @@ class InstructionExecutor
         var actualCount = 0;
         foreach (var (symbol, item) in symbols.Zip(items))
         {
-            _context.Variables[symbol] = new WeakReference<RuntimeObject>(item);
+            _context.Variables[symbol] = item;
             actualCount++;
         }
 
@@ -558,6 +600,7 @@ class InstructionExecutor
         var function = (RuntimeUserFunction)_stack.Pop();
         var frame = new Frame(
             function.Page,
+            function,
             _ip,
             _stack.Count - 1,
             isRoot
@@ -590,16 +633,16 @@ class InstructionExecutor
             var result = function.StdFunction.Invoke(arguments.ToList());
             _stack.Push(result);
         }
-        catch (RuntimeException e)
+        catch (RuntimeException ex)
         {
-            throw new RuntimeStdException(e.Message)
+            throw new RuntimeStdException(ex.Message)
             {
-                ElkStackTrace = e.ElkStackTrace,
+                ElkStackTrace = ex.ElkStackTrace,
             };
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            throw new RuntimeStdException(e.Message);
+            throw new RuntimeStdException(ex.Message);
         }
     }
 
@@ -865,7 +908,7 @@ class InstructionExecutor
         _stack.PushObject(symbol);
     }
 
-    private void Glob()
+    private void Glob(GlobbedArgumentCount globbedArgumentCount)
     {
         // The glob instruction should only be used for variadic arguments
         var value = _stack[^1].As<RuntimeString>().Value;
@@ -873,37 +916,7 @@ class InstructionExecutor
         if (!matches.Any())
             return;
 
-        // Find the list containing the variadic arguments
-        var instructions = _currentPage.Instructions;
-        var buildListIndex = _ip;
-        while (instructions[buildListIndex] is not
-            ((byte)InstructionKind.BuildList or (byte)InstructionKind.BuildListBig))
-        {
-            buildListIndex++;
-        }
-
-        // If it's a regular BuildList instruction, turn it into a BuildListBig
-        // instruction and add the amount of matches.
-        // Otherwise, if it's a BuildListBig instruction already, find the list
-        // size constant in the ConstantTable and increase it.
-        if (instructions[buildListIndex] == (byte)InstructionKind.BuildList)
-        {
-            int count = instructions[buildListIndex + 1].ToUshort(instructions[buildListIndex + 2]);
-            instructions[buildListIndex] = (byte)InstructionKind.BuildListBig;
-
-            var (key1, key2) = _currentPage.ConstantTable.Add(count + matches.Count - 1).ToBytePair();
-            instructions[buildListIndex + 1] = key1;
-            instructions[buildListIndex + 2] = key2;
-        }
-        else
-        {
-            var constantAddress = instructions[buildListIndex + 1];
-            var count = _currentPage.ConstantTable.Get<int>(constantAddress);
-            _currentPage.ConstantTable.Update(
-                constantAddress,
-                count + matches.Count - 1
-            );
-        }
+        globbedArgumentCount.GlobbedCount += matches.Count - 1;
 
         _stack.Pop();
         foreach (var match in matches)
@@ -948,6 +961,12 @@ class InstructionExecutor
             values[size - i - 1] = _stack.Pop();
 
         _stack.Push(new RuntimeList(values.ToList()));
+    }
+
+    private void BuildGlobbedArgumentList(GlobbedArgumentCount globbedArgumentCount)
+    {
+        BuildListBig(globbedArgumentCount.NonGlobbedCount + globbedArgumentCount.GlobbedCount);
+        globbedArgumentCount.GlobbedCount = 0;
     }
 
     private void BuildSet(ushort size)
