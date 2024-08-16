@@ -947,6 +947,7 @@ class Analyser(RootModuleScope rootModule)
         {
             var captures = expr.CapturedVariables
                 .Where(x => enclosingClosure.Body.Scope.HasVariable(x))
+                .Where(x => !enclosingClosure.Body.Scope.HasDeclarationOfVariable(x))
                 .Where(x => !expr.Body.Scope.HasDeclarationOfVariable(x))
                 .Where(x => enclosingClosure.Parameters.All(param => param.Value != x));
             foreach (var captured in captures)

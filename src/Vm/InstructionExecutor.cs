@@ -135,7 +135,13 @@ private int FindCurrentLineNumber()
 
             Console.WriteLine("Stack:");
             foreach (var item in _stack)
-                Console.WriteLine(item);
+            {
+                var itemString = item.ToString()?.Replace("\n", " ") ?? "";
+                if (itemString.Length > 40)
+                    itemString = itemString[..40] + "...";
+
+                Console.WriteLine(itemString);
+            }
     }
 
     private void ExecuteCurrentPage()

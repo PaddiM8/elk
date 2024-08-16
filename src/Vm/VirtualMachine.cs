@@ -10,21 +10,14 @@ namespace Elk.Vm;
 
 record struct ExceptionFrame(Page Page, int Ip, int StackSize);
 
-class VirtualMachine
+class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
 {
-    public RootModuleScope RootModule { get; }
+    public RootModuleScope RootModule { get; } = rootModule;
 
     public ShellEnvironment ShellEnvironment { get; } = new(null);
 
-    private readonly VirtualMachineOptions _options;
     private readonly FunctionTable _functions = new();
     private readonly VirtualMachineContext _context = new();
-
-    public VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
-    {
-        RootModule = rootModule;
-        _options = options;
-    }
 
     public void AddGlobalVariable(string name, RuntimeObject value)
     {
@@ -34,10 +27,10 @@ class VirtualMachine
 
     public Page Generate(Ast ast)
     {
-        var executor = new InstructionExecutor(_options, _context);
+        var executor = new InstructionExecutor(options, _context);
         var generator = new InstructionGenerator(_functions, ShellEnvironment, executor);
         var page = generator.Generate(ast);
-        if (!_options.DumpInstructions)
+        if (!options.DumpInstructions)
             return page;
 
         foreach (var function in ast.Expressions.Where(x => x is FunctionExpr).Cast<FunctionExpr>())
@@ -54,7 +47,7 @@ class VirtualMachine
 
     public RuntimeObject Execute(Page page)
     {
-        var executor = new InstructionExecutor(_options, _context);
+        var executor = new InstructionExecutor(options, _context);
 
         return executor.Execute(page);
     }
@@ -82,7 +75,7 @@ class VirtualMachine
 
         try
         {
-            var executor = new InstructionExecutor(_options, _context);
+            var executor = new InstructionExecutor(options, _context);
 
             return executor.ExecuteFunction(function, arguments, isRoot);
         }

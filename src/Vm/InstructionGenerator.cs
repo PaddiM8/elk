@@ -449,7 +449,6 @@ class InstructionGenerator(
     private void ClearBlock(bool isPrimaryExitPoint, int? newScopeDepth = null)
     {
         var popCount = ConsumeBlockLocals(isPrimaryExitPoint, newScopeDepth);
-        Console.WriteLine(popCount);
         for (var i = 0; i < popCount; i++)
             Emit(InstructionKind.Pop);
     }
