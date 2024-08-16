@@ -6,10 +6,10 @@ namespace Elk.Cli;
 
 static class Utils
 {
-    private static readonly Regex _escapeCharRegex = new("[{}()|$ ]");
+    private static readonly Regex _escapeCharRegex = new("[{}()|$\"' ]");
 
     public static string Escape(string input)
-        => _escapeCharRegex.Replace(input, m => $"\\{m.Value}");
+        => _escapeCharRegex.Replace(input, m => $"\\{m.Value}").Replace("\n", "\\n");
 
     public static string Unescape(string input)
     {

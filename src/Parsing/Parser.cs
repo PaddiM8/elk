@@ -1371,6 +1371,16 @@ internal class Parser
         {
             AdvanceIf(TokenKind.Backslash);
 
+            if (Previous?.Kind == TokenKind.Backslash && Current?.Value.StartsWith('n') is true)
+            {
+                _tokens[_index] = Current with { Value = Current.Value[1..] };
+                if (Current.Value.Length == 0)
+                    Eat();
+
+                currentText.Append('\n');
+                continue;
+            }
+
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
                 var token = new Token(
