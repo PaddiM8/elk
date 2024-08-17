@@ -1335,6 +1335,9 @@ private int FindCurrentLineNumber()
     private void PopFrame()
     {
         var frame = _callStack.Pop();
+        while (_stack.Count - 1 > frame.BasePointer)
+            _stack.PopObject();
+
         if (_callStack.Count > 0)
             _currentPage = _callStack.Peek().Page;
 
