@@ -47,7 +47,10 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
 
         if (File.Exists(CommonPaths.InitFile))
         {
+            var previousFilePath = _virtualMachine.RootModule.FilePath;
+            _virtualMachine.RootModule.FilePath = CommonPaths.InitFile;
             RunFile(CommonPaths.InitFile, null);
+            _virtualMachine.RootModule.FilePath = previousFilePath;
 
             return;
         }

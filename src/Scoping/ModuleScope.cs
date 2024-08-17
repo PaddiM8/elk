@@ -42,7 +42,7 @@ public class ModuleScope : Scope, ISymbol
 
     public string? Name { get; }
 
-    public string? FilePath { get; }
+    public string? FilePath { get; set; }
 
     public Ast Ast { get; set; }
 
