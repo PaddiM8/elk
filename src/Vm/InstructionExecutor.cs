@@ -70,6 +70,16 @@ class InstructionExecutor
                 Console.WriteLine(ex);
             }
 
+            var stackTrace = new List<Trace>();
+            if (ex is RuntimeException original)
+                stackTrace.AddRange(original.ElkStackTrace);
+
+            while (_callStack.Any())
+            {
+                stackTrace.Add(CreateTrace(_currentPage.Name));
+                PopFrame();
+            }
+
             while (_stack.Count > _initialStackSize)
                 _stack.PopObject();
 
@@ -78,9 +88,7 @@ class InstructionExecutor
 
             throw new RuntimeException(ex.Message, textPos, textPos)
             {
-                ElkStackTrace = ex is RuntimeException original
-                    ? original.ElkStackTrace
-                    : [],
+                ElkStackTrace = stackTrace,
             };
         }
 
@@ -168,15 +176,7 @@ class InstructionExecutor
             catch (RuntimeException ex)
             {
                 if (!_context.ExceptionStack.Any())
-                {
-                    while (_callStack.Any())
-                    {
-                        ex.ElkStackTrace.Add(CreateTrace(_currentPage.Name));
-                        PopFrame();
-                    }
-
                     throw;
-                }
 
                 var exceptionFrame = _context.ExceptionStack.Pop();
                 while (_currentPage != exceptionFrame.Page)
