@@ -29,9 +29,8 @@ Compile and install the program:
 
 ```shell
 ./build.sh
-mkdir -p /usr/share/elk
-install -D ./build/* /usr/share/elk/
-ln -s /usr/share/elk/elk /usr/bin/elk
+cd build/*
+tar -xvf elk.tar.xz -C /
 ```
 
 Elk is now installed and can be accessed with the `elk` command.

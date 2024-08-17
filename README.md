@@ -11,8 +11,7 @@ Installation steps:
 * Build the program `./build.sh`
 * Install the program
   ```sh
-  mkdir /usr/share/elk
-  install -D ./build/* /usr/share/elk/
-  ln -s /usr/share/elk/elk /usr/bin/elk
+  cd build/*
+  tar -xvf elk.tar.xz -C /
   ```
 * Run the program `elk`
