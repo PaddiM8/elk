@@ -1,0 +1,23 @@
+#!/usr/bin/env elk
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        line
+            | split ":"
+            | iter::at 1
+            | split "|"
+            | map => &str::trim
+            | map => x {
+                x | re::findAll '\d+' | map => &into::int | iter::collect
+            }
+            | into::set
+    }
+    | map => pair {
+        let (winning, own) = pair
+        let count = own
+            | where => x: x in winning
+            | len
+        2 ^ (count - 1) | into::int
+    }
+    | math::sum
+    | assertEqual(19855)

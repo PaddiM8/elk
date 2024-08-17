@@ -1,0 +1,92 @@
+#!/usr/bin/env elk
+
+fn getEntryPoints(schematic, pos) {
+    let (x, y) = pos
+    let c = getPoint(schematic, pos)
+
+    return [(x, y + 1), (x, y - 1)] if c == "|"
+    return [(x + 1, y), (x - 1, y)] if c == "-"
+    return [(x, y - 1), (x + 1, y)] if c == "L"
+    return [(x, y - 1), (x - 1, y)] if c == "J"
+    return [(x - 1, y), (x, y + 1)] if c == "7"
+    return [(x + 1, y), (x, y + 1)] if c == "F"
+    return [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] if c == "S"
+    []
+}
+
+fn getPoint(schematic, pos) {
+    (iter::at(schematic, pos[1]) ?? []) | iter::at(pos[0])
+}
+
+fn findLoopPipes(schematic) {
+    # find the starting point
+    let start = nil
+    for (line, y) in schematic | withIndex {
+        for (c, x) in line | withIndex {
+            if c == "S" {
+                start = (x, y)
+                break
+            }
+        }
+    }
+
+    let oldPos = nil
+    let pos = start
+    let pipes = []
+    while len(pipes) == 0 or getPoint(schematic, pos) != "S" {
+        let (x, y) = pos
+        let newPos = schematic
+            | getEntryPoints(pos)
+            | where => xy { xy != oldPos and xy[0] >= 0 and xy[1] >= 0 }
+            | iter::firstOf => xy: pos in getEntryPoints(schematic, xy)
+        oldPos = pos
+        pos = newPos
+        pipes | push(pos)
+    }
+
+    pipes
+}
+
+# https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule
+fn isInArea(points, x, y) {
+    points = points | into::list
+    let num = points | len
+    let j = num - 1
+    let c = false
+    for i in 0..num {
+        return false if x == points[i][0] and y == points[i][1]
+        if (points[i][1] > y) == (points[j][1] > y) {
+            j = i
+            continue
+        }
+
+        let slope = (x - points[i][0]) * (points[j][1] - points[i][1]) -
+            (points[j][0] - points[i][0]) * (y - points[i][1])
+
+        # point is on boundary
+        return false if slope == 0
+
+        c = not c if (slope < 0) != (points[j][1] < points[i][1])
+        j = i
+    }
+
+    c
+}
+
+let pipes = cat ${scriptPath}/input.txt
+    | map => &into::chars
+    | iter::collect
+    | findLoopPipes
+let minX = pipes | map => &iter::at(0) | iter::min
+let minY = pipes | map => &iter::at(1) | iter::min
+let maxX = pipes | map => &iter::at(0) | iter::max
+let maxY = pipes | map => &iter::at(1) | iter::max
+let count = 0
+for y in minY..=maxY {
+    for x in minX..=maxX {
+        let isTile = not ((x, y) in pipes)
+        count += 1 if isTile and pipes | isInArea(x, y)
+    }
+}
+
+count | assertEqual(10)

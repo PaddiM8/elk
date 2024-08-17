@@ -668,6 +668,9 @@ class InstructionExecutor
         }
         catch (RuntimeException ex)
         {
+            if (_vmOptions.DumpInstructions)
+                Console.WriteLine(ex);
+
             List<Trace> stackTrace = [
                 ..ex.ElkStackTrace,
                 CreateTrace(function.StdFunction.Name)

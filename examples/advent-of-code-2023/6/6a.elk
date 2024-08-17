@@ -1,0 +1,14 @@
+#!/usr/bin/env elk
+
+let (times, distances) = cat ${scriptPath}/input.txt
+    | map => &re::findAll '\d+'
+
+let result = 1
+for (time, record) in times | iter::zip(distances) {
+    let occurrences = 1..=time
+        | iter::count => speed: speed * (time - speed) > record
+
+    result *= occurrences if occurrences
+}
+
+result | assertEqual(140220)

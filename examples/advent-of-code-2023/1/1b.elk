@@ -1,0 +1,31 @@
+#!/usr/bin/env elk
+
+let digits = {
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+}
+let pattern = dict::keys(digits)
+    | join "|"
+    | op::add '|\d'
+    | into::regex
+
+fn parseDigit(input) {
+    iter::at(digits, input) ?? input
+}
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        let left = re::find(line, pattern)
+        let right = re::findLast(line, pattern)
+
+        parseDigit(left) + parseDigit(right)
+    }
+    | math::sum
+    | assertEqual(6552)
