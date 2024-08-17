@@ -170,7 +170,7 @@ static class Iteration
     [ElkFunction("firstOf")]
     public static RuntimeObject FirstOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue)
-           ?? throw new RuntimeStdException("Can not get the first item of an empty Iterable.");
+           ?? throw new RuntimeStdException("An item matching the condition was not found");
 
     /// <returns>
     /// The first element of the given iterable object where the closure returns true,
