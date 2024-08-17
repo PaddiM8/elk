@@ -29,7 +29,7 @@ public record DiagnosticMessage(string Message, TextPos StartPosition, TextPos E
                 ? $"{trace.Position} "
                 : "";
             builder.AppendLine(
-                $"{position}{trace.FunctionIdentifier?.Value}".Trim()
+                $"{position}{trace.FunctionName}".Trim()
             );
         }
 

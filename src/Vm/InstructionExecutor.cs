@@ -9,6 +9,7 @@ using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Scoping;
 using Elk.Std.DataTypes;
+using Trace = Elk.Exceptions.Trace;
 
 namespace Elk.Vm;
 
@@ -31,65 +32,70 @@ class InstructionExecutor
     private Page _currentPage = null!;
     private RuntimeObject? _returnedValue;
 
-internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
-{
-    _vmOptions = vmOptions;
-    _context = context;
-    _stack = context.Stack;
-    _initialStackSize = context.Stack.Count;
-}
-
-public RuntimeObject Execute(Page page)
-{
-    PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
-
-    if (_vmOptions.DumpInstructions)
+    internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
     {
-        Console.Write($"Page {_currentPage.GetHashCode()}:");
-        page.Dump();
-        Console.WriteLine();
+        _vmOptions = vmOptions;
+        _context = context;
+        _stack = context.Stack;
+        _initialStackSize = context.Stack.Count;
     }
 
-    try
+    public RuntimeObject Execute(Page page)
     {
-        while (_callStack.Any())
-        {
-            ExecuteCurrentPage();
-            PopFrame();
-        }
-    }
-    catch (Exception ex)
-    {
+        PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
+
         if (_vmOptions.DumpInstructions)
         {
-            if (ex is not RuntimeException)
-                DumpState();
-
+            Console.Write($"Page {_currentPage.GetHashCode()}:");
+            page.Dump();
             Console.WriteLine();
-            Console.WriteLine(ex);
         }
 
-        while (_stack.Count > _initialStackSize)
-            _stack.PopObject();
+        try
+        {
+            while (_callStack.Any())
+            {
+                ExecuteCurrentPage();
+                PopFrame();
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_vmOptions.DumpInstructions)
+            {
+                if (ex is not RuntimeException)
+                    DumpState();
 
-        var lineNumber = FindCurrentLineNumber();
-        var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
+                Console.WriteLine();
+                Console.WriteLine(ex);
+            }
 
-        throw new RuntimeException(ex.Message, textPos, textPos);
+            while (_stack.Count > _initialStackSize)
+                _stack.PopObject();
+
+            var lineNumber = FindCurrentLineNumber();
+            var textPos = new TextPos(lineNumber, -1, -1, _currentPage.FilePath);
+
+            throw new RuntimeException(ex.Message, textPos, textPos)
+            {
+                ElkStackTrace = ex is RuntimeException original
+                    ? original.ElkStackTrace
+                    : [],
+            };
+        }
+
+        var returnValue = _stack.Any()
+            ? _stack.Pop()
+            : RuntimeNil.Value;
+        Debug.Assert(page.Name == "<root>" || !_stack.Any());
+
+        return returnValue;
     }
 
-    var returnValue = _stack.Any()
-        ? _stack.Pop()
-        : RuntimeNil.Value;
-    Debug.Assert(page.Name == "<root>" || !_stack.Any());
-
-    return returnValue;
-}
-
-private int FindCurrentLineNumber()
-{
-    if (_currentPage.LineNumbers.Count == 0)
-        return 0;
+    private int FindCurrentLineNumber()
+    {
+        if (_currentPage.LineNumbers.Count == 0)
+            return 0;
 
         var target = _ip;
         var min = 0;
@@ -112,6 +118,13 @@ private int FindCurrentLineNumber()
         return maxEntry.instructionIndex <= _ip
             ? maxEntry.lineNumber
             : _currentPage.LineNumbers[min].lineNumber;
+    }
+
+    private Trace CreateTrace(string? functionName)
+    {
+        var textPos = new TextPos(FindCurrentLineNumber(), 0, 0, _currentPage.FilePath);
+
+        return new Trace(textPos, functionName);
     }
 
     private void DumpState()
@@ -155,11 +168,22 @@ private int FindCurrentLineNumber()
             catch (RuntimeException ex)
             {
                 if (!_context.ExceptionStack.Any())
+                {
+                    while (_callStack.Any())
+                    {
+                        ex.ElkStackTrace.Add(CreateTrace(_currentPage.Name));
+                        PopFrame();
+                    }
+
                     throw;
+                }
 
                 var exceptionFrame = _context.ExceptionStack.Pop();
                 while (_currentPage != exceptionFrame.Page)
+                {
+                    ex.ElkStackTrace.Add(CreateTrace(_currentPage.Name));
                     PopFrame();
+                }
 
                 while (_stack.Count > exceptionFrame.StackSize)
                     _stack.PopObject();
@@ -644,14 +668,22 @@ private int FindCurrentLineNumber()
         }
         catch (RuntimeException ex)
         {
+            List<Trace> stackTrace = [
+                ..ex.ElkStackTrace,
+                CreateTrace(function.StdFunction.Name)
+            ];
+
             throw new RuntimeStdException(ex.Message)
             {
-                ElkStackTrace = ex.ElkStackTrace,
+                ElkStackTrace = stackTrace,
             };
         }
         catch (Exception ex)
         {
-            throw new RuntimeStdException(ex.Message);
+            throw new RuntimeStdException(ex.Message)
+            {
+                ElkStackTrace = [CreateTrace(function.StdFunction.Name)],
+            };
         }
     }
 
