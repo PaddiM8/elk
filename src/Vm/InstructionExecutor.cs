@@ -683,6 +683,12 @@ class InstructionExecutor
         }
         catch (Exception ex)
         {
+            if (_vmOptions.DumpInstructions)
+                Console.WriteLine(ex);
+
+            if (_vmOptions.DumpInstructions)
+                Console.WriteLine(ex);
+
             throw new RuntimeStdException(ex.Message)
             {
                 ElkStackTrace = [CreateTrace(function.StdFunction.Name)],

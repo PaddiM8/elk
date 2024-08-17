@@ -814,14 +814,15 @@ class InstructionGenerator(
 
     private int EmitArguments(CallExpr expr, bool skipFirst = false)
     {
-        IEnumerable<(Expr? defaultValue, bool isVariadic)> parameters = Array.Empty<(Expr?, bool)>();
+        var parameters = new List<(Expr? defaultValue, bool isVariadic)>();
         if (expr.FunctionSymbol != null)
         {
             parameters = expr
                 .FunctionSymbol
                 .Expr
                 .Parameters
-                .Select(x => (x.DefaultValue, x.IsVariadic));
+                .Select(x => (x.DefaultValue, x.IsVariadic))
+                .ToList();
         }
         else if (expr.StdFunction != null)
         {
@@ -842,13 +843,18 @@ class InstructionGenerator(
                 .Select(x => (
                     defaultValues: x.item.IsNullable ? nilExpr : null,
                     isVariadic: x.index == expr.StdFunction.VariadicStart
-                ));
+                ))
+                .ToList();
         }
 
         // Program calls are always variadic
         var skipCount = skipFirst ? 1 : 0;
         var arguments = new List<Expr>();
-        var variadicArguments = expr.FunctionSymbol == null && expr.StdFunction == null
+        var isProgramCall = expr.FunctionSymbol == null && expr.StdFunction == null;
+        var isEmptyVariadic = expr.Arguments.Count == 0 &&
+             !expr.IsReference &&
+             parameters.Any(x => x.isVariadic);
+        var variadicArguments = isProgramCall | isEmptyVariadic
             ? new List<(Expr expr, bool isGlob)>()
             : null;
         foreach (var (argument, parameter) in expr.Arguments.ZipLongest(parameters).Skip(skipCount))
