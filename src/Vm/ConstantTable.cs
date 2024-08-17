@@ -8,7 +8,7 @@ namespace Elk.Vm;
 class ConstantTable
 {
     private readonly List<object> _constants = [RuntimeNil.Value];
-    private readonly Dictionary<object, ushort> _cache = [];
+    private readonly Dictionary<(Type, object), ushort> _cache = [];
 
     public void ClearCache()
     {
@@ -27,9 +27,11 @@ class ConstantTable
             return 0;
 
         var canCache = true;
+        (Type, object)? cacheKey = null;
         try
         {
-            if (_cache.TryGetValue(value, out var key))
+            cacheKey = (value.GetType(), value);
+            if (_cache.TryGetValue(cacheKey.Value, out var key))
                 return key;
         }
         catch
@@ -40,7 +42,7 @@ class ConstantTable
         _constants.Add(value);
         var newKey = (ushort)(_constants.Count - 1);
         if (canCache)
-            _cache.Add(value, newKey);
+            _cache.Add(cacheKey!.Value, newKey);
 
         return newKey;
     }
