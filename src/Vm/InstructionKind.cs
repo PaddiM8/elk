@@ -52,6 +52,7 @@ enum InstructionKind : byte
     Sub,
     Mul,
     Div,
+    Pow,
     Mod,
     Negate,
     Not,

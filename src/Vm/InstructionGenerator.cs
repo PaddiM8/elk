@@ -606,6 +606,7 @@ class InstructionGenerator(
             OperationKind.Subtraction => InstructionKind.Sub,
             OperationKind.Multiplication => InstructionKind.Mul,
             OperationKind.Division => InstructionKind.Div,
+            OperationKind.Power => InstructionKind.Pow,
             OperationKind.Modulo => InstructionKind.Mod,
             OperationKind.EqualsEquals => InstructionKind.Equal,
             OperationKind.NotEquals => InstructionKind.NotEqual,

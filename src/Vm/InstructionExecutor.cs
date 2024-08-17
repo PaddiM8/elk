@@ -391,6 +391,9 @@ private int FindCurrentLineNumber()
             case InstructionKind.Div:
                 Div();
                 break;
+            case InstructionKind.Pow:
+                Pow();
+                break;
             case InstructionKind.Mod:
                 Mod();
                 break;
@@ -1085,6 +1088,12 @@ private int FindCurrentLineNumber()
     {
         var right = _stack.Pop();
         _stack[^1] = _stack[^1].Operation(OperationKind.Division, right);
+    }
+
+    private void Pow()
+    {
+        var right = _stack.Pop();
+        _stack[^1] = _stack[^1].Operation(OperationKind.Power, right);
     }
 
     private void Mod()
