@@ -870,8 +870,41 @@ class Analyser(RootModuleScope rootModule)
             throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
     }
 
-    private LiteralExpr Visit(LiteralExpr expr)
+    private Expr Visit(LiteralExpr expr)
     {
+        if (expr.Value.Kind == TokenKind.BashLiteral)
+        {
+            // Everything after `$:`
+            var bashContent = expr.Value.Value[2..];
+            var arguments = new List<Expr>
+            {
+                new LiteralExpr(
+                    new Token(TokenKind.SingleQuoteStringLiteral, "-c", expr.Value.Position),
+                    expr.Scope
+                )
+                {
+                    RuntimeValue = new RuntimeString("-c"),
+                },
+                new LiteralExpr(
+                    new Token(TokenKind.SingleQuoteStringLiteral, bashContent, expr.Value.Position),
+                    expr.Scope
+                )
+                {
+                    RuntimeValue = new RuntimeString(bashContent),
+                },
+            };
+
+            return new CallExpr(
+                new Token(TokenKind.Identifier, "bash", expr.Value.Position),
+                Array.Empty<Token>(),
+                arguments,
+                CallStyle.Parenthesized,
+                CallType.Program,
+                expr.Scope,
+                expr.EndPosition
+            );
+        }
+
         RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
