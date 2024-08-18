@@ -54,7 +54,10 @@ class Disassembler
     private void EatShort(string? format = null)
     {
         var value = NextByte().ToUshort(NextByte());
-        _builder.Append(" " + value.ToString(format));
+        var prefix = format == "B" ? "0b" : "";
+        _builder.Append(' ');
+        _builder.Append(prefix);
+        _builder.Append(value.ToString(format));
     }
 
     private void GetConstant<T>()

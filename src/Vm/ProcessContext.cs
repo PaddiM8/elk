@@ -145,6 +145,11 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         _disposeError = true;
     }
 
+    public void AllowNonZeroExit()
+    {
+        _allowNonZeroExit = true;
+    }
+
     public int Wait()
     {
         CloseProcess(messageOnError: true);
@@ -214,7 +219,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
             Environment.SetEnvironmentVariable("?", ExitCode.ToString());
 
-            if (ExitCode == 0)
+            if (Success)
                 return;
 
             RuntimeObject message = messageOnError
