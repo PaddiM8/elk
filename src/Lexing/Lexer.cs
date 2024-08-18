@@ -200,8 +200,7 @@ public class Lexer
 
         if (Current == '#')
         {
-            var c = NextComment();
-            return c;
+            return NextComment();
         }
 
         if (Current == '"' && Previous != '\\')
@@ -346,7 +345,7 @@ public class Lexer
         return Build(
             kind,
             valueString,
-            new(_pos.line, startColumn, startIndex, _filePath)
+            new TextPos(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
@@ -459,7 +458,7 @@ public class Lexer
         return Build(
             TokenKind.DoubleQuoteStringLiteral,
             value.ToString(),
-            new(_pos.line, startColumn, startIndex, _filePath)
+            new TextPos(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
@@ -503,12 +502,12 @@ public class Lexer
         return Build(
             TokenKind.SingleQuoteStringLiteral,
             value.ToString(),
-            new(_pos.line, startColumn, startIndex, _filePath)
+            new TextPos(_pos.line, startColumn, startIndex, _filePath)
         );
     }
 
     private static bool IsValidIdentifierStart(char c)
-        => !"+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\",. ".Contains(c);
+        => !"+-*/%^><=&|?()[]{}:;~\\\n\t\v\0\r\"',. ".Contains(c);
 
     private static bool IsValidIdentifierMiddle(char c, char next)
         => c != '$' && (IsValidIdentifierStart(c) ||

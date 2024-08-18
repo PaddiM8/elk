@@ -6,6 +6,7 @@ using Elk;
 using Elk.Cli;
 using Elk.LanguageServer;
 using Elk.Scoping;
+using Elk.Services;
 using Elk.Std.Serialization.CommandLine;
 using Elk.Vm;
 

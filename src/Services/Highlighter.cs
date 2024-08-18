@@ -533,7 +533,6 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         if (Current?.Kind != TokenKind.WhiteSpace)
             return new TextArgumentsInfo(Array.Empty<string>(), -1, -1);
 
-
         var textArguments = new List<string>();
         var caretAtArgumentIndex = -1;
         var textArgumentTokens = new List<Token>();
@@ -557,6 +556,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         {
             if (Current!.Kind is TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral)
             {
+                AppendTextArgumentTokens();
                 NextStringLiteral();
             }
             else if (Previous?.Kind != TokenKind.Backslash &&
