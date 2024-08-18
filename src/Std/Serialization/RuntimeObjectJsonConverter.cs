@@ -26,6 +26,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
             RuntimeGenerator generator => BuildList(generator),
             RuntimeTuple tuple => BuildTuple(tuple),
             RuntimeDictionary dictionary => BuildDictionary(dictionary),
+            RuntimeSet set => BuildSet(set),
             RuntimeStruct @struct => BuildStruct(@struct),
             RuntimeTable table => BuildTable(table),
             _ => BuildValue(value),
@@ -48,6 +49,9 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
 
         return result;
     }
+
+    private JArray BuildSet(RuntimeSet set)
+        => new(set.Entries.Select(x => Build(x.Value)));
 
     private JObject BuildStruct(RuntimeStruct structValue)
     {
