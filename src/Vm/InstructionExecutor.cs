@@ -520,10 +520,14 @@ class InstructionExecutor
 
     private void StoreEnvironmentVariable(string name)
     {
-        Environment.SetEnvironmentVariable(
-            name,
-            _stack.Peek().As<RuntimeString>().Value
-        );
+        var value = _stack.Peek();
+        if (value is RuntimeNil)
+        {
+            Environment.SetEnvironmentVariable(name, null);
+            return;
+        }
+
+        Environment.SetEnvironmentVariable(name, value.As<RuntimeString>().Value);
     }
 
     private void LoadUpper(VariableSymbol symbol)
