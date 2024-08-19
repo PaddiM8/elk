@@ -1,30 +1,61 @@
 fn confirmParamCount(expectedCount, params...) {
-    assert(expectedCount == len(params))
+    assertEqual(len(params), expectedCount)
 }
+
+fn nothing() {}
+assertEqual(nothing(), nil)
 
 confirmParamCount(1, "a")
 confirmParamCount(2, "a", "b")
 
-assert((simple test) == "test")
-assert(simple("test") == "test")
+assertEqual((simple test), "test")
+assertEqual(simple("test"), "test")
 
 fn simple(a) {
     a
 }
 
-assert((empty) == "empty")
-assert(empty() == "empty")
+assertEqual((empty), "empty")
+assertEqual(empty(), "empty")
 
 fn empty() {
     "empty"
 }
+
+# default argument
+fn withDefault(a, b=[]) {
+    assertEqual(a, "a")
+    assertEqual(len(b), 0)
+    b | push(1)
+    assertEqual(len(b), 1)
+}
+
+withDefault("a")
+withDefault("a")
+withDefault("a", [])
+
+# => closure with default arguments
+fn closureWithDefault(a = 5) => closure {
+    closure(a)
+}
+
+assertEqual(closureWithDefault() => x { x + 1 }, 6)
+assertEqual(closureWithDefault(2) => x { x + 1 }, 3)
+
+# => closure with variadic
+fn closureWithVariadic(args...) => closure {
+    closure(args)
+}
+
+assertEqual(closureWithVariadic() => &join(" "), "")
+assertEqual(closureWithVariadic("a", "b") => &join(" "), "a b")
 
 # recursion
 fn rec(x) {
     if x > 0: rec(x - 1) else x
 }
 
-assert(rec(10) == 0)
+assertEqual(rec(10), 0)
 
 # does it return?
 fn ret() {
@@ -33,4 +64,12 @@ fn ret() {
     return 2
 }
 
-assert(ret() == 1)
+assertEqual(ret(), 1)
+
+# globs
+fn count(args...) {
+    args | len
+}
+
+let counted = count *
+assert(counted > 0)

@@ -1,0 +1,50 @@
+#!/usr/bin/env elk
+
+fn getEntryPoints(schematic, pos) {
+    let (x, y) = pos
+    let c = schematic[y][x]
+
+    return [(x, y + 1), (x, y - 1)] if c == "|"
+    return [(x + 1, y), (x - 1, y)] if c == "-"
+    return [(x, y - 1), (x + 1, y)] if c == "L"
+    return [(x, y - 1), (x - 1, y)] if c == "J"
+    return [(x - 1, y), (x, y + 1)] if c == "7"
+    return [(x + 1, y), (x, y + 1)] if c == "F"
+    return [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] if c == "S"
+    [(-1, -1)]
+}
+
+fn countToEnd(schematic) {
+    # find the starting point
+    let start = nil
+    for (line, y) in schematic | withIndex {
+        for (c, x) in line | withIndex {
+            if c == "S" {
+                start = (x, y)
+                break
+            }
+        }
+    }
+
+    let oldPos = nil
+    let pos = start
+    let count = 0
+    while count == 0 or schematic[pos[1]][pos[0]] != "S" {
+        let (x, y) = pos
+        let c = schematic | iter::at(y) | iter::at(x)
+        let newPos = schematic
+            | getEntryPoints(pos)
+            | where => xy { xy != oldPos and xy[0] >= 0 and xy[1] >= 0 }
+            | iter::firstOf => xy: pos in getEntryPoints(schematic, xy)
+        oldPos = pos
+        pos = newPos
+        count += 1
+    }
+
+    count
+}
+
+cat ${scriptPath}/input.txt
+    | countToEnd
+    | op::div 2
+    | assertEqual(80)

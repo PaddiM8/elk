@@ -1,0 +1,48 @@
+#!/usr/bin/env elk
+
+let allLabels = "J23456789TQKA"
+
+module hand {
+    pub struct Hand(scores, bid, type)
+
+    pub fn from(labels, bid) {
+        let scores = labels
+            | map => x: iter::indexOf(allLabels, x)
+            | iter::collect
+        new Hand(scores, into::int(bid), getType(labels))
+    }
+
+    fn getType(labels) {
+        let labelCounts = {}
+        for label in labels {
+            labelCounts[label] ??= 0
+            labelCounts[label] += 1
+        }
+
+        let jokers = (labelCounts | iter::at "J") ?? 0
+        labelCounts | remove "J"
+        let counts = labelCounts | dict::values | sort::desc
+        counts | push(0) if len(counts) == 0
+        counts[0] += jokers
+
+        return 7 if counts[0] == 5
+        return 6 if counts[0] == 4
+        return 5 if counts[0] == 3 and counts[1] == 2
+        return 4 if counts[0] == 3
+        return 3 if counts[0] == 2 and counts[1] == 2
+        return 2 if counts[0] == 2
+        return 1
+    }
+}
+
+cat ${scriptPath}/input.txt
+    | map => &split " "
+    | map => pair: hand::from(pair[0], pair[1])
+    | sort::ascBy => hand: (hand->type, hand->scores)
+    | withIndex
+    | map => x {
+        let (hand, rank) = x
+        hand->bid * (rank + 1)
+    }
+    | math::sum
+    | assertEqual(643819)

@@ -1,9 +1,17 @@
 let sum = 0
-for i in 0..5 {
+for i in 0..10 {
+    if i % 2 == 0: continue
     sum += i
 }
 
-assert(sum == 10)
+for _ in [] {
+    assert(false)
+}
+
+for _ in [1] {
+}
+
+assert(sum == 25)
 
 let result = for i in 0..5 {
     if i == 3 {

@@ -6,10 +6,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
+using Elk.Scoping;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
@@ -20,15 +21,25 @@ namespace Elk.Std.Environment;
 [ElkModule("env")]
 static class Environment
 {
-    /// <param name="index">The index of the argument to get</param>
-    /// <returns>The list of command line arguments passed to the program, or a specific one if an index was specified</returns>
-    [ElkFunction("getArgv", Reachability.Everywhere)]
-    public static RuntimeObject Argv(RuntimeInteger? index = null, ShellEnvironment env = null!)
+    [ElkFunction("cd", Reachability.Everywhere)]
+    public static void Cd(RuntimeString? path = null, ShellEnvironment? env = null)
     {
-        if (index != null)
-            return env.Argv.ElementAtOrDefault((int)index.Value) ?? RuntimeNil.Value;
+        if (path == null)
+        {
+            ShellEnvironment.WorkingDirectory = "";
 
-        return new RuntimeList(env.Argv.ToList());
+            return;
+        }
+
+        var absolutePath = path.Value == "-"
+            ? System.Environment.GetEnvironmentVariable("OLDPWD") ?? ""
+            : env!.GetAbsolutePath(path.Value);
+
+        if (!System.IO.Directory.Exists(absolutePath))
+            throw new RuntimeException($"cd: The directory \"{path}\" does not exist");
+
+        System.Environment.SetEnvironmentVariable("OLDPWD", ShellEnvironment.WorkingDirectory);
+        ShellEnvironment.WorkingDirectory = absolutePath;
     }
 
     /// <summary>
@@ -40,12 +51,15 @@ static class Environment
     [ElkFunction("eval", Reachability.Everywhere)]
     public static RuntimeObject Eval(RuntimeString input, RuntimeDictionary? env = null)
     {
-        var interpreter = new Interpreter(null);
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(null, null),
+            new VirtualMachineOptions()
+        );
         if (env != null)
         {
-            foreach (var (key, value) in env.Entries.Select(x => x.Value))
+            foreach (var (_, (key, value)) in env.Entries)
             {
-                interpreter.CurrentModule.AddVariable(
+                virtualMachine.AddGlobalVariable(
                     key.As<RuntimeString>().Value,
                     value
                 );
@@ -54,9 +68,9 @@ static class Environment
 
         var result = ElkProgram.Evaluate(
             input.Value,
-            interpreter.CurrentModule,
+            virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
-            interpreter
+            virtualMachine
         );
         if (result.Diagnostics.Any())
             throw new RuntimeException(result.Diagnostics.FirstOrDefault()?.Message ?? "Eval error.");
@@ -94,6 +108,17 @@ static class Environment
                 .Select(x => new RuntimeString(x))
         );
 
+    /// <param name="index">The index of the argument to get</param>
+    /// <returns>The list of command line arguments passed to the program, or a specific one if an index was specified</returns>
+    [ElkFunction("getArgv", Reachability.Everywhere)]
+    public static RuntimeObject GetArgv(RuntimeInteger? index = null, ShellEnvironment env = null!)
+    {
+        if (index != null)
+            return env.Argv.ElementAtOrDefault((int)index.Value) ?? RuntimeNil.Value;
+
+        return new RuntimeList(env.Argv.ToList());
+    }
+
     /// <returns>A string containing a modified version of the path to the current directory (the value of $PWD). The names of all the directories in the path except for the last one are replaced with their first letter, and '/home/user' is replaced with a tilde.</returns>
     /// <example>assert(prettyPwd() == "~/P/e/src")</example>
     [ElkFunction("prettyPwd")]
@@ -124,6 +149,16 @@ static class Environment
             : "/" + shortenedPath;
 
         return new(shortenedPath + directoryNames.Last()[1..]);
+    }
+
+    [ElkFunction("scriptPath", Reachability.Everywhere)]
+    public static RuntimeString ScriptPath(ShellEnvironment env)
+    {
+        var path = env.ScriptPath == null
+            ? ShellEnvironment.WorkingDirectory
+            : System.IO.Path.GetDirectoryName(env.ScriptPath)!;
+
+        return new RuntimeString(path);
     }
 
     /// <returns>

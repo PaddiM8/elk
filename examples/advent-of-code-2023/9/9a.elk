@@ -1,0 +1,20 @@
+#!/usr/bin/env elk
+
+fn getNext(seq) {
+    return 0 if seq | iter::allOf => x: x == 0
+    let diffs = seq
+        | iter::skip 1
+        | iter::zip(seq)
+        | map => x: x[0] - x[1]
+        | iter::collect
+
+    getNext(diffs) + seq[-1]
+}
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        line | split " " | map => &into::int | iter::collect
+    }
+    | map => &getNext
+    | math::sum
+    | assertEqual(504731009)

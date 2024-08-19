@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 namespace Elk.Std.String;
 

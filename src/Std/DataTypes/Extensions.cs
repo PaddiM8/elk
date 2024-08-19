@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 
 namespace Elk.Std.DataTypes;
 

@@ -6,21 +6,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
-using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
 namespace Elk;
 
-public class ShellSession
+public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOptions)
 {
-    public ModuleScope CurrentModule
-        => _interpreter.CurrentModule;
+    public RootModuleScope RootModule
+        => _virtualMachine.RootModule;
 
     public string WorkingDirectory
         => ShellEnvironment.WorkingDirectory;
@@ -37,14 +35,9 @@ public class ShellSession
         }
     }
 
-    private readonly Interpreter _interpreter = new(null);
+    private readonly VirtualMachine _virtualMachine = new(rootModule, vmOptions);
 
-    public ShellSession()
-    {
-        Init();
-    }
-
-    private void Init()
+    public void InitInteractive()
     {
         LoadPaths();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
@@ -54,7 +47,10 @@ public class ShellSession
 
         if (File.Exists(CommonPaths.InitFile))
         {
-            RunFile(_interpreter, CommonPaths.InitFile);
+            var previousFilePath = _virtualMachine.RootModule.FilePath;
+            _virtualMachine.RootModule.FilePath = CommonPaths.InitFile;
+            RunFile(CommonPaths.InitFile, null);
+            _virtualMachine.RootModule.FilePath = previousFilePath;
 
             return;
         }
@@ -91,13 +87,13 @@ public class ShellSession
         // The 'elkPrompt' function should have been created
         // automatically. This is simply a fallback in case
         // something goes wrong.
-        if (!_interpreter.CurrentModule.FunctionExists("elkPrompt"))
+        if (!_virtualMachine.RootModule.FunctionExists("elkPrompt"))
             return $"{WorkingDirectoryUnexpanded} >> ";
 
-        var prompt = CallFunction(_interpreter, "elkPrompt")?.ToString() ?? " >> ";
+        var prompt = _virtualMachine.ExecuteFunction("elkPrompt", [], isRoot: false);
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
-        return prompt;
+        return prompt.ToString() ?? " >> ";
     }
 
     public void RunCommand(
@@ -111,10 +107,10 @@ public class ShellSession
         var evaluationResult = ElkProgram.Evaluate(
             command,
             ownScope
-                ? new LocalScope(_interpreter.CurrentModule)
-                : _interpreter.CurrentModule,
+                ? new LocalScope(_virtualMachine.RootModule)
+                : _virtualMachine.RootModule,
             AnalysisScope.AppendToModule,
-            _interpreter
+            _virtualMachine
         );
 
         if (evaluationResult.Diagnostics.Any())
@@ -158,19 +154,14 @@ public class ShellSession
         Console.ResetColor();
     }
 
-    public static void RunFile(string filePath, IEnumerable<string>? arguments)
-    {
-        RunFile(new Interpreter(filePath), filePath, arguments);
-    }
-
-    private static void RunFile(Interpreter interpreter, string filePath, IEnumerable<string>? arguments = null)
+    public void RunFile(string filePath, IEnumerable<string>? arguments)
     {
         arguments ??= new List<string>();
 
         var argumentValues = arguments.Prepend(filePath)
             .Select<string, RuntimeObject>(literal => new RuntimeString(literal));
         var argv = new RuntimeList(argumentValues.ToList());
-        interpreter.ShellEnvironment.Argv = argv;
+        _virtualMachine.ShellEnvironment.Argv = argv;
 
         if (!File.Exists(filePath))
         {
@@ -186,16 +177,18 @@ public class ShellSession
 
         void CallOnExit()
         {
-            if (interpreter.CurrentModule.FunctionExists("__onExit"))
-                CallFunction(interpreter, "__onExit");
+            if (_virtualMachine.RootModule.FunctionExists("__onExit"))
+                _virtualMachine.ExecuteFunction("__onExit", [], isRoot: true);
         }
 
         Console.CancelKeyPress += (_, _) => CallOnExit();
+
+        _virtualMachine.RootModule.AnalysisStatus = AnalysisStatus.None;
         var evaluationResult = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
-            new RootModuleScope(filePath, null),
+            _virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
-            interpreter
+            _virtualMachine
         );
 
         CallOnExit();
@@ -206,42 +199,6 @@ public class ShellSession
                 Console.Error.WriteLine(diagnostic.ToString().Trim());
 
             Environment.Exit(1);
-        }
-    }
-
-    private static RuntimeObject? CallFunction(Interpreter interpreter, string identifier)
-    {
-        var call = new CallExpr(
-            new Token(TokenKind.Identifier, identifier, TextPos.Default),
-            Array.Empty<Token>(),
-            Array.Empty<Expr>(),
-            CallStyle.Parenthesized,
-            Plurality.Singular,
-            CallType.Function,
-            interpreter.CurrentModule,
-            TextPos.Default
-        )
-        {
-            IsRoot = true,
-        };
-
-        try
-        {
-            return ElkProgram.Evaluate(
-                new Ast(new List<Expr> { call }),
-                interpreter.CurrentModule,
-                AnalysisScope.AppendToModule,
-                interpreter
-            ).Value;
-        }
-        catch (RuntimeException e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.Write($"Error evaluating {identifier}: ");
-            Console.ResetColor();
-            Console.WriteLine(e);
-
-            return null;
         }
     }
 }

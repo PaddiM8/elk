@@ -23,8 +23,11 @@ public record TextPos(int Line, int Column, int Index, string? FilePath)
             builder.Append(' ');
         }
 
+        var columnString = Column == -1
+            ? ""
+            : Column.ToString();
         builder.Append('(');
-        builder.Append(Ansi.Format($"{Line}:{Column}", AnsiForeground.DarkYellow));
+        builder.Append(Ansi.Format($"{Line}:{columnString}", AnsiForeground.DarkYellow));
         builder.Append(')');
 
         return builder.ToString();

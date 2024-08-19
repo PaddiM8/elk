@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Lexing;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
@@ -78,7 +78,7 @@ internal class Parser
             if (parser.ReachedEnd)
                 break;
 
-            var expr = parser.ParseExpr();
+            var expr = parser.ParseExprOrDecl();
             expr.IsRoot = true;
             expressions.Add(expr);
             parser.SkipWhiteSpace();
@@ -220,7 +220,7 @@ internal class Parser
         return importScope;
     }
 
-    private Expr ParseExpr()
+    private Expr ParseExprOrDecl()
     {
         SkipWhiteSpace();
 
@@ -249,9 +249,10 @@ internal class Parser
             TokenKind.Module => ParseModule(),
             TokenKind.Struct => ParseStruct(),
             TokenKind.Fn => ParseFn(),
+            TokenKind.Let => ParseLet(),
             TokenKind.Alias => ParseAlias(),
             TokenKind.Unalias => ParseUnalias(),
-            _ => ParseBinaryIf(),
+            _ => ParseExpr(),
         };
     }
 
@@ -332,6 +333,18 @@ internal class Parser
         return function;
     }
 
+    private LetExpr ParseLet()
+    {
+        var startPos = EatExpected(TokenKind.Let).Position;
+
+        var identifierList = ParseIdentifierList();
+        EatExpected(TokenKind.Equals);
+        foreach (var identifier in identifierList)
+            _scope.AddVariable(identifier.Value, RuntimeNil.Value);
+
+        return new LetExpr(identifierList, ParseExpr(), _scope, startPos);
+    }
+
     private Expr ParseAlias()
     {
         var pos = EatExpected(TokenKind.Alias).Position;
@@ -396,6 +409,16 @@ internal class Parser
         EatExpected(TokenKind.ClosedParenthesis);
 
         return parameters;
+    }
+
+    private Expr ParseExpr()
+    {
+        SkipWhiteSpace();
+
+        while (AdvanceIf(TokenKind.Semicolon))
+            SkipWhiteSpace();
+
+        return ParseBinaryIf();
     }
 
     private Expr ParseBinaryIf(Expr? existingLeft = null)
@@ -766,11 +789,6 @@ internal class Parser
             return ParseParenthesis();
         }
 
-        if (Match(TokenKind.Let))
-        {
-            return ParseLet();
-        }
-
         if (Match(TokenKind.New))
         {
             return ParseNew();
@@ -831,17 +849,20 @@ internal class Parser
 
         if (Match(TokenKind.Ampersand))
         {
+            _scope = new LocalScope(_scope);
             var call = ParseIdentifier();
+
             if (call is not CallExpr { IsReference: true } functionReference)
                 throw Error("Expected function or function reference to the right of closure.");
 
             var block = new BlockExpr(
                 [functionReference],
                 StructureKind.Function,
-                new LocalScope(_scope),
+                _scope,
                 Previous!.Position,
                 Previous!.EndPosition
             );
+            _scope = _scope.Parent!;
 
             return new ClosureExpr(left, [], block, _scope);
         }
@@ -960,18 +981,6 @@ internal class Parser
         return expressions.Count == 1
             ? expressions.First()
             : new TupleExpr(expressions, _scope, startPos, endPos);
-    }
-
-    private LetExpr ParseLet()
-    {
-        var startPos = EatExpected(TokenKind.Let).Position;
-
-        var identifierList = ParseIdentifierList();
-        EatExpected(TokenKind.Equals);
-        foreach (var identifier in identifierList)
-            _scope.AddVariable(identifier.Value, RuntimeNil.Value);
-
-        return new LetExpr(identifierList, ParseExpr(), _scope, startPos);
     }
 
     private NewExpr ParseNew()
@@ -1166,7 +1175,7 @@ internal class Parser
         var expressions = new List<Expr>();
         while (!AdvanceIf(TokenKind.ClosedBrace))
         {
-            expressions.Add(ParseExpr());
+            expressions.Add(ParseExprOrDecl());
             if (!orAsOtherStructure)
                 continue;
 
@@ -1293,14 +1302,11 @@ internal class Parser
             while (AdvanceIf(TokenKind.Comma));
 
             var endPos = EatExpected(TokenKind.ClosedParenthesis).EndPosition;
-            var functionPlurality = ParsePlurality(identifier, out var modifiedIdentifier);
-
             var call = new CallExpr(
-                modifiedIdentifier,
+                identifier,
                 modulePath,
                 arguments,
                 CallStyle.Parenthesized,
-                functionPlurality,
                 CallType.Unknown,
                 _scope,
                 endPos
@@ -1330,14 +1336,11 @@ internal class Parser
             textArguments.InsertRange(0, aliasResult.Arguments);
         }
 
-        var plurality = ParsePlurality(identifier, out var newIdentifier);
-
         var textCall = new CallExpr(
-            newIdentifier,
+            identifier,
             modulePath,
             textArguments,
             CallStyle.TextArguments,
-            plurality,
             CallType.Unknown,
             _scope,
             textArguments.LastOrDefault()?.EndPosition ?? identifier.EndPosition
@@ -1349,20 +1352,6 @@ internal class Parser
         return Match(TokenKind.EqualsGreater)
             ? ParseClosure(textCall)
             : textCall;
-    }
-
-    private Plurality ParsePlurality(Token identifier, out Token newToken)
-    {
-        if (identifier.Value.EndsWith('!'))
-        {
-            newToken = identifier with { Value = identifier.Value[..^1] };
-
-            return Plurality.Plural;
-        }
-
-        newToken = identifier;
-
-        return Plurality.Singular;
     }
 
     private List<Expr> ParseTextArguments()
@@ -1380,6 +1369,16 @@ internal class Parser
         while (!ReachedTextEnd())
         {
             AdvanceIf(TokenKind.Backslash);
+
+            if (Previous?.Kind == TokenKind.Backslash && Current?.Value.StartsWith('n') is true)
+            {
+                _tokens[_index] = Current with { Value = Current.Value[1..] };
+                if (Current.Value.Length == 0)
+                    Eat();
+
+                currentText.Append('\n');
+                continue;
+            }
 
             if (Previous?.Kind != TokenKind.Backslash && AdvanceIf(TokenKind.WhiteSpace))
             {
@@ -1407,7 +1406,7 @@ internal class Parser
                 Current!.Value.StartsWith('$') &&
                 Previous?.Value != "\\";
             if (MatchInclWhiteSpace(TokenKind.Tilde) &&
-                (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace))
+                (next == null || next.Kind is TokenKind.Slash or TokenKind.WhiteSpace or TokenKind.NewLine))
             {
                 Eat();
                 currentText.Append(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));

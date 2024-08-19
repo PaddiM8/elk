@@ -1,6 +1,6 @@
 let result = try {
     1 + 1
-} catch {
+} catch ex {
     assert(false)
 }
 
@@ -9,7 +9,7 @@ assertEqual(result, 2)
 let result2 = try {
     list::column(1, 1)
     assert(false)
-} catch e with String {
+} catch e with Integer {
     assert(false)
 } catch e {
     assert(isType(error::value(e), String))
@@ -46,3 +46,32 @@ try {
 }
 
 assert(rethrew)
+
+try {
+} catch e with String {
+} catch e {
+}
+
+fn fn1(x) {
+    fn2(x)
+}
+
+fn fn2(x) {
+    fn3(x)
+}
+
+fn fn3(x) {
+    throw x
+}
+
+let result = try {
+    fn1("hello")
+} catch ex {
+    ex | error::value
+}
+
+assertEqual(result, "hello")
+
+# non-redirecting or
+("try" || "else") | assertEqual("try")
+({ "str" / 2 } || "else") | assertEqual("else")

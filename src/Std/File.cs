@@ -1,6 +1,6 @@
-using Elk.Interpreting;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 namespace Elk.Std;
 
@@ -12,7 +12,7 @@ static class File
         => RuntimeBoolean.From(System.IO.File.Exists(env.GetAbsolutePath(path.Value)));
 
     [ElkFunction("executableExists")]
-    public static RuntimeBoolean ExecutableExists(RuntimeString path, ShellEnvironment env)
+    public static RuntimeBoolean ExecutableExists(RuntimeString path)
         => RuntimeBoolean.From(
             FileUtils.ExecutableExists(path.Value, ShellEnvironment.WorkingDirectory)
         );

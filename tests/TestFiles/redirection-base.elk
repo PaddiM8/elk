@@ -1,0 +1,25 @@
+#!/usr/bin/env -S dotnet run --project ./cli/Elk.Cli.csproj
+
+fn f() {
+    echo hello world
+}
+
+# this is validated in ./redirection-validation.elk
+f() # don't capture output
+f | assertEqual("hello world") # do capture output
+
+fn g() {
+    {
+        echo hello world
+    }
+}
+
+g() # don't capture output
+g | assertEqual("hello world") # do capture output
+
+fn h() {
+    f()
+}
+
+h() # don't capture output
+h | assertEqual("hello world") # do capture output

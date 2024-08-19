@@ -13,23 +13,12 @@ namespace Elk.Std;
 [ElkModule("elk")]
 public class HardCoded
 {
-    /// <summary>Changes the current directory.</summary>
-    /// <param name="directory">The path of the directory to navigate to.</param>
-    [ElkFunction("cd", Reachability.Everywhere)]
-    public static void Cd(RuntimeString directory)
-        => throw new NotSupportedException();
-
     /// <summary>
     /// Executes a program.
     /// </summary>
     /// <param name="programName">The name of the program to execute.</param>
     [ElkFunction("exec", Reachability.Everywhere)]
     public static RuntimeObject Exec(RuntimeString programName)
-        => throw new NotSupportedException();
-
-    /// <returns>The file path of the script that is currently being evaluated.</returns>
-    [ElkFunction("scriptPath", Reachability.Everywhere)]
-    public static RuntimeString ScriptPath()
         => throw new NotSupportedException();
 
     /// <summary>

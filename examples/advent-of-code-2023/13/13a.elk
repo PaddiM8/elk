@@ -1,0 +1,44 @@
+#!/usr/bin/env elk
+
+fn getReflectionScore(note) {
+    for (line, i) in note | withIndex | iter::skip 1 {
+        continue if i == 0 or note[i - 1] != line
+
+        let behind = note
+            | iter::take(i)
+            | iter::reverse
+        let ahead = note
+            | iter::skip(i)
+        let size = ahead   
+            | iter::zip(behind)
+            | iter::takeWhile => pair: pair[0] == pair[1]
+            | len
+            | op::sub(1)
+
+        return i if size + i == len(note) - 1 or i == size + 1
+    }
+
+    0
+}
+
+fn rotate(note) {
+    let width = note | iter::first | len
+    0..width | map => i {
+        note | map => &iter::at(i) | join
+    }
+    | iter::collect
+}
+
+read ${scriptPath}/input.txt
+    | split "\n\n"
+    | map => &str::lines
+    | map => note {
+        [
+            note | rotate | getReflectionScore,
+            note | getReflectionScore | op::mul(100),
+        ]
+    }
+    | iter::flatten
+    | math::sum
+    | assertEqual(1818)
+    

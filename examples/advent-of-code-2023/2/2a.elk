@@ -1,0 +1,51 @@
+#!/usr/bin/env elk
+
+# Parses eg. `1 green, 2 red, 3 blue` into a dictionary
+fn parseSet(line) {
+    line
+        | split ","
+        | map => colorAmount {
+            let color = colorAmount | re::find '[a-z]+'
+            let amount = colorAmount | re::find '\d+' | into::int
+
+            [color, amount]
+        }
+        | dict::create
+}
+
+# Parses eg. `Game 1: 1 green, 2 blue; 3 green`
+fn parseGame(line) {
+    let (name, sets) = line | split ":"
+    let parsedSets = sets
+        | split ";"
+        | map => &parseSet
+    let id = name | re::find '\d+' | into::int
+
+    (id, parsedSets)
+}
+
+# Returns true if the set fits within the bag
+fn validateSet(set, bag) {
+    set
+        | iter::allOf => keyValue {
+            let (key, value) = keyValue
+            value <= bag[key]
+        }
+}
+
+let bag = {
+    "red": 12,
+    "green": 13,
+    "blue": 14,
+}
+
+cat ${scriptPath}/input.txt
+    | map => &parseGame
+    | map => game {
+        let (id, sets) = game
+        let valid = sets | iter::allOf => &validateSet(bag)
+
+        if valid: id else 0
+    }
+    | math::sum
+    | assertEqual(2617)

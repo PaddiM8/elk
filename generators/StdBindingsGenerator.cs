@@ -46,7 +46,7 @@ public class StdBindingsGenerator : ISourceGenerator
     /// </summary>
     // ReSharper disable once ConvertToConstant.Local
     private readonly bool _useDebugger = false;
-    private readonly HashSet<string> _typeNames = new();
+    private readonly HashSet<string> _typeNames = [];
     private const string BaseObjectName = "Elk.Std.DataTypes.RuntimeObject";
 
     private readonly Dictionary<string, string> _additionalTypes = new()
@@ -74,7 +74,7 @@ public class StdBindingsGenerator : ISourceGenerator
         using System.Collections.Generic;
         using System.Collections.Immutable;
         using Elk.Std;
-        using Elk.Interpreting;
+        using Elk.Vm;
         using Elk.Std.DataTypes;
 
         namespace Elk.Std.Bindings;
@@ -280,14 +280,19 @@ public class StdBindingsGenerator : ISourceGenerator
                 if (string.IsNullOrEmpty(nullable))
                     arg += "!";
 
+                sourceBuilder.Append('(');
                 sourceBuilder.Append(arg);
+                if (!string.IsNullOrEmpty(nullable))
+                    sourceBuilder.Append($" is RuntimeNil ? null : {arg}");
+
+                sourceBuilder.Append(')');
 
                 if (isAdditionalType)
                 {
                     var elkTypeName = _additionalTypes.First(kv => kv.Value == typeName).Key;
                     sourceBuilder.Append($" is {typeName} _{i}");
                     sourceBuilder.Append($" ? _{i}");
-                    sourceBuilder.Append($" : throw new Elk.Interpreting.Exceptions.RuntimeCastException({arg}.GetType(), \"{elkTypeName}\")");
+                    sourceBuilder.Append($" : throw new Elk.Exceptions.RuntimeCastException({arg}.GetType(), \"{elkTypeName}\")");
                 }
 
                 if (isStdType)
@@ -322,7 +327,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var additional = "";
 
             // Nullable
-            if (parameter.type.EndsWith("?"))
+            if (parameter.type.EndsWith('?'))
                 additional = ", true";
 
             // Closure

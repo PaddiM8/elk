@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elk.Exceptions;
 using Elk.Std.Bindings;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Services;
 using Elk.Std.DataTypes;
 
@@ -257,6 +257,9 @@ class Analyser(RootModuleScope rootModule)
         {
             IsRoot = expr.IsRoot,
             AnalysisStatus = AnalysisStatus.Analysed,
+            ClosureSymbol = expr.HasClosure
+                ? new VariableSymbol("closure", RuntimeNil.Value)
+                : null,
         };
 
         // Need to set _enclosingFunction *before* analysing the block
@@ -298,6 +301,14 @@ class Analyser(RootModuleScope rootModule)
             }
             else
             {
+                var isLiteral = parameter.DefaultValue is
+                    LiteralExpr or
+                    ListExpr { Values.Count: 0 } or
+                    DictionaryExpr { Entries.Count: 0 } or
+                    StringInterpolationExpr { Parts: [LiteralExpr] };
+                if (!isLiteral)
+                    throw new RuntimeException("Expected literal or empty collection as default parameter");
+
                 newParameters.Add(
                     parameter with { DefaultValue = Next(parameter.DefaultValue) }
                 );
@@ -318,6 +329,9 @@ class Analyser(RootModuleScope rootModule)
 
     private LetExpr Visit(LetExpr expr)
     {
+        if (expr.IdentifierList.Count > 1 && expr.IdentifierList.Any(x => x.Value.StartsWith('$')))
+            throw new RuntimeException("Cannot destructure into an environment variable");
+
         return new LetExpr(
             expr.IdentifierList,
             Next(expr.Value),
@@ -572,12 +586,15 @@ class Analyser(RootModuleScope rootModule)
     {
         if (expr.Left is VariableExpr variableExpr)
         {
-            if (!_scope.HasVariable(variableExpr.Identifier.Value))
-                throw new RuntimeNotFoundException(variableExpr.Identifier.Value);
+            AnalyseVariable(variableExpr);
         }
         else if (expr.Left is not (IndexerExpr or FieldAccessExpr))
         {
-            throw new RuntimeException("Invalid assignment");
+            var message = expr.Left is CallExpr
+                ? "Invalid assignment. The left expression was parsed as a call, but a variable was expected"
+                : "Invalid assignment";
+
+            throw new RuntimeException(message);
         }
 
         return new BinaryExpr(Next(expr.Left), expr.Operator, Next(expr.Right), _scope)
@@ -646,24 +663,48 @@ class Analyser(RootModuleScope rootModule)
 
     private VariableExpr Visit(VariableExpr expr)
     {
+        return AnalyseVariable(expr);
+    }
+
+    private VariableExpr AnalyseVariable(VariableExpr expr)
+    {
         var variableExpr = new VariableExpr(expr.Identifier, _scope)
         {
             IsRoot = expr.IsRoot,
         };
 
-        if (!expr.Identifier.Value.StartsWith('$'))
-        {
-            if (!_scope.HasVariable(expr.Identifier.Value))
+        if (!expr.Identifier.Value.StartsWith('$') && !_scope.HasVariable(expr.Identifier.Value))
                 throw new RuntimeNotFoundException(expr.Identifier.Value);
-        }
 
-        if (expr.EnclosingFunction is ClosureExpr closure &&
-            closure.Body.Scope.Parent?.HasVariable(expr.Identifier.Value) is true)
+        if (expr.EnclosingFunction is not ClosureExpr closure)
+            return variableExpr;
+
+        var capturedVariable = closure.Body.Scope.Parent?.FindVariable(expr.Identifier.Value);
+        if (capturedVariable != null && !IsVariableDeclaredInClosure(expr.Identifier.Value, _scope, closure.Body.Scope))
         {
             closure.CapturedVariables.Add(expr.Identifier.Value);
+            capturedVariable.IsCaptured = true;
+            variableExpr.IsCaptured = true;
         }
 
         return variableExpr;
+    }
+
+    private bool IsVariableDeclaredInClosure(string name, Scope startScope, Scope closureScope)
+    {
+        if (startScope.HasDeclarationOfVariable(name))
+            return true;
+
+        var currentScope = startScope;
+        while (currentScope != closureScope && currentScope != null)
+        {
+            if (currentScope.HasDeclarationOfVariable(name))
+                return true;
+
+            currentScope = currentScope.Parent;
+        }
+
+        return false;
     }
 
     private CallExpr Visit(
@@ -675,9 +716,7 @@ class Analyser(RootModuleScope rootModule)
         var name = expr.Identifier.Value;
         CallType? builtIn = name switch
         {
-            "cd" => CallType.BuiltInCd,
             "exec" => CallType.BuiltInExec,
-            "scriptPath" => CallType.BuiltInScriptPath,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
             _ => null,
@@ -698,6 +737,12 @@ class Analyser(RootModuleScope rootModule)
             }
 
             enclosingClosureProvidingFunction = enclosingFunction;
+            if (expr.EnclosingFunction is ClosureExpr nearestEnclosingClosure &&
+                enclosingClosureProvidingFunction.ClosureSymbol != null)
+            {
+                enclosingClosureProvidingFunction.ClosureSymbol.IsCaptured = true;
+                nearestEnclosingClosure.CapturedVariables.Add(enclosingClosureProvidingFunction.ClosureSymbol.Name);
+            }
         }
 
         var stdFunction = !builtIn.HasValue
@@ -794,7 +839,6 @@ class Analyser(RootModuleScope rootModule)
             expr.ModulePath,
             evaluatedArguments,
             expr.CallStyle,
-            expr.Plurality,
             callType,
             _scope,
             expr.EndPosition
@@ -824,30 +868,43 @@ class Analyser(RootModuleScope rootModule)
 
         if (tooManyArguments || tooFewArguments)
             throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
-
-        if (parameters.LastOrDefault()?.IsVariadic is true)
-        {
-            var variadicStart = parameters.Count - 1;
-            var variadicArguments = new Expr[arguments.Count - variadicStart];
-            for (var i = 0; i < variadicArguments.Length; i++)
-            {
-                variadicArguments[^(i + 1)] = arguments.Last();
-                arguments.RemoveAt(arguments.Count - 1);
-            }
-
-            arguments.Add(
-                new ListExpr(
-                    variadicArguments,
-                    _scope,
-                    variadicArguments.FirstOrDefault()?.StartPosition ?? TextPos.Default,
-                    variadicArguments.LastOrDefault()?.EndPosition ?? TextPos.Default
-                )
-            );
-        }
     }
 
-    private LiteralExpr Visit(LiteralExpr expr)
+    private Expr Visit(LiteralExpr expr)
     {
+        if (expr.Value.Kind == TokenKind.BashLiteral)
+        {
+            // Everything after `$:`
+            var bashContent = expr.Value.Value[2..];
+            var arguments = new List<Expr>
+            {
+                new LiteralExpr(
+                    new Token(TokenKind.SingleQuoteStringLiteral, "-c", expr.Value.Position),
+                    expr.Scope
+                )
+                {
+                    RuntimeValue = new RuntimeString("-c"),
+                },
+                new LiteralExpr(
+                    new Token(TokenKind.SingleQuoteStringLiteral, bashContent, expr.Value.Position),
+                    expr.Scope
+                )
+                {
+                    RuntimeValue = new RuntimeString(bashContent),
+                },
+            };
+
+            return new CallExpr(
+                new Token(TokenKind.Identifier, "bash", expr.Value.Position),
+                Array.Empty<Token>(),
+                arguments,
+                CallStyle.Parenthesized,
+                CallType.Program,
+                expr.Scope,
+                expr.EndPosition
+            );
+        }
+
         RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
@@ -915,16 +972,19 @@ class Analyser(RootModuleScope rootModule)
         _enclosingFunction = closure;
         closure.Body = (BlockExpr)Next(expr.Body);
         _enclosingFunction = previousEnclosingFunction;
+        expr.EnclosingFunction = previousEnclosingFunction;
 
         // If closure inside a closure captures a variable that is outside its parent,
         // the parent needs to capture it as well, in order to pass it on to the child.
         if (_enclosingFunction is ClosureExpr enclosingClosure)
         {
-            foreach (var captured in expr.CapturedVariables
-                .Where(x => enclosingClosure.Body.Scope.HasVariable(x)))
-            {
+            var captures = expr.CapturedVariables
+                .Where(x => enclosingClosure.Body.Scope.HasVariable(x))
+                .Where(x => !enclosingClosure.Body.Scope.HasDeclarationOfVariable(x))
+                .Where(x => !expr.Body.Scope.HasDeclarationOfVariable(x))
+                .Where(x => enclosingClosure.Parameters.All(param => param.Value != x));
+            foreach (var captured in captures)
                 enclosingClosure.CapturedVariables.Add(captured);
-            }
         }
 
         if (closure.Body.Expressions.Count != 1 ||
@@ -943,7 +1003,7 @@ class Analyser(RootModuleScope rootModule)
             _ => new List<Token> { functionReference.Identifier with { Value = "'a" } },
         };
         var implicitArguments = closureParameters
-            .Select(x => new VariableExpr(x, _scope)
+            .Select(x => new VariableExpr(x, expr.Body.Scope)
             {
                 EnclosingFunction = closure,
             });

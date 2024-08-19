@@ -1,0 +1,35 @@
+fn f() => closure {
+    closure(10)
+}
+
+# for loop
+let ref = nil
+let i = 0;
+for (a, b) in [(2, 3), (4, 5)] {
+    ref = &f => x: a + x
+
+    if i == 0 {
+        assertEqual(a, 2)
+        assertEqual(b, 3)
+        assertEqual(call(ref), 12)
+    } else {
+        assertEqual(a, 4)
+        assertEqual(b, 5)
+        assertEqual(call(ref), 14)
+    }
+
+    i += 1
+}
+
+assertEqual(call(ref), 14)
+
+# function
+let ref2 = nil
+fn h(captured) {
+    ref2 = &f => x: x + captured
+}
+
+h(7)
+assertEqual(call(ref2), 17)
+
+# TODO: Add a test for a captured `closure`

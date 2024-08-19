@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 
 #endregion
 
@@ -57,7 +57,6 @@ static class AstBuilder
             Array.Empty<Token>(),
             arguments,
             CallStyle.Parenthesized,
-            Plurality.Singular,
             CallType.Unknown,
             _scope,
             TextPos.Default

@@ -1,0 +1,38 @@
+#!/usr/bin/env elk
+
+let lines = cat ${scriptPath}/input.txt
+let directions = lines
+    | iter::first
+    | map => c { if c == "L": 0 else 1 }
+    | iter::repeat
+    | iter::flatten
+let routeEntries = lines
+    | iter::skip(2)
+    | map => &re::findAll '\w+'
+    | map => &iter::collect
+    | map => matches: [matches[0], (matches[1], matches[2])]
+    | iter::collect
+let startRoutes = routeEntries
+    | where => route: str::endsWith(route[0], "A")
+    | map => &iter::first
+let endRoutes = routeEntries
+    | where => route: str::endsWith(route[0], "Z")
+    | map => &iter::first
+    | into::set
+let routes = routeEntries | dict::create
+
+let currentRoutes = startRoutes
+let stepCounts = []
+for start in startRoutes {
+    let current = start
+    let steps = for (direction, i) in directions | withIndex {
+        current = routes[current][direction]
+        break i + 1 if current | str::endsWith "Z"
+    }
+
+    stepCounts | push(steps)
+}
+
+stepCounts
+    | iter::reduce => a, b: math::lcm(a, b)
+    | assertEqual(2)

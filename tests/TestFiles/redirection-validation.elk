@@ -1,0 +1,2 @@
+./tests/TestFiles/redirection-base.elk
+    | assertEqual("hello world\nhello world\nhello world")

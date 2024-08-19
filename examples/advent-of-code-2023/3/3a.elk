@@ -1,0 +1,57 @@
+#!/usr/bin/env elk
+
+fn isSymbol(c) {
+    isType(c, String) and c != "." and not str::isDigit(c)
+}
+
+fn hasAdjacentSymbol(x, y, schematic) {
+    # get a 3x3 area inside the schematic and check
+    # if it contains a symbol
+    schematic
+        | iter::skip(y - 1)
+        | iter::take(3)
+        | map => line {
+            line | iter::skip(x - 1) | iter::take(3)
+        }
+        | iter::flatten
+        | iter::anyOf => &isSymbol
+}
+
+struct CharInfo(char, x, y)
+
+fn getPartNumbers(schematic) {
+    # find all the numbers and save them together with
+    # the coordinates of each digit
+    # eg. [
+    #   (["4", 0, 0], ["2", 1, 0]), # 42
+    #   (["2", 2, 3], ["7", 2, 4]), # 27
+    # ]
+    let numbers = []
+    for (line, y) in schematic | withIndex {
+        numbers | push([])
+        for (c, x) in line | withIndex {
+            if str::isDigit(c) {
+                numbers[-1] | push(new CharInfo(c, x, y))
+            } else {
+                numbers | push([])
+            }
+        }
+    }
+
+    numbers
+        | where => digits {
+            digits | iter::anyOf => charInfo:
+                hasAdjacentSymbol(charInfo->x, charInfo->y, schematic)
+        }
+        | map => digits {
+            digits
+                | map => charInfo: charInfo->char
+                | join
+                | into::int
+        }
+}
+
+cat ${scriptPath}/input.txt
+    | getPartNumbers
+    | math::sum
+    | assertEqual(178997)

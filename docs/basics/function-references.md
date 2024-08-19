@@ -8,7 +8,7 @@ reference, the `call` function is used.
 let f = &len
 f | call abc #=> 3
 
-let ouput = if userEcho: $echo else $println
+let ouput = if userEcho: &echo else &println
 output | call hello world #=> hello world
 ```
 

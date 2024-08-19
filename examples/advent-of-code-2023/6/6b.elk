@@ -1,0 +1,25 @@
+#!/usr/bin/env elk
+
+let (time, record) = cat ${scriptPath}/input.txt
+    | map => line {
+        line | re::findAll '\d+' | join | into::int
+    }
+
+
+fn search(start, end, condition) {
+    if end - start < 2 {
+        return start if call(condition, start)
+        return end
+    }
+
+    let mid = (start + end) / 2 | into::int
+    return search(mid + 1, end, condition) if not call(condition, mid)
+    return search(start, mid, condition)
+}
+
+fn isRecord(speed):
+    speed * (time - speed) > record
+
+let max = search(1, time, &Fn => x: not isRecord(x))
+let min = search(1, time, &isRecord)
+max - min | assertEqual(39570185)

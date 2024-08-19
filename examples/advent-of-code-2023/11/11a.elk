@@ -1,0 +1,36 @@
+#!/usr/bin/env elk
+
+let expandedLines = []
+for line in cat ${scriptPath}/input.txt {
+    expandedLines | push(line) if line | iter::allOf => c: c == "."
+    expandedLines | push(line)
+}
+
+let width = expandedLines | iter::first | len
+let columns = 0..width
+    | map => i {
+        expandedLines | map => line: line[i] | iter::collect
+    }
+let universe = []
+for column in columns {
+    universe | push(column) if column | iter::allOf => c: c == "."
+    universe | push(column)
+}
+
+let galaxies = []
+for (line, y) in universe | withIndex {
+    for (c, x) in line | withIndex {
+        galaxies | push((x, y)) if c == "#"
+    }
+}
+
+let totalDistance = 0
+for (g1, i) in galaxies | withIndex {
+    for g2 in galaxies | iter::skip(i + 1) {
+        let (x1, x2) = (g1[0], g2[0]) | sort::asc
+        let (y1, y2) = (g1[1], g2[1]) | sort::asc
+        totalDistance += x2 - x1 + y2 - y1
+    }
+}
+
+totalDistance | assertEqual(1001570)

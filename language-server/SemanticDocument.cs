@@ -1,6 +1,6 @@
-using Elk.Interpreting.Scope;
 using Elk.LanguageServer.Data;
 using Elk.Parsing;
+using Elk.Scoping;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 

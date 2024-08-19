@@ -1,0 +1,8 @@
+#!/usr/bin/env elk
+
+cat ${scriptPath}/input.txt
+    | map => &re::findAll '\d'
+    | map => &iter::collect
+    | map => matches: matches[0] + matches[-1]
+    | math::sum
+    | assertEqual(6376)

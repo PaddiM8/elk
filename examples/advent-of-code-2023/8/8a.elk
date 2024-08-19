@@ -1,0 +1,22 @@
+#!/usr/bin/env elk
+
+let lines = cat ${scriptPath}/input.txt
+let directions = lines
+    | iter::first
+    | map => c { if c == "L": 0 else 1 }
+    | iter::repeat
+    | iter::flatten
+let routes = lines
+    | iter::skip(2)
+    | map => &re::findAll '\w+'
+    | map => &iter::collect
+    | map => matches: [matches[0], (matches[1], matches[2])]
+    | dict::create
+
+let current = "AAA"
+let steps = for (direction, i) in directions | withIndex {
+    current = routes[current][direction]
+    break i if current == "ZZZ"
+}
+
+steps + 1 | assertEqual(2)

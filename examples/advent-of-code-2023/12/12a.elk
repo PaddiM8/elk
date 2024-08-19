@@ -1,0 +1,49 @@
+#!/usr/bin/env elk
+
+struct Record(springs, unknownIndices, groupSizes)
+
+fn isValid(record) {
+    let actualGroupSizes = [0]
+    for c in record->springs {
+        if c == "#" {
+            actualGroupSizes[-1] += 1 
+        } else if actualGroupSizes[-1] != 0 {
+            actualGroupSizes | push(0)
+        }
+    }
+
+    actualGroupSizes | pop() if actualGroupSizes[-1] == 0
+
+    return false if len(actualGroupSizes) > len(record->groupSizes)
+    into::tuple(actualGroupSizes) == into::tuple(record->groupSizes)
+}
+
+let records = cat ${scriptPath}/input.txt
+    | map => line {
+        let (springs, specs) = line | split " "
+        let unknownIndices = springs
+            | withIndex
+            | where => x: x[0] == "?"
+            | map => x: x[1]
+            | iter::collect
+        let groupSizes = specs
+            | split ","
+            | map => &into::int
+            | iter::collect
+        new Record(into::chars(springs), unknownIndices, groupSizes)
+    }
+
+let count = 0
+for record in records {
+    let combinations = "#." | iter::product(record->unknownIndices | len)
+    for combination in combinations {
+        for (c, i) in combination | withIndex {
+            let index = record->unknownIndices[i]
+            record->springs[index] = c
+        }
+
+        count += 1 if record | isValid
+    }
+}
+
+count | assertEqual(137)

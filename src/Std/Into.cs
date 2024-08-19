@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Std.Serialization;
@@ -115,6 +115,9 @@ public class Into
     [ElkFunction("json")]
     public static RuntimeString Json(RuntimeObject input, RuntimeString? indentationStyle = null)
     {
+        if (input is RuntimeGenerator generator)
+            input = new RuntimeList(generator.Values.ToList());
+
         var formatting = indentationStyle?.Value is "--indented" or "-i"
             ? Formatting.Indented
             : Formatting.None;

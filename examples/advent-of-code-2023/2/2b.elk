@@ -1,0 +1,46 @@
+#!/usr/bin/env elk
+
+# Parses eg. `1 green, 2 red, 3 blue` into a dictionary
+fn parseSet(line) {
+    line
+        | split ","
+        | map => colorAmount {
+            let color = colorAmount | re::find '[a-z]+'
+            let amount = colorAmount | re::find '\d+' | into::int
+
+            [color, amount]
+        }
+        | dict::create
+}
+
+# Parses eg. `Game 1: 1 green, 2 blue; 3 green`
+fn parseGame(line) {
+    line
+        | split ":"
+        | iter::at 1
+        | split ";"
+        | map => &parseSet
+}
+
+fn minimumSet(sets) {
+    let maxOfColors = {}
+    for set in sets {
+        for (color, amount) in set {
+            let currentMax = iter::at(maxOfColors, color) ?? 0
+            maxOfColors[color] = amount if amount > currentMax
+        }
+    }
+
+    maxOfColors
+}
+
+cat ${scriptPath}/input.txt
+    | map => &parseGame
+    | map => sets {
+        sets
+            | minimumSet
+            | dict::values
+            | iter::reduce => &op::mul
+    }
+    | math::sum
+    | assertEqual(59795)

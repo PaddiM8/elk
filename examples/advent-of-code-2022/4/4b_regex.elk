@@ -1,8 +1,10 @@
 cat(scriptPath() + "/input.txt")
     | map => &re::findAll('\d+')
-    | map! => &into::int
+    | map => x {
+        x | map => &into::int | iter::collect
+    }
     | iter::count => x {
-        let (a, b, c, d) = x | iter::collect
+        let (a, b, c, d) = x
         b >= c and a <= d
     }
     | assertEqual(45)

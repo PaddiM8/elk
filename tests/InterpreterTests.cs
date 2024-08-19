@@ -2,11 +2,11 @@
 
 using System.Collections.Generic;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 using NUnit.Framework;
 using static Elk.Tests.AstBuilder;
 
@@ -18,14 +18,18 @@ internal class InterpreterTests
 {
     private RuntimeObject Interpret(IList<Expr> ast, Scope? scope = null)
     {
-        var interpreter = new Interpreter(null);
-
-        return ElkProgram.Evaluate(
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(null, null),
+            new VirtualMachineOptions()
+        );
+        var result = ElkProgram.Evaluate(
             new Ast(ast),
-            scope ?? interpreter.CurrentModule,
+            scope ?? virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
-            interpreter
-        ).Value ?? RuntimeNil.Value;
+            virtualMachine
+        );
+
+        return result.Value ?? RuntimeNil.Value;
     }
 
     [TestCase(2, TokenKind.Plus, 3, 5)]

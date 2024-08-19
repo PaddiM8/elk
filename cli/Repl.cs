@@ -5,19 +5,26 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
+using Elk.Scoping;
+using Elk.Vm;
 
 #endregion
 
 namespace Elk.Cli;
 
-class Repl
+static class Repl
 {
-    public static void Run()
+    public static void Run(VirtualMachineOptions vmOptions)
     {
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 
-        var shell = new ShellSession();
+        var shell = new ShellSession(
+            new RootModuleScope(null, null),
+            vmOptions
+        );
+        shell.InitInteractive();
+
         const int maxEntries = 50000;
         var historyRepository = new HistoryRepository(maxEntries);
         var historyHandler = HistoryHandler.Init(maxEntries, historyRepository);

@@ -12,7 +12,7 @@ namespace Elk.Cli;
 
 class HighlightHandler(ShellSession shell) : IHighlightHandler
 {
-    public Highlighter Highlighter { get; } = new(shell.CurrentModule, shell);
+    public Highlighter Highlighter { get; } = new(shell.RootModule, shell);
 
     public string Highlight(string text, int caret)
     {

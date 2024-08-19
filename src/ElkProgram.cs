@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
-using Elk.Interpreting.Scope;
+using Elk.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Services;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 namespace Elk;
 
@@ -40,7 +40,7 @@ public static class ElkProgram
         string input,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter)
+        VirtualMachine? virtualMachine)
     {
         Ast ast;
         try
@@ -84,7 +84,12 @@ public static class ElkProgram
 
         try
         {
-            var result = Evaluate(ast, scope, analysisScope, interpreter);
+            var result = Evaluate(
+                ast,
+                scope,
+                analysisScope,
+                virtualMachine
+            );
             result.SemanticTokens = semanticTokens;
 
             return result;
@@ -109,60 +114,67 @@ public static class ElkProgram
                 Diagnostics = diagnostics,
             };
         }
-        catch (Exception e)
-        {
-            var message = new DiagnosticMessage(
-                e.Message,
-                interpreter?.Position ?? TextPos.Default,
-                interpreter?.Position ?? TextPos.Default
-            );
-
-            return new EvaluationResult
-            {
-                SemanticTokens = semanticTokens,
-                Diagnostics = [message],
-            };
-        }
     }
 
     internal static EvaluationResult Evaluate(
         Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
-        Interpreter? interpreter)
+        VirtualMachine? virtualMachine)
     {
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
-        EvaluateModules(
-            scope.ModuleScope.ImportedModules
-                .Where(x => x != scope)
-                .Where(x =>
-                    x.AnalysisStatus != AnalysisStatus.Failed &&
-                        x.AnalysisStatus != AnalysisStatus.Evaluated
-                ),
-            interpreter
-        );
-
-        var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        var result = interpreter?.Interpret(analysedAst.Expressions, scope);
-        EvaluateModules(scope.ModuleScope.Modules, interpreter);
+        var generated = GeneratePages(ast, scope, analysisScope, virtualMachine).ToList();
+        var result = generated
+            .Select(pair => virtualMachine?.Execute(pair.page))
+            .LastOrDefault();
 
         return new EvaluationResult
         {
-            Ast = analysedAst,
+            Ast = generated.LastOrDefault().analysedAst,
             Value = result,
         };
     }
 
-    private static void EvaluateModules(IEnumerable<ModuleScope> modules, Interpreter? interpreter)
+    private static IEnumerable<(Ast analysedAst, Page page)> GeneratePages(
+        Ast ast,
+        Scope scope,
+        AnalysisScope analysisScope,
+        VirtualMachine? virtualMachine)
     {
-        foreach (var module in modules)
+        Debug.Assert(scope.ModuleScope is not { Ast: null });
+
+        var importedModules = scope.ModuleScope.ImportedModules
+            .Where(x => x != scope)
+            .Where(x =>
+                x.AnalysisStatus != AnalysisStatus.Failed &&
+                    x.AnalysisStatus != AnalysisStatus.Evaluated
+            );
+        var pages = EvaluateModules(importedModules, virtualMachine)
+            .Concat(EvaluateModules(scope.ModuleScope.Modules, virtualMachine));
+
+        var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
+        if (virtualMachine != null)
+        {
+            var result = virtualMachine.Generate(analysedAst);
+            pages = pages.Append((analysedAst, result));
+        }
+
+        return pages;
+    }
+
+    private static IEnumerable<(Ast, Page)> EvaluateModules(
+        IEnumerable<ModuleScope> modules,
+        VirtualMachine? virtualMachine)
+    {
+        return modules.SelectMany(module =>
         {
             if (module.AnalysisStatus == AnalysisStatus.None)
                 Analyser.Analyse(module.Ast, module, AnalysisScope.OncePerModule);
 
             module.AnalysisStatus = AnalysisStatus.Evaluated;
-            Evaluate(module.Ast, module, AnalysisScope.OncePerModule, interpreter);
-        }
+
+            return GeneratePages(module.Ast, module, AnalysisScope.OncePerModule, virtualMachine);
+        });
     }
 }

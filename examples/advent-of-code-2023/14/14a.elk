@@ -1,0 +1,35 @@
+#!/usr/bin/env elk
+
+fn tilt(lines) {
+    for (line, y) in lines | withIndex {
+        for x in 0..len(line) {
+            for y2 in 0..y | iter::reverse {
+                if lines[y2 + 1][x] == "O" and lines[y2][x] == "." {
+                    lines[y2 + 1][x] = "."
+                    lines[y2][x] = "O"
+                }
+            }
+        }
+    }
+
+    lines
+}
+
+fn calculateLoad(lines) {
+    lines
+        | withIndex
+        | map => entry {
+            let (line, y) = entry
+            line
+                | iter::count => c: c == "O"
+                | op::mul(len(lines) - y)
+        }
+        | math::sum
+}
+
+cat ${scriptPath}/input.txt
+    | map => &into::chars
+    | iter::collect
+    | tilt
+    | calculateLoad
+    | assertEqual(27509)

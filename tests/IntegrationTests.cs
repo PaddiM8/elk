@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Elk.Analysis;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
+using Elk.Scoping;
+using Elk.Vm;
 using NUnit.Framework;
 using Path = System.IO.Path;
 
@@ -18,16 +18,15 @@ public class IntegrationTests
     [TestCaseSource(nameof(ElkFiles))]
     public void RunIntegrationTests(string filePath)
     {
-        var interpreter = new Interpreter(filePath)
-        {
-            PrintErrors = false,
-        };
-
+        var virtualMachine = new VirtualMachine(
+            new RootModuleScope(filePath, null),
+            new VirtualMachineOptions()
+        );
         var result = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
-            interpreter.CurrentModule,
+            virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
-            interpreter
+            virtualMachine
         );
         Assert.IsEmpty(result.Diagnostics);
     }
@@ -41,6 +40,7 @@ public class IntegrationTests
         {
             Directory.GetFiles(dataPath, "*.elk", SearchOption.AllDirectories),
             Directory.GetFiles(Path.Combine(examplesPath, "advent-of-code-2022"), "*.elk", SearchOption.AllDirectories),
+            Directory.GetFiles(Path.Combine(examplesPath, "advent-of-code-2023"), "*.elk", SearchOption.AllDirectories),
         }.SelectMany(x => x);
     }
 }

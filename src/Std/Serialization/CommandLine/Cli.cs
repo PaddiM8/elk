@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting;
 using Elk.ReadLine;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 namespace Elk.Std.Serialization.CommandLine;
 

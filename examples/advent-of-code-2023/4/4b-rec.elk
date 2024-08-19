@@ -1,0 +1,39 @@
+#!/usr/bin/env elk
+
+struct Card(id, winCount, count)
+
+fn scanCard(card, cards) {
+    if card->count != nil:
+        return card->count
+    if card->winCount == 0:
+        return 0
+    return card->count = 1..=(card->winCount)
+        | map => i: cards[card->id + i]
+        | iter::collect
+        | map => &scanCard(cards)
+        | math::sum
+        | op::add(card->winCount)
+}
+
+let cards = cat ${scriptPath}/input.txt
+    | withIndex
+    | map => entry {
+        let (line, index) = entry
+        let (winning, actual) = line
+            | split ":"
+            | iter::at 1
+            | split " | "
+            | map => x {
+                x | re::findAll '\d+' | map => &into::int | into::set
+            }
+        let winCount = actual | iter::count => x: x in winning
+
+        new Card(index, winCount, nil)
+    }
+    | iter::collect
+
+cards
+    | map => &scanCard(cards)
+    | math::sum
+    | op::add(len(cards))
+    | assertEqual(10378710)

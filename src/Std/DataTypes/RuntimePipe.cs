@@ -4,10 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting;
-using Elk.Interpreting.Exceptions;
+using Elk.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
+using Elk.Vm;
 
 #endregion
 
@@ -185,6 +185,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         _processContext.EnableDisposeError();
     }
 
+    public void AllowNonZeroExit()
+    {
+        _processContext.AllowNonZeroExit();
+    }
+
     public int Wait()
         => _processContext.Wait();
 
@@ -202,36 +207,29 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     }
 }
 
-class RuntimePipeEnumerator : IEnumerator<RuntimeObject>
+class RuntimePipeEnumerator(IEnumerator<string> streamEnumerator, IList<string>? values)
+    : IEnumerator<RuntimeObject>
 {
     public RuntimeObject Current { get; private set; } = RuntimeNil.Value;
 
     object IEnumerator.Current
         => Current;
 
-    private readonly IEnumerator<string> _streamEnumerator;
-    private readonly IList<string>? _values;
     private int _valuesIndex;
-
-    public RuntimePipeEnumerator(IEnumerator<string> streamEnumerator, IList<string>? values)
-    {
-        _streamEnumerator = streamEnumerator;
-        _values = values;
-    }
 
     public bool MoveNext()
     {
-        if (_valuesIndex < _values?.Count)
+        if (_valuesIndex < values?.Count)
         {
-            Current = new RuntimeString(_values[_valuesIndex]);
+            Current = new RuntimeString(values[_valuesIndex]);
             _valuesIndex++;
 
             return true;
         }
 
-        if (_streamEnumerator.MoveNext())
+        if (streamEnumerator.MoveNext())
         {
-            Current = new RuntimeString(_streamEnumerator.Current);
+            Current = new RuntimeString(streamEnumerator.Current);
             _valuesIndex++;
 
             return true;
@@ -241,7 +239,7 @@ class RuntimePipeEnumerator : IEnumerator<RuntimeObject>
     }
 
     public void Reset()
-        => _streamEnumerator.Reset();
+        => streamEnumerator.Reset();
 
     public void Dispose()
     {

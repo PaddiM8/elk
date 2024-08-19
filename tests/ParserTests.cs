@@ -2,9 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
 using Elk.Parsing;
+using Elk.Scoping;
 using Elk.Std.DataTypes;
 using NUnit.Framework;
 using static Elk.Tests.AstBuilder;

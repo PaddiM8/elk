@@ -17,13 +17,15 @@ fn parse(lines) {
 
 fn parseInstructions(lines, startIndex, stacks) {
     for line in lines[startIndex..] {
-        let (count, fromStack, toStack) = line | re::findAll('\d+') | into::int!
+        let (count, fromStack, toStack) = line
+            | re::findAll('\d+')
+            | map => &into::int
         stacks | moveCrates(count, fromStack, toStack)
     }
 
     stacks
         | where => x: len(x) > 0
-        | iter::last!
+        | map => &iter::last
         | join
 }
 

@@ -1,3 +1,3 @@
-using iter fn g(a){a=a|into::set!
+using iter fn g(a){a=a|map=>&into::set|iter::collect
 let c=a[0]|intersect(a[1])|intersect(a[2])|first
-into::charCode(c)-if c <"a":38 else 96}cat(scriptPath() + "/input.txt")|where =>x:x|iter::chunks 3|g!|math::sum|assertEqual(232)
+into::charCode(c)-if c <"a":38 else 96}cat(scriptPath() + "/input.txt")|where =>x:x|iter::chunks 3|map=>&g|math::sum|assertEqual(232)

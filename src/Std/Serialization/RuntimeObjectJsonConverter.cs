@@ -23,15 +23,17 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
         => value switch
         {
             RuntimeList list => BuildList(list),
+            RuntimeGenerator generator => BuildList(generator),
             RuntimeTuple tuple => BuildTuple(tuple),
             RuntimeDictionary dictionary => BuildDictionary(dictionary),
+            RuntimeSet set => BuildSet(set),
             RuntimeStruct @struct => BuildStruct(@struct),
             RuntimeTable table => BuildTable(table),
             _ => BuildValue(value),
         };
 
-    private JArray BuildList(RuntimeList list)
-        => new(list.Values.Select(Build));
+    private JArray BuildList(IEnumerable<RuntimeObject> list)
+        => new(list.Select(Build));
 
     private JArray BuildTuple(RuntimeTuple list)
         => new(list.Values.Select(Build));
@@ -47,6 +49,9 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
 
         return result;
     }
+
+    private JArray BuildSet(RuntimeSet set)
+        => new(set.Entries.Select(x => Build(x.Value)));
 
     private JObject BuildStruct(RuntimeStruct structValue)
     {

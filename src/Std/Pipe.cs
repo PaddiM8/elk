@@ -72,6 +72,7 @@ public static class Pipe
     public static RuntimePipe DisposeErr(RuntimePipe pipe)
     {
         pipe.EnableDisposeError();
+        pipe.AllowNonZeroExit();
         pipe.Start();
 
         return pipe;

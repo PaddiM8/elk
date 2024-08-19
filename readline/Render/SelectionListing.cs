@@ -148,7 +148,7 @@ class SelectionListing(IRenderer renderer)
 
         // Padding
         var itemLength = content.GetWcLength() + (truncatedDescription?.GetWcLength() ?? 0);
-        var padding = new string(' ', columnWidth - itemLength);
+        var padding = new string(' ', Math.Max(0, columnWidth - itemLength));
         if (itemLength == renderer.WindowWidth)
             padding = "";
 

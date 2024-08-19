@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elk.Interpreting.Scope;
 using Elk.Lexing;
+using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
 using Newtonsoft.Json;
@@ -63,11 +63,6 @@ public abstract class Expr(TextPos startPos, TextPos endPos, Scope scope)
     public Scope Scope { get; } = scope;
 
     public abstract IEnumerable<Expr> ChildExpressions { get; }
-
-    internal RuntimeClosureFunction? EnclosingClosureValue
-        => EnclosingFunction is ClosureExpr closureExpr
-            ? closureExpr.RuntimeValue
-            : null;
 }
 
 public class EmptyExpr(Scope scope) : Expr(TextPos.Default, TextPos.Default, scope)
@@ -148,10 +143,10 @@ public class FunctionExpr(
 
     public bool HasClosure { get; } = hasClosure;
 
+    public VariableSymbol? ClosureSymbol { get; init; }
+
     public override IEnumerable<Expr> ChildExpressions
         => [Block];
-
-    internal RuntimeClosureFunction? GivenClosure { get; set; }
 
     internal AnalysisStatus AnalysisStatus { get; set; }
 }
@@ -166,6 +161,11 @@ public class LetExpr(
     public List<Token> IdentifierList { get; } = identifierList;
 
     public Expr Value { get; } = value;
+
+    public IEnumerable<VariableSymbol> Symbols
+        => IdentifierList
+            .Select(x => Scope.FindVariable(x.Value))
+            .Where(x => x != null)!;
 
     public override IEnumerable<Expr> ChildExpressions
         => [Value];
@@ -416,6 +416,8 @@ public class VariableExpr(Token identifier, Scope scope)
 {
     public Token Identifier { get; } = identifier;
 
+    public bool IsCaptured { get; set; }
+
     public override IEnumerable<Expr> ChildExpressions
         => Array.Empty<Expr>();
 }
@@ -426,21 +428,13 @@ public enum CallStyle
     TextArguments,
 }
 
-public enum Plurality
-{
-    Singular,
-    Plural,
-}
-
 public enum CallType
 {
     Unknown,
     Program,
     StdFunction,
     Function,
-    BuiltInCd,
     BuiltInExec,
-    BuiltInScriptPath,
     BuiltInClosure,
     BuiltInCall,
 }
@@ -458,7 +452,6 @@ public class CallExpr(
     IList<Token> modulePath,
     IList<Expr> arguments,
     CallStyle callStyle,
-    Plurality plurality,
     CallType callType,
     Scope scope,
     TextPos endPos)
@@ -475,8 +468,6 @@ public class CallExpr(
     public IList<Expr> Arguments { get; set; } = arguments;
 
     public CallStyle CallStyle { get; } = callStyle;
-
-    public Plurality Plurality { get; } = plurality;
 
     public CallType CallType { get; } = callType;
 
@@ -552,8 +543,6 @@ public class ClosureExpr(
 
     public override IEnumerable<Expr> ChildExpressions
         => [Function, Body];
-
-    internal RuntimeClosureFunction? RuntimeValue { get; set; }
 }
 
 public class TryExpr(
