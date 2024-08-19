@@ -49,6 +49,19 @@ internal class StringInterpolationParserTests
         Assert.AreEqual(InterpolationPartKind.Expression, parts[1].Kind);
     }
 
+    [Test]
+    public void TestEnvironmentVariable()
+    {
+        var parts = StringInterpolationParser.Parse(StringToken("> $VAR")).ToList();
+        Assert.AreEqual(2, parts.Count);
+
+        Assert.AreEqual("> ", parts[0].Value);
+        Assert.AreEqual(InterpolationPartKind.Text, parts[0].Kind);
+
+        Assert.AreEqual("$VAR", parts[1].Value);
+        Assert.AreEqual(InterpolationPartKind.Expression, parts[1].Kind);
+    }
+
     private static Token StringToken(string value)
         => new(TokenKind.DoubleQuoteStringLiteral, value, TextPos.Default);
 }

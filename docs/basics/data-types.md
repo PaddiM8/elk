@@ -287,7 +287,8 @@ in mutation.
 
 String interpolation is done by surrounding code with braces preceded by a
 dollar sign in a string literal, for example `"Value: ${x + 1}"`. This is only
-possible with double quote strings.
+possible with double quote strings. Environment variables can also be interpolated,
+for example `Var: $VAR`.
 
 ### Iteration
 

@@ -24,6 +24,7 @@ class StringInterpolationParser
         var literal = token.Value;
         var textString = new StringBuilder();
         var nextPartStartPos = 0;
+
         for (var i = 0; i < literal.Length; i++)
         {
             // Parse escaped dollar signs literally
@@ -55,6 +56,36 @@ class StringInterpolationParser
                 yield return new InterpolationPart(expressionPart, InterpolationPartKind.Expression, offset);
                 i += expressionPart.Length + 1; // One additional for the closing brace
                 nextPartStartPos = i;
+
+                continue;
+            }
+
+            // A single environment variable
+            if (literal[i] == '$' && IsValidEnvironmentVariableCharacter(next))
+            {
+                var environmentVariableStart = i;
+                i++;
+
+                if (textString.Length > 0)
+                {
+                    yield return new InterpolationPart(
+                        textString.ToString(),
+                        InterpolationPartKind.Text,
+                        nextPartStartPos
+                    );
+                    textString.Clear();
+                }
+
+                while (i < literal.Length && IsValidEnvironmentVariableCharacter(literal[i]))
+                    i++;
+
+                var environmentVariableEnd = i;
+
+                yield return new InterpolationPart(
+                    literal[environmentVariableStart..environmentVariableEnd],
+                    InterpolationPartKind.Expression,
+                    environmentVariableStart
+                );
 
                 continue;
             }
@@ -91,4 +122,7 @@ class StringInterpolationParser
 
         return exprString.ToString();
     }
+
+    private static bool IsValidEnvironmentVariableCharacter(char c)
+        => char.IsAsciiLetterOrDigit(c) || c == '_';
 }
