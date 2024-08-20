@@ -12,7 +12,7 @@ let result2 = try {
 } catch e with Integer {
     assert(false)
 } catch e {
-    assert(isType(error::value(e), String))
+    assert(isType(error::value(e), ElkErrorValue))
 
     "caught"
 }

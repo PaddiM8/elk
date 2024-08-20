@@ -197,7 +197,7 @@ class InstructionExecutor
                 _ip = exceptionFrame.Ip;
 
                 var value = (ex as RuntimeUserException)?.Value
-                    ?? new RuntimeError(new RuntimeString(ex.Message));
+                    ?? new RuntimeError(new RuntimeElkErrorValue(ex.Message));
 
                 _stack.Push(value);
             }
