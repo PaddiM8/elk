@@ -77,14 +77,27 @@ class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
         {
             var executor = new InstructionExecutor(this, options, _context);
 
-            return executor.ExecuteFunction(function, arguments, isRoot);
+            return executor.ExecuteFunction(function, arguments, isRoot, isIndependentCall: true);
         }
-        catch (RuntimeException e)
+        catch (RuntimeException ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.Write($"Error evaluating {identifier}: ");
+            Console.Error.WriteLine($"Error evaluating {identifier}");
             Console.ResetColor();
-            Console.WriteLine(e);
+
+            if (ex.StartPosition == null || ex.EndPosition == null)
+            {
+                Console.WriteLine(ex.Message);
+
+                return RuntimeNil.Value;
+            }
+
+            var diagnosticMessage = new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)
+            {
+                StackTrace = ex.ElkStackTrace,
+            };
+
+            Console.WriteLine(diagnosticMessage);
 
             return RuntimeNil.Value;
         }

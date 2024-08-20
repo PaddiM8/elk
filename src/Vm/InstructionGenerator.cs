@@ -942,7 +942,8 @@ class InstructionGenerator(
             return (arguments, isRoot) => executor.ExecuteFunction(
                 (RuntimeUserFunction)function,
                 arguments,
-                isRoot
+                isRoot,
+                isIndependentCall: false
             );
         };
 
@@ -1358,7 +1359,8 @@ class InstructionGenerator(
             return (arguments, isRoot) => executor.ExecuteFunction(
                 (RuntimeUserFunction)function,
                 arguments,
-                isRoot
+                isRoot,
+                isIndependentCall: false
             );
         };
 

@@ -191,8 +191,6 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
             _virtualMachine
         );
 
-        CallOnExit();
-
         if (evaluationResult.Diagnostics.Any())
         {
             foreach (var diagnostic in evaluationResult.Diagnostics)
@@ -200,5 +198,13 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
 
             Environment.Exit(1);
         }
+
+        var mainFunction = _virtualMachine.RootModule.FindFunction("main", lookInImports: false);
+        if (mainFunction != null)
+        {
+            _virtualMachine.ExecuteFunction("main", new List<RuntimeObject>(), isRoot: true);
+        }
+
+        CallOnExit();
     }
 }
