@@ -719,6 +719,7 @@ class Analyser(RootModuleScope rootModule)
             "exec" => CallType.BuiltInExec,
             "closure" => CallType.BuiltInClosure,
             "call" => CallType.BuiltInCall,
+            "source" => CallType.BuiltInSource,
             _ => null,
         };
 

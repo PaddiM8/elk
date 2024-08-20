@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Elk.Analysis;
 using Elk.Exceptions;
 using Elk.Lexing;
 using Elk.Parsing;
@@ -23,6 +24,7 @@ record struct Frame(
 
 class InstructionExecutor
 {
+    private readonly VirtualMachine _virtualMachine;
     private readonly VirtualMachineOptions _vmOptions;
     private readonly VirtualMachineContext _context;
     private readonly IndexableStack<RuntimeObject> _stack;
@@ -32,8 +34,12 @@ class InstructionExecutor
     private Page _currentPage = null!;
     private RuntimeObject? _returnedValue;
 
-    internal InstructionExecutor(VirtualMachineOptions vmOptions, VirtualMachineContext context)
+    internal InstructionExecutor(
+        VirtualMachine virtualMachine,
+        VirtualMachineOptions vmOptions,
+        VirtualMachineContext context)
     {
+        _virtualMachine = virtualMachine;
         _vmOptions = vmOptions;
         _context = context;
         _stack = context.Stack;
@@ -357,6 +363,9 @@ class InstructionExecutor
                 break;
             case InstructionKind.ResolveArgumentsDynamically:
                 ResolveArgumentsDynamically(Eat());
+                break;
+            case InstructionKind.Source:
+                Source();
                 break;
             case InstructionKind.Index:
                 Index();
@@ -927,6 +936,21 @@ class InstructionExecutor
 
         // Return the actual argument count
         _stack.PushObject((byte)actualArgumentCount);
+    }
+
+    private void Source()
+    {
+        var rootModuleScope = (RootModuleScope)_stack.PopObject();
+        var path = _stack.Pop().As<RuntimeString>().Value;
+        if (!File.Exists(path))
+            throw new RuntimeException("File not found");
+
+        ElkProgram.Evaluate(
+            File.ReadAllText(path),
+            rootModuleScope,
+            AnalysisScope.AppendToModule,
+            _virtualMachine
+        );
     }
 
     private void Index()

@@ -806,6 +806,9 @@ class InstructionGenerator(
             case CallType.BuiltInExec:
                 EmitBuiltInExec(expr, isMaybeRoot);
                 break;
+            case CallType.BuiltInSource:
+                EmitBuiltInSource(expr, isMaybeRoot);
+                break;
             default:
                 EmitProgramCall(expr, isMaybeRoot);
                 break;
@@ -1207,6 +1210,16 @@ class InstructionGenerator(
         Emit(kind);
         Emit((ushort)ProgramCallProps.None);
         Emit((byte)0);
+    }
+
+    private void EmitBuiltInSource(CallExpr expr, bool isMaybeRoot = false)
+    {
+        if (expr.Arguments.Count != 1)
+            throw new RuntimeWrongNumberOfArgumentsException(1, expr.Arguments.Count);
+
+        Next(expr.Arguments.Single());
+        EmitBig(InstructionKind.Const, expr.Scope.ModuleScope.RootModule);
+        Emit(InstructionKind.Source);
     }
 
     private void EmitProgramCall(CallExpr expr, bool isMaybeRoot = false)

@@ -40,4 +40,12 @@ public class HardCoded
     [ElkFunction("call", Reachability.Everywhere)]
     public static RuntimeObject Call(RuntimeFunction function, [ElkVariadic] IEnumerable<RuntimeObject> callArguments)
         => throw new NotSupportedException();
+
+    /// <summary>
+    /// Evaluate a file in the context of the current environment.
+    /// </summary>
+    /// <param name="path">Path to the script to evaluate.</param>
+    [ElkFunction("source", Reachability.Everywhere)]
+    public static RuntimeObject Source(RuntimeString path)
+        => throw new NotSupportedException();
 }

@@ -27,7 +27,7 @@ class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
 
     public Page Generate(Ast ast)
     {
-        var executor = new InstructionExecutor(options, _context);
+        var executor = new InstructionExecutor(this, options, _context);
         var generator = new InstructionGenerator(_functions, ShellEnvironment, executor);
         var page = generator.Generate(ast);
         if (!options.DumpInstructions)
@@ -47,7 +47,7 @@ class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
 
     public RuntimeObject Execute(Page page)
     {
-        var executor = new InstructionExecutor(options, _context);
+        var executor = new InstructionExecutor(this, options, _context);
 
         return executor.Execute(page);
     }
@@ -75,7 +75,7 @@ class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
 
         try
         {
-            var executor = new InstructionExecutor(options, _context);
+            var executor = new InstructionExecutor(this, options, _context);
 
             return executor.ExecuteFunction(function, arguments, isRoot);
         }

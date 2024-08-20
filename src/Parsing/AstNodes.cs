@@ -437,6 +437,7 @@ public enum CallType
     BuiltInExec,
     BuiltInClosure,
     BuiltInCall,
+    BuiltInSource,
 }
 
 public enum RedirectionKind

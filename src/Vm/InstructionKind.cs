@@ -31,6 +31,7 @@ enum InstructionKind : byte
     DynamicCall,
     PushArgsToRef,
     ResolveArgumentsDynamically,
+    Source,
 
     Index,
     IndexStore,
