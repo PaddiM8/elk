@@ -72,6 +72,7 @@ export default defineConfig({
             { text: "Shell Customisation", link: "/other/shell-customisation" },
             { text: "Path", link: "/other/path" },
             { text: "Pattern Matching", link: "/other/pattern-matching" },
+            { text: "Python Virtual Environments", link: "/other/python-virtual-environments" },
             { text: "Conventions", link: "/other/conventions" },
             { text: "Multi-Line Expressions", link: "/other/multi-line-expressions" },
           ],

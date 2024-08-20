@@ -941,7 +941,11 @@ class InstructionExecutor
     private void Source()
     {
         var rootModuleScope = (RootModuleScope)_stack.PopObject();
-        var path = _stack.Pop().As<RuntimeString>().Value;
+        var path = Path.Combine(
+            ShellEnvironment.WorkingDirectory,
+            _stack.Pop().As<RuntimeString>().Value
+        );
+
         if (!File.Exists(path))
             throw new RuntimeException("File not found");
 

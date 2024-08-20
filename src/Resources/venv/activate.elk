@@ -1,0 +1,26 @@
+fn deactivate() {
+    if $_OLD_VIRTUAL_PATH {
+        let $PATH = $_OLD_VIRTUAL_PATH
+        let $_OLD_VIRTUAL_PATH = nil
+    }
+
+    if $_OLD_VIRTUAL_PYTHONHOME {
+        let $PYTHONHOME = $_OLD_VIRTUAL_PYTHONHOME
+        let $_OLD_VIRTUAL_PYTHONHOME = nil
+    }
+
+    let $VIRTUAL_ENV = nil
+    let $VIRTUAL_ENV_PROMPT = nil
+
+    # TODO: unset the deactivate function (create an unset built-in)
+}
+
+let $VIRTUAL_ENV = "{{ path }}"
+
+let _OLD_VIRTUAL_PATH = $PATH
+let $PATH = "$VIRTUAL_ENV/bin:$PATH"
+
+if $PYTHONHOME {
+    let $_OLD_VIRTUAL_PYTHONHOME = $PYTHONHOME
+    let $PYTHONHOME = nil
+}

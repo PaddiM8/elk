@@ -87,6 +87,8 @@ class StringInterpolationParser
                     environmentVariableStart
                 );
 
+                i--;
+
                 continue;
             }
 

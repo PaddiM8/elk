@@ -11,10 +11,8 @@ fn elkPrompt() {
     }
 
     let pwd = env::prettyPwd | ansi::color blue
-    if branch {
-        let formattedBranch = " ${branch}" | ansi::color magenta
-        "${pwd} ${formattedBranch} ❯ "
-    } else {
-        "${pwd} ❯ "
-    }
+    let formattedBranch = if branch: ansi::color("  ${branch}", "magenta") else ""
+    let venv = if $VIRTUAL_ENV: ansi::color(" (venv)", "green") else ""
+
+    "${pwd}${formattedBranch}${venv} ❯ "
 }
