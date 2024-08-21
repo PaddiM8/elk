@@ -24,8 +24,7 @@ if [ "$(uname)" = "Darwin" ]; then
     cp cli/bin/Release/*/$TARGET/publish/*.dylib build/$TARGET
 
     cd build/$TARGET
-    tar -czf elk.tar.xz usr
-    rm -rf usr
+    tar -czf $TARGET.tar.xz *
 else
     mkdir -p build/$TARGET/usr/bin
     mkdir -p build/$TARGET/usr/lib/elk
@@ -35,6 +34,6 @@ else
     cp cli/bin/Release/*/$TARGET/publish/*.so build/$TARGET/usr/lib/elk
 
     cd build/$TARGET
-    tar -czf elk.tar.xz usr
+    tar -czf $TARGET.tar.xz usr
     rm -rf usr
 fi

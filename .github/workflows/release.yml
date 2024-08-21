@@ -7,6 +7,8 @@ on:
 
 jobs:
   binaries:
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -18,13 +20,23 @@ jobs:
           dotnet-version: '8.0.x'
       - run: |
           ./build.sh
-          cd build
-          tar -cJf "$(basename ./*).tar.xz" -C * .
-          cd ..
-      - uses: ncipollo/release-action@v1
+          gh release create ${{ github.ref_name }} build/*/*.tar.* || gh release upload ${{ github.ref_name }} build/*/*.tar.*
+  win-binary:
+    env:
+      GH_TOKEN: ${{ github.token }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
         with:
-          artifacts: "build/*.tar.xz"
-          allowUpdates: true
+          dotnet-version: '8.0.x'
+      - run: |
+          ./Build.ps1
+          Compress-Archive -Path build/* -Destination win-x64.zip
+          gh release create ${{ github.ref_name }} win-x64.zip || gh release upload ${{ github.ref_name }} win-x64.zip
   docs:
     runs-on: ubuntu-latest
     steps:
