@@ -168,7 +168,7 @@ class InstructionExecutor
             Console.WriteLine("Stack:");
             foreach (var item in _stack)
             {
-                var itemString = item.ToString()?.Replace("\n", " ") ?? "";
+                var itemString = item.ToString()?.Replace(Environment.NewLine, " ") ?? "";
                 if (itemString.Length > 40)
                     itemString = itemString[..40] + "...";
 

@@ -30,6 +30,6 @@ public static class TextUtils
         if (builder.ToString().Trim().Any())
             lines.Add(builder.ToString().Trim());
 
-        return indentation + string.Join($"\n{indentation}", lines);
+        return indentation + string.Join($"{Environment.NewLine}{indentation}", lines);
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -7,9 +6,15 @@ namespace Elk.Cli;
 static class Utils
 {
     private static readonly Regex _escapeCharRegex = new("[{}()|$\"' ]");
+    private static readonly Regex _newLineRegex = new(@"\r?\n");
 
     public static string Escape(string input)
-        => _escapeCharRegex.Replace(input, m => $"\\{m.Value}").Replace("\n", "\\n");
+    {
+        return _newLineRegex.Replace(
+            _escapeCharRegex.Replace(input, m => $"\\{m.Value}"),
+            "\\n"
+        );
+    }
 
     public static string Unescape(string input)
     {

@@ -39,6 +39,7 @@ class SearchListing(IRenderer renderer, IHighlightHandler? highlightHandler)
         {
             var escaped = x.item
                 .Replace("\t", "  ")
+                .Replace(Environment.NewLine, " ")
                 .Replace("\n", " ")
                 .Replace("\x1b", "");
             const string prefix = "❯ ";

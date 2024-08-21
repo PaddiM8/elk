@@ -389,7 +389,6 @@ internal class Renderer : IRenderer
 
     public void WriteRaw(params string[] values)
     {
-        File.AppendAllText("/tmp/log.txt", string.Concat(values).Replace("\x1b", "\\e") + "\n");
         WriteRaw(string.Concat(values));
     }
 
@@ -402,7 +401,6 @@ internal class Renderer : IRenderer
             return;
         }
 
-        File.AppendAllText("/tmp/log.txt", value.Replace("\x1b", "\\e") + "\n");
         Console.Write(value);
     }
 

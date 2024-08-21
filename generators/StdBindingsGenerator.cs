@@ -48,6 +48,9 @@ public class StdBindingsGenerator : ISourceGenerator
     private readonly bool _useDebugger = false;
     private readonly HashSet<string> _typeNames = [];
     private const string BaseObjectName = "Elk.Std.DataTypes.RuntimeObject";
+    // Environment.NewLine is not available in analysers
+    private const string NewLine = @"
+";
 
     private readonly Dictionary<string, string> _additionalTypes = new()
     {
@@ -93,7 +96,7 @@ public class StdBindingsGenerator : ISourceGenerator
         """
         );
         GenerateTypeEntries(context.Compilation, sourceBuilder);
-        sourceBuilder.AppendLine("\n\t};\n");
+        sourceBuilder.AppendLine($"{NewLine}\t}};{NewLine}");
 
         // Functions
         var modules = new Dictionary<string, ModuleEntry>();
@@ -104,7 +107,7 @@ public class StdBindingsGenerator : ISourceGenerator
         """
         );
         GenerateFunctionEntries(context.Compilation, sourceBuilder, modules);
-        sourceBuilder.AppendLine("\n\t};\n");
+        sourceBuilder.AppendLine($"{NewLine}\t}};{NewLine}");
 
         // Structs
         sourceBuilder.Append(
@@ -114,7 +117,7 @@ public class StdBindingsGenerator : ISourceGenerator
         """
         );
         GenerateStructEntries(context.Compilation, sourceBuilder, modules);
-        sourceBuilder.AppendLine("\n\t};\n");
+        sourceBuilder.AppendLine($"{NewLine}\t}};{NewLine}");
 
         // Modules
         sourceBuilder.Append(
@@ -124,7 +127,7 @@ public class StdBindingsGenerator : ISourceGenerator
         """
         );
         GenerateModuleEntries(sourceBuilder, modules);
-        sourceBuilder.AppendLine("\n\t};");
+        sourceBuilder.AppendLine($"{NewLine}\t}};");
 
         // End
         sourceBuilder.Append('}');
@@ -135,7 +138,7 @@ public class StdBindingsGenerator : ISourceGenerator
     {
         // Iterable, Indexable, etc.
         foreach (var (key, value) in _additionalTypes)
-            sourceBuilder.Append($"\n\t\t{{ \"{key}\", typeof({value}) }},");
+            sourceBuilder.Append($"{NewLine}\t\t{{ \"{key}\", typeof({value}) }},");
 
         foreach (var declaredClass in FindClasses(compilation))
         {
@@ -152,7 +155,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var classType = GetFullTypeName(compilation, declaredClass);
 
             _typeNames.Add(classType);
-            sourceBuilder.Append($"\n\t\t{{ \"{typeName}\", typeof({classType}) }},");
+            sourceBuilder.Append($"{NewLine}\t\t{{ \"{typeName}\", typeof({classType}) }},");
         }
     }
 
@@ -188,7 +191,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var fullName = function.ModuleName == null
                 ? function.FunctionName
                 : $"{function.ModuleName}::{function.FunctionName}";
-            sourceBuilder.Append("\n\t\t{ \"");
+            sourceBuilder.Append($"{NewLine}\t\t{{ \"");
             sourceBuilder.Append(fullName);
 
             string moduleName;
@@ -215,6 +218,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var documentation = function.Documentation?
                 .Replace("\\", @"\\")
                 .Replace("\"", "\\\"")
+                .Replace("\r", "")
                 .Replace("\n", "\\n");
             var documentationLiteral = documentation == null
                 ? "null"
@@ -348,7 +352,7 @@ public class StdBindingsGenerator : ISourceGenerator
         foreach (var structInfo in FindStructs(compilation))
         {
             var fullName = $"{structInfo.ModuleName}::{structInfo.StructName}";
-            sourceBuilder.Append($"\n\t\t{{ \"{fullName}\", ");
+            sourceBuilder.Append($"{NewLine}\t\t{{ \"{fullName}\", ");
 
             var moduleName = $"\"{structInfo.ModuleName}\"";
             if (!modules.TryGetValue(moduleName, out var moduleEntries))
@@ -384,7 +388,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var functionArrayType = module.Value.FunctionNames.Any()
                 ? ""
                 : " string";
-            sourceBuilder.Append($"\n\t\t{{ {module.Key}, (");
+            sourceBuilder.Append($"{NewLine}\t\t{{ {module.Key}, (");
             sourceBuilder.Append($"ImmutableArray.Create(new{structArrayType}[] {{ {structNames} }}), ");
             sourceBuilder.Append($"ImmutableArray.Create(new{functionArrayType}[] {{ {functionNames} }})");
             sourceBuilder.Append(") },");
@@ -551,7 +555,7 @@ public class StdBindingsGenerator : ISourceGenerator
             var parameterNodes = document.DocumentElement?.SelectNodes("/member/param");
             if (parameterNodes?.Count > 0)
             {
-                documentationBuilder.AppendLine("\n---");
+                documentationBuilder.AppendLine($"{NewLine}---");
                 foreach (XmlNode parameterNode in parameterNodes)
                 {
                     documentationBuilder.Append(parameterNode.Attributes?["name"]?.Value);
@@ -568,7 +572,7 @@ public class StdBindingsGenerator : ISourceGenerator
                 .InnerText
                 .Trim();
             if (!string.IsNullOrWhiteSpace(returns))
-                documentationBuilder.Append($"\nReturns: {returns}");
+                documentationBuilder.Append($"{NewLine}Returns: {returns}");
         }
 
         return new StdFunctionInfo(

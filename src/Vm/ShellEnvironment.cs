@@ -13,10 +13,15 @@ class ShellEnvironment(string? scriptPath)
 {
     public static string WorkingDirectory
     {
-        get => Environment.GetEnvironmentVariable("PWD")
-            ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        set => Environment.SetEnvironmentVariable("PWD", value);
+        get => Directory.GetCurrentDirectory();
+        set
+        {
+            var path = value == string.Empty
+                ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                : value;
+            Directory.SetCurrentDirectory(path);
+            Environment.SetEnvironmentVariable("PWD", value);
+        }
     }
 
     public IEnumerable<RuntimeObject> Argv { get; set; } = Array.Empty<RuntimeObject>();

@@ -1,7 +1,7 @@
 namespace Elk.Std.Serialization;
 
-public class StringFormatting
+public static class StringFormatting
 {
     public static string ToDisplayString(string input)
-        => $"\"{input.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
+        => $"\"{System.Text.RegularExpressions.Regex.Replace(input, @"\r?\n", "\\n").Replace("\"", "\\\"")}\"";
 }

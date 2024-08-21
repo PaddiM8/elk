@@ -50,12 +50,12 @@ public static class Path
     public static RuntimeString List()
     {
         if (!System.IO.File.Exists(CommonPaths.PathFile))
-            return new("");
+            return new RuntimeString("");
 
         var lines = System.IO.File.ReadAllLines(CommonPaths.PathFile)
             .Select((x, i) => $"{i}. {x}");
 
-        return new(string.Join("\n", lines));
+        return new RuntimeString(string.Join(System.Environment.NewLine, lines));
     }
 
     /// <summary>Removes the path of the given index from $PATH and ~/.config/elk/path.txt. The index can be found with the help of the path::list function.</summary>

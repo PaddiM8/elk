@@ -125,7 +125,7 @@ static class Environment
     public static RuntimeString PrettyPwd()
     {
         var homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        var pwd = System.Environment.GetEnvironmentVariable("PWD");
+        var pwd = ShellEnvironment.WorkingDirectory;
         if (string.IsNullOrEmpty(pwd))
             pwd = homePath;
 
@@ -137,18 +137,18 @@ static class Environment
         }
 
         if (pwd == "/")
-            return new("/");
+            return new RuntimeString("/");
 
         var directoryNames = GetDirectoryNames(pwd);
         if (directoryNames.Count == 0)
-            return new(containsHome ? "~" : "");
+            return new RuntimeString(containsHome ? "~" : "");
 
         var shortenedPath = string.Join('/', directoryNames.Select(x => x[0]));
         shortenedPath = containsHome
             ? "~/" + shortenedPath
             : "/" + shortenedPath;
 
-        return new(shortenedPath + directoryNames.Last()[1..]);
+        return new RuntimeString(shortenedPath + directoryNames.Last()[1..]);
     }
 
     [ElkFunction("scriptPath", Reachability.Everywhere)]
@@ -175,7 +175,7 @@ static class Environment
         var milliseconds = Math.Max(0, stopwatch.ElapsedMilliseconds - stopwatch.Elapsed.Seconds * 1000);
         var paddedMilliseconds = milliseconds.ToString().PadLeft(2, '0');
 
-        return new ($"elapsed: {stopwatch.Elapsed.Minutes}m{stopwatch.Elapsed.Seconds}.{paddedMilliseconds}");
+        return new RuntimeString($"elapsed: {stopwatch.Elapsed.Minutes}m{stopwatch.Elapsed.Seconds}.{paddedMilliseconds}");
     }
 
     /// <returns>The amount of time it took to evaluate the given closure, in milliseconds.</returns>
@@ -187,7 +187,7 @@ static class Environment
         closure();
         stopwatch.Stop();
 
-        return new(stopwatch.ElapsedMilliseconds);
+        return new RuntimeInteger(stopwatch.ElapsedMilliseconds);
     }
 
     private static List<string> GetDirectoryNames(string path)
@@ -197,6 +197,10 @@ static class Environment
 
         var directoryNames = new List<string>();
         var directoryInfo = new DirectoryInfo(path);
+        var pathRoot = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path));
+        if (pathRoot?.StartsWith('/') is false)
+            directoryNames.Add(pathRoot.TrimEnd('/').TrimEnd('\\'));
+
         while (directoryInfo.Parent != null)
         {
             directoryNames.Add(directoryInfo.Name);

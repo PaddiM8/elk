@@ -76,7 +76,7 @@ class XmlDocumentationReader(string xmlPath) : IDisposable
     private string ReadWithoutIndentation()
     {
         var raw = _reader.ReadInnerXml().Trim();
-        var lines = raw.Split('\n');
+        var lines = raw.Split(["\n\r", "\r", "\n"], StringSplitOptions.None);
         if (lines.Length == 0)
             return "";
 

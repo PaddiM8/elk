@@ -28,7 +28,7 @@ class SearchState : IRenderable
         _query.Clear();
         ReloadQuery();
 
-        _renderer.WriteRaw("\n");
+        _renderer.WriteRaw(Environment.NewLine);
         Render();
 
         while (IsActive)

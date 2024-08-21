@@ -3,12 +3,8 @@
   <PropertyGroup>
     <AssemblyTitle>Elk.ReadLine</AssemblyTitle>
     <TargetFramework>net8.0</TargetFramework>
-    <DebugType>portable</DebugType>
     <PackageId>Elk.ReadLine</PackageId>
-    <PackageVersion>$(AssemblyVersion)</PackageVersion>
-    <PackageTags>readline;console;shell;tui</PackageTags>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/PaddiM8/elk</RepositoryUrl>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>

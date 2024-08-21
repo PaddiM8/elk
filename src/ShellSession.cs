@@ -41,6 +41,7 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
     {
         LoadPaths();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
+        Console.OutputEncoding = Encoding.UTF8;
 
         var initFile = ResourceProvider.ReadFile("init.elk")!;
         RunCommand(initFile);

@@ -7,6 +7,7 @@ using System.Linq;
 using Elk.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
+using Elk.Std.Serialization;
 using Elk.Vm;
 
 #endregion
@@ -26,7 +27,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
 
             return Values == null
                 ? ""
-                : string.Join("\n", Values);
+                : string.Join(System.Environment.NewLine, Values);
         }
     }
 
@@ -152,7 +153,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         => StringValue;
 
     public override string ToDisplayString()
-        => $"\"{StringValue.Replace("\n", "\\n").Replace("\"", "\\\"")}\"";
+        => StringFormatting.ToDisplayString(StringValue);
 
     public void Start()
     {

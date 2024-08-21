@@ -80,7 +80,7 @@ public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
 
     public override string ToString()
     {
-        var stringBuilder = new StringBuilder("{\n");
+        var stringBuilder = new StringBuilder("{" + System.Environment.NewLine);
         foreach (var (key, value) in Values)
             stringBuilder.AppendLine($"    {key}: {value.ToDisplayString()},");
 

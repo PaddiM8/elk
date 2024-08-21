@@ -154,7 +154,7 @@ public class KeyHandler
                 // Re-render without any potential hints
                 _renderer.RenderText();
                 HintHandler?.Reset();
-                _renderer.WriteRaw("\n");
+                _renderer.WriteRaw(Environment.NewLine);
                 _wasEdited = false;
                 OnEnter();
             }
@@ -162,14 +162,14 @@ public class KeyHandler
             return;
         }
 
-        if (_shortcuts?.TryGetValue(new(firstKey.Modifiers, firstKey.Key), out var action1) ?? false)
+        if (_shortcuts?.TryGetValue(new KeyPress(firstKey.Modifiers, firstKey.Key), out var action1) ?? false)
         {
             action1?.Invoke(this);
 
             return;
         }
 
-        if (_defaultShortcuts.TryGetValue(new(firstKey.Modifiers, firstKey.Key), out var action2))
+        if (_defaultShortcuts.TryGetValue(new KeyPress(firstKey.Modifiers, firstKey.Key), out var action2))
         {
             action2.Invoke();
 
@@ -187,7 +187,7 @@ public class KeyHandler
 
     public void AbortInput()
     {
-        _renderer.WriteRaw("\n");
+        _renderer.WriteRaw(Environment.NewLine);
         _renderer.RenderPrompt();
         _renderer.Text = "";
     }

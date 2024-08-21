@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Elk.ReadLine;
 using Elk.Std.Serialization.CommandLine;
 
@@ -19,7 +20,13 @@ public static class FileUtils
     public static bool FileIsExecutable(string filePath)
     {
         if (OperatingSystem.IsWindows())
-            return false;
+        {
+            if (filePath.EndsWith(".exe") && File.Exists(filePath))
+                return true;
+
+            if (File.Exists($"{filePath}.exe"))
+                return true;
+        }
 
         var fileInfo = new FileInfo(filePath);
         if (!fileInfo.Exists)
@@ -51,7 +58,7 @@ public static class FileUtils
             return FileIsExecutable(name);
 
         return Environment.GetEnvironmentVariable("PATH")?
-            .Split(":")
+            .Split(Path.PathSeparator)
             .Any(x => Directory.Exists(x) && FileIsExecutable(Path.Combine(x, name))) is true;
     }
 
@@ -64,18 +71,25 @@ public static class FileUtils
         if (absolutePath == "/")
             return true;
 
-        if (File.Exists(absolutePath) || Directory.Exists(absolutePath))
-            return true;
+        try
+        {
+            if (File.Exists(absolutePath) || Directory.Exists(absolutePath))
+                return true;
 
-        var parentPath = Path.GetDirectoryName(absolutePath);
-        if (!Directory.Exists(parentPath))
+            var parentPath = Path.GetDirectoryName(absolutePath);
+            if (!Directory.Exists(parentPath))
+                return false;
+
+            var fileName = Path.GetFileName(path);
+
+            return Directory.GetFileSystemEntries(parentPath)
+                .Select(Path.GetFileName)
+                .Any(x => x?.StartsWith(fileName) is true);
+        }
+        catch
+        {
             return false;
-
-        var fileName = Path.GetFileName(path);
-
-        return Directory.GetFileSystemEntries(parentPath)
-            .Select(Path.GetFileName)
-            .Any(x => x?.StartsWith(fileName) is true);
+        }
     }
 
     public static IList<Completion> GetPathCompletions(
@@ -108,7 +122,7 @@ public static class FileUtils
         var pathWithoutCompletion = lastSlashIndex == 0 && path.StartsWith('/')
             ? "/"
             : path[..lastSlashIndex];
-        var fullPath = path.StartsWith('/')
+        var fullPath = Path.GetPathRoot(path) == string.Empty
             ? ExpandPath(pathWithoutCompletion)
             : Path.Combine(workingDirectory, ExpandPath(pathWithoutCompletion));
         var completionTarget = path.EndsWith('/')

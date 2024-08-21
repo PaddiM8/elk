@@ -224,7 +224,7 @@ public class Lexer
     private Token NextBashLiteral()
     {
         var builder = new StringBuilder();
-        while (Current is not ('\n' or '\0'))
+        while (Current is not ('\n' or '\r' or '\0'))
             builder.Append(Eat());
 
         return Build(TokenKind.BashLiteral, builder.ToString());
@@ -232,6 +232,7 @@ public class Lexer
 
     private Token NextWhiteSpace()
     {
+        AdvanceIf('\r');
         if (AdvanceIf('\n'))
             return Build(TokenKind.NewLine, Environment.NewLine);
 

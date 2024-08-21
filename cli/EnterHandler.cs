@@ -1,3 +1,4 @@
+using System;
 using Elk.ReadLine;
 
 namespace Elk.Cli;
@@ -10,7 +11,7 @@ public class EnterHandler : IEnterHandler
         {
             return new EnterHandlerResponse(
                 true,
-                $"{promptText.TrimEnd()[..^1]}\n  | ",
+                $"{promptText.TrimEnd()[..^1]}{Environment.NewLine}  | ",
                 caret + 4
             );
         }
