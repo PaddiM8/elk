@@ -46,7 +46,8 @@ variableName += 1    # value is 3
 Environment variables can be created and accessed by putting a dollar sign in 
 front of the variable name. Any variable name with a leading dollar sign is 
 treated as an environment variable. Naturally, this means that these types of 
-variables can only be assigned string values.
+variables can only be assigned string values. An environment variable can
+be assigned to with or without the `let` keyword.
 
 ```elk
 let $ENV_VAR = "hello"

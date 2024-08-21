@@ -631,9 +631,17 @@ class InstructionGenerator(
         {
             Next(right);
 
+            if (leftValue.Identifier.Value.StartsWith('$'))
+            {
+                EmitBig(InstructionKind.StoreEnvironmentVariable, leftValue.Identifier.Value[1..]);
+
+                return;
+            }
+
             if (leftValue.IsCaptured)
             {
                 EmitBig(InstructionKind.StoreCaptured, leftValue.Identifier.Value);
+
                 return;
             }
 
@@ -641,6 +649,7 @@ class InstructionGenerator(
             if (local.HasValue)
             {
                 EmitBig(InstructionKind.Store, local);
+
                 return;
             }
 
