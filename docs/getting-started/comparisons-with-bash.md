@@ -48,7 +48,7 @@ done
 
 # elk
 # option 1
-cat lines.txt | map => line: echo Line: ${line}
+cat lines.txt | each => line: echo("Line: ${line}")
 
 # otion 2
 for line in cat("lines.txt"):
