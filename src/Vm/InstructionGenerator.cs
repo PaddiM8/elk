@@ -160,7 +160,7 @@ class InstructionGenerator(
     private void Visit(FunctionExpr expr)
     {
         var previousPage = _currentPage;
-        _currentPage = functionTable.Get(
+        _currentPage = functionTable.GetAndUpdate(
             expr.Module.FindFunction(expr.Identifier.Value, lookInImports: false)!
         );
 

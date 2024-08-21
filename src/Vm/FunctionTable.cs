@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Elk.Scoping;
 
@@ -9,15 +10,32 @@ class FunctionTable
 
     public Page Get(FunctionSymbol symbol)
     {
-        if (_functions.TryGetValue(symbol, out var page))
-            return page;
+        return _functions.TryGetValue(symbol, out var page)
+            ? page
+            : Add(symbol);
+    }
 
-        var newPage = new Page(
+    public Page GetAndUpdate(FunctionSymbol symbol)
+    {
+        if (_functions.TryGetValue(symbol, out var page))
+        {
+            page.Update(symbol.Expr.Identifier.Position.FilePath, []);
+
+            return page;
+        }
+
+        return Add(symbol);
+    }
+
+    private Page Add(FunctionSymbol symbol)
+    {
+        var page = new Page(
             symbol.Expr.Identifier.Value,
             symbol.Expr.Identifier.Position.FilePath
         );
-        _functions.Add(symbol, newPage);
 
-        return newPage;
+        _functions.Add(symbol, page);
+
+        return page;
     }
 }
