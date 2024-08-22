@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Elk.ReadLine;
 using Elk.Std.Serialization.CommandLine;
+using Elk.Vm;
 
 namespace Elk;
 
@@ -125,6 +126,9 @@ public static class FileUtils
         var fullPath = Path.GetPathRoot(path) == string.Empty
             ? ExpandPath(pathWithoutCompletion)
             : Path.Combine(workingDirectory, ExpandPath(pathWithoutCompletion));
+        if (fullPath == string.Empty)
+            fullPath = ShellEnvironment.WorkingDirectory;
+
         var completionTarget = path.EndsWith('/')
             ? ""
             : ExpandPath(path[lastSlashIndex..].TrimStart('/'));
@@ -193,7 +197,17 @@ public static class FileUtils
             );
         }
 
-        var completions = directories.Concat(files).ToList();
+        var combined = directories.Concat(files);
+        if (OperatingSystem.IsWindows())
+        {
+            combined = combined
+                .Select(x => x with
+                {
+                    CompletionText = x.CompletionText.Replace('\\', '/')
+                });
+        }
+
+        var completions = combined.ToList();
         if (completions.Count > 1 && path.Length > 0 &&
             !"./~".Contains(path.Last()))
         {
