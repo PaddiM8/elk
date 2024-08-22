@@ -140,13 +140,15 @@ static class Environment
             return new RuntimeString("/");
 
         var directoryNames = GetDirectoryNames(pwd);
+        var pathRoot = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(pwd))?
+            .Replace('\\', '/') ?? "";
         if (directoryNames.Count == 0)
-            return new RuntimeString(containsHome ? "~" : "");
+            return new RuntimeString(containsHome ? "~" : pathRoot);
 
         var shortenedPath = string.Join('/', directoryNames.Select(x => x[0]));
         shortenedPath = containsHome
             ? "~/" + shortenedPath
-            : "/" + shortenedPath;
+            : pathRoot + shortenedPath;
 
         return new RuntimeString(shortenedPath + directoryNames.Last()[1..]);
     }
@@ -197,9 +199,6 @@ static class Environment
 
         var directoryNames = new List<string>();
         var directoryInfo = new DirectoryInfo(path);
-        var pathRoot = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path));
-        if (pathRoot?.StartsWith('/') is false)
-            directoryNames.Add(pathRoot.TrimEnd('/').TrimEnd('\\'));
 
         while (directoryInfo.Parent != null)
         {
