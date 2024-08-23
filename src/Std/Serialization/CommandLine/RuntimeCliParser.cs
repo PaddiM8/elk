@@ -119,10 +119,10 @@ public class RuntimeCliParser(string name) : RuntimeObject
         var whitespaceRegex = new System.Text.RegularExpressions.Regex(@"(?<!\\)\s");
         var tokensBeforeCaret = whitespaceRegex
             .Split(args[..caret.Value])
-            .Select(x => x.Trim());
+            .Select(x => Utils.Unescape(x).Trim());
         var allTokens = whitespaceRegex
             .Split(args)
-            .Select(x => x.Trim());
+            .Select(x => Utils.Unescape(x).Trim());
 
         try
         {
