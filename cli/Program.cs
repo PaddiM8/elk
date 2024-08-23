@@ -104,7 +104,7 @@ var cliParser = new RuntimeCliParser("elk")
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ExceptionLogger.Log(ex);
             }
 
             return;
@@ -114,10 +114,25 @@ var cliParser = new RuntimeCliParser("elk")
             new RootModuleScope(filePath, null),
             vmOptions
         );
-        session.RunFile(
-            filePath,
-            result.GetList("arguments")
-        );
+
+        try
+        {
+            session.RunFile(
+                filePath,
+                result.GetList("arguments")
+            );
+        }
+        catch (Exception ex)
+        {
+            ExceptionLogger.Log(ex);
+        }
     });
 
-cliParser.Parse(args);
+try
+{
+    cliParser.Parse(args);
+}
+catch (Exception ex)
+{
+    ExceptionLogger.Log(ex);
+}
