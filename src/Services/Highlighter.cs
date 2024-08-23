@@ -544,7 +544,8 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             var argumentString = string.Join("", textArgumentTokens.Select(x => x.Value));
             if (textArgumentTokens.Any())
             {
-                var kind = shell != null && FileUtils.IsValidStartOfPath(argumentString, shell.WorkingDirectory)
+                var unescaped = Utils.Unescape(argumentString);
+                var kind = shell != null && FileUtils.IsValidStartOfPath(unescaped, shell.WorkingDirectory)
                     ? SemanticTokenKind.Path
                     : SemanticTokenKind.TextArgument;
                 Push(kind, argumentString, textArgumentTokens.First().Position);
@@ -569,6 +570,8 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             else if (Current?.Kind == TokenKind.Backslash)
             {
                 textArgumentTokens.Add(Eat()!);
+                if (Current != null)
+                    textArgumentTokens.Add(Eat()!);
             }
             else if (Current?.Kind == TokenKind.WhiteSpace)
             {
@@ -597,7 +600,8 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         var lastArgumentString = string.Join("", textArgumentTokens.Select(x => x.Value));
         if (textArgumentTokens.Any())
         {
-            var kind = shell != null && FileUtils.IsValidStartOfPath(lastArgumentString, shell.WorkingDirectory)
+            var unescaped = Utils.Unescape(lastArgumentString);
+            var kind = shell != null && FileUtils.IsValidStartOfPath(unescaped, shell.WorkingDirectory)
                 ? SemanticTokenKind.Path
                 : SemanticTokenKind.TextArgument;
             Push(kind, lastArgumentString, textArgumentTokens.First().Position);
