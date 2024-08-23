@@ -24,6 +24,19 @@ public static partial class Parse
         return new RuntimeGenerator(new CsvParser(lines, separatorChar));
     }
 
+    /// <param name="input">A string representation of a date and time value.</param>
+    /// <param name="format">The format of the given input string.</param>
+    /// <example>
+    /// parse::dateTime("2024-08-23 23:56", "yyyy-MM-dd HH:mm")
+    /// </example>
+    [ElkFunction("dateTime")]
+    public static RuntimeDateTime DateTime(RuntimeString input, RuntimeString format)
+    {
+        var dateTime = System.DateTime.ParseExact(input.Value, format.Value, CultureInfo.InvariantCulture);
+
+        return new RuntimeDateTime(dateTime);
+    }
+
     /// <param name="str">A string representation of a hexadecimal number.</param>
     /// <returns>
     /// The equivalent decimal integer of the given hexadecimal value,
