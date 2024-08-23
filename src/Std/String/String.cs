@@ -135,6 +135,31 @@ static class String
     public static RuntimeString Lower(RuntimeString input)
         => new(input.Value.ToLower());
 
+    /// <param name="input">The string to pad.</param>
+    /// <param name="padding">The desired total length of the padded string.</param>
+    /// <returns>
+    /// The given input string with spaces added to the left.
+    /// </returns>
+    [ElkFunction("padLeft")]
+    public static RuntimeString PadLeft(RuntimeString input, RuntimeInteger padding)
+        => new(input.Value.PadLeft((int)padding.Value));
+
+    /// <param name="input">The string to pad.</param>
+    /// <param name="padding">The desired total length of the padded string.</param>
+    /// <returns>
+    /// The given input string with spaces added to the right.
+    /// </returns>
+    [ElkFunction("padRight")]
+    public static RuntimeString PadReft(RuntimeString input, RuntimeInteger padding)
+        => new(input.Value.PadRight((int)padding.Value));
+
+    /// <param name="number">The floating point number to round.</param>
+    /// <param name="precision">How many decimal places the string representation should show.</param>
+    /// <returns>A string representation of the given number rounded by the given precision.</returns>
+    [ElkFunction("precision")]
+    public static RuntimeString Precision(RuntimeFloat number, RuntimeInteger precision)
+        => new RuntimeString(number.Value.ToString($"N{precision.Value}"));
+
     /// <summary>Repeats a string.</summary>
     /// <param name="item">The string to repeat</param>
     /// <param name="n">The amount of times it should be repeated</param>
