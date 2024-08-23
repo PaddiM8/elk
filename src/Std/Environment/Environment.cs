@@ -119,10 +119,24 @@ static class Environment
         return new RuntimeList(env.Argv.ToList());
     }
 
-    /// <returns>A string containing a modified version of the path to the current directory (the value of $PWD). The names of all the directories in the path except for the last one are replaced with their first letter, and '/home/user' is replaced with a tilde.</returns>
-    /// <example>assert(prettyPwd() == "~/P/e/src")</example>
+    /// <param name="options">A dictionary such as the one shown in the example below.</param>
+    /// <returns>
+    /// A string containing a modified version of the path to the current directory (the value of $PWD).
+    /// The names of all the directories in the path except for the last one are replaced with their first
+    /// letter, and '/home/user' is replaced with a tilde.
+    /// </returns>
+    /// <example>
+    /// prettyPwd() #=> ~/P/e/src
+    ///
+    /// prettyPwd({
+    ///     "wordColor": "brightBlue",    # The color of the folder names (see: `ansi::color`)
+    ///     "slashColor": "blue",         # The color of the slashes (and tilde)
+    ///     "wholeFolderNameAmount": "2", # The amount of folder names that should *not* be shortened (default: 1)
+    /// })
+    /// # => ~/P/elk/src
+    /// </example>
     [ElkFunction("prettyPwd")]
-    public static RuntimeString PrettyPwd()
+    public static RuntimeString PrettyPwd(RuntimeDictionary? options = null)
     {
         var homePath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
         var pwd = ShellEnvironment.WorkingDirectory;
@@ -136,8 +150,16 @@ static class Environment
             pwd = pwd[homePath.Length..];
         }
 
+        var slashColor = options?.GetValue<RuntimeString>("slashColor");
+        var tilde = slashColor == null
+            ? "~"
+            : Ansi.Color("~", slashColor.Value);
+        var slash = slashColor == null
+            ? "/"
+            : Ansi.Color("/", slashColor.Value);
+
         if (pwd == "/")
-            return new RuntimeString("/");
+            return new RuntimeString(slash);
 
         var directoryNames = GetDirectoryNames(pwd);
         var pathRoot = "/";
@@ -148,14 +170,43 @@ static class Environment
         }
 
         if (directoryNames.Count == 0)
-            return new RuntimeString(containsHome ? "~" : pathRoot);
+        {
+            return new RuntimeString(
+                containsHome
+                    ? tilde
+                    : pathRoot.Replace("/", slash)
+            );
+        }
 
-        var shortenedPath = string.Join('/', directoryNames.Select(x => x[0]));
-        shortenedPath = containsHome
-            ? "~/" + shortenedPath
-            : pathRoot + shortenedPath;
+        var wordColor = options?.GetValue<RuntimeString>("wordColor")?.Value;
+        var wholeFolderNameAmount = (int?)options?.GetValue<RuntimeInteger>("wholeFolderNameAmount")?.Value ?? 1;
+        var shortenedFolderNameAmount = directoryNames.Count - wholeFolderNameAmount;
+        var shortenedFolderNames = directoryNames
+            .Take(shortenedFolderNameAmount)
+            .Select(x => FormatDirectoryName(x, wordColor, shorten: true));
+        var fullFolderNames = directoryNames
+            .Skip(shortenedFolderNameAmount)
+            .Take(wholeFolderNameAmount)
+            .Select(x => FormatDirectoryName(x, wordColor, shorten: false));
 
-        return new RuntimeString(shortenedPath + directoryNames.Last()[1..]);
+        var formattedFolderNames = shortenedFolderNames.Concat(fullFolderNames);
+        var formatted = string.Join(slash, formattedFolderNames);
+        formatted = containsHome
+            ? tilde + slash + formatted
+            : pathRoot + formatted;
+
+        return new RuntimeString(formatted);
+    }
+
+    private static string FormatDirectoryName(string name, string? color, bool shorten)
+    {
+        var shortened = shorten
+            ? name[0].ToString()
+            : name;
+
+        return color == null
+            ? shortened
+            : Ansi.Color(shortened, color);
     }
 
     [ElkFunction("scriptPath", Reachability.Everywhere)]

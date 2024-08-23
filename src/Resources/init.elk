@@ -9,7 +9,7 @@ fn elkPrompt() {
             || nil
     }
 
-    let pwd = env::prettyPwd | ansi::color blue
+    let pwd = env::prettyPwd({ "wholeFolderNameAmount": 2 }) | ansi::color blue
     let formattedBranch = if branch: ansi::color("  ${branch}", "magenta") else ""
     let venv = if $VIRTUAL_ENV: ansi::color(" (venv)", "green") else ""
 
