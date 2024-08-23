@@ -21,6 +21,24 @@ namespace Elk.Std.Environment;
 [ElkModule("env")]
 static class Environment
 {
+    /// <returns>The path of the current user's cache folder, eg. ~/.cache on Linux.</returns>
+    [ElkFunction("cachePath")]
+    public static RuntimeString CachePath()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var localAppData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData);
+
+            return new RuntimeString(localAppData);
+        }
+
+        var home = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+
+        return OperatingSystem.IsMacOS()
+            ? new RuntimeString(System.IO.Path.Combine(home, "Library/Caches"))
+            : new RuntimeString(System.IO.Path.Combine(home, ".cache"));
+    }
+
     [ElkFunction("cd", Reachability.Everywhere)]
     public static void Cd(RuntimeString? path = null, ShellEnvironment? env = null)
     {
@@ -41,6 +59,16 @@ static class Environment
         System.Environment.SetEnvironmentVariable("OLDPWD", ShellEnvironment.WorkingDirectory);
         ShellEnvironment.WorkingDirectory = absolutePath;
     }
+
+    /// <returns>The path of the current user's application data folder, eg. ~/.config on Linux.</returns>
+    [ElkFunction("configPath")]
+    public static RuntimeString ConfigPath()
+        => new(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData));
+
+    /// <returns>The path of the current user's local data folder, eg. ~/.local/share on Linux.</returns>
+    [ElkFunction("dataPath")]
+    public static RuntimeString DataPath()
+        => new(System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData));
 
     /// <summary>
     /// Evaluates the given string as Elk code.
@@ -118,6 +146,11 @@ static class Environment
 
         return new RuntimeList(env.Argv.ToList());
     }
+
+    /// <returns>The path of the current user's home folder.</returns>
+    [ElkFunction("homePath")]
+    public static RuntimeString HomePath()
+        => new(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile));
 
     /// <param name="options">A dictionary such as the one shown in the example below.</param>
     /// <returns>
@@ -198,7 +231,7 @@ static class Environment
         return new RuntimeString(formatted);
     }
 
-    private static string FormatDirectoryName(string name, string? color, bool shorten)
+    public static string FormatDirectoryName(string name, string? color, bool shorten)
     {
         var shortened = shorten
             ? name[0].ToString()
@@ -248,7 +281,7 @@ static class Environment
         return new RuntimeInteger(stopwatch.ElapsedMilliseconds);
     }
 
-    private static List<string> GetDirectoryNames(string path)
+    public static List<string> GetDirectoryNames(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
             return [];
