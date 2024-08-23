@@ -28,15 +28,11 @@ assert(scriptPath() == "/home/user/scripts")
 
 ## time
 
-The `time` function measures how long it takes for the argument
-to evaluate, similar to the behaviour in other shells. However,
-you need to pass it as a proper function argument rather than
-a text argument.
+The `time` function measures how long it takes for the closure to
+evaluate.
 
 ```elk
-time(sleep 3)
-# or
-sleep 3 | time
+time =>: sleep 3
 ```
 
 ## __onExit (user-defined)
