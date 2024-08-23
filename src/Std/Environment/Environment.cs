@@ -140,8 +140,13 @@ static class Environment
             return new RuntimeString("/");
 
         var directoryNames = GetDirectoryNames(pwd);
-        var pathRoot = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(pwd))?
-            .Replace('\\', '/') ?? "";
+        var pathRoot = "/";
+        if (pwd.Length > 0)
+        {
+            pathRoot = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(pwd))?
+                .Replace('\\', '/') ?? "";
+        }
+
         if (directoryNames.Count == 0)
             return new RuntimeString(containsHome ? "~" : pathRoot);
 

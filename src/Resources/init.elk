@@ -5,7 +5,7 @@ fn elkPrompt() {
         git branch
             |all where => &str::startsWith("* ")
             | map => x: x[2..]
-            | iter::first
+            | iter::firstOrNil
             || nil
     }
 
