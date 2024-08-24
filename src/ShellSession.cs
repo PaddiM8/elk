@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Elk.Analysis;
 using Elk.Parsing;
@@ -59,6 +60,9 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
         File.WriteAllText(CommonPaths.InitFile, initFile.Trim());
     }
+
+    public RuntimeObject RunFunction(string name, IList<RuntimeObject> arguments)
+        => _virtualMachine.ExecuteFunction(name, arguments, isRoot: false);
 
     private void LoadPaths()
     {

@@ -9,7 +9,7 @@ using Elk.Std.DataTypes;
 
 namespace Elk.Vm;
 
-class ShellEnvironment(string? scriptPath)
+public class ShellEnvironment(string? scriptPath)
 {
     public static string WorkingDirectory
     {

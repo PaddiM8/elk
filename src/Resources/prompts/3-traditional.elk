@@ -1,0 +1,17 @@
+fn elkPrompt() {
+    {{ GIT_BRANCH_VAR }}
+    let sections = [
+        env::user() | ansi::color("blue"),
+        "@",
+        env::hostname() | ansi::color("red"),
+        ":",
+        env::prettyPwd | ansi::color("green"),
+        {{ GIT_BRANCH_SECTION }}
+        ansi::color(" (venv)", "green") if $VIRTUAL_ENV,
+        " $ ",
+    ]
+
+    sections
+        | map => x { x ?? "" }
+        | join
+}
