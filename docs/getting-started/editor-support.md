@@ -5,8 +5,7 @@ both connect to the Elk language server, which provides semantic highlighting, i
 
 ## Visual Studio Code
 
-The Visual Studio Code plugin is available on the [marketplace](https://marketplace.visualstudio.com/items?itemName=PaddiM8.elk-vscode
-).
+The Visual Studio Code plugin is available on the [marketplace](https://marketplace.visualstudio.com/items?itemName=PaddiM8.elk-shell).
 
 ## Vim/Neovim
 

@@ -1,8 +1,8 @@
 {
-    "name": "elk-vscode",
-    "description": "A VS Code extension for the Elk programming language.",
+    "name": "elk-shell",
+    "description": "Language integrations for the elk shell programming language",
     "license": "MIT",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "PaddiM8",
     "repository": "https://github.com/PaddiM8/elk",
     "icon": "icon.png",
@@ -10,7 +10,7 @@
         "vscode": "^1.82.0"
     },
     "categories": [
-        "Other"
+        "Programming Languages"
     ],
     "activationEvents": [
         "onLanguage:plaintext"
