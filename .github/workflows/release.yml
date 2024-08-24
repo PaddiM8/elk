@@ -74,5 +74,5 @@ jobs:
           cp -r elk-tmp/editors/vim/* .
           rm -rf elk-tmp
           git add .
-          git commit -m "${{ github.ref_name }}"
+          git commit -m "${{ github.ref_name }}" || echo Didn't commit
           git push origin main || echo Didn't push
