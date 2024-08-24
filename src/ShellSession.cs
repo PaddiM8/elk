@@ -44,21 +44,13 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
         Console.OutputEncoding = Encoding.UTF8;
 
-        var initFile = ResourceProvider.ReadFile("init.elk")!;
-        RunCommand(initFile);
-
-        if (File.Exists(CommonPaths.InitFile))
-        {
-            var previousFilePath = _virtualMachine.RootModule.FilePath;
-            _virtualMachine.RootModule.FilePath = CommonPaths.InitFile;
-            RunFile(CommonPaths.InitFile, null);
-            _virtualMachine.RootModule.FilePath = previousFilePath;
-
+        if (!File.Exists(CommonPaths.InitFile))
             return;
-        }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(CommonPaths.InitFile)!);
-        File.WriteAllText(CommonPaths.InitFile, initFile.Trim());
+        var previousFilePath = _virtualMachine.RootModule.FilePath;
+        _virtualMachine.RootModule.FilePath = CommonPaths.InitFile;
+        RunFile(CommonPaths.InitFile, null);
+        _virtualMachine.RootModule.FilePath = previousFilePath;
     }
 
     public RuntimeObject RunFunction(string name, IList<RuntimeObject> arguments)
