@@ -358,6 +358,7 @@ class Analyser(RootModuleScope rootModule)
                 argumentCount > stdStruct.MaxArgumentCount)
             {
                 throw new RuntimeWrongNumberOfArgumentsException(
+                    stdStruct.Name,
                     stdStruct.MinArgumentCount,
                     argumentCount,
                     stdStruct.VariadicStart.HasValue
@@ -385,6 +386,7 @@ class Analyser(RootModuleScope rootModule)
             throw new RuntimeAccessLevelException(symbol.Expr.AccessLevel, expr.Identifier.Value);
 
         ValidateArguments(
+            expr.Identifier.Value,
             expr.Arguments,
             symbol.Expr.Parameters,
             isReference: false
@@ -788,6 +790,7 @@ class Analyser(RootModuleScope rootModule)
             if (!hasEnoughArguments || argumentCount > stdFunction.MaxArgumentCount)
             {
                 throw new RuntimeWrongNumberOfArgumentsException(
+                    stdFunction.Name,
                     stdFunction.MinArgumentCount,
                     argumentCount,
                     stdFunction.VariadicStart.HasValue
@@ -804,6 +807,7 @@ class Analyser(RootModuleScope rootModule)
                 throw new RuntimeException("Expected closure.");
 
             ValidateArguments(
+                functionSymbol.Expr.Identifier.Value,
                 evaluatedArguments,
                 functionSymbol.Expr.Parameters,
                 expr.IsReference
@@ -859,7 +863,7 @@ class Analyser(RootModuleScope rootModule)
         };
     }
 
-    private void ValidateArguments(IList<Expr> arguments, IList<Parameter> parameters, bool isReference)
+    private void ValidateArguments(string name, IList<Expr> arguments, IList<Parameter> parameters, bool isReference)
     {
         var argumentCount = arguments.Count;
         var isVariadic = parameters.LastOrDefault()?.IsVariadic is true;
@@ -868,7 +872,7 @@ class Analyser(RootModuleScope rootModule)
             parameters[argumentCount].DefaultValue == null;
 
         if (tooManyArguments || tooFewArguments)
-            throw new RuntimeWrongNumberOfArgumentsException(parameters.Count, argumentCount, isVariadic);
+            throw new RuntimeWrongNumberOfArgumentsException(name, parameters.Count, argumentCount, isVariadic);
     }
 
     private Expr Visit(LiteralExpr expr)
