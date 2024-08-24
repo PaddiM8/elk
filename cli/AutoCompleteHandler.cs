@@ -68,7 +68,8 @@ class AutoCompleteHandler : IAutoCompleteHandler
         }
 
         var isRelativeIdentifier = _currentInvocationInfo?.Name.First() is '.' or '/' or '~';
-        var atInvocationName = endPos < _currentInvocationInfo?.TextArgumentsInfo.StartIndex;
+        var textArgumentsStart = _currentInvocationInfo?.TextArgumentsInfo.StartIndex;
+        var atInvocationName = textArgumentsStart == -1 || endPos < textArgumentsStart;
         if (isColonColon || (!isRelativeIdentifier && atInvocationName))
         {
             return GetProgramCompletions(
@@ -105,7 +106,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
             return new List<Completion>();
 
         return path
-            .Split(":")
+            .Split(Path.PathSeparator)
             .Where(Directory.Exists)
             .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
             .Select<string, (string name, string? documentation)>(x => (Path.GetFileName(x), null))
