@@ -766,7 +766,7 @@ class InstructionExecutor
         if (environmentVariables != null)
         {
             foreach (var (key, value) in environmentVariables)
-                process.StartInfo.EnvironmentVariables.Add(key, value.ToString());
+                process.StartInfo.EnvironmentVariables[key] = value.ToString();
         }
 
         // Arguments
