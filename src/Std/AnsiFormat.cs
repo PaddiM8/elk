@@ -1,6 +1,7 @@
 #region
 
 using System.Collections.Generic;
+using Elk.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -42,6 +43,13 @@ public class AnsiFormat
     [ElkFunction("color")]
     public static RuntimeString Color(RuntimeString input, RuntimeString colorName)
         => new(Ansi.Color(input.Value, colorName.Value));
+
+    /// <param name="input">Text that should be colored</param>
+    /// <param name="colorName">Color name. One of: default, black, red, green, yellow, blue, magenta, cyan, white, brightBlack, brightRed, etc.</param>
+    /// <returns>A string containing ansi escape codes that result in colored background in the terminal.</returns>
+    [ElkFunction("colorBg")]
+    public static RuntimeString ColorBg(RuntimeString input, RuntimeString colorName)
+        => new(Ansi.ColorBg(input.Value, colorName.Value));
 
     /// <returns>A string containing ansi escape codes that result in the cursor being hidden.</returns>
     [ElkFunction("hideCursor")]
@@ -107,9 +115,18 @@ static class Ansi
 
     public static string Color(string value, string colorName)
     {
-        return _colors.TryGetValue(colorName, out var colorCode)
-            ? Escape(value, colorCode, 39)
-            : value;
+        if (_colors.TryGetValue(colorName, out var colorCode))
+            return Escape(value, colorCode, 39);
+
+        throw new RuntimeException($"Unknown color name: {colorName}");
+    }
+
+    public static string ColorBg(string value, string colorName)
+    {
+        if (_colors.TryGetValue(colorName, out var colorCode))
+            return Escape(value, colorCode + 10, 49);
+
+        throw new RuntimeException($"Unknown color name: {colorName}");
     }
 
     public static string Italic(string value)
