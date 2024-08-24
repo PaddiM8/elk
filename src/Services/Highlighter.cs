@@ -245,6 +245,47 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         for (var i = 0; i < value.Length; i++)
         {
             var c = value[i];
+
+            var isEnvironmentVariable = tokenKind == TokenKind.DoubleQuoteStringLiteral &&
+                value.ElementAtOrDefault(i - 1) != '\\' &&
+                c == '$' &&
+                IsEnvironmentVariableCharacter(value.ElementAtOrDefault(i + 1));
+            if (isEnvironmentVariable)
+            {
+                Push(
+                    SemanticTokenKind.String,
+                    part.ToString(),
+                    position with
+                    {
+                        Index = position.Index + partOffset,
+                        Column = position.Column + partOffset,
+                    }
+                );
+                part.Clear();
+                part.Append(c);
+                i++;
+
+                while (IsEnvironmentVariableCharacter(value.ElementAtOrDefault(i)))
+                {
+                    part.Append(value[i]);
+                    i++;
+                }
+
+                Push(
+                    SemanticTokenKind.Variable,
+                    part.ToString(),
+                    position with
+                    {
+                        Index = position.Index + partOffset,
+                        Column = position.Column + partOffset,
+                    }
+                );
+                part.Clear();
+                i--;
+
+                continue;
+            }
+
             var isInterpolation = tokenKind == TokenKind.DoubleQuoteStringLiteral &&
                 value.ElementAtOrDefault(i - 1) != '\\' &&
                 c == '$' &&
@@ -354,6 +395,9 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             }
         );
     }
+
+    private bool IsEnvironmentVariableCharacter(char c)
+        => char.IsLetterOrDigit(c) || c == '_';
 
     private void NextIdentifier(List<string>? modulePath = null)
     {

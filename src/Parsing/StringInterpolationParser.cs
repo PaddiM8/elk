@@ -84,7 +84,8 @@ class StringInterpolationParser
                 yield return new InterpolationPart(
                     literal[environmentVariableStart..environmentVariableEnd],
                     InterpolationPartKind.Expression,
-                    environmentVariableStart
+                    // This one isn't preceded by ${ so we need to account for that with - 2 (I think)
+                    environmentVariableStart - 2
                 );
 
                 i--;
