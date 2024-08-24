@@ -24,10 +24,19 @@ public static partial class StdBindings
     public static IEnumerable<string> FullSymbolNames
         => _modules.Keys.Concat(_functions.Keys);
 
-    public static IEnumerable<(string name, string? documentation)> FullSymbolNamesWithDocumentation
-        => _modules.Keys
-            .Select<string, (string, string?)>(x => (x, null))
-            .Concat(_functions.Select(x => (x.Key, x.Value.Documentation)));
+    public static IEnumerable<(string name, IEnumerable<string> parameters, string? documentation)> FullSymbolNamesWithDocumentation()
+    {
+        var functions = _functions
+            .Select(x => (
+                x.Key,
+                x.Value.Parameters.Select(param => param.Name),
+                x.Value.Documentation
+            ));
+
+        return _modules.Keys
+                .Select<string, (string, IEnumerable<string>, string?)>(x => (x, Array.Empty<string>(), null))
+                .Concat(functions);
+    }
 
     public static bool HasModule(string moduleName)
         => _modules.ContainsKey(moduleName);

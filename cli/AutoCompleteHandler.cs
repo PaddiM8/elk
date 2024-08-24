@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Services;
+using Elk.Std;
 using Elk.Std.Bindings;
+using Regex = System.Text.RegularExpressions.Regex;
 
 #endregion
 
@@ -72,7 +74,7 @@ class AutoCompleteHandler : IAutoCompleteHandler
         var atInvocationName = textArgumentsStart == -1 || endPos < textArgumentsStart;
         if (isColonColon || (!isRelativeIdentifier && atInvocationName))
         {
-            return GetProgramCompletions(
+            return GetProgramAndStdCompletions(
                 Utils.Unescape(
                     _currentInvocationInfo?.Name ?? text[startPos..endPos]
                 )
@@ -99,27 +101,79 @@ class AutoCompleteHandler : IAutoCompleteHandler
             .ToList();
     }
 
-    private IList<Completion> GetProgramCompletions(string name)
+    private IList<Completion> GetProgramAndStdCompletions(string name)
     {
         var path = Environment.GetEnvironmentVariable("PATH");
         if (path == null)
             return new List<Completion>();
 
-        return path
+        var programs = path
             .Split(Path.PathSeparator)
             .Where(Directory.Exists)
             .SelectMany(x => Directory.EnumerateFiles(x, "", SearchOption.TopDirectoryOnly))
-            .Select<string, (string name, string? documentation)>(x => (Path.GetFileName(x), null))
-            .Concat(StdBindings.FullSymbolNamesWithDocumentation)
+            .Select(Path.GetFileName)
+            .Where(x => x?.StartsWith(name) is true)
+            .Select(x => new Completion(Utils.Escape(x!)));
+        var stdFunctions = StdBindings.FullSymbolNamesWithDocumentation()
             .Where(x => x.name.StartsWith(name))
-            .DistinctBy(x => x.name)
-            .OrderBy(x => x.name)
-            .Select(x => new Completion(x.name, x.name, x.documentation?.Replace("\n", " ")))
-            .Select(x => x with
-            {
-                DisplayText = Utils.Escape(x.CompletionText),
-            })
+            .Select(x => CreateStdFunctionCompletion(x.name, x.parameters, x.documentation));
+        var userFunctions = _shell.RootModule.Functions
+            .Concat(_shell.RootModule.ImportedFunctions)
+            .Where(x => x.Expr.Identifier.Value.StartsWith(name))
+            .Select(x => new Completion(Utils.Escape(x.Expr.Identifier.Value)));
+
+        return programs
+            .Concat(stdFunctions)
+            .Concat(userFunctions)
+            .DistinctBy(x => x.CompletionText)
+            .OrderBy(x => x.CompletionText)
             .ToList();
+    }
+
+    private Completion CreateStdFunctionCompletion(string name, IEnumerable<string> parameters, string? documentation)
+    {
+        var parameterString = string.Join(", ", parameters);
+        var displayName = $"{name}({parameterString})";
+
+        return new Completion(
+            name,
+            displayName,
+            FormatStdDocumentation(documentation)
+        );
+    }
+
+    private string? FormatStdDocumentation(string? input)
+    {
+        if (input == null)
+            return null;
+
+        int? argumentListStart = null;
+        for (var i = 0; i < input.Length; i++)
+        {
+            // If it's `---\n`
+            var isDashDashDash = input[i] == '-' &&
+                input.ElementAtOrDefault(i + 1) == '-' &&
+                input.ElementAtOrDefault(i + 2) == '-' &&
+                input.ElementAtOrDefault(i + 3) is '\n' or '\0';
+            if (!isDashDashDash)
+                continue;
+
+            if (!argumentListStart.HasValue)
+            {
+                argumentListStart = i;
+
+                continue;
+            }
+
+            var argumentListEnd = i + 3;
+            var summary = argumentListEnd >= input.Length
+                ? input[..argumentListStart.Value]
+                : input[..argumentListStart.Value] + input[argumentListEnd..];
+
+            return Regex.Replace(summary, @"\s+", " ");
+        }
+
+        return Regex.Replace(input, @"\s+", " ");
     }
 
     private string FindPathBefore(string text, int startPos)
