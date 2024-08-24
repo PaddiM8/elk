@@ -157,6 +157,30 @@ static class Environment
     public static RuntimeString Hostname()
         => new(System.Environment.MachineName);
 
+    /// <returns>Whether the operating system is Unix-based.</returns>
+    [ElkFunction("isUnix")]
+    public static RuntimeBoolean IsUnix()
+        => RuntimeBoolean.From(System.Environment.OSVersion.Platform == PlatformID.Unix);
+
+    /// <returns>The name of the current operating system. Values: linux, macOS, windows, bsd, other</returns>
+    [ElkFunction("os")]
+    public static RuntimeString Os()
+    {
+        if (OperatingSystem.IsWindows())
+            return new RuntimeString("windows");
+
+        if (OperatingSystem.IsLinux())
+            return new RuntimeString("linux");
+
+        if (OperatingSystem.IsMacOS())
+            return new RuntimeString("macOS");
+
+        if (OperatingSystem.IsFreeBSD())
+            return new RuntimeString("bsd");
+
+        return new RuntimeString("other");
+    }
+
     /// <param name="options">A dictionary such as the one shown in the example below.</param>
     /// <returns>
     /// A string containing a modified version of the path to the current directory (the value of $PWD).
