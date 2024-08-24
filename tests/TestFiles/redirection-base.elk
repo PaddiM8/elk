@@ -1,4 +1,4 @@
-#!/usr/bin/env -S dotnet run --project ./cli/Elk.Cli.csproj
+#!/usr/bin/env -S dotnet run --project ../../../../../cli/Elk.Cli.csproj
 
 fn f() {
     echo hello world

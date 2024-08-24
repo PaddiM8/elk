@@ -22,12 +22,17 @@ public class IntegrationTests
             new RootModuleScope(filePath, null),
             new VirtualMachineOptions()
         );
+        var previousWorkingDirectory = ShellEnvironment.WorkingDirectory;
+        ShellEnvironment.WorkingDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles");
+
         var result = ElkProgram.Evaluate(
             File.ReadAllText(filePath),
             virtualMachine.RootModule,
             AnalysisScope.OncePerModule,
             virtualMachine
         );
+
+        ShellEnvironment.WorkingDirectory = previousWorkingDirectory;
         Assert.IsEmpty(result.Diagnostics);
     }
 
