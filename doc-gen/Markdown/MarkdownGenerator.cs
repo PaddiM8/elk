@@ -27,10 +27,9 @@ public class MarkdownGenerator
                 continue;
 
             var isBuiltIn = module.DisplayName == "Built-in";
-            var title = isBuiltIn
-                ? "Built-in"
-                : $"({module.Name})";
-            var folderPath = TitleToFolderName(title);
+            var folderPath = isBuiltIn
+                ? "built-in"
+                : module.Name;
             Directory.CreateDirectory(Path.Combine(outDirectory, folderPath));
 
             var indexBuilder = new StringBuilder();
@@ -48,7 +47,7 @@ public class MarkdownGenerator
                     Path.Combine(outDirectory, folderPath, functionName) + ".md",
                     GenerateFunction(function, functionModule)
                 );
-                indexBuilder.AppendLine($"* [{functionName}](/std/{module.Name}/{functionName})");
+                indexBuilder.AppendLine($"* [{functionName}](/std/{folderPath}/{functionName})");
             }
 
             File.WriteAllText(
@@ -207,10 +206,4 @@ public class MarkdownGenerator
 
         return functionString.ToString();
     }
-
-    private static string TitleToFolderName(string title)
-        => title.ToLower()
-            .Replace(" ", "-")
-            .Replace("(", "")
-            .Replace(")", "");
 }
