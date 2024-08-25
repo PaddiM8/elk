@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  macOS-binary:
+  macOS-binaries:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
         with:
           name: binaries
           path: build/*/*.tar.*
-  linux-binary:
+  linux-binaries:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -49,7 +49,7 @@ jobs:
         with:
           name: binaries
           path: build/*/*.tar.*
-  windows-binary:
+  windows-binaries:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
