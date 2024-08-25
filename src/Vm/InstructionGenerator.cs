@@ -41,19 +41,29 @@ class InstructionGenerator(
         _shellEnvironment = shellEnvironment;
         _shellEnvironment.ScriptPath = filePath;
 
-        // Deal with the last one outside of the loop, since it
-        // should never be popped
-        foreach (var expr in ast.Expressions.SkipLast(1))
+        try
         {
-            Next(expr);
-            var shouldPop = expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr) ||
-                (expr is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
-            if (shouldPop)
-                Emit(InstructionKind.Pop);
-        }
+            // Deal with the last one outside of the loop, since it
+            // should never be popped
+            foreach (var expr in ast.Expressions.SkipLast(1))
+            {
+                Next(expr);
+                var shouldPop = expr is not (ModuleExpr or FunctionExpr or StructExpr or LetExpr or KeywordExpr) ||
+                                (expr is LetExpr letExpr && letExpr.Symbols.Any(x => x.IsCaptured));
+                if (shouldPop)
+                    Emit(InstructionKind.Pop);
+            }
 
-        if (ast.Expressions.Count > 0)
-            Next(ast.Expressions.Last());
+            if (ast.Expressions.Count > 0)
+                Next(ast.Expressions.Last());
+        }
+        catch (RuntimeException ex)
+        {
+            ex.StartPosition = _lastExpr?.StartPosition;
+            ex.EndPosition = _lastExpr?.EndPosition;
+
+            throw;
+        }
 
         // TODO: What if there are more than 255 locals
         if (_locals.Any())
@@ -816,7 +826,7 @@ class InstructionGenerator(
                 EmitBuiltInExec(expr, isMaybeRoot);
                 break;
             case CallType.BuiltInSource:
-                EmitBuiltInSource(expr, isMaybeRoot);
+                EmitBuiltInSource(expr);
                 break;
             default:
                 EmitProgramCall(expr, isMaybeRoot);
@@ -1136,7 +1146,7 @@ class InstructionGenerator(
     private void EmitBuiltInCall(CallExpr expr, bool isMaybeRoot = false)
     {
         if (expr.Arguments.Count == 0)
-            throw new RuntimeWrongNumberOfArgumentsException(1, 0, variadic: true);
+            throw new RuntimeWrongNumberOfArgumentsException("call", 1, 0, variadic: true);
 
         // The function reference
         Next(expr.Arguments.First());
@@ -1200,7 +1210,7 @@ class InstructionGenerator(
             throw new RuntimeException("Can't get the reference of 'exec' (yet)");
 
         if (expr.Arguments.Count == 0)
-            throw new RuntimeWrongNumberOfArgumentsException(1, 0, variadic: true);
+            throw new RuntimeWrongNumberOfArgumentsException("exec", 1, 0, variadic: true);
 
         // Arguments
         EmitArguments(expr, skipFirst: true);
@@ -1222,10 +1232,10 @@ class InstructionGenerator(
         Emit((byte)0);
     }
 
-    private void EmitBuiltInSource(CallExpr expr, bool isMaybeRoot = false)
+    private void EmitBuiltInSource(CallExpr expr)
     {
         if (expr.Arguments.Count != 1)
-            throw new RuntimeWrongNumberOfArgumentsException(1, expr.Arguments.Count);
+            throw new RuntimeWrongNumberOfArgumentsException("source", 1, expr.Arguments.Count);
 
         Next(expr.Arguments.Single());
         EmitBig(InstructionKind.Const, expr.Scope.ModuleScope.RootModule);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Elk;
@@ -32,5 +33,12 @@ public static class ResourceProvider
         return !File.Exists(absolutePath)
             ? null
             : File.ReadAllText(absolutePath);
+    }
+
+    public static IEnumerable<string> GetFolderEntries(string relativePath)
+    {
+        var absolutePath = Path.Combine(_resourcePath, relativePath);
+
+        return Directory.GetFiles(absolutePath);
     }
 }

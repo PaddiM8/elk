@@ -152,6 +152,35 @@ static class Environment
     public static RuntimeString HomePath()
         => new(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile));
 
+    /// <returns>The hostname of the device.</returns>
+    [ElkFunction("hostname")]
+    public static RuntimeString Hostname()
+        => new(System.Environment.MachineName);
+
+    /// <returns>Whether the operating system is Unix-based.</returns>
+    [ElkFunction("isUnix")]
+    public static RuntimeBoolean IsUnix()
+        => RuntimeBoolean.From(System.Environment.OSVersion.Platform == PlatformID.Unix);
+
+    /// <returns>The name of the current operating system. Values: linux, macOS, windows, bsd, other</returns>
+    [ElkFunction("os")]
+    public static RuntimeString Os()
+    {
+        if (OperatingSystem.IsWindows())
+            return new RuntimeString("windows");
+
+        if (OperatingSystem.IsLinux())
+            return new RuntimeString("linux");
+
+        if (OperatingSystem.IsMacOS())
+            return new RuntimeString("macOS");
+
+        if (OperatingSystem.IsFreeBSD())
+            return new RuntimeString("bsd");
+
+        return new RuntimeString("other");
+    }
+
     /// <param name="options">A dictionary such as the one shown in the example below.</param>
     /// <returns>
     /// A string containing a modified version of the path to the current directory (the value of $PWD).
@@ -164,7 +193,7 @@ static class Environment
     /// prettyPwd({
     ///     "wordColor": "brightBlue",    # The color of the folder names (see: `ansi::color`)
     ///     "slashColor": "blue",         # The color of the slashes (and tilde)
-    ///     "wholeFolderNameAmount": "2", # The amount of folder names that should *not* be shortened (default: 1)
+    ///     "wholeFolderNameAmount": "2", # The amount of folder names that should *not* be shortened (default: nil)
     /// })
     /// # => ~/P/elk/src
     /// </example>
@@ -212,7 +241,8 @@ static class Environment
         }
 
         var wordColor = options?.GetValue<RuntimeString>("wordColor")?.Value;
-        var wholeFolderNameAmount = (int?)options?.GetValue<RuntimeInteger>("wholeFolderNameAmount")?.Value ?? 1;
+        var wholeFolderNameAmount = (int?)options?.GetValue<RuntimeInteger>("wholeFolderNameAmount")?
+            .Value ?? directoryNames.Count;
         var shortenedFolderNameAmount = directoryNames.Count - wholeFolderNameAmount;
         var shortenedFolderNames = directoryNames
             .Take(shortenedFolderNameAmount)
@@ -280,6 +310,11 @@ static class Environment
 
         return new RuntimeInteger(stopwatch.ElapsedMilliseconds);
     }
+
+    /// <returns>The name of the current user.</returns>
+    [ElkFunction("user")]
+    public static RuntimeString User()
+        => new(System.Environment.UserName);
 
     public static List<string> GetDirectoryNames(string path)
     {

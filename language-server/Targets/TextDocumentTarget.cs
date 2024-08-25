@@ -14,7 +14,7 @@ class TextDocumentTarget(JsonRpc rpc)
     public void DidOpen(JToken token)
     {
         var parameters = token.ToObject<DidOpenTextDocumentParams>();
-        if (parameters == null || Path.GetExtension(parameters.TextDocument.Uri.Path) != ".elk")
+        if (parameters == null)
             return;
 
         var document = new SemanticDocument(
@@ -36,7 +36,7 @@ class TextDocumentTarget(JsonRpc rpc)
     public async Task DidChangeAsync(JToken token)
     {
         var parameters = token.ToObject<DidChangeTextDocumentParams>();
-        if (parameters == null || Path.GetExtension(parameters.TextDocument.Uri.Path) != ".elk")
+        if (parameters == null)
             return;
 
         var newText = parameters.ContentChanges.FirstOrDefault()?.Text;

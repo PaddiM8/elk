@@ -1,0 +1,16 @@
+fn elkPrompt() {
+    let pwdOptions = {
+        "wholeFolderNameAmount": 2,
+    }
+    {{ GIT_BRANCH_VAR }}
+    let sections = [
+        env::prettyPwd(pwdOptions) | ansi::color("yellow"),
+        {{ GIT_BRANCH_SECTION }}
+        ansi::color(" (venv)", "green") if $VIRTUAL_ENV,
+        " | ",
+    ]
+
+    sections
+        | map => x { x ?? "" }
+        | join
+}

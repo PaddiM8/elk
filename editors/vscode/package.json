@@ -1,34 +1,44 @@
 {
-    "name": "elk-vscode",
-    "description": "A VS Code extension for the Elk programming language.",
+    "name": "elk-shell",
+    "description": "Language integrations for the elk shell programming language",
     "license": "MIT",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "publisher": "PaddiM8",
+    "repository": "https://github.com/PaddiM8/elk",
+    "icon": "icon.png",
     "engines": {
         "vscode": "^1.82.0"
     },
     "categories": [
-        "Other"
+        "Programming Languages"
     ],
     "activationEvents": [
         "onLanguage:plaintext"
     ],
     "main": "./out/src/extension",
     "contributes": {
-        "languages": [{
-            "id": "elk",
-            "aliases": ["elk"],
-            "extensions": [".elk"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "elk",
-            "scopeName": "source.elk",
-            "path": "./syntaxes/elk.tmLanguage.json",
-            "embeddedLanguages": {
-                "meta.embedded.line.elk": "elk"
+        "languages": [
+            {
+                "id": "elk",
+                "aliases": [
+                    "elk"
+                ],
+                "extensions": [
+                    ".elk"
+                ],
+                "configuration": "./language-configuration.json"
             }
-        }],
+        ],
+        "grammars": [
+            {
+                "language": "elk",
+                "scopeName": "source.elk",
+                "path": "./syntaxes/elk.tmLanguage.json",
+                "embeddedLanguages": {
+                    "meta.embedded.line.elk": "elk"
+                }
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Elk configuration",
@@ -49,7 +59,8 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
+        "watch": "tsc -watch -p ./",
+        "deploy": "vsce publish"
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
@@ -57,6 +68,7 @@
         "@types/node": "^20.8.0",
         "@types/vscode": "^1.82.0",
         "@vscode/test-electron": "^2.3.4",
+        "@vscode/vsce": "^3.0.0",
         "glob": "^10.3.10",
         "mocha": "^10.2.0",
         "source-map-support": "^0.5.21",

@@ -459,7 +459,7 @@ static class Iteration
         else if (container is RuntimeDictionary dict)
         {
             if (value2 == null)
-                throw new RuntimeWrongNumberOfArgumentsException(3, 2);
+                throw new RuntimeWrongNumberOfArgumentsException("push", 3, 2);
 
             dict.Entries.Add(value1.GetHashCode(), (value1, value2));
         }

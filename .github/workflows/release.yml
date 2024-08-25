@@ -11,7 +11,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -55,3 +55,24 @@ jobs:
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  push-vim-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: "PaddiM8/elk-vim"
+          ref: "main"
+          token: ${{ secrets.ACCESS_TOKEN_GITHUB }}
+      - run: |
+          git config --global user.email "<>"
+          git config --global user.name "GitHub Actions"
+  
+          mv README.md ..
+          rm -rf *
+          git clone https://github.com/PaddiM8/elk elk-tmp
+          mv ../README.md .
+          cp -r elk-tmp/editors/vim/* .
+          rm -rf elk-tmp
+          git add .
+          git commit -m "${{ github.ref_name }}" || echo Didn't commit
+          git push origin main || echo Didn't push

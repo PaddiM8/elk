@@ -73,10 +73,10 @@ public class Regex
         => new(pattern.Value.Matches(value.Value).Select(x => new RuntimeString(x.Value)));
 
     /// <param name="value">The entire string</param>
-    /// <param name="replacement">The replacement</param>
     /// <param name="pattern">The pattern to replace</param>
+    /// <param name="replacement">The replacement</param>
     [ElkFunction("replace")]
-    public static RuntimeString Replace(RuntimeString value, RuntimeString replacement, RuntimeRegex pattern)
+    public static RuntimeString Replace(RuntimeString value, RuntimeRegex pattern, RuntimeString replacement)
         => new(pattern.Value.Replace(value.Value, replacement.Value));
 
     /// <param name="value">The entire string</param>

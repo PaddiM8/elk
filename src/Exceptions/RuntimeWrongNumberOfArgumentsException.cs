@@ -1,13 +1,13 @@
 namespace Elk.Exceptions;
 
-class RuntimeWrongNumberOfArgumentsException : RuntimeException
+class RuntimeWrongNumberOfArgumentsException(string? symbolName, int? expected, int got, bool variadic = false)
+    : RuntimeException(GetMessage(symbolName, expected, got, variadic))
 {
-    public RuntimeWrongNumberOfArgumentsException(int expected, int got, bool variadic = false)
-        : base(
-            variadic
-                ? $"Wrong number of arguments. Expected {expected} or more but got {got}"
-                : $"Wrong numbers of arguments. Expected {expected} but got {got}"
-        )
+    private static string GetMessage(string? symbolName, int? expected, int got, bool variadic)
     {
+        var forName = $" for '{symbolName}'";
+        return variadic
+            ? $"Wrong number of arguments{forName}. Expected {expected} or more but got {got}"
+            : $"Wrong numbers of arguments{forName}. Expected {expected} but got {got}";
     }
 }

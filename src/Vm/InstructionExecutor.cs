@@ -766,7 +766,7 @@ class InstructionExecutor
         if (environmentVariables != null)
         {
             foreach (var (key, value) in environmentVariables)
-                process.StartInfo.EnvironmentVariables.Add(key, value.ToString());
+                process.StartInfo.EnvironmentVariables[key] = value.ToString();
         }
 
         // Arguments
@@ -965,12 +965,27 @@ class InstructionExecutor
         if (!File.Exists(path))
             throw new RuntimeException("File not found");
 
-        ElkProgram.Evaluate(
+        var previousPath = rootModuleScope.FilePath;
+        rootModuleScope.FilePath = path;
+        var result = ElkProgram.Evaluate(
             File.ReadAllText(path),
             rootModuleScope,
             AnalysisScope.AppendToModule,
             _virtualMachine
         );
+
+        rootModuleScope.FilePath = previousPath;
+
+        if (result.Diagnostics.Any())
+        {
+            var diagnostic = result.Diagnostics.First();
+            var message = $"Error in sourced file: {diagnostic.Message} at {diagnostic.StartPosition}";
+
+            throw new RuntimeException(message, diagnostic.StartPosition, diagnostic.EndPosition)
+            {
+                ElkStackTrace = diagnostic.StackTrace,
+            };
+        }
     }
 
     private void Index()

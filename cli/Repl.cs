@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Elk.ReadLine;
 using Elk.Cli.Database;
+using Elk.Cli.Setup;
 using Elk.Scoping;
 using Elk.Vm;
 
@@ -16,6 +17,9 @@ static class Repl
 {
     public static void Run(VirtualMachineOptions vmOptions)
     {
+        if (!File.Exists(Path.Combine(CommonPaths.ConfigFolder, "init.elk")))
+            SetupWizard.Run();
+
         if (!Directory.Exists(CommonPaths.ConfigFolder))
             Directory.CreateDirectory(CommonPaths.ConfigFolder);
 

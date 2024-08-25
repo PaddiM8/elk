@@ -45,6 +45,7 @@ export default defineConfig({
             { text: "Usage", link: "/getting-started/usage" },
             { text: "Examples", link: "/getting-started/examples" },
             { text: "Comparisons with Bash", link: "/getting-started/comparisons-with-bash" },
+            { text: "Editor Support", link: "/getting-started/editor-support" },
           ],
         },
         {
