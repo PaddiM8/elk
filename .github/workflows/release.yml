@@ -6,37 +6,89 @@ on:
   workflow_dispatch:
 
 jobs:
-  binaries:
-    env:
-      GH_TOKEN: ${{ github.token }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-14]
-    runs-on: ${{ matrix.os }}
+  macOS-binary:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build elk
+        run: |
+          ./build.sh x64
+          ./build.sh arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: build/*/*.tar.*
+  linux-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install arm toolchain
+        if: runner.os == 'Linux'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc) main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-updates main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-backports main restricted universe multiverse
+          EOF'
+          sudo sed -i -e 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
+          sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
+      - name: Build elk
+        run: |
+          ./build.sh x64
+          ./build.sh arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: build/*/*.tar.*
+  windows-binary:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
       - run: |
-          ./build.sh
-          gh release create ${{ github.ref_name }} build/*/*.tar.* || gh release upload ${{ github.ref_name }} build/*/*.tar.*
-  win-binary:
-    env:
-      GH_TOKEN: ${{ github.token }}
-    strategy:
-      matrix:
-        os: [windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
+          ./Build.ps1 x64
+          ./Build.ps1 arm64
+          Compress-Archive -Path build/win-x64 -Destination win-x64.zip
+          Compress-Archive -Path build/win-arm64 -Destination win-arm64.zip
+      - uses: actions/upload-artifact@v4
         with:
-          dotnet-version: '8.0.x'
-      - run: |
-          ./Build.ps1
-          Compress-Archive -Path build/* -Destination win-x64.zip
-          gh release create ${{ github.ref_name }} win-x64.zip || gh release upload ${{ github.ref_name }} win-x64.zip
+          name: binaries
+          path: win-*.zip
+  create-release:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [linux-binaries, macOS-binaries, windows-binaries]
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: binaries
+      - name: Upload Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} *
   docs:
     runs-on: ubuntu-latest
     steps:

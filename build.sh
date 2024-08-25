@@ -24,7 +24,7 @@ if [ "$(uname)" = "Darwin" ]; then
     cp cli/bin/Release/*/$TARGET/publish/*.dylib build/$TARGET
 
     cd build/$TARGET
-    tar -czf $TARGET.tar.xz *
+    tar -czf macOS-$ARCHITECTURE.tar.xz *
 else
     mkdir -p build/$TARGET/usr/bin
     mkdir -p build/$TARGET/usr/lib/elk

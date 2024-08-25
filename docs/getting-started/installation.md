@@ -2,18 +2,21 @@
 
 ## Pre-built
 
-Download the latest release ([Linux](https://github.com/PaddiM8/elk/releases/download/v0.0.0/linux-x64.tar.xz), [macOS](https://github.com/PaddiM8/elk/releases/download/v0.0.0/osx-x64.tar.xz))
-and extract it into `/`:
+Download the [latest release](https://github.com/PaddiM8/elk/releases/latest/) from GitHub.
+
+### Linux/macOS
+Extract the archive into `/`:
 ```bash
 tar xvf *.tar.xz -C /
 ```
+
+### Windows
+Extract the zip file.
 
 ## Manual Compilation
 
 ### Prerequisites
 
-* A 64-bit Linux distro (it is possible to modify the `build.sh` file to 
-compile for other platforms, but it may not work as expected)
 * [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
 
 ### Steps
@@ -29,8 +32,10 @@ Compile and install the program:
 
 ```shell
 ./build.sh
-cd build/*
-tar -xvf elk.tar.xz -C /
+cd build
+
+# Linux/macOS
+tar -xvf */*.tar.xz -C /
 ```
 
 Elk is now installed and can be accessed with the `elk` command.
