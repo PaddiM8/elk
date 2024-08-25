@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "Glob": {
+        "type": "Transitive",
+        "resolved": "1.1.9",
+        "contentHash": "AfK5+ECWYTP7G3AAdnU8IfVj+QpGjrh9GC2mpdcJzCvtQ4pnerAGwHsxJ9D4/RnhDUz2DSzd951O/lQjQby2Sw=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.1",
+        "contentHash": "ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A=="
+      },
+      "Wcwidth": {
+        "type": "Transitive",
+        "resolved": "1.0.0",
+        "contentHash": "aekut5BeF4c1Jr2qab3aXcttcgPEfPb2ok2L8911EIzn3RnDBYnUWgx/1OVlqrSXCdwAkBpNgYWXb6b5t4cBng=="
+      },
+      "elk": {
+        "type": "Project",
+        "dependencies": {
+          "Elk.ReadLine": "[1.0.0, )",
+          "Glob": "[1.1.9, )",
+          "Newtonsoft.Json": "[13.0.1, )"
+        }
+      },
+      "elk.readline": {
+        "type": "Project",
+        "dependencies": {
+          "Wcwidth": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

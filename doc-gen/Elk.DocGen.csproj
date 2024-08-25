@@ -5,6 +5,7 @@
     <LangVersion>12</LangVersion>
     <OutputType>Exe</OutputType>
     <NoWarn>1573</NoWarn>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <PropertyGroup>
