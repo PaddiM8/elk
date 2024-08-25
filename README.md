@@ -1,4 +1,4 @@
-<img src="res/logo.png" width="260"><br>
+<img src="res/logo.png" width="225">
 
 Elk is an experimental shell language that aims to seamlessly combine the syntax of a shell language like bash with the syntax of a general-purpose language like Python. Bash is great for executing programs and handling files, but can be quite limiting and tedious to use when it comes to dealing with different data types and performing complex operations.
 
