@@ -1,6 +1,9 @@
 <img src="res/logo.png" width="225">
 
-Elk is an experimental shell language that aims to seamlessly combine the syntax of a shell language like bash with the syntax of a general-purpose language like Python. Bash is great for executing programs and handling files, but can be quite limiting and tedious to use when it comes to dealing with different data types and performing complex operations.
+Elk is an experimental shell language that aims to seamlessly combine the syntax of a shell language like bash with the
+syntax of a general-purpose language like Python. Bash is great for executing programs and handling files, but can be
+quite limiting and tedious to use when it comes to dealing with different data types and performing complex operations.
+Elk was built with both of these scenarios in mind.
 
 ![GitHub branch check runs](https://img.shields.io/github/check-runs/PaddiM8/elk/main?label=tests)
 ![GitHub Release](https://img.shields.io/github/v/release/PaddiM8/elk)
@@ -11,9 +14,16 @@ Elk is an experimental shell language that aims to seamlessly combine the syntax
 
 [Read More / Documentation](https://elk.strct.net)
 
-The fundamental syntax of Elk is similar to that of languages like Python, meaning you can easily define variables and functions and perform operations just like you would in regular scripting languages. At the same time, programs can be executed as easily as in bash, making it a good choice for shell scripting and command line usage. This is achieved by treating program invocations as function calls syntactically, while also allowing these to be written similar to program invocations in shell languages.
+The fundamental syntax of Elk is similar to that of languages like Python, meaning you can easily define variables
+and functions and perform operations just like you would in regular scripting languages. At the same time, programs
+can be executed as easily as in bash, making it a good choice for shell scripting and command line usage. This is
+achieved by treating program invocations as function calls syntactically, while also allowing these to be written
+similar to program invocations in shell languages.
 
-In Elk, redirection of standard output is done automatically, removing the need for command substitution (eg. `$(ls)`), arithmetic expansion (eg. `$((1+2))`), and process substitution (eg. `<(list)`). When a program invocation expression is in a context where its value is used, the standard output of the resulting process is redirected and handled by Elk, giving the illusion that program invocations are simply function calls.
+In Elk, redirection of standard output is done automatically, removing the need for command substitution (eg. `$(ls)`),
+arithmetic expansion (eg. `$((1+2))`), and process substitution (eg. `<(list)`). When a program invocation expression
+is in a context where its value is used, the standard output of the resulting process is redirected and handled by Elk,
+giving the illusion that program invocations are simply function calls.
 
 ```nim
 # here, 'ls' and 'echo' are program invocations, while 'lines' is a 
