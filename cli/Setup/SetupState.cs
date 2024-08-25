@@ -42,6 +42,7 @@ public class SetupState
 
     public void GenerateInitFile(string path)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var scriptContent = GenerateElkPromptFunction();
         File.WriteAllText(path, scriptContent);
     }
