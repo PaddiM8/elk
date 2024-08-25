@@ -457,7 +457,7 @@ public class CallExpr(
     Scope scope,
     TextPos endPos)
     : Expr(
-        modulePath.FirstOrDefault()?.Position ?? identifier.Position,
+        GetStartPosition(modulePath, identifier, arguments),
         endPos,
         scope
     )
@@ -491,7 +491,19 @@ public class CallExpr(
     public FunctionExpr? EnclosingClosureProvidingFunction { get; init; }
 
     public override IEnumerable<Expr> ChildExpressions
-        => Arguments;
+        => PipedToProgram == null
+            ? Arguments
+            : Arguments.Prepend(PipedToProgram);
+
+    private static TextPos GetStartPosition(IList<Token> modulePath, Token identifier, IList<Expr> arguments)
+    {
+        var callPos = modulePath.FirstOrDefault()?.Position ?? identifier.Position;
+        var firstArgumentPosition = arguments.FirstOrDefault()?.StartPosition;
+
+        return firstArgumentPosition?.Index < callPos.Index
+            ? firstArgumentPosition
+            : callPos;
+    }
 }
 
 public class LiteralExpr(Token value, Scope scope)

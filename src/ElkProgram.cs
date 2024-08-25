@@ -112,6 +112,7 @@ public static class ElkProgram
             {
                 SemanticTokens = semanticTokens,
                 Diagnostics = diagnostics,
+                Ast = ast,
             };
         }
     }
@@ -125,9 +126,13 @@ public static class ElkProgram
         Debug.Assert(scope.ModuleScope is not { Ast: null });
 
         var generated = GeneratePages(ast, scope, analysisScope, virtualMachine).ToList();
-        var result = generated
-            .Select(pair => virtualMachine?.Execute(pair.page))
-            .LastOrDefault();
+        RuntimeObject? result = null;
+        if (virtualMachine != null)
+        {
+            result = generated
+                .Select(pair => virtualMachine.Execute(pair.page!))
+                .LastOrDefault();
+        }
 
         return new EvaluationResult
         {
@@ -136,7 +141,7 @@ public static class ElkProgram
         };
     }
 
-    private static IEnumerable<(Ast analysedAst, Page page)> GeneratePages(
+    private static IEnumerable<(Ast analysedAst, Page? page)> GeneratePages(
         Ast ast,
         Scope scope,
         AnalysisScope analysisScope,
@@ -154,16 +159,12 @@ public static class ElkProgram
             .Concat(EvaluateModules(scope.ModuleScope.Modules, virtualMachine));
 
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
-        if (virtualMachine != null)
-        {
-            var result = virtualMachine.Generate(analysedAst);
-            pages = pages.Append((analysedAst, result));
-        }
+        var result = virtualMachine?.Generate(analysedAst);
 
-        return pages;
+        return pages.Append((analysedAst, result));
     }
 
-    private static IEnumerable<(Ast, Page)> EvaluateModules(
+    private static IEnumerable<(Ast, Page?)> EvaluateModules(
         IEnumerable<ModuleScope> modules,
         VirtualMachine? virtualMachine)
     {
