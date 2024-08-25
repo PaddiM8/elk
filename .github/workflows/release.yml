@@ -57,10 +57,6 @@ jobs:
         with:
           name: linux-arm64
           path: build/*-arm64/*.tar.*
-      - uses: actions/upload-artifact@v4
-        with:
-          name: binaries
-          path: build/*/*.tar.*
   windows-binaries:
     runs-on: windows-latest
     steps:
