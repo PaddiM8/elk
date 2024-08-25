@@ -13,7 +13,7 @@ public static class ExceptionLogger
         );
         Directory.CreateDirectory(logDirectoryPath);
 
-        var date = DateTime.Now.ToString("yyyy-MM-dd-HH:mm:ss");
+        var date = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
         var logFilePath = Path.Combine(logDirectoryPath, $"exception-{date}.txt");
         File.WriteAllText(logFilePath, ex.ToString());
         Console.WriteLine($"Unexpected exception caught! This is a bug. Log written to: {logFilePath}");
