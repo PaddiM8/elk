@@ -446,7 +446,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         }
 
         modulePath.Add(identifier);
-        if (module.ModuleExists(modulePath))
+        if (module.ModuleExists(modulePath) && Current?.Kind != TokenKind.WhiteSpace)
         {
             NextModule(modulePath);
 
