@@ -15,7 +15,7 @@ elif [ -n "$2" ]; then
 fi
 
 dotnet publish cli/Elk.Cli.csproj -r $TARGET -c Release
-rm -rf build
+rm -rf build/$TARGET
 
 if [ "$(uname)" = "Darwin" ]; then
     mkdir -p build/$TARGET

@@ -33,7 +33,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Install arm toolchain
-        if: runner.os == 'Linux'
         run: |
           sudo dpkg --add-architecture arm64
           sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
@@ -67,37 +66,34 @@ jobs:
       - run: |
           ./Build.ps1 x64
           ./Build.ps1 arm64
-          Compress-Archive -Path build/win-x64 -Destination win-x64.zip
-          Compress-Archive -Path build/win-arm64 -Destination win-arm64.zip
+          Compress-Archive -Path build/win-x64 -Destination build/win-x64/win-x64.zip
+          Compress-Archive -Path build/win-arm64 -Destination build/win-arm64/win-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: win-x64
-          path: win-x64.zip
+          path: build/*-x64/*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: win-arm64
-          path: win-arm64.zip
+          path: build/*-arm64/*.zip
   create-release:
     runs-on: ubuntu-latest
     needs: [linux-binaries, macOS-binaries, windows-binaries]
     steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+      - uses: actions/checkout@v3
+      - run: |
+          mkdir build
       - name: Download Artifact
         uses: actions/download-artifact@v4
+        with:
+          path: build
+          merge-multiple: true
       - name: Upload Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} *
+          du build
+          gh release create ${{ github.ref_name }} build/**/*
   docs:
     runs-on: ubuntu-latest
     steps:
