@@ -752,11 +752,19 @@ class InstructionExecutor
         var fileName = ((RuntimeProgramFunction)_stack.Pop()).ProgramName;
         var process = new Process();
         var shouldRedirectOutput = props.HasFlag(ProgramCallProps.RedirectOutput) || !isRoot;
+        fileName = fileName.StartsWith("./")
+            ? Path.Combine(ShellEnvironment.WorkingDirectory, fileName)
+            : fileName;
+        var prefixArguments = new List<string>();
+        if (OperatingSystem.IsWindows() && fileName.EndsWith(".ps1"))
+        {
+            prefixArguments = ["-NoProfile", "-ExecutionPolicy", "ByPass", "-File", fileName];
+            fileName = "powershell.exe";
+        }
+
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = fileName.StartsWith("./")
-                ? Path.Combine(ShellEnvironment.WorkingDirectory, fileName)
-                : fileName,
+            FileName = fileName,
             RedirectStandardOutput = shouldRedirectOutput,
             RedirectStandardError = props.HasFlag(ProgramCallProps.RedirectError),
             RedirectStandardInput = pipedValue != null,
@@ -770,9 +778,10 @@ class InstructionExecutor
         }
 
         // Arguments
-        var arguments = (RuntimeList)_stack.Pop();
-        foreach (var arg in arguments)
-            process.StartInfo.ArgumentList.Add(arg.ToString() ?? "");
+        var arguments = ((RuntimeList)_stack.Pop())
+            .Select(x => x.ToString() ?? "");
+        foreach (var arg in prefixArguments.Concat(arguments))
+            process.StartInfo.ArgumentList.Add(arg);
 
         var processContext = new ProcessContext(
             process,
