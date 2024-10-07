@@ -29,7 +29,7 @@ if has("nvim")
 lua << EOF
     vim.lsp.start({
         name = "elk",
-        cmd = {"elk --lsp"}
+        cmd = {"elk", "--lsp"}
     })
 EOF
 endif
