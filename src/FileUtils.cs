@@ -58,6 +58,9 @@ public static class FileUtils
         if (name.StartsWith('/'))
             return FileIsExecutable(name);
 
+        if (OperatingSystem.IsWindows() && name.ElementAtOrDefault(1) == ':')
+            return FileIsExecutable(name);
+
         return Environment.GetEnvironmentVariable("PATH")?
             .Split(Path.PathSeparator)
             .Any(x => Directory.Exists(x) && FileIsExecutable(Path.Combine(x, name))) is true;

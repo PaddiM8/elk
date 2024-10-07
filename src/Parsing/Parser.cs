@@ -1264,7 +1264,11 @@ internal class Parser
             Eat(); // ::
         }
 
-        var identifier = Match(TokenKind.Identifier)
+        // eg. C:/
+        var isWindowsPath = Current is { Kind: TokenKind.Identifier, Value.Length: 1 } &&
+            Peek()?.Kind == TokenKind.Colon &&
+            Peek(2)?.Kind == TokenKind.Slash;
+        var identifier = Match(TokenKind.Identifier) && !isWindowsPath
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
 

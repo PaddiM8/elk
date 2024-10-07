@@ -24,9 +24,6 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
     public IEnumerable<ShellStyleInvocationInfo> LastShellStyleInvocations
         => _lastShellStyleInvocations;
 
-    private Token? Peek
-        => _tokens.ElementAtOrDefault(_index + 1);
-
     private Token? Current
         => _tokens.ElementAtOrDefault(_index);
 
@@ -76,15 +73,21 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
 
     private void Next()
     {
-        if (Current?.Kind is TokenKind.Dot or TokenKind.DotDot or TokenKind.Tilde &&
-            Peek?.Kind == TokenKind.Slash)
+        if (Current?.Kind is TokenKind.Dot or TokenKind.DotDot or TokenKind.Tilde && Peek()?.Kind == TokenKind.Slash)
         {
             NextPath();
 
             return;
         }
 
-        if (Current?.Kind == TokenKind.Slash && Peek?.Kind == TokenKind.Identifier)
+        if (Current?.Kind == TokenKind.Slash && Peek()?.Kind == TokenKind.Identifier)
+        {
+            NextPath();
+
+            return;
+        }
+
+        if (Current is { Kind: TokenKind.Identifier, Value.Length: 1 } && Peek()?.Kind == TokenKind.Colon && Peek(2)?.Kind == TokenKind.Slash)
         {
             NextPath();
 
@@ -427,7 +430,6 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             return;
         }
 
-        identifier = identifier.TrimEnd('!');
         modulePath ??= [];
         if (module.StructExists(identifier))
         {
@@ -544,7 +546,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             // and the loop should be stopped.
             if (Current?.Kind == TokenKind.DotDot &&
                 Previous?.Kind != TokenKind.Slash &&
-                Peek?.Kind != TokenKind.Slash)
+                Peek()?.Kind != TokenKind.Slash)
             {
                 break;
             }
@@ -606,7 +608,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
             }
             else if (Previous?.Kind != TokenKind.Backslash &&
                  Current!.Value == "$" &&
-                 Peek?.Kind == TokenKind.OpenBrace)
+                 Peek()?.Kind == TokenKind.OpenBrace)
             {
                 AppendTextArgumentTokens();
                 NextInterpolation();
@@ -719,6 +721,9 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
 
         return token;
     }
+
+    private Token? Peek(int count = 1)
+        => _tokens.ElementAtOrDefault(_index + count);
 
     private void Push(Token token)
     {
