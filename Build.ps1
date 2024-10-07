@@ -23,4 +23,5 @@ if (Test-Path "build/$target") {
 
 mkdir build/$target
 cp cli/bin/Release/*/$target/publish/Elk.Cli.exe build/$target/elk.exe
+cp cli/bin/Release/*/$target/publish/*.dll build/$target
 cp -r cli/bin/Release/*/$target/publish/Resources/* build/$target
