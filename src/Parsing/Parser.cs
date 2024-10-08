@@ -34,26 +34,31 @@ internal class Parser
     private bool UseAliases
         => Current?.Position.FilePath == null;
 
+    private readonly List<Token> _tokens;
+    private readonly bool _ignoreErrors;
     private bool _allowEndOfExpression;
     private int _index;
     private Scope _scope;
-    private readonly List<Token> _tokens;
 
     private Parser(
         List<Token> tokens,
-        Scope scope)
+        Scope scope,
+        bool ignoreErrors)
     {
         _tokens = tokens;
         _scope = scope;
+        _ignoreErrors = ignoreErrors;
     }
 
     public static Ast Parse(
         List<Token> tokens,
-        Scope scope)
+        Scope scope,
+        bool ignoreErrors = false)
     {
         var parser = new Parser(
             tokens,
-            scope
+            scope,
+            ignoreErrors
         );
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
@@ -1175,14 +1180,22 @@ internal class Parser
         var expressions = new List<Expr>();
         while (!AdvanceIf(TokenKind.ClosedBrace))
         {
-            expressions.Add(ParseExprOrDecl());
-            if (!orAsOtherStructure)
-                continue;
+            try
+            {
+                expressions.Add(ParseExprOrDecl());
+                if (!orAsOtherStructure)
+                    continue;
 
-            if (Match(TokenKind.Comma) && expressions.Count == 1)
-                return ContinueParseAsSet(expressions.First());
-            if (Match(TokenKind.Colon) && expressions.Count == 1)
-                return ContinueParseAsDictionary(expressions.First());
+                if (Match(TokenKind.Comma) && expressions.Count == 1)
+                    return ContinueParseAsSet(expressions.First());
+                if (Match(TokenKind.Colon) && expressions.Count == 1)
+                    return ContinueParseAsDictionary(expressions.First());
+            }
+            catch (RuntimeException)
+            {
+                if (!_ignoreErrors)
+                    throw;
+            }
         }
 
         _scope = _scope.Parent!;

@@ -32,7 +32,8 @@ public static class ElkProgram
             input,
             scope,
             AnalysisScope.OverwriteExistingModule,
-            null
+            null,
+            semanticInformationOnly: true
         );
     }
 
@@ -40,7 +41,8 @@ public static class ElkProgram
         string input,
         Scope scope,
         AnalysisScope analysisScope,
-        VirtualMachine? virtualMachine)
+        VirtualMachine? virtualMachine,
+        bool semanticInformationOnly = false)
     {
         Ast ast;
         try
@@ -51,7 +53,8 @@ public static class ElkProgram
                     scope.ModuleScope.FilePath,
                     out var error
                 ),
-                scope
+                scope,
+                ignoreErrors: semanticInformationOnly
             );
 
             if (error != null)
@@ -80,7 +83,9 @@ public static class ElkProgram
         }
 
         scope.ModuleScope.Ast = ast;
-        var semanticTokens = ast.GetSemanticTokens();
+        var semanticTokens = semanticInformationOnly
+            ? ast.GetSemanticTokens()
+            : null;
 
         try
         {
