@@ -28,7 +28,7 @@ public class ShellEnvironment(string? scriptPath)
 
     public string? ScriptPath { get; set; } = scriptPath;
 
-    public string GetAbsolutePath(string relativePath)
+    public static string GetAbsolutePath(string relativePath)
         => Path.GetFullPath(Path.Combine(WorkingDirectory, relativePath));
 
 }

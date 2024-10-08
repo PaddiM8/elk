@@ -9,5 +9,5 @@ static class Directory
 {
     [ElkFunction("exists")]
     public static RuntimeBoolean Exists(RuntimeString path, ShellEnvironment env)
-        => RuntimeBoolean.From(System.IO.Directory.Exists(env.GetAbsolutePath(path.Value)));
+        => RuntimeBoolean.From(System.IO.Directory.Exists(ShellEnvironment.GetAbsolutePath(path.Value)));
 }

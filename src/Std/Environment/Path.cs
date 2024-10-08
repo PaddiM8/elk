@@ -4,6 +4,7 @@ using System.Linq;
 using Elk.Exceptions;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
+using Elk.Vm;
 
 #endregion
 
@@ -23,7 +24,8 @@ public static class Path
     [ElkFunction("add")]
     public static void Add(RuntimeString path)
     {
-        System.IO.File.AppendAllText(CommonPaths.PathFile, $"{path}\n");
+        var absolutePath = ShellEnvironment.GetAbsolutePath(path.Value);
+        System.IO.File.AppendAllText(CommonPaths.PathFile, $"{absolutePath}\n");
 
         // Reload the path variable
         var pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";

@@ -51,7 +51,7 @@ static class Environment
 
         var absolutePath = path.Value == "-"
             ? System.Environment.GetEnvironmentVariable("OLDPWD") ?? ""
-            : env!.GetAbsolutePath(path.Value);
+            : ShellEnvironment.GetAbsolutePath(path.Value);
 
         if (!System.IO.Directory.Exists(absolutePath))
             throw new RuntimeException($"cd: The directory \"{path}\" does not exist");

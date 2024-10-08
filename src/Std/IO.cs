@@ -28,7 +28,7 @@ static class IO
     /// <returns>Text content of the file at the provided path.</returns>
     [ElkFunction("read", Reachability.Everywhere)]
     public static RuntimeString ReadFile(RuntimeString path, ShellEnvironment env)
-        => new(System.IO.File.ReadAllText(env.GetAbsolutePath(path.Value)));
+        => new(System.IO.File.ReadAllText(ShellEnvironment.GetAbsolutePath(path.Value)));
 
     /// <summary>Writes the provided text to a file, overwriting any previous content.</summary>
     /// <param name="content">Text that should be written to the file</param>
@@ -37,7 +37,7 @@ static class IO
     [ElkFunction("write", Reachability.Everywhere, ConsumesPipe = true)]
     public static void WriteToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
-        var absolutePath = env.GetAbsolutePath(path.Value);
+        var absolutePath = ShellEnvironment.GetAbsolutePath(path.Value);
         if (content is RuntimePipe runtimePipe)
         {
             var fileInfo = new FileInfo(absolutePath);
@@ -73,7 +73,7 @@ static class IO
     [ElkFunction("append", Reachability.Everywhere)]
     public static void AppendToFile(RuntimeObject content, RuntimeString path, ShellEnvironment env)
     {
-        var absolutePath = env.GetAbsolutePath(path.Value);
+        var absolutePath = ShellEnvironment.GetAbsolutePath(path.Value);
         var fileInfo = new FileInfo(absolutePath);
 
         if (content is RuntimePipe runtimePipe)
@@ -118,7 +118,7 @@ static class IO
     /// <returns>nil</returns>
     [ElkFunction("appendEnd", Reachability.Everywhere)]
     public static void AppendEnd(RuntimeString content, RuntimeString path, ShellEnvironment env)
-        => System.IO.File.AppendAllText(env.GetAbsolutePath(path.Value), content.Value);
+        => System.IO.File.AppendAllText(ShellEnvironment.GetAbsolutePath(path.Value), content.Value);
 
     /// <summary>Reads the next line from the standard input stream. This is used to get input from the user in a terminal.</summary>
     /// <param name="prompt">Text that should be printed before the input prompt</param>

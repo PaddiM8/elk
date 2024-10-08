@@ -9,7 +9,7 @@ static class File
 {
     [ElkFunction("exists")]
     public static RuntimeBoolean Exists(RuntimeString path, ShellEnvironment env)
-        => RuntimeBoolean.From(System.IO.File.Exists(env.GetAbsolutePath(path.Value)));
+        => RuntimeBoolean.From(System.IO.File.Exists(ShellEnvironment.GetAbsolutePath(path.Value)));
 
     [ElkFunction("executableExists")]
     public static RuntimeBoolean ExecutableExists(RuntimeString path)
