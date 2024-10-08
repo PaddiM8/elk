@@ -134,9 +134,8 @@ public static class ElkProgram
         RuntimeObject? result = null;
         if (virtualMachine != null)
         {
-            result = generated
-                .Select(pair => virtualMachine.Execute(pair.page!))
-                .LastOrDefault();
+            foreach (var pair in generated)
+                result = virtualMachine.Execute(pair.page!);
         }
 
         return new EvaluationResult

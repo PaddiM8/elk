@@ -115,6 +115,11 @@ static class String
     public static RuntimeBoolean IsDigit(RuntimeString str)
         => RuntimeBoolean.From(str.Value.Length == 1 && char.IsDigit(str.Value[0]));
 
+    /// <returns>Whether or not the given string only consists of a whitespace characters.</returns>
+    [ElkFunction("isWhitespace")]
+    public static RuntimeBoolean IsWhitespace(RuntimeString str)
+        => RuntimeBoolean.From(string.IsNullOrWhiteSpace(str.Value));
+
     /// <returns>A list of all the lines in the given string.</returns>
     [ElkFunction("lines")]
     public static RuntimeList Lines(RuntimeString input)
