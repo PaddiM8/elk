@@ -199,11 +199,6 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void CloseProcess(bool messageOnError)
     {
-        if (_process == null)
-            return;
-
-        _process.WaitForExit();
-
         // Sometimes the CloseProcess method is called several times,
         // which means that two threads could be waiting for exit at
         // the same time. Only one needs to dispose the process and
@@ -212,6 +207,11 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         {
             if (_process == null)
                 return;
+
+            _process.WaitForExit();
+
+            //if (_process == null)
+                //return;
 
             ExitCode = _process.ExitCode;
             _process.Dispose();

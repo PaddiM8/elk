@@ -275,9 +275,6 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
             _values?.Add(Current);
         }
 
-        if (!result && !_process.Success)
-            throw new RuntimeException("");
-
         return result;
     }
 
@@ -293,6 +290,7 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
     void IDisposable.Dispose()
     {
+        _process.Wait();
         _processEnumerator.Dispose();
     }
 }
