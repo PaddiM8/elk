@@ -322,7 +322,16 @@ static class Environment
             return [];
 
         var directoryNames = new List<string>();
-        var directoryInfo = new DirectoryInfo(path);
+
+        DirectoryInfo directoryInfo;
+        try
+        {
+            directoryInfo = new DirectoryInfo(path);
+        }
+        catch
+        {
+            return [];
+        }
 
         while (directoryInfo.Parent != null)
         {
