@@ -2,11 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Elk.Exceptions;
 using Elk.Scoping;
 using Elk.Std.Attributes;
+using Elk.Std.Serialization;
+using Newtonsoft.Json;
 
 #endregion
 
@@ -15,6 +15,8 @@ namespace Elk.Std.DataTypes;
 [ElkType("Struct")]
 public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
 {
+    private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
+
     internal StructSymbol Symbol { get; }
 
     public Dictionary<string, RuntimeObject> Values { get; }
@@ -75,17 +77,9 @@ public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
             dict[keyValue.GetHashCode()] = (keyValue, value);
         }
 
-        return new(dict);
+        return new RuntimeDictionary(dict);
     }
 
     public override string ToString()
-    {
-        var stringBuilder = new StringBuilder("{" + System.Environment.NewLine);
-        foreach (var (key, value) in Values)
-            stringBuilder.AppendLine($"    {key}: {value.ToDisplayString()},");
-
-        stringBuilder.Append('}');
-
-        return stringBuilder.ToString();
-    }
+        => JsonConvert.SerializeObject(this, Formatting.Indented, _jsonConverter);
 }
