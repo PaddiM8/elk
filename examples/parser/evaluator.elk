@@ -7,6 +7,7 @@ pub fn evaluate(ast) {
 fn next(expr) {
     return nextBinary(expr) if expr | isType(BinaryExpr)
     return nextLiteral(expr) if expr | isType(LiteralExpr)
+    return nextGroup(expr) if expr | isType(GroupExpr)
 }
 
 fn nextBinary(expr) {
@@ -21,4 +22,8 @@ fn nextBinary(expr) {
 
 fn nextLiteral(expr) {
     expr->value->value | into::float
+}
+
+fn nextGroup(expr) {
+    expr->value | next
 }

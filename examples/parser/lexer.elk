@@ -30,7 +30,7 @@ fn next() {
 
     return nil if c == nil
 
-    if c in ["+", "-", "*", "/"] {
+    if c in ["+", "-", "*", "/", "(", ")"] {
         advance
         return new Token(c, c)
     }

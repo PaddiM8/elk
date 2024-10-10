@@ -8,6 +8,7 @@ let index = 0
 pub fn parse(input) {
     tokens = lexer::lex(input)
     index = 0
+    return nil if len(tokens) == 0
 
     expr()
 }
@@ -26,6 +27,13 @@ fn advance() {
 fn match(kinds...) {
     return false if not current()
     kinds | iter::anyOf => kind { kind == current()->kind }
+}
+
+fn expect(kind) {
+    return advance() if match(kind)
+
+    throw new ParseError("Expected '${kind}'") if current() == nil
+    throw new ParseError("Expected '${kind}' but got '${current()->kind}'")
 }
 
 fn expr() {
@@ -59,6 +67,13 @@ fn multiplicative() {
 fn primary() {
     if match("number") {
         return new LiteralExpr(advance())
+    }
+
+    if match("(") {
+        advance()
+        let group = new GroupExpr(expr())
+        expect(")")
+        return group
     }
 
     throw new ParseError("Unexpected end of expression") if current() != nil

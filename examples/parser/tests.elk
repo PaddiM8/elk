@@ -1,0 +1,7 @@
+with parse from ./parser
+with evaluate from ./evaluator
+
+parse("2 + 3 * 4") | evaluate | assertEqual(14)
+parse("(3 + 3 * 4) / 3") | evaluate | assertEqual(5)
+parse("2") | evaluate | assertEqual(2)
+parse("") | evaluate | assertEqual(nil)

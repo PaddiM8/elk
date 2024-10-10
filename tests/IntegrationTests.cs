@@ -46,6 +46,7 @@ public class IntegrationTests
             Directory.GetFiles(dataPath, "*.elk", SearchOption.AllDirectories),
             Directory.GetFiles(Path.Combine(examplesPath, "advent-of-code-2022"), "*.elk", SearchOption.AllDirectories),
             Directory.GetFiles(Path.Combine(examplesPath, "advent-of-code-2023"), "*.elk", SearchOption.AllDirectories),
+            Directory.GetFiles(Path.Combine(examplesPath, "parser"), "*.elk", SearchOption.AllDirectories),
         }.SelectMany(x => x);
     }
 }
