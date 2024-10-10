@@ -44,48 +44,29 @@ public static class ElkProgram
         VirtualMachine? virtualMachine,
         bool semanticInformationOnly = false)
     {
-        Ast ast;
-        try
+        var (tokens, lexerDiagnostics) = Lexer.Lex(input, scope.ModuleScope.FilePath);
+        if (lexerDiagnostics.Any())
         {
-            ast = Parser.Parse(
-                Lexer.Lex(
-                    input,
-                    scope.ModuleScope.FilePath,
-                    out var error
-                ),
-                scope,
-                ignoreErrors: semanticInformationOnly
-            );
-
-            if (error != null)
-                throw error;
-        }
-        catch (RuntimeException ex)
-        {
-            var diagnostics = new List<DiagnosticMessage>();
-            var result = new EvaluationResult
+            return new EvaluationResult
             {
-                Diagnostics = diagnostics,
+                Diagnostics = lexerDiagnostics,
             };
-
-            if (ex.StartPosition == null || ex.EndPosition == null)
-                return result;
-
-            var message = new DiagnosticMessage(ex.Message, ex.StartPosition, ex.EndPosition)
-            {
-                StackTrace = ex.ElkStackTrace,
-            };
-
-            if (ex.Message.Length > 0)
-                diagnostics.Add(message);
-
-            return result;
         }
 
+        var (ast, parserDiagnostics) = Parser.Parse(tokens, scope);
         scope.ModuleScope.Ast = ast;
         var semanticTokens = semanticInformationOnly
             ? ast.GetSemanticTokens()
             : null;
+
+        if (parserDiagnostics.Any())
+        {
+            return new EvaluationResult
+            {
+                Diagnostics = parserDiagnostics,
+                SemanticTokens = semanticTokens,
+            };
+        }
 
         try
         {

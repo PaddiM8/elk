@@ -24,7 +24,7 @@ internal class ParserTests
     }
 
     private IList<Expr> Parse(List<Token> tokens)
-        => Parser.Parse(tokens, _scope).Expressions;
+        => Parser.Parse(tokens, _scope).ast.Expressions;
 
     [Test]
     public void TestBinary()

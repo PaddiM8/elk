@@ -14,7 +14,6 @@ static class DocumentStorage
 
     public static void Remove(string uri)
     {
-        if (_documents.ContainsKey(uri))
-            _documents.Remove(uri);
+        _documents.Remove(uri);
     }
 }

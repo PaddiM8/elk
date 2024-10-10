@@ -52,7 +52,7 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         HashSet<string>? unevaluatedVariables)
     {
         startPos ??= new TextPos(1, 1, 0, "");
-        _tokens = Lexer.Lex(text, startPos, out _, LexerMode.Preserve);
+        _tokens = Lexer.Lex(text, startPos, LexerMode.Preserve).tokens;
         _semanticTokens.Clear();
         _index = 0;
         _length = text.Length;

@@ -35,61 +35,81 @@ internal class Parser
         => Current?.Position.FilePath == null;
 
     private readonly List<Token> _tokens;
-    private readonly bool _ignoreErrors;
+    private readonly List<DiagnosticMessage> _diagnostics = [];
     private bool _allowEndOfExpression;
     private int _index;
     private Scope _scope;
 
     private Parser(
         List<Token> tokens,
-        Scope scope,
-        bool ignoreErrors)
+        Scope scope)
     {
         _tokens = tokens;
         _scope = scope;
-        _ignoreErrors = ignoreErrors;
     }
 
-    public static Ast Parse(
+    public static (Ast ast, List<DiagnosticMessage> diagnostics) Parse(
         List<Token> tokens,
-        Scope scope,
-        bool ignoreErrors = false)
+        Scope scope)
     {
         var parser = new Parser(
             tokens,
-            scope,
-            ignoreErrors
+            scope
         );
         var expressions = new List<Expr>();
         while (!parser.ReachedEnd)
         {
-            if (parser.Match(TokenKind.With))
+            try
             {
-                parser.ParseWith();
-
-                continue;
+                var expr = parser.NextExpr();
+                if (expr != null)
+                    expressions.Add(expr);
             }
-
-            if (parser.Match(TokenKind.Using))
+            catch (RuntimeException ex)
             {
-                parser.ParseUsing();
+                var diagnostic = ex.ToDiagnosticMessage();
+                if (diagnostic != null)
+                    parser._diagnostics.Add(diagnostic);
 
-                continue;
+                while (!parser.MatchIgnoreWhiteSpace(TokenKind.NewLine, TokenKind.Semicolon) &&
+                    parser.Current != null &&
+                    !parser.PreviouslySkippedNewLine())
+                {
+                    parser.Eat();
+                }
             }
-
-            while (parser.Match(TokenKind.Comment))
-                parser.Eat();
-
-            if (parser.ReachedEnd)
-                break;
-
-            var expr = parser.ParseExprOrDecl();
-            expr.IsRoot = true;
-            expressions.Add(expr);
-            parser.SkipWhiteSpace();
         }
 
-        return new Ast(expressions);
+        return (new Ast(expressions), parser._diagnostics);
+    }
+
+    private Expr? NextExpr()
+    {
+        if (Match(TokenKind.With))
+        {
+            ParseWith();
+
+            return null;
+        }
+
+        if (Match(TokenKind.Using))
+        {
+            ParseUsing();
+
+            return null;
+        }
+
+        while (Match(TokenKind.Comment))
+            Eat();
+
+        if (ReachedEnd)
+            return null;
+
+        var expr = ParseExprOrDecl();
+        expr.IsRoot = true;
+        SkipWhiteSpace();
+
+        return expr;
     }
 
     private void ParseWith()
@@ -212,12 +232,17 @@ internal class Parser
             );
             _scope.ModuleScope.RootModule.RegisterModule(absolutePath, importScope);
 
-            importScope.Ast = Parse(
-                Lexer.Lex(File.ReadAllText(absolutePath), absolutePath, out var lexError),
-                importScope
-            );
-            if (lexError != null)
-                throw lexError;
+            var (tokens, lexerDiagnostics) = Lexer.Lex(File.ReadAllText(absolutePath), absolutePath);
+            _diagnostics.AddRange(lexerDiagnostics);
+            if (lexerDiagnostics.Any())
+                return importScope;
+
+            var (ast, parserDiagnostics) = Parse(tokens, importScope);
+            _diagnostics.AddRange(parserDiagnostics);
+            importScope.Ast = ast;
+
+            if (parserDiagnostics.Any())
+                return importScope;
         }
 
         _scope.ModuleScope.ImportModule(moduleName, importScope);
@@ -950,11 +975,18 @@ internal class Parser
                 {
                     Column = textPos.Column + 3, // Start after: "${
                 };
-                var tokens = Lexer.Lex(part.Value, startPos, out var lexError);
-                if (lexError != null)
-                    throw lexError;
+                var (tokens, lexerDiagnostics) = Lexer.Lex(part.Value, startPos);
+                _diagnostics.AddRange(lexerDiagnostics);
 
-                var ast = Parse(tokens, _scope);
+                if (lexerDiagnostics.Any())
+                    continue;
+
+                var (ast, parserDiagnostics) = Parse(tokens, _scope);
+                _diagnostics.AddRange(parserDiagnostics);
+
+                if (parserDiagnostics.Any())
+                    continue;
+
                 if (ast.Expressions.Count != 1)
                     throw new RuntimeException(
                         "Expected exactly one expression in the string interpolation block",
@@ -1178,7 +1210,7 @@ internal class Parser
         _scope = blockScope;
 
         var expressions = new List<Expr>();
-        while (!AdvanceIf(TokenKind.ClosedBrace))
+        while (!AdvanceIf(TokenKind.ClosedBrace) && Current != null)
         {
             try
             {
@@ -1191,10 +1223,18 @@ internal class Parser
                 if (Match(TokenKind.Colon) && expressions.Count == 1)
                     return ContinueParseAsDictionary(expressions.First());
             }
-            catch (RuntimeException)
+            catch (RuntimeException ex)
             {
-                if (!_ignoreErrors)
-                    throw;
+                var diagnostic = ex.ToDiagnosticMessage();
+                if (diagnostic != null)
+                    _diagnostics.Add(diagnostic);
+
+                while (!MatchIgnoreWhiteSpace(TokenKind.NewLine, TokenKind.Semicolon) &&
+                    Current != null &&
+                    !PreviouslySkippedNewLine())
+                {
+                    Eat();
+                }
             }
         }
 
@@ -1635,6 +1675,21 @@ internal class Parser
     {
         while (IsWhiteSpace(Current?.Kind))
             Eat();
+    }
+
+    private bool PreviouslySkippedNewLine()
+    {
+        for (var i = _index; i > 0; i--)
+        {
+            var kind = _tokens[i].Kind;
+            if (kind == TokenKind.NewLine)
+                return true;
+
+            if (!IsWhiteSpace(kind))
+                return false;
+        }
+
+        return false;
     }
 
     private bool IsWhiteSpace(TokenKind? kind)

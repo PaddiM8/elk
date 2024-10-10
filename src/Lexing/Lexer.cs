@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Elk.Exceptions;
 
 #endregion
 
@@ -34,10 +33,10 @@ public class Lexer
     private bool ReachedEnd => _index >= _source.Length;
 
     private readonly string _source;
+    private readonly List<DiagnosticMessage> _diagnostics = [];
     private int _index;
     private (int line, int column) _pos;
     private readonly string? _filePath;
-    private RuntimeException? _error;
     private readonly LexerMode _mode;
 
     private Lexer(string input, TextPos startPos, LexerMode mode)
@@ -48,10 +47,9 @@ public class Lexer
         _mode = mode;
     }
 
-    public static List<Token> Lex(
+    public static (List<Token> tokens, List<DiagnosticMessage> diagnostics) Lex(
         string input,
         TextPos startPos,
-        out RuntimeException? error,
         LexerMode mode = LexerMode.Default)
     {
         var lexer = new Lexer(input, startPos, mode);
@@ -61,21 +59,15 @@ public class Lexer
         while ((token = lexer.Next()).Kind != TokenKind.EndOfFile)
             tokens.Add(token);
 
-        error = lexer._error;
-
-        return tokens;
+        return (tokens, lexer._diagnostics);
     }
 
-    public static List<Token> Lex(
+    public static (List<Token> tokens, List<DiagnosticMessage> diagnostics) Lex(
         string input,
         string? filePath,
-        out RuntimeException? error,
         LexerMode mode = LexerMode.Default)
     {
-        var result = Lex(input, new TextPos(1, 1, 0, filePath), out var innerError, mode);
-        error = innerError;
-
-        return result;
+        return Lex(input, new TextPos(1, 1, 0, filePath), mode);
     }
 
     private Token Next()
@@ -574,15 +566,13 @@ public class Lexer
 
     private void Error(string message)
     {
-        var pos = new TextPos(_pos.line, _pos.column, _index, _filePath);
-        _error = new RuntimeException(
-            message,
-            pos,
-            pos with
-            {
-                Column = pos.Column + 1,
-                Index = pos.Index + 1,
-            }
-        );
+        var startPos = new TextPos(_pos.line, _pos.column, _index, _filePath);
+        var endPos = startPos with
+        {
+            Column = startPos.Column + 1,
+            Index = startPos.Index + 1,
+        };
+
+        _diagnostics.Add(new DiagnosticMessage(message, startPos, endPos));
     }
 }

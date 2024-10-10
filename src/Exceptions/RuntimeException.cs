@@ -49,4 +49,17 @@ public class RuntimeException : Exception
         if (startPosition != null)
             ElkStackTrace.Add(new Trace(startPosition));
     }
+
+    public DiagnosticMessage? ToDiagnosticMessage()
+    {
+        if (StartPosition == null || EndPosition == null)
+        {
+            return null;
+        }
+
+        return new DiagnosticMessage(Message, StartPosition, EndPosition)
+        {
+            StackTrace = ElkStackTrace,
+        };
+    }
 }
