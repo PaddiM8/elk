@@ -1325,7 +1325,7 @@ internal class Parser
             ? Eat()
             : new Token(TokenKind.Identifier, ParsePath(), pos);
 
-        if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.ContainsStruct(identifier.Value))
+        if (StdBindings.HasRuntimeType(identifier.Value) || _scope.ModuleScope.FindStruct(identifier.Value, lookInImports: true) != null)
             return new TypeExpr(identifier, _scope);
 
         var importedStdModule = _scope.ModuleScope.FindImportedStdFunctionModule(identifier.Value)

@@ -140,6 +140,7 @@ public static class ElkProgram
                 x.AnalysisStatus != AnalysisStatus.Failed &&
                     x.AnalysisStatus != AnalysisStatus.Evaluated
             );
+
         var pages = EvaluateModules(importedModules, virtualMachine);
         var analysedAst = Analyser.Analyse(ast, scope.ModuleScope, analysisScope);
         var result = virtualMachine?.Generate(analysedAst);
@@ -147,7 +148,6 @@ public static class ElkProgram
         return pages
             .Append((analysedAst, result))
             .Concat(EvaluateModules(scope.ModuleScope.Modules, virtualMachine));
-
     }
 
     private static IEnumerable<(Ast, Page?)> EvaluateModules(
