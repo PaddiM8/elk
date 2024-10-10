@@ -1,0 +1,24 @@
+with ./parser
+with ./evaluator
+
+fn main() {
+    if (len(getArgv) > 1) {
+        getArgv
+            | join " "
+            | evaluate
+            | println
+
+        return
+    }
+
+    while true {
+        let input = ">> " | ansi::color blue | io::interactiveInput
+        continue if not input
+        input | evaluate | println
+    }
+}
+
+fn evaluate(input) {
+    parser::parse(input)
+        | evaluator::evaluate
+}

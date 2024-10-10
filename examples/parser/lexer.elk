@@ -1,0 +1,60 @@
+using ./errors
+using ./ast
+
+let chars = ""
+let index = 0
+
+pub fn lex(input) {
+    chars = input
+
+    let tokens = []
+    while index < len(chars) {
+        tokens | push(next)
+    }
+
+    chars = ""
+    index = 0
+
+    tokens
+}
+
+fn current() {
+    chars | iter::at(index)
+}
+
+fn next() {
+    let c = current()
+    while c | str::isWhitespace {
+        c = advance
+    }
+
+    return nil if c == nil
+
+    if c in ["+", "-", "*", "/"] {
+        advance
+        return new Token(c, c)
+    }
+
+    return nextNumber() if c | str::isDigit
+
+    throw new ParseError("Unexpected character: ${c}")
+}
+
+fn nextNumber() {
+    let digits = []
+    while (str::isDigit(current) or current() == ".") {
+        digits | push(current)
+        advance()
+    }
+
+    let numberString = digits | join
+
+    return new Token("number", into::float(numberString)) if "." in digits
+    return new Token("number", into::int(numberString))
+}
+
+fn advance() {
+    index += 1
+
+    current()
+}

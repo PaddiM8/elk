@@ -1,0 +1,66 @@
+using ./errors
+using ./ast
+with ./lexer
+
+let tokens = []
+let index = 0
+
+pub fn parse(input) {
+    tokens = lexer::lex(input)
+    index = 0
+
+    expr()
+}
+
+fn current() {
+    tokens | iter::at(index)
+}
+
+fn advance() {
+    let token = current()
+    index += 1
+
+    token
+}
+
+fn match(kinds...) {
+    return false if not current()
+    kinds | iter::anyOf => kind { kind == current()->kind }
+}
+
+fn expr() {
+    additive()
+}
+
+fn additive() {
+    let left = multiplicative()
+    while match("+", "-") {
+        let op = advance()->kind
+        let right = multiplicative()
+
+        left = new BinaryExpr(left, op, right)
+    }
+
+    left
+}
+
+fn multiplicative() {
+    let left = primary()
+    while match("*", "/") {
+        let op = advance()->kind
+        let right = primary()
+
+        left = new BinaryExpr(left, op, right)
+    }
+
+    left
+}
+
+fn primary() {
+    if match("number") {
+        return new LiteralExpr(advance())
+    }
+
+    throw new ParseError("Unexpected end of expression") if current() != nil
+    throw new ParseError("Unexpected token: '${current()->kind}'")
+}

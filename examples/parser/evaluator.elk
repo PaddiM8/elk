@@ -1,0 +1,24 @@
+using ./ast
+
+pub fn evaluate(ast) {
+    next(ast)
+}
+
+fn next(expr) {
+    return nextBinary(expr) if expr | isType(BinaryExpr)
+    return nextLiteral(expr) if expr | isType(LiteralExpr)
+}
+
+fn nextBinary(expr) {
+    let left = expr->left | next
+    let right = expr->right | next
+
+    return left + right if expr->op == "+"
+    return left - right if expr->op == "-"
+    return left * right if expr->op == "*"
+    return left / right if expr->op == "/"
+}
+
+fn nextLiteral(expr) {
+    expr->value->value | into::float
+}

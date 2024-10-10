@@ -1,0 +1,5 @@
+pub struct Token(kind, value)
+
+pub struct BinaryExpr(left, op, right)
+
+pub struct LiteralExpr(value)
