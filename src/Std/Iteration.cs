@@ -43,7 +43,7 @@ static class Iteration
     public static RuntimeBoolean AnyOf(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => RuntimeBoolean.From(items.Any(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
-    /// <returns>A new list with the given item append to the given Iterable.</returns>
+    /// <returns>A generator for the given item append to the given Iterable.</returns>
     [ElkFunction("append")]
     public static RuntimeGenerator Append(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Append(item));
@@ -86,7 +86,7 @@ static class Iteration
 
     /// <param name="first">The first Iterable.</param>
     /// <param name="second">The second Iterable.</param>
-    /// <returns>A new list containing the items of both the the given Iterables.</returns>
+    /// <returns>A generator for the items of both the the given Iterables.</returns>
     [ElkFunction("concat")]
     public static RuntimeGenerator Concat(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Concat(second));
@@ -426,7 +426,7 @@ static class Iteration
             yield return new RuntimeGenerator(r);
     }
 
-    /// <returns>A new list with the given item prepended to the given Iterable.</returns>
+    /// <returns>A generator for the given item prepended to the given Iterable.</returns>
     [ElkFunction("prepend")]
     public static RuntimeGenerator Prepend(IEnumerable<RuntimeObject> items, RuntimeObject item)
         => new(items.Prepend(item));
@@ -570,7 +570,7 @@ static class Iteration
 
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>
-    /// <returns>A new list without the first n items.</returns>
+    /// <returns>A generator for the first n items.</returns>
     [ElkFunction("skip")]
     public static RuntimeGenerator Skip(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Skip((int)count.Value).ToList());
@@ -600,21 +600,20 @@ static class Iteration
 
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to take from the left</param>
-    /// <returns>A new list with the specified amount of items.</returns>
+    /// <returns>A generator for the specified amount of items.</returns>
     [ElkFunction("take")]
     public static RuntimeGenerator Take(IEnumerable<RuntimeObject> items, RuntimeInteger count)
         => new(items.Take((int)count.Value).ToList());
 
     /// <param name="items">All items</param>
     /// <param name="closure"></param>
-    /// <returns></returns>
     [ElkFunction("takeWhile")]
     public static RuntimeGenerator TakeWhile(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.TakeWhile(x => closure(x).As<RuntimeBoolean>().IsTrue).ToList());
 
     /// <param name="first">The first Iterable</param>
     /// <param name="second">The second Iterable</param>
-    /// <returns>A new list with the items from the given Iterables combined, excluding duplicates.</returns>
+    /// <returns>A generator for the items from the given Iterables combined, excluding duplicates.</returns>
     [ElkFunction("union")]
     public static RuntimeGenerator Union(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second)
         => new(first.Union(second));
@@ -623,12 +622,45 @@ static class Iteration
     /// <param name="second">The second Iterable</param>
     /// <param name="closure"></param>
     /// <returns>
-    /// A new list with the items from the given Iterables combined, excluding duplicates.
+    /// A generator for the items from the given Iterables combined, excluding duplicates.
     /// The closure selects the key of each item.
     /// </returns>
     [ElkFunction("unionBy")]
     public static RuntimeGenerator UnionBy(IEnumerable<RuntimeObject> first, IEnumerable<RuntimeObject> second, Func<RuntimeObject, RuntimeObject> closure)
         => new(first.UnionBy(second, closure));
+
+    /// <param name="values">The values to slide over</param>
+    /// <param name="size">The size of the window</param>
+    /// <returns>A generator for a sliding window over the given values.</returns>
+    /// <example>
+    /// [1, 2, 3, 4, 5] | iter::window(2) #=> [[1, 2], [2, 3], [3, 4], [4, 5], [5, nil]]
+    /// </example>
+    [ElkFunction("window")]
+    public static RuntimeGenerator Window(IEnumerable<RuntimeObject> values, RuntimeInteger size)
+        => new(Window(values, size.Value));
+
+    private static IEnumerable<RuntimeObject> Window(IEnumerable<RuntimeObject> values, long size)
+    {
+        var buffer = new Queue<RuntimeObject>();
+        foreach (var value in values)
+        {
+            buffer.Enqueue(value);
+            if (buffer.Count == size)
+            {
+                yield return new RuntimeList(buffer.ToList());
+                buffer.Dequeue();
+            }
+        }
+
+        if (buffer.Any())
+        {
+            while (buffer.Count < size)
+                buffer.Enqueue(RuntimeNil.Value);
+
+            yield return new RuntimeList(buffer.ToList());
+            buffer.Clear();
+        }
+    }
 
     /// <param name="values" types="Iterable"></param>
     /// <returns>
