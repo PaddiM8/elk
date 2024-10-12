@@ -1,6 +1,7 @@
 using System.Text;
 using Elk.LanguageServer.Data;
 using Elk.Std.Bindings;
+using Elk.Vm;
 using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using StreamJsonRpc;
@@ -243,7 +244,9 @@ class TextDocumentTarget(JsonRpc rpc)
 
             documentation = DocumentationBuilder.BuildSignature(
                 identifier,
-                stdFunction.Parameters.Select(x => x.Name),
+                stdFunction.Parameters
+                    .Where(x => x.Type != typeof(ShellEnvironment))
+                    .Select(x => x.Name),
                 stdFunction.Documentation,
                 stdFunction.HasClosure
             );
