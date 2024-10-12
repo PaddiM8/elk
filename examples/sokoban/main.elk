@@ -23,13 +23,15 @@ fn rowToString(board, y) {
 
         let blockType = block | sokoban::block::getType
         if blockType == "wall" {
-            row += "#"
+            row += "#" | ansi::color brightBlack
         } else if blockType == "crate" {
-            row += if board | sokoban::blockIsOnStorage(block): "*" else "o"
+            let char = if board | sokoban::blockIsOnStorage(block): "*" else "o"
+            row += char | ansi::color blue
         } else if blockType == "player" {
-            row += if board | sokoban::blockIsOnStorage(block): "+" else "@"
+            let char = if board | sokoban::blockIsOnStorage(block): "+" else "@"
+            row += char | ansi::color red
         } else if blockType == "storage" {
-            row += "."
+            row += "." | ansi::color brightRed
         }
     }
 
@@ -91,7 +93,7 @@ fn startGame(mapPath) {
 
     if sokoban::hasWon(board) {
         updateScreen(board)
-        println You won!
+        println("You won!" | ansi::color green)
         println Press enter to continue
         io::input()
         clear()
@@ -120,13 +122,14 @@ while runGame {
 
     for (mapPath, i) in maps | withIndex {
         let mapName = mapPath | split(".") | iter::first
-        println "${i + 1}. ${mapName}"
+        let number = i + 1 | ansi::color yellow
+        println "${number}. ${mapName}"
     }
 
-    let quitId = len(maps) + 1 | into::str
+    let quitId = len(maps) + 1 | ansi::color yellow
     println "${quitId}. Quit"
 
-    let mapId = io::input "Choose: "
+    let mapId = io::input("Choose: " | ansi::color blue)
     runGame = mapId != quitId
 
     if runGame and str::isDigit(mapId) {
