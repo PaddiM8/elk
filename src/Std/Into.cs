@@ -80,7 +80,7 @@ public class Into
             BuildRow(cellValues);
         }
 
-        return new(builder.ToString());
+        return new RuntimeString(builder.ToString());
     }
 
     /// <returns></returns>
@@ -122,13 +122,7 @@ public class Into
             ? Formatting.Indented
             : Formatting.None;
 
-        return new(
-            JsonConvert.SerializeObject(
-                input,
-                formatting,
-                new RuntimeObjectJsonConverter()
-            )
-        );
+        return new RuntimeString(ElkJsonSerializer.Serialize(input, formatting));
     }
 
     /// <param name="value">Value that should be cast</param>

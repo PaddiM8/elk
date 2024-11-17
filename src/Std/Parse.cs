@@ -6,7 +6,6 @@ using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Std.Serialization;
 using Elk.Std.Table;
-using Newtonsoft.Json;
 
 namespace Elk.Std;
 
@@ -59,8 +58,7 @@ public static partial class Parse
 
     [ElkFunction("json")]
     public static RuntimeObject Json(RuntimeString json)
-        => JsonConvert.DeserializeObject<RuntimeObject>(json.Value, new RuntimeObjectJsonConverter())
-           ?? RuntimeNil.Value;
+        => ElkJsonSerializer.Deserialize(json.Value) ?? RuntimeNil.Value;
 
     /// <summary>
     /// Parses a string into a Table.

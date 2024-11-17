@@ -20,8 +20,6 @@ public class RuntimeList(List<RuntimeObject> values)
 {
     public List<RuntimeObject> Values { get; } = values;
 
-    private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
-
     public IEnumerator<RuntimeObject> GetEnumerator()
         => Values.GetEnumerator();
 
@@ -90,7 +88,7 @@ public class RuntimeList(List<RuntimeObject> values)
 
     public override string ToString()
     {
-        var json = JsonConvert.SerializeObject(this, Formatting.Indented, _jsonConverter);
+        var json = ElkJsonSerializer.Serialize(this, Formatting.Indented);
 
         // If it ends up being short, redo it all and simply print it on one line instead
         const int lineLimit = 100;

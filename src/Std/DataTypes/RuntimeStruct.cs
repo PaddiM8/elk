@@ -15,8 +15,6 @@ namespace Elk.Std.DataTypes;
 [ElkType("Struct")]
 public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
 {
-    private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
-
     internal StructSymbol Symbol { get; }
 
     public Dictionary<string, RuntimeObject> Values { get; }
@@ -81,5 +79,5 @@ public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
     }
 
     public override string ToString()
-        => JsonConvert.SerializeObject(this, Formatting.Indented, _jsonConverter);
+        => ElkJsonSerializer.Serialize(this, Formatting.Indented);
 }

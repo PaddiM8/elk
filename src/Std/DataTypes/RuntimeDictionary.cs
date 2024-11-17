@@ -19,8 +19,6 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
 {
     public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; } = entries;
 
-    private static readonly RuntimeObjectJsonConverter _jsonConverter = new();
-
     public RuntimeDictionary()
         : this(new Dictionary<int, (RuntimeObject, RuntimeObject)>())
     {
@@ -94,7 +92,7 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         => Entries.GetHashCode();
 
     public override string ToString()
-        => JsonConvert.SerializeObject(this, Formatting.Indented, _jsonConverter);
+        => ElkJsonSerializer.Serialize(this, Formatting.Indented);
 
     public RuntimeObject? GetValue(string key)
     {
