@@ -4,6 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NoWarn>NU1901</NoWarn>
+    <NoWarn>NU1902</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="OmniSharp.Extensions.LanguageProtocol" Version="0.19.9" />
