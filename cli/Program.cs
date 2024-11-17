@@ -98,13 +98,16 @@ var cliParser = new RuntimeCliParser("elk")
         var filePath = result.GetString("file_path");
         if (filePath == null)
         {
-            try
+            while (true)
             {
-                Repl.Run(vmOptions);
-            }
-            catch (Exception ex)
-            {
-                ExceptionLogger.Log(ex);
+                try
+                {
+                    Repl.Run(vmOptions);
+                }
+                catch (Exception ex)
+                {
+                    ExceptionLogger.Log(ex);
+                }
             }
 
             return;
