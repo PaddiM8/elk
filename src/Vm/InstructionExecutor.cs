@@ -190,10 +190,18 @@ class InstructionExecutor
                     throw;
 
                 var exceptionFrame = _context.ExceptionStack.Pop();
-                while (_currentPage != exceptionFrame.Page)
+                while (_callStack.Any() && _currentPage != exceptionFrame.Page)
                 {
                     ex.ElkStackTrace.Add(CreateTrace(_currentPage.Name));
                     PopFrame();
+                }
+
+                // If the current context doesn't have the exception frame,
+                // add it back and throw, to let the parent context handle it
+                if (_currentPage != exceptionFrame.Page)
+                {
+                    _context.ExceptionStack.Push(exceptionFrame);
+                    throw;
                 }
 
                 while (_stack.Count > exceptionFrame.StackSize)

@@ -97,7 +97,7 @@ public class RuntimeList(List<RuntimeObject> values)
         var totalIndentationLength = 3 * Values.Count;
 
         return json.Length - totalIndentationLength < lineLimit
-            ? $"[{string.Join(", ", Values.Select(x => x.ToDisplayString()))}]"
+            ? $"[{string.Join(", ", Values.Select(x => x?.ToDisplayString()))}]"
             : json;
     }
 }

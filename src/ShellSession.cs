@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Elk.Analysis;
+using Elk.Exceptions;
+using Elk.Lexing;
 using Elk.Parsing;
 using Elk.Scoping;
 using Elk.Std.DataTypes;
@@ -126,9 +128,11 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         }
         else
         {
-            resultBuilder.AppendLine(
-                evaluationResult.Value.ToString() ?? ""
-            );
+            var evaluationResultValue = GetEvaluationResultValue(evaluationResult);
+            if (evaluationResultValue.isError)
+                textWriter = Console.Error;
+
+            resultBuilder.AppendLine(evaluationResultValue.value);
         }
 
         if (!printReturnedValue && !evaluationResult.Diagnostics.Any())
@@ -149,6 +153,26 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         }
 
         Console.ResetColor();
+    }
+
+    private (string value, bool isError) GetEvaluationResultValue(EvaluationResult evaluationResult)
+    {
+        try
+        {
+            var value = evaluationResult.Value?.ToString() ?? "";
+
+            return (value, isError: false);
+        }
+        catch (RuntimeException ex)
+        {
+            var diagnostic = new DiagnosticMessage(ex.Message, ex.StartPosition ?? TextPos.Default, ex.EndPosition ?? TextPos.Default)
+            {
+                StackTrace = ex.ElkStackTrace,
+            };
+            var value = diagnostic.ToString(includePosition: false).Trim();
+
+            return (value, isError: true);
+        }
     }
 
     public void RunFile(string filePath, IEnumerable<string>? arguments)
