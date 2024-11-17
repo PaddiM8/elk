@@ -107,10 +107,10 @@ var cliParser = new RuntimeCliParser("elk")
                 catch (Exception ex)
                 {
                     ExceptionLogger.Log(ex);
+                    Console.WriteLine("Press any key to continue");
+                    Console.ReadKey();
                 }
             }
-
-            return;
         }
 
         var session = new ShellSession(

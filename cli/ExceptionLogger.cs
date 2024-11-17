@@ -7,6 +7,10 @@ public static class ExceptionLogger
 {
     public static void Log(Exception ex)
     {
+#if DEBUG
+        Console.WriteLine("Unexpected exception caught:");
+        Console.WriteLine(ex);
+#else
         var logDirectoryPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "elk/logs"
@@ -17,5 +21,6 @@ public static class ExceptionLogger
         var logFilePath = Path.Combine(logDirectoryPath, $"exception-{date}.txt");
         File.WriteAllText(logFilePath, ex.ToString());
         Console.WriteLine($"Unexpected exception caught! This is a bug. Log written to: {logFilePath}");
+#endif
     }
 }
