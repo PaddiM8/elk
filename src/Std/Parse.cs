@@ -90,10 +90,11 @@ public static partial class Parse
             );
         }
 
-        return new RuntimeTable(
-            new RuntimeList(lines.FirstOrDefault()?.ToList() ?? []),
-            lines[1..]
-        );
+        var header = new RuntimeList(lines.FirstOrDefault()?.ToList() ?? []);
+
+        return lines.Count < 2
+            ? new RuntimeTable(header, [[]])
+            : new RuntimeTable(header, lines[1..]);
     }
 
     [GeneratedRegex(@"\t\s*|\s{2,}", RegexOptions.Compiled)]
