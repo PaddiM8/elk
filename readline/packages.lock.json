@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    "net8.0": {
+    "net9.0": {
       "Wcwidth": {
         "type": "Direct",
         "requested": "[1.0.0, )",

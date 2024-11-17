@@ -1,21 +1,21 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35219.272
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk", "src\Elk.csproj", "{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk", "src\Elk.csproj", "{F7A717F8-63CF-4298-A5F2-1E6E307F4B03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Tests", "tests\Elk.Tests.csproj", "{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.Tests", "tests\Elk.Tests.csproj", "{0AD18CCC-C5FC-4A18-A4A1-5ECFDDAE26FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Cli", "cli\Elk.Cli.csproj", "{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.Cli", "cli\Elk.Cli.csproj", "{E9DDD32E-1FB9-4938-B42A-04A4445EE8C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.DocGen", "doc-gen\Elk.DocGen.csproj", "{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.DocGen", "doc-gen\Elk.DocGen.csproj", "{3DD279BA-AC36-4FE7-96C4-691A0ADAEB9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.Generators", "generators\Elk.Generators.csproj", "{57421CE2-E3B6-4C8D-823B-F5F963B24D2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.Generators", "generators\Elk.Generators.csproj", "{57421CE2-E3B6-4C8D-823B-F5F963B24D2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.ReadLine", "readline\Elk.ReadLine.csproj", "{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.ReadLine", "readline\Elk.ReadLine.csproj", "{BF769EE8-5D64-4D01-917D-F1E5BBBCEE08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elk.LanguageServer", "language-server\Elk.LanguageServer.csproj", "{4C4C9F51-14A9-42C9-B9AE-4ED560878179}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elk.LanguageServer", "language-server\Elk.LanguageServer.csproj", "{4C4C9F51-14A9-42C9-B9AE-4ED560878179}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

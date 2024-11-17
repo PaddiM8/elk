@@ -1,17 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <AssemblyTitle>Elk.ReadLine</AssemblyTitle>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageId>Elk.ReadLine</PackageId>
     <RepositoryType>git</RepositoryType>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Wcwidth" Version="1.0.0" />
   </ItemGroup>
-
 </Project>

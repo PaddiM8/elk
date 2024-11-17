@@ -1,19 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <LangVersion>12</LangVersion>
     <PublishAot>true</PublishAot>
     <PublishTrimmed>true</PublishTrimmed>
     <OptimizationPreference>Speed</OptimizationPreference>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
-
   <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <!--
     Set the rpath to the location of the shared libraries that the program depends on.
@@ -22,18 +19,15 @@
     -->
     <LinkerArg Include="-Wl,-rpath,'$ORIGIN/../lib/elk'" Condition="$([MSBuild]::IsOSPlatform('macOS')) == 'false'" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0-rc.2.23480.1" />
-    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="8.0.8" />
-    <PackageReference Include="Microsoft.Net.ILLink.Tasks" Version="8.0.8" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Net.ILLink.Tasks" Version="9.0.0" />
     <PackageReference Include="Nito.Collections.Deque" Version="1.1.1" />
     <ProjectReference Include="../readline/Elk.ReadLine.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\src\Elk.csproj" />
     <ProjectReference Include="..\language-server\Elk.LanguageServer.csproj" />
   </ItemGroup>
-
 </Project>
