@@ -328,17 +328,18 @@ public class StdBindingsGenerator : ISourceGenerator
             if (i != 0)
                 sourceBuilder.Append(", ");
 
-            var additional = "";
+            List<string> additional = ["false", "false"];
 
             // Nullable
             if (parameter.type.EndsWith('?'))
-                additional = ", true";
+                additional[0] = "true";
 
             // Closure
             if (parameter.type.StartsWith("System.Func<") || parameter.type.StartsWith("System.Action<"))
-                additional = ", false, true";
+                additional[1] = "true";
 
-            sourceBuilder.Append($"new(typeof({parameter.type.TrimEnd('?')}), \"{parameter.name}\"{additional})");
+            var additionalString = ", " + string.Join(", ", additional);
+            sourceBuilder.Append($"new(typeof({parameter.type.TrimEnd('?')}), \"{parameter.name}\"{additionalString})");
         }
 
         sourceBuilder.Append(" })");

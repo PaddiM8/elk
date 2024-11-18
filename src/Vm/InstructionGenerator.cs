@@ -869,7 +869,6 @@ class InstructionGenerator(
                 .ToList();
         }
 
-        // Program calls are always variadic
         var skipCount = skipFirst ? 1 : 0;
         var arguments = new List<Expr>();
         var isProgramCall = expr.FunctionSymbol == null && expr.StdFunction == null;
@@ -879,8 +878,12 @@ class InstructionGenerator(
         var variadicArguments = isProgramCall | isEmptyVariadic
             ? new List<(Expr expr, bool isGlob)>()
             : null;
+
         foreach (var (argument, parameter) in expr.Arguments.ZipLongest(parameters).Skip(skipCount))
         {
+            if (parameter.isVariadic && (argument != null || !expr.IsReference))
+                variadicArguments = [];
+
             if (argument == null)
             {
                 if (parameter.defaultValue != null)
@@ -888,9 +891,6 @@ class InstructionGenerator(
 
                 continue;
             }
-
-            if (parameter.isVariadic)
-                variadicArguments = new List<(Expr expr, bool isGlob)>();
 
             if (variadicArguments != null)
             {
