@@ -1,0 +1,21 @@
+@font-face {
+    font-family: CommitMono;
+    src: url("./fonts/CommitMono-400-Regular.otf");
+}
+
+@font-face {
+    font-family: CommitMono;
+    src: url("./fonts/CommitMono-400-Italic.otf");
+    font-style: italic
+}
+
+@font-face {
+    font-family: CommitMono;
+    src: url("./fonts/CommitMono-700-Regular.otf");
+    font-weight: bold
+}
+
+:root {
+    --vp-font-family-mono: "CommitMono", monospace;
+    --vp-code-font-size: 0.95em
+}
