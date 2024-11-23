@@ -1302,6 +1302,7 @@ class InstructionGenerator(
             RedirectionKind.Error => ProgramCallProps.RedirectError,
             _ => ProgramCallProps.None,
         };
+
         // Environment variables
         foreach (var (key, value) in expr.EnvironmentVariables)
         {

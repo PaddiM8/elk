@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -87,6 +88,11 @@ public class Into
     [ElkFunction("error")]
     public static RuntimeError Error(RuntimeObject value)
         => new(value);
+
+    /// <param name="unixTimestamp">A Unix timestamp (in seconds)</param>
+    [ElkFunction("dateTime")]
+    public static RuntimeDateTime ToDateTime(RuntimeInteger unixTimestamp)
+        => new(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp.Value).DateTime);
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("dict")]
