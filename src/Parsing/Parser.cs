@@ -1425,7 +1425,8 @@ internal class Parser
 
         while (!ReachedTextEnd())
         {
-            AdvanceIf(TokenKind.Backslash);
+            if (Current?.Kind == TokenKind.Backslash)
+                Eat();
 
             if (Previous?.Kind == TokenKind.Backslash && Current?.Value.StartsWith('n') is true)
             {
