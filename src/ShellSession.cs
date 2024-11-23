@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Elk.Analysis;
 using Elk.Exceptions;
@@ -18,7 +17,7 @@ using Elk.Vm;
 
 namespace Elk;
 
-public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOptions)
+public class ShellSession
 {
     public RootModuleScope RootModule
         => _virtualMachine.RootModule;
@@ -38,7 +37,14 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         }
     }
 
-    private readonly VirtualMachine _virtualMachine = new(rootModule, vmOptions);
+    private readonly VirtualMachine _virtualMachine;
+
+    public ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOptions)
+    {
+        _virtualMachine = new VirtualMachine(rootModule, vmOptions);
+
+        LoadLocale();
+    }
 
     public void InitInteractive()
     {
@@ -93,6 +99,56 @@ public class ShellSession(RootModuleScope rootModule, VirtualMachineOptions vmOp
         Environment.SetEnvironmentVariable("?", previousExitCode);
 
         return prompt.ToString() ?? " >> ";
+    }
+
+    private static void LoadLocale()
+    {
+        if (!File.Exists("/etc/profile.d/locale.sh"))
+        {
+            return;
+        }
+
+        // /etc/profile.d/locale.sh translated to C#
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LANG")))
+        {
+            var xdgConfigHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+            var home = Environment.GetEnvironmentVariable("HOME");
+
+            if (!string.IsNullOrEmpty(xdgConfigHome) && File.Exists(Path.Combine(xdgConfigHome, "locale.conf")))
+            {
+                LoadLocaleConfig(Path.Combine(xdgConfigHome, "locale.conf"));
+            }
+            else if (!string.IsNullOrEmpty(home) && File.Exists(Path.Combine(home, ".config", "locale.conf")))
+            {
+                LoadLocaleConfig(Path.Combine(home, ".config", "locale.conf"));
+            }
+            else if (File.Exists("/etc/locale.conf"))
+            {
+                LoadLocaleConfig("/etc/locale.conf");
+            }
+        }
+
+        // Set LANG to default value 'C' if still unset
+        var lang = Environment.GetEnvironmentVariable("LANG") ?? "C";
+        Environment.SetEnvironmentVariable("LANG", lang);
+    }
+
+    private static void LoadLocaleConfig(string filePath)
+    {
+        foreach (var line in File.ReadAllLines(filePath))
+        {
+            // Ignore comments and empty lines
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+                continue;
+
+            var parts = line.Split('=', 2);
+            if (parts.Length == 2)
+            {
+                var key = parts[0].Trim();
+                var value = parts[1].Trim().Trim('"'); // Remove potential quotes
+                Environment.SetEnvironmentVariable(key, value);
+            }
+        }
     }
 
     public void RunCommand(
