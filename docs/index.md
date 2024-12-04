@@ -34,8 +34,8 @@ process is redirected and handled by Elk, giving the illusion that program
 invocations are simply function calls.
 
 ```elk
-# here, 'ls' and 'echo' are program invocations, while 'lines' is a 
-# call to a built-in Elk function
+# here, 'ls' and 'echo' are program invocations, while 'str::upper' and 'len'
+# are calls to built-in Elk functions
 #
 # programs and functions can be called both using bash-like invocation
 # syntax (arguments parsed as pure text) and Python-like parenthesised
@@ -59,7 +59,7 @@ if len(imageFiles) > 1 {
 * User-defined functions
 * Convenient syntax for program invocation
 * Pipes for both program and function calls
-* Module system that supports circular imports
+* Flexible module system
 * Standard library with operations that are common in general-purpose languages
 * Control flow (if, for, while, etc.) with familiar syntax
 * Common operations (like arithmetic operations) that can be done anywhere, 
@@ -73,4 +73,5 @@ unlike in bash
 * Custom completions
 * Semantic highlighting
 * Hints (history, file names)
+* Fuzzy tab complete
 * ...more
