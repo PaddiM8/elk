@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Elk.Std.Attributes;
@@ -9,6 +10,24 @@ namespace Elk.Std;
 [ElkModule("re")]
 public class Regex
 {
+    /// <param name="pattern"></param>
+    /// <param name="value"></param>
+    /// <returns>A list that contains lists of groups of all the found matches.</returns>
+    [ElkFunction("allGroups")]
+    public static RuntimeList AllGroups(RuntimeString value, RuntimeRegex pattern)
+    {
+        var result = pattern.Value
+            .Matches(value.Value)
+            .Select<Match, RuntimeObject>(m =>
+            {
+                var groups = m.Groups.Values.Select<Group, RuntimeObject>(x => new RuntimeString(x.Value)).ToList();
+                return new RuntimeList(groups);
+            })
+            .ToList();
+
+        return new RuntimeList(result);
+    }
+
     /// <param name="pattern"></param>
     /// <returns>A new Regex where dots match newlines.</returns>
     [ElkFunction("dotAll")]
@@ -107,4 +126,10 @@ public class Regex
 
         return new RuntimeString(result);
     }
+
+    /// <param name="value">The entire string</param>
+    /// <param name="pattern">The pattern to split on</param>
+    [ElkFunction("split")]
+    public static RuntimeList Split(RuntimeString value, RuntimeRegex pattern)
+        => new(pattern.Value.Split(value.Value).Select<string, RuntimeObject>(x => new RuntimeString(x)).ToList());
 }
