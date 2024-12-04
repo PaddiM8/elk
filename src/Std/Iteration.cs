@@ -56,7 +56,7 @@ static class Iteration
     public static RuntimeObject At(IEnumerable<RuntimeObject> items, RuntimeObject index, RuntimeObject? fallback = null)
     {
         if (items is not IIndexable<RuntimeObject> indexable)
-            return items.ElementAt((int)index.As<RuntimeInteger>().Value);
+            return items.ElementAtOrDefault((int)index.As<RuntimeInteger>().Value) ?? RuntimeNil.Value;
 
         try
         {
@@ -652,11 +652,8 @@ static class Iteration
             }
         }
 
-        if (buffer.Any())
+        if (buffer.Count == size)
         {
-            while (buffer.Count < size)
-                buffer.Enqueue(RuntimeNil.Value);
-
             yield return new RuntimeList(buffer.ToList());
             buffer.Clear();
         }
