@@ -1,0 +1,19 @@
+0..3 | into::list | join ", " | assertEqual("0, 1, 2")
+0..=3 | into::list | join ", " | assertEqual("0, 1, 2, 3")
+2..4 | into::list | join ", " | assertEqual("2, 3")
+2..=4 | into::list | join ", " | assertEqual("2, 3, 4")
+
+0..6 | stepBy 2 | into::list | join ", " | assertEqual("0, 2, 4")
+0..=6 | stepBy 2 | into::list | join ", " | assertEqual("0, 2, 4, 6")
+2..8 | stepBy 2 | into::list | join ", " | assertEqual("2, 4, 6")
+2..=8 | stepBy 2 | into::list | join ", " | assertEqual("2, 4, 6, 8")
+
+3..0 | into::list | join ", " | assertEqual("2, 1, 0")
+3..=0 | into::list | join ", " | assertEqual("3, 2, 1, 0")
+4..2 | into::list | join ", " | assertEqual("3, 2")
+4..=2 | into::list | join ", " | assertEqual("4, 3, 2")
+
+6..0 | stepBy 2 | into::list | join ", " | assertEqual("4, 2, 0")
+6..=0 | stepBy 2 | into::list | join ", " | assertEqual("6, 4, 2, 0")
+8..2 | stepBy 2 | into::list | join ", " | assertEqual("6, 4, 2")
+8..=2 | stepBy 2 | into::list | join ", " | assertEqual("8, 6, 4, 2")

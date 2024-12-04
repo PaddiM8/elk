@@ -13,16 +13,18 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Range")]
-public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObject, IEnumerable<RuntimeObject>
+public class RuntimeRange(long? from, long? to, bool isInclusive = false, long increment = 1) : RuntimeObject, IEnumerable<RuntimeObject>
 {
     public long? From { get; } = from;
 
     public long? To { get; } = to;
 
+    public bool IsInclusive { get; } = isInclusive;
+
     public long Increment { get; set; } = increment;
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => new RuntimeRangeEnumerator(From, To, Increment);
+        => new RuntimeRangeEnumerator(From, To, IsInclusive, Increment);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -49,27 +51,42 @@ public class RuntimeRange(long? from, long? to, long increment = 1) : RuntimeObj
         var otherRange = other.As<RuntimeRange>();
         return kind switch
         {
-            OperationKind.EqualsEquals => RuntimeBoolean.From(From == otherRange.From && To == otherRange.To),
-            OperationKind.NotEquals => RuntimeBoolean.From(From != otherRange.From || To != otherRange.To),
+            OperationKind.EqualsEquals => RuntimeBoolean.From(
+                From == otherRange.From &&
+                    To == otherRange.To &&
+                    IsInclusive == otherRange.IsInclusive &&
+                    Increment == otherRange.Increment
+            ),
+            OperationKind.NotEquals => RuntimeBoolean.From(
+                From != otherRange.From ||
+                    To != otherRange.To ||
+                    IsInclusive != otherRange.IsInclusive ||
+                    Increment != otherRange.Increment
+            ),
             _ => throw InvalidOperation(kind),
         };
     }
 
+    // ReSharper disable once NonReadonlyMemberInGetHashCode
     public override int GetHashCode()
-        => (To, From).GetHashCode();
+        => (To, From, IsInclusive, Increment).GetHashCode();
 
     public override string ToString()
-        => $"{From}..{To}";
+        => $"{From}..{(IsInclusive ? "=" : "")}{To}";
 
     public bool Contains(long value)
-        => value >= From && value < To;
+    {
+        var actualTo = IsInclusive ? To + Increment : To;
+
+        return value >= From && value < actualTo;
+    }
 }
 
 class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
 {
     public RuntimeObject Current
         => _reversed
-            ?  new RuntimeInteger(_to!.Value - _pos)
+            ?  new RuntimeInteger((_from ?? 0) + _to!.Value - _increment - _pos)
             : new RuntimeInteger(_pos);
 
     object IEnumerator.Current
@@ -81,7 +98,7 @@ class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
     private long _pos;
     private readonly bool _reversed;
 
-    public RuntimeRangeEnumerator(long? from, long? to, long increment)
+    public RuntimeRangeEnumerator(long? from, long? to, bool isInclusive, long increment)
     {
         if (to == null || to > from)
         {
@@ -96,6 +113,9 @@ class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
             _from = to;
         }
 
+        if (isInclusive)
+            _to += increment;
+
         _increment = increment;
 
         Reset();
@@ -103,7 +123,7 @@ class RuntimeRangeEnumerator : IEnumerator<RuntimeObject>
 
     public bool MoveNext()
     {
-        if (_to != null && _pos >= _to - 1)
+        if (_to != null && _pos >= _to - _increment)
             return false;
 
         _pos += _increment;

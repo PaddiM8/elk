@@ -1138,19 +1138,7 @@ class InstructionExecutor
             ? null
             : fromObject.As<RuntimeInteger>().Value;
 
-        if (isInclusive)
-        {
-            if (to >= from)
-            {
-                to++;
-            }
-            else
-            {
-                from++;
-            }
-        }
-
-        _stack.Push(new RuntimeRange(from, to));
+        _stack.Push(new RuntimeRange(from, to, isInclusive));
     }
 
     private void BuildString(ushort count)
