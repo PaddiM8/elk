@@ -71,7 +71,7 @@ class InstructionExecutor
         }
 
         var returnValue = _stack.Any()
-            ? _stack.Pop()
+            ? _stack.PopObject() as RuntimeObject ?? RuntimeNil.Value
             : RuntimeNil.Value;
         Debug.Assert(page.Name == "<root>" || !_stack.Any());
 
