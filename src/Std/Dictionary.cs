@@ -36,7 +36,42 @@ public static class Dictionary
             );
         });
 
-        return new(keyValuePairs.ToDictionary(x => x.key, x => x.value));
+        return new RuntimeDictionary(keyValuePairs.ToDictionary(x => x.key, x => x.value));
+    }
+
+    /// <param name="values">An Iterable of key-value-pairs</param>
+    /// <returns>A new Dictionary based on the given values, where duplicate keys are merged and their values are combined into a list.</returns>
+    /// <example>
+    /// [["a", 1], ["a", 2], ["b", 3]] | dict::create
+    /// #=>
+    /// # {
+    /// #   "a": [1, 2],
+    /// #   "b": [3],
+    /// # }
+    /// </example>
+    [ElkFunction("createLookup")]
+    public static RuntimeDictionary CreateLookup(IEnumerable<RuntimeObject> values)
+    {
+        var entries = new Dictionary<int, (RuntimeObject key, RuntimeObject list)>();
+        foreach (var givenValue in values)
+        {
+            if (givenValue is not IEnumerable<RuntimeObject> keyValuePair)
+                throw new RuntimeCastException(givenValue.GetType(), "Iterable");
+
+            var key = keyValuePair.FirstOrDefault() ?? RuntimeNil.Value;
+            var value = keyValuePair.ElementAtOrDefault(1) ?? RuntimeNil.Value;
+            var hash = key.GetHashCode();
+            if (entries.TryGetValue(hash, out var existing))
+            {
+                ((RuntimeList)existing.list).Values.Add(value);
+            }
+            else
+            {
+                entries[hash] = (key, new RuntimeList([value]));
+            }
+        }
+
+        return new RuntimeDictionary(entries);
     }
 
     /// <returns>The keys in the given dictionary.</returns>
