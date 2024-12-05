@@ -453,7 +453,8 @@ class InstructionGenerator(
         if (popCount > byte.MaxValue)
             throw new RuntimeException("Too many variables in block");
 
-        Emit(InstructionKind.ExitBlock, (byte)popCount);
+        if (popCount > 0)
+            Emit(InstructionKind.ExitBlock, (byte)popCount);
     }
 
     private void ClearBlock(bool isPrimaryExitPoint, int? newScopeDepth = null)
