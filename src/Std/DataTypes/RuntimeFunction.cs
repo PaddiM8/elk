@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elk.Exceptions;
 using Elk.Scoping;
 using Elk.Std.Attributes;
@@ -59,6 +60,11 @@ internal class RuntimeStdFunction(
 {
     public StdFunction StdFunction { get; } = stdFunction;
 
+    public override bool Equals(object? obj)
+        => obj is RuntimeStdFunction other &&
+           StdFunction == other.StdFunction &&
+           Arguments.ZipLongest(other.Arguments).All(x => x.Item1?.Equals(x.Item2) is true);
+
     public override int GetHashCode()
         => StdFunction.GetHashCode();
 
@@ -73,6 +79,9 @@ internal class RuntimeUserFunction(
     : RuntimeFunction(arguments, createInvoker)
 {
     internal Page Page { get; } = page;
+
+    public override bool Equals(object? obj)
+        => obj is RuntimeUserFunction other && Page == other.Page;
 
     public override int GetHashCode()
         => Page.GetHashCode();
@@ -89,6 +98,9 @@ internal class RuntimeClosureFunction(
     : RuntimeUserFunction(page, arguments, createInvoker)
 {
     public Scope Environment { get; } = environment;
+
+    public override bool Equals(object? obj)
+        => obj is RuntimeUserFunction other && Page == other.Page;
 
     public override int GetHashCode()
         => Page.GetHashCode();
