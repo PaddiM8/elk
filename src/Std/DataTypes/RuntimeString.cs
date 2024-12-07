@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Elk.Exceptions;
 using Elk.Parsing;
 using Elk.Std.Attributes;
@@ -81,6 +82,13 @@ public class RuntimeString(string value) : RuntimeObject, IEnumerable<RuntimeObj
                 => new RuntimeRegex(new System.Text.RegularExpressions.Regex(Value)),
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Value.Length != 0),
+            _ when toType == typeof(RuntimeList)
+                => new RuntimeList(
+                    Value
+                        .Select(x => new RuntimeString(x.ToString()))
+                        .Cast<RuntimeObject>()
+                        .ToList()
+                ),
             _
                 => throw new RuntimeCastException<RuntimeString>(toType),
         };
