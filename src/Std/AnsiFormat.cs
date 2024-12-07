@@ -67,10 +67,15 @@ public class AnsiFormat
     public static RuntimeString Reset()
         => new(Ansi.Reset());
 
-    /// <returns>A string containing ansi escape codes that result in the cursor being shown.</returns>
+    /// <returns>A string containing ansi escape codes that result in the cursor position being changed.</returns>
     [ElkFunction("setCursor")]
     public static RuntimeString SetCursor(RuntimeInteger row, RuntimeInteger column)
         => new($"\x1b[{row.Value}:{column.Value}H");
+
+    /// <returns>A string containing ansi escape codes that result in the cursor column position being changed to the given index.</returns>
+    [ElkFunction("column")]
+    public static RuntimeString Column(RuntimeInteger index)
+        => new($"\x1b[{index.Value}G");
 
     /// <returns>A string containing ansi escape codes that result in the cursor being shown.</returns>
     [ElkFunction("showCursor")]
