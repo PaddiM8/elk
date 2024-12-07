@@ -134,7 +134,7 @@ public class Into
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("list")]
     public static RuntimeList ToList(RuntimeObject? value = null)
-        => value?.As<RuntimeList>() ?? new RuntimeList(new List<RuntimeObject>());
+        => value?.As<RuntimeList>() ?? new RuntimeList([]);
 
     /// <param name="value">Value that should be cast</param>
     [ElkFunction("regex")]

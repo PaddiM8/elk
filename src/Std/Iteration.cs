@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elk.Exceptions;
+using Elk.Parsing;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Std.Table;
@@ -98,6 +99,24 @@ static class Iteration
     public static RuntimeInteger Count(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => new(items.Count(x => closure(x).As<RuntimeBoolean>().IsTrue));
 
+    /// <returns>Whether or not x contains y</returns>
+    [ElkFunction("contains")]
+    public static RuntimeBoolean Contains(RuntimeObject container, RuntimeObject value)
+    {
+        var contains = container switch
+        {
+            RuntimeList list => list.Values
+                .Find(x => x.Operation(OperationKind.EqualsEquals, value).As<RuntimeBoolean>().IsTrue) != null,
+            RuntimeRange range => range.Contains(value.As<RuntimeInteger>().Value),
+            RuntimeSet set => set.Entries.ContainsKey(value.GetHashCode()),
+            RuntimeDictionary dict => dict.Entries.ContainsKey(value.GetHashCode()),
+            RuntimeString str => str.Value.Contains(value.As<RuntimeString>().Value),
+            _ => throw new RuntimeInvalidOperationException("in", container.GetType()),
+        };
+
+        return RuntimeBoolean.From(contains);
+    }
+
     /// <returns>A list of the distinct items in the given Iterable.</returns>
     [ElkFunction("distinct")]
     public static RuntimeGenerator Distinct(IEnumerable<RuntimeObject> items)
@@ -146,6 +165,20 @@ static class Iteration
     [ElkFunction("find")]
     public static RuntimeObject Find(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
         => items.FirstOrDefault(x => closure(x).As<RuntimeBoolean>().IsTrue) ?? RuntimeNil.Value;
+
+    /// <param name="items"></param>
+    /// <param name="closure"></param>
+    /// <returns>The index of the first item for which the closure evaluates to true. Returns -1 if no item was found.</returns>
+    [ElkFunction("findIndex")]
+    public static RuntimeObject FindIndex(IEnumerable<RuntimeObject> items, Func<RuntimeObject, RuntimeObject> closure)
+    {
+        var index = items
+            .Select((x, i) => (closure(x).As<RuntimeBoolean>().IsTrue, i))
+            .FirstOrDefault(x => x.Item1, (true, -1))
+            .Item2;
+
+        return new RuntimeInteger(index);
+    }
 
     /// <summary>
     /// Throws an error if the Iterable is empty.
@@ -392,7 +425,7 @@ static class Iteration
 
     /// <returns>The cartesian product of an Iterable.</returns>
     [ElkFunction("product")]
-    public static RuntimeGenerator Permutations(IEnumerable<RuntimeObject> items, RuntimeInteger? repeat = null)
+    public static RuntimeGenerator Product(IEnumerable<RuntimeObject> items, RuntimeInteger? repeat = null)
     {
         if (repeat == null)
         {
@@ -454,7 +487,7 @@ static class Iteration
         }
         else if (container is RuntimeSet set)
         {
-            set.Entries.Add(value1.GetHashCode(), value1);
+            set.Entries.TryAdd(value1.GetHashCode(), value1);
         }
         else if (container is RuntimeDictionary dict)
         {
@@ -689,4 +722,23 @@ static class Iteration
     [ElkFunction("zip")]
     public static RuntimeGenerator Zip(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
         => new(a.Zip(b).Select(x => new RuntimeTuple([x.First, x.Second])));
+
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>A list containing pairs of values.</returns>
+    /// <example>[1, 2, 3, 4] | iter::zipLongest([4, 5, 6]) #=> [(1, 4), (2, 5), (3, 6), (4, 0)]</example>
+    [ElkFunction("zipLongest")]
+    public static RuntimeGenerator ZipLongest(IEnumerable<RuntimeObject> a, IEnumerable<RuntimeObject> b)
+    {
+        var result = a
+            .ZipLongest(b)
+            .Select(x =>
+                new RuntimeTuple([
+                    x.Item1 ?? RuntimeNil.Value,
+                    x.Item2 ?? RuntimeNil.Value
+                ])
+        );
+
+        return new RuntimeGenerator(result);
+    }
 }

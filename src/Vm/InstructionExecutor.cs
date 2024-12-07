@@ -9,7 +9,10 @@ using Elk.Lexing;
 using Elk.Parsing;
 using Elk.ReadLine.Render.Formatting;
 using Elk.Scoping;
+using Elk.Std;
 using Elk.Std.DataTypes;
+using Ansi = Elk.ReadLine.Render.Formatting.Ansi;
+using File = System.IO.File;
 using Trace = Elk.Exceptions.Trace;
 
 namespace Elk.Vm;
@@ -1310,20 +1313,9 @@ class InstructionExecutor
 
     private void Contains()
     {
-        var right = _stack.Pop();
-        var left = _stack[^1];
-        var result = right switch
-        {
-            RuntimeList list => list.Values
-                .Find(x => x.Operation(OperationKind.EqualsEquals, left).As<RuntimeBoolean>().IsTrue) != null,
-            RuntimeRange range => range.Contains(left.As<RuntimeInteger>().Value),
-            RuntimeSet set => set.Entries.ContainsKey(left.GetHashCode()),
-            RuntimeDictionary dict => dict.Entries.ContainsKey(left.GetHashCode()),
-            RuntimeString str => str.Value.Contains(left.As<RuntimeString>().Value),
-            _ => throw new RuntimeInvalidOperationException("in", right.GetType()),
-        };
-
-        _stack[^1] = RuntimeBoolean.From(result);
+        var container = _stack.Pop();
+        var value = _stack[^1];
+        _stack[^1] = Iteration.Contains(container, value);
     }
 
     private void Coalesce()
