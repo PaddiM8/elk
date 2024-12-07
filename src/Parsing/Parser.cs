@@ -1207,6 +1207,7 @@ internal class Parser
     {
         var startPos = EatExpected(TokenKind.OpenBrace).Position;
         var blockScope = scope ?? new LocalScope(_scope);
+        var previousScope = _scope;
         _scope = blockScope;
 
         var expressions = new List<Expr>();
@@ -1238,7 +1239,7 @@ internal class Parser
             }
         }
 
-        _scope = _scope.Parent!;
+        _scope = previousScope;
 
         if (expressions.Count == 0 && couldBeDictionary)
             return new DictionaryExpr([], _scope, startPos, Previous!.EndPosition);
