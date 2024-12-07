@@ -508,6 +508,9 @@ class InstructionGenerator(
                 ExitBlock(isPrimaryExitPoint: false, _currentLoop.ScopeDepth);
 
                 var jump = EmitJump(InstructionKind.Jump);
+                if (_currentLoop.BreakPositions.Count == 0)
+                    throw new RuntimeException("Can only break inside loops");
+
                 _currentLoop.BreakPositions.Peek().Add(jump);
                 break;
             case TokenKind.Continue:
