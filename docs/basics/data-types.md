@@ -249,7 +249,7 @@ A set represents a collection of unique unordered values with hashing.
 
 ```elk
 2 in { "a", 2, true } #=> true
-let s = set()
+let s = into::set()
 s | push(5)
 ```
 
