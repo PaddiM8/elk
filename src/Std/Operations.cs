@@ -47,3 +47,4 @@ public class Operations
     public static RuntimeObject Sub(RuntimeObject x, RuntimeObject y)
         => x.Operation(OperationKind.Subtraction, y);
 }
+

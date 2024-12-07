@@ -63,7 +63,8 @@ internal class RuntimeStdFunction(
     public override bool Equals(object? obj)
         => obj is RuntimeStdFunction other &&
            StdFunction == other.StdFunction &&
-           Arguments.ZipLongest(other.Arguments).All(x => x.Item1?.Equals(x.Item2) is true);
+           Arguments.ZipLongest(other.Arguments).All(x => x.Item1?.Equals(x.Item2) is true) &&
+           Closure == null;
 
     public override int GetHashCode()
         => StdFunction.GetHashCode();
