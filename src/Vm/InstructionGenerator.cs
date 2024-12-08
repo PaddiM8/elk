@@ -991,7 +991,7 @@ class InstructionGenerator(
                 : (byte)variadicStart,
             Closure = expr.IsReference
                 ? closure
-                : null
+                : null,
         };
 
         EmitBig(InstructionKind.Const, runtimeFunction);
@@ -1360,7 +1360,7 @@ class InstructionGenerator(
         page.AddLine(expr.StartPosition.Line);
         _currentPage = page;
 
-        foreach (var parameter in expr.Parameters)
+        foreach (var parameter in expr.Parameters.AsEnumerable().Reverse())
             _locals.Push(new Variable(parameter, 0));
 
         var previousBasePointer = _currentBasePointer;
