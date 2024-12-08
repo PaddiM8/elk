@@ -12,20 +12,15 @@ using Elk.Std.Attributes;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Set")]
-public class RuntimeSet : RuntimeObject, IEnumerable<RuntimeObject>
+public class RuntimeSet(HashSet<RuntimeObject> entries) : RuntimeObject, IEnumerable<RuntimeObject>
 {
-    public Dictionary<int, RuntimeObject> Entries { get; }
-
-    public RuntimeSet(Dictionary<int, RuntimeObject> entries)
-    {
-        Entries = entries;
-    }
+    public HashSet<RuntimeObject> Entries { get; } = entries;
 
     public int Count
         => Entries.Count;
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => Entries.Values.GetEnumerator();
+        => Entries.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -38,7 +33,7 @@ public class RuntimeSet : RuntimeObject, IEnumerable<RuntimeObject>
             _ when toType == typeof(RuntimeBoolean)
                 => RuntimeBoolean.From(Entries.Any()),
             _ when toType == typeof(RuntimeList)
-                => new RuntimeList(Entries.Values.ToList()),
+                => new RuntimeList(Entries.ToList()),
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(ToString()),
             _
@@ -49,5 +44,5 @@ public class RuntimeSet : RuntimeObject, IEnumerable<RuntimeObject>
         => Entries.GetHashCode();
 
     public override string ToString()
-        => $"{{ {string.Join(", ", Entries.Values.Select(x => x.ToDisplayString())) } }}";
+        => $"{{ {string.Join(", ", Entries.Select(x => x.ToDisplayString())) } }}";
 }

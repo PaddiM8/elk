@@ -30,14 +30,11 @@ public class CliResult(Dictionary<string, object?> values, IEnumerable<int> argu
                 _ => new RuntimeString(pair.Value.ToString() ?? ""),
             };
 
-            return new KeyValuePair<int, (RuntimeObject, RuntimeObject)>(
-                key.GetHashCode(),
-                (key, value)
-            );
+            return new KeyValuePair<RuntimeObject, RuntimeObject>(key, value);
         });
 
         return new RuntimeDictionary(
-            new Dictionary<int, (RuntimeObject, RuntimeObject)>(runtimeValues)
+            new Dictionary<RuntimeObject, RuntimeObject>(runtimeValues)
         );
     }
 

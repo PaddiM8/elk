@@ -68,12 +68,9 @@ public class RuntimeStruct : RuntimeObject, IIndexable<RuntimeObject>
 
     private RuntimeDictionary ToDictionary()
     {
-        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
+        var dict = new Dictionary<RuntimeObject, RuntimeObject>();
         foreach (var (key, value) in Values)
-        {
-            var keyValue = new RuntimeString(key);
-            dict[keyValue.GetHashCode()] = (keyValue, value);
-        }
+            dict[new RuntimeString(key)] = value;
 
         return new RuntimeDictionary(dict);
     }

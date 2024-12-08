@@ -85,7 +85,7 @@ static class Environment
         );
         if (env != null)
         {
-            foreach (var (_, (key, value)) in env.Entries)
+            foreach (var (key, value) in env.Entries)
             {
                 virtualMachine.AddGlobalVariable(
                     key.As<RuntimeString>().Value,

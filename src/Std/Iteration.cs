@@ -108,8 +108,8 @@ static class Iteration
             RuntimeList list => list.Values
                 .Find(x => x.Operation(OperationKind.EqualsEquals, value).As<RuntimeBoolean>().IsTrue) != null,
             RuntimeRange range => range.Contains(value.As<RuntimeInteger>().Value),
-            RuntimeSet set => set.Entries.ContainsKey(value.GetHashCode()),
-            RuntimeDictionary dict => dict.Entries.ContainsKey(value.GetHashCode()),
+            RuntimeSet set => set.Entries.Contains(value),
+            RuntimeDictionary dict => dict.Entries.ContainsKey(value),
             RuntimeString str => str.Value.Contains(value.As<RuntimeString>().Value),
             _ => throw new RuntimeInvalidOperationException("in", container.GetType()),
         };
@@ -487,14 +487,14 @@ static class Iteration
         }
         else if (container is RuntimeSet set)
         {
-            set.Entries.TryAdd(value1.GetHashCode(), value1);
+            set.Entries.Add(value1);
         }
         else if (container is RuntimeDictionary dict)
         {
             if (value2 == null)
                 throw new RuntimeWrongNumberOfArgumentsException("push", 3, 2);
 
-            dict.Entries.Add(value1.GetHashCode(), (value1, value2));
+            dict.Entries.Add(value1, value2);
         }
         else if (container is RuntimeTable table)
         {
@@ -561,11 +561,11 @@ static class Iteration
         }
         else if (container is RuntimeSet set)
         {
-            set.Entries.Remove(index.GetHashCode());
+            set.Entries.Remove(index);
         }
         else if (container is RuntimeDictionary dict)
         {
-            dict.Entries.Remove(index.GetHashCode());
+            dict.Entries.Remove(index);
         }
         else if (container is RuntimeTable table)
         {

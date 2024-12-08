@@ -1107,11 +1107,11 @@ class InstructionExecutor
 
     private void BuildSet(ushort size)
     {
-        var dict = new Dictionary<int, RuntimeObject>(size);
+        var dict = new HashSet<RuntimeObject>(size);
         for (ushort i = 0; i < size; i++)
         {
             var value = _stack.Pop();
-            if (!dict.TryAdd(value.GetHashCode(), value))
+            if (!dict.Add(value))
                 throw new RuntimeException("Duplicate value in set");
         }
 
@@ -1120,12 +1120,12 @@ class InstructionExecutor
 
     private void BuildDict(ushort size)
     {
-        var dict = new Dictionary<int, (RuntimeObject, RuntimeObject)>(size);
+        var dict = new Dictionary<RuntimeObject, RuntimeObject>(size);
         for (ushort i = 0; i < size; i++)
         {
             var value = _stack.Pop();
             var key = _stack.Pop();
-            if (!dict.TryAdd(key.GetHashCode(), (key, value)))
+            if (!dict.TryAdd(key, value))
                 throw new RuntimeException("Duplicate value in dictionary");
         }
 

@@ -30,10 +30,7 @@ public static class Dictionary
             var key = keyValuePair.FirstOrDefault() ?? RuntimeNil.Value;
             var value = keyValuePair.ElementAtOrDefault(1) ?? RuntimeNil.Value;
 
-            return (
-                key: key.GetHashCode(),
-                value: (key, value)
-            );
+            return (key, value);
         });
 
         return new RuntimeDictionary(keyValuePairs.ToDictionary(x => x.key, x => x.value));
@@ -52,7 +49,7 @@ public static class Dictionary
     [ElkFunction("createLookup")]
     public static RuntimeDictionary CreateLookup(IEnumerable<RuntimeObject> values)
     {
-        var entries = new Dictionary<int, (RuntimeObject key, RuntimeObject list)>();
+        var entries = new Dictionary<RuntimeObject, RuntimeObject>();
         foreach (var givenValue in values)
         {
             if (givenValue is not IEnumerable<RuntimeObject> keyValuePair)
@@ -60,14 +57,13 @@ public static class Dictionary
 
             var key = keyValuePair.FirstOrDefault() ?? RuntimeNil.Value;
             var value = keyValuePair.ElementAtOrDefault(1) ?? RuntimeNil.Value;
-            var hash = key.GetHashCode();
-            if (entries.TryGetValue(hash, out var existing))
+            if (entries.TryGetValue(key, out var existing))
             {
-                ((RuntimeList)existing.list).Values.Add(value);
+                ((RuntimeList)existing).Values.Add(value);
             }
             else
             {
-                entries[hash] = (key, new RuntimeList([value]));
+                entries[key] = new RuntimeList([value]);
             }
         }
 
@@ -77,10 +73,10 @@ public static class Dictionary
     /// <returns>The keys in the given dictionary.</returns>
     [ElkFunction("keys")]
     public static RuntimeGenerator Keys(RuntimeDictionary dictionary)
-        => new(dictionary.Entries.Values.Select(x => x.Item1));
+        => new(dictionary.Entries.Keys);
 
     /// <returns>The values in the given dictionary.</returns>
     [ElkFunction("values")]
     public static RuntimeGenerator Values(RuntimeDictionary dictionary)
-        => new(dictionary.Entries.Values.Select(x => x.Item2));
+        => new(dictionary.Entries.Values);
 }

@@ -14,13 +14,13 @@ using Newtonsoft.Json;
 namespace Elk.Std.DataTypes;
 
 [ElkType("Dictionary")]
-public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> entries)
+public class RuntimeDictionary(Dictionary<RuntimeObject, RuntimeObject> entries)
     : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable<RuntimeObject>
 {
-    public Dictionary<int, (RuntimeObject, RuntimeObject)> Entries { get; } = entries;
+    public Dictionary<RuntimeObject, RuntimeObject> Entries { get; } = entries;
 
     public RuntimeDictionary()
-        : this(new Dictionary<int, (RuntimeObject, RuntimeObject)>())
+        : this(new Dictionary<RuntimeObject, RuntimeObject>())
     {
     }
 
@@ -28,15 +28,15 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
     {
         get
         {
-            if (Entries.TryGetValue(index.GetHashCode(), out var value))
-                return value.Item2;
+            if (Entries.TryGetValue(index, out var value))
+                return value;
 
             throw new RuntimeItemNotFoundException(index.ToString() ?? "?");
         }
 
         set
         {
-            Entries[index.GetHashCode()] = (index, value);
+            Entries[index] = value;
         }
     }
 
@@ -44,8 +44,8 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
     {
         get
         {
-            if (Entries.TryGetValue(index.GetHashCode(), out var value))
-                return value.Item2;
+            if (Entries.TryGetValue(new RuntimeString(index), out var value))
+                return value;
 
             throw new RuntimeItemNotFoundException(index);
         }
@@ -53,7 +53,7 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         set
         {
             var runtimeIndex = new RuntimeString(index);
-            Entries[runtimeIndex.GetHashCode()] = (runtimeIndex, value);
+            Entries[runtimeIndex] = value;
         }
     }
 
@@ -61,7 +61,7 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         => Entries.Count;
 
     public IEnumerator<RuntimeObject> GetEnumerator()
-        => new RuntimeDictionaryEnumerator(Entries.Values);
+        => new RuntimeDictionaryEnumerator(Entries);
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -74,10 +74,8 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
             _ when toType == typeof(RuntimeList)
                 => new RuntimeList(
                     Entries
-                        .Values
-                        .Select<(RuntimeObject, RuntimeObject), RuntimeObject>(x =>
-                            new RuntimeTuple([x.Item1, x.Item2])
-                        )
+                        .Select(x => new RuntimeTuple([x.Key, x.Value]))
+                        .Cast<RuntimeObject>()
                         .ToList()
                 ),
             _ when toType == typeof(RuntimeBoolean)
@@ -95,27 +93,23 @@ public class RuntimeDictionary(Dictionary<int, (RuntimeObject, RuntimeObject)> e
         => ElkJsonSerializer.Serialize(this, Formatting.Indented);
 
     public RuntimeObject? GetValue(string key)
-    {
-        return Entries.TryGetValue(key.GetHashCode(), out var value)
-            ? value.Item2
-            : default;
-    }
+        => Entries.GetValueOrDefault(new RuntimeString(key));
 
     public T? GetValue<T>(string key)
         where T : RuntimeObject
     {
-        return Entries.TryGetValue(key.GetHashCode(), out var value)
-            ? value.Item2.As<T>()
+        return Entries.TryGetValue(new RuntimeString(key), out var value)
+            ? value.As<T>()
             : default;
     }
 
     public T GetExpectedValue<T>(string key)
         where T : RuntimeObject
     {
-        if (!Entries.TryGetValue(key.GetHashCode(), out var value))
+        if (!Entries.TryGetValue(new RuntimeString(key), out var value))
             throw new RuntimeNotFoundException(key);
 
-        return value.Item2.As<T>();
+        return value.As<T>();
     }
 }
 
@@ -126,13 +120,13 @@ class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
     object IEnumerator.Current
         => Current;
 
-    private readonly IEnumerable<(RuntimeObject, RuntimeObject)> _keyValueSets;
-    private IEnumerator<(RuntimeObject, RuntimeObject)> _enumerator;
+    private readonly IEnumerable<KeyValuePair<RuntimeObject, RuntimeObject>> _keyValuePairs;
+    private IEnumerator<KeyValuePair<RuntimeObject, RuntimeObject>> _enumerator;
 
-    public RuntimeDictionaryEnumerator(IEnumerable<(RuntimeObject, RuntimeObject)> keyValueSets)
+    public RuntimeDictionaryEnumerator(IEnumerable<KeyValuePair<RuntimeObject, RuntimeObject>> keyValuePairs)
     {
-        _keyValueSets = keyValueSets;
-        _enumerator = _keyValueSets.GetEnumerator();
+        _keyValuePairs = keyValuePairs;
+        _enumerator = _keyValuePairs.GetEnumerator();
         Current = RuntimeNil.Value;
     }
 
@@ -143,8 +137,8 @@ class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
         {
             Current = new RuntimeTuple(
             [
-                _enumerator.Current.Item1,
-                _enumerator.Current.Item2,
+                _enumerator.Current.Key,
+                _enumerator.Current.Value,
             ]);
         }
 
@@ -153,7 +147,7 @@ class RuntimeDictionaryEnumerator : IEnumerator<RuntimeObject>
 
     public void Reset()
     {
-        _enumerator = _keyValueSets.GetEnumerator();
+        _enumerator = _keyValuePairs.GetEnumerator();
         Current = RuntimeNil.Value;
     }
 

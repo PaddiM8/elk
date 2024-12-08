@@ -146,15 +146,9 @@ public class Into
     public static RuntimeSet ToSet(RuntimeObject? value = null)
     {
         if (value is IEnumerable<RuntimeObject> enumerable)
-        {
-            var dict = new Dictionary<int, RuntimeObject>();
-            foreach (var item in enumerable)
-                dict.TryAdd(item.GetHashCode(), item);
+            return new RuntimeSet(enumerable.ToHashSet());
 
-            return new RuntimeSet(dict);
-        }
-
-        return  value?.As<RuntimeSet>() ?? new RuntimeSet(new());
+        return value?.As<RuntimeSet>() ?? new RuntimeSet([]);
     }
 
     /// <param name="value">Value that should be cast</param>

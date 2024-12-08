@@ -41,7 +41,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
     private JObject BuildDictionary(RuntimeDictionary dictionary)
     {
         var result = new JObject();
-        foreach (var (key, value) in dictionary.Entries.Values)
+        foreach (var (key, value) in dictionary.Entries)
         {
             var keyString = key.As<RuntimeString>().Value;
             result[keyString] = Build(value);
@@ -51,7 +51,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
     }
 
     private JArray BuildSet(RuntimeSet set)
-        => new(set.Entries.Select(x => Build(x.Value)));
+        => new(set.Entries.Select(Build));
 
     private JObject BuildStruct(RuntimeStruct structValue)
     {
@@ -107,13 +107,13 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
 
     private RuntimeDictionary GetDictionary(JObject data)
     {
-        var dictionary = new Dictionary<int, (RuntimeObject, RuntimeObject)>();
+        var dictionary = new Dictionary<RuntimeObject, RuntimeObject>();
         foreach (var (key, valueData) in data)
         {
             var value = valueData == null
                 ? RuntimeNil.Value
                 : Get(valueData);
-            dictionary[key.GetHashCode()] = (new RuntimeString(key), value);
+            dictionary[new RuntimeString(key)] = value;
         }
 
         return new RuntimeDictionary(dictionary);
