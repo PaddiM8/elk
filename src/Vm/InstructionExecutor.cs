@@ -655,14 +655,19 @@ class InstructionExecutor
 
     private void ExitBlock(byte popCount)
     {
-        if (_stack.Count == 1)
-            return;
+        if (_stack.Count == popCount)
+        {
+            while (_stack.Any())
+                Pop();
 
-        var returnValue = _stack.Pop();
+            return;
+        }
+
+        var returnValue = _stack.PopObject() as RuntimeObject;
         for (byte i = 0; i < popCount; i++)
             Pop();
 
-        _stack.Push(returnValue);
+        _stack.Push(returnValue ?? RuntimeNil.Value);
     }
 
     private void Ret()
