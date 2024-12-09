@@ -601,6 +601,12 @@ static class Iteration
     public static RuntimeGenerator Reverse(IEnumerable<RuntimeObject> items)
         => new(items.Reverse());
 
+    [ElkFunction("reverseMut")]
+    public static void Reverse(RuntimeList items)
+    {
+        items.Values.Reverse();
+    }
+
     /// <param name="items">All items</param>
     /// <param name="count">The amount of items to skip from the left</param>
     /// <returns>A generator for the first n items.</returns>
