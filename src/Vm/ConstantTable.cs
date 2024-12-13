@@ -26,12 +26,12 @@ class ConstantTable
         if (value is RuntimeNil)
             return 0;
 
-        var canCache = true;
+        var canCache = value is not RuntimeFloat;
         (Type, object)? cacheKey = null;
         try
         {
             cacheKey = (value.GetType(), value);
-            if (_cache.TryGetValue(cacheKey.Value, out var key))
+            if (canCache && _cache.TryGetValue(cacheKey.Value, out var key))
                 return key;
         }
         catch
