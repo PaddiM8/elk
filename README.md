@@ -26,8 +26,8 @@ is in a context where its value is used, the standard output of the resulting pr
 giving the illusion that program invocations are simply function calls.
 
 ```nim
-# here, 'ls' and 'echo' are program invocations, while 'lines' is a 
-# call to a built-in Elk function
+# here, 'ls' and 'echo' are program invocations, while 'str::upper' and 
+# 'len' are calls to standard library functions
 #
 # programs and functions can be called both using bash-like invocation
 # syntax (arguments parsed as pure text) and Python-like parenthesised
