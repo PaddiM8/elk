@@ -76,6 +76,19 @@ static class Iteration
     public static RuntimeGenerator Chunks(IEnumerable<RuntimeObject> items, RuntimeInteger size)
         => new(items.Chunk((int)size.Value).Select(x => new RuntimeTuple(x)));
 
+    /// <param name="items">The Iterable to clone</param>
+    [ElkFunction("clone")]
+    public static RuntimeObject Clone(IEnumerable<RuntimeObject> items)
+    {
+        return items switch
+        {
+            RuntimeSet set => new RuntimeSet([..set.Entries]),
+            RuntimeDictionary dict => new RuntimeDictionary(dict.Entries.ToDictionary(x => x.Key, x=> x.Value)),
+            RuntimeList list => new RuntimeList([..list.Values]),
+            _ => throw new RuntimeException($"Clone currently does not support {ExceptionFormatting.Type(items.GetType())}"),
+        };
+    }
+
     /// <summary>
     /// Some standard library functions return lazily evaluated Iterables. This function
     /// forces an Iterable's items to be evaluated right away.
