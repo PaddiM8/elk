@@ -96,8 +96,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         if (_disposeError)
             _process!.StartInfo.RedirectStandardError = true;
 
-        _allowNonZeroExit = _process!.StartInfo.RedirectStandardError;
-        _process.EnableRaisingEvents = true;
+        _allowNonZeroExit = _allowNonZeroExit || _process!.StartInfo.RedirectStandardError;
+        _process!.EnableRaisingEvents = true;
 
         try
         {
@@ -180,7 +180,11 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
                 while (runtimePipe.StreamEnumerator.MoveNext())
                     streamWriter.WriteLine(runtimePipe.StreamEnumerator.Current);
             }
-            else if (value is RuntimeList runtimeList)
+            else if (value is RuntimeString)
+            {
+                streamWriter.Write(value);
+            }
+            else if (value is IEnumerable<RuntimeObject> runtimeList)
             {
                 foreach (var item in runtimeList)
                     streamWriter.WriteLine(item);
@@ -210,9 +214,6 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
             _process.WaitForExit();
 
-            //if (_process == null)
-                //return;
-
             ExitCode = _process.ExitCode;
             _process.Dispose();
             _process = null;
@@ -225,6 +226,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             RuntimeObject message = messageOnError
                 ? new RuntimeString("Program returned a non-zero exit code.")
                 : RuntimeNil.Value;
+
             // TODO: Somehow get the actual signal rather than relying on exit codes
             if (ExitCode >= 128 && ExitCode <= 128 + SignalHelper.SignalNames.Length - 1)
             {

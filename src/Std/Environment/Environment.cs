@@ -11,6 +11,7 @@ using Elk.Scoping;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 using Elk.Vm;
+using Microsoft.VisualBasic.FileIO;
 
 #endregion
 
@@ -126,15 +127,6 @@ static class Environment
             ? new RuntimeInteger(0)
             : new RuntimeInteger(int.Parse(exitCode));
     }
-
-    /// <param name="pattern">The glob pattern to expand</param>
-    /// <returns>Expands a glob string, eg. "**/*.elk"</returns>
-    [ElkFunction("expand")]
-    public static RuntimeGenerator Expand(RuntimeString pattern)
-        => new(
-            Globbing.Glob(ShellEnvironment.WorkingDirectory, pattern.Value)
-                .Select(x => new RuntimeString(x))
-        );
 
     /// <param name="index">The index of the argument to get</param>
     /// <returns>The list of command line arguments passed to the program, or a specific one if an index was specified</returns>
