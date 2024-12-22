@@ -23,7 +23,7 @@ syn match elkNumber /\v<[+-]=(\d+\.)=\d+>/
 
 syn match elkBraces "[\[\]]"
 syn region elkStringInterp matchgroup=elkBraces start=/\${/ end=/}/ contained contains=ALL
-syn region elkString   start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=elkStringInterp
+syn region elkString   start=/["']/ skip=/\\\\\|\\"|\\'/ end=/["']/ contains=elkStringInterp
 
 hi def link elkBraces Delimiter
 hi def link elkKeyword Keyword
@@ -37,6 +37,6 @@ hi def link elkOperator Operator
 hi def link elkString String
 hi def link elkNumber Number
 hi def link elkBoolean Boolean
-hi def link elkControl Exception
+hi def link elkControl Keyword
 
 let b:current_syntax = 'elk'
