@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Elk.Exceptions;
 using Elk.Lexing;
+using Elk.Parsing;
 using Elk.Scoping;
 using Elk.Std.Bindings;
 using Elk.Std.DataTypes;
@@ -106,6 +108,9 @@ internal class Parser
             return null;
 
         var expr = ParseExprOrDecl();
+        if (expr == null)
+            return null;
+
         expr.IsRoot = true;
         SkipWhiteSpace();
 
@@ -250,12 +255,15 @@ internal class Parser
         return importScope;
     }
 
-    private Expr ParseExprOrDecl()
+    private Expr? ParseExprOrDecl()
     {
         SkipWhiteSpace();
 
         while (AdvanceIf(TokenKind.Semicolon))
             SkipWhiteSpace();
+
+        if (ReachedEnd)
+            return null;
 
         if (AdvanceIf(TokenKind.Pub))
         {
@@ -1215,7 +1223,11 @@ internal class Parser
         {
             try
             {
-                expressions.Add(ParseExprOrDecl());
+                var expr = ParseExprOrDecl();
+                if (expr == null)
+                    continue;
+
+                expressions.Add(expr);
                 if (!orAsOtherStructure)
                     continue;
 

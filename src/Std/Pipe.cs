@@ -58,6 +58,7 @@ public static class Pipe
     {
         pipe.EnableDisposeOutput();
         pipe.EnableDisposeError();
+        pipe.AllowNonZeroExit();
         pipe.Start();
 
         return pipe;
@@ -78,15 +79,34 @@ public static class Pipe
         return pipe;
     }
 
+    /// <summary>
+    /// Configures the given pipe to only redirect stderr.
+    /// </summary>
+    /// <returns>The given pipe.</returns>
+    [ElkFunction("getErr", Reachability.Everywhere, StartsPipeManually = true)]
+    public static RuntimePipe Err(RuntimePipe pipe)
+    {
+        pipe.EnableDisposeOutput();
+        pipe.AllowNonZeroExit();
+        pipe.Start();
+
+        return pipe;
+    }
+
     /// <returns>
     /// The exit code of the process belonging to the given pipe, or nil if it has not terminated yet.
     /// Note: Only works on pipes that run in the background (eg. where the `background` function has been used).
     /// </returns>
-    [ElkFunction("exitCode")]
+    [ElkFunction("exitCode", Reachability.Everywhere, StartsPipeManually = true)]
     public static RuntimeObject ExitCode(RuntimePipe pipe)
-        => pipe.ExitCode == null
+    {
+        pipe.AllowNonZeroExit();
+        pipe.Start();
+
+        return pipe.ExitCode == null
             ? RuntimeNil.Value
             : new RuntimeInteger(pipe.ExitCode.Value);
+    }
 
     /// <summary>
     /// Waits for a pipe that was started in the background.
