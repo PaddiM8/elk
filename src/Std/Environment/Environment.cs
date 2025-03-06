@@ -293,7 +293,7 @@ static class Environment
 
     /// <returns>The amount of time it took to evaluate the given closure, in milliseconds.</returns>
     [ElkFunction("timeMs", Reachability.Everywhere)]
-    public static RuntimeInteger TimeMs(Func<RuntimeObject> closure)
+    public static RuntimeInteger TimeMs(Action closure)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
