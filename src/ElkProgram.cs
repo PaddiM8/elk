@@ -116,7 +116,12 @@ public static class ElkProgram
         if (virtualMachine != null)
         {
             foreach (var pair in generated)
-                result = virtualMachine.Execute(pair.page!);
+            {
+                var pageResult = virtualMachine.Execute(pair.page!);
+                result = pair.page!.RootExpressionType == typeof(LetExpr)
+                    ? RuntimeNil.Value
+                    : pageResult;
+            }
         }
 
         return new EvaluationResult

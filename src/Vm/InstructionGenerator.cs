@@ -37,7 +37,11 @@ class InstructionGenerator(
     public Page Generate(Ast ast)
     {
         var filePath = ast.Expressions.FirstOrDefault()?.StartPosition.FilePath;
-        _currentPage = new Page("<root>", filePath);
+        _currentPage = new Page("<root>", filePath)
+        {
+            RootExpressionType = ast.Expressions.LastOrDefault()?.GetType(),
+        };
+
         _shellEnvironment = shellEnvironment;
         _shellEnvironment.ScriptPath = filePath;
 
@@ -1356,7 +1360,11 @@ class InstructionGenerator(
     private void Visit(ClosureExpr expr, bool isMaybeRoot = false)
     {
         var previousPage = _currentPage;
-        var page = new Page(name: null, expr.StartPosition.FilePath);
+        var page = new Page(name: null, expr.StartPosition.FilePath)
+        {
+            RootExpressionType = expr.Body.Expressions.LastOrDefault()?.GetType(),
+        };
+
         page.AddLine(expr.StartPosition.Line);
         _currentPage = page;
 

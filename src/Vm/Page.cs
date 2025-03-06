@@ -12,6 +12,8 @@ class Page(string? name, string? filePath)
 
     public List<byte> Instructions { get; private set; } = [];
 
+    public Type? RootExpressionType { get; init; }
+
     public IReadOnlyList<(int instructionIndex, int lineNumber)> LineNumbers
         => _lineNumbers;
 
