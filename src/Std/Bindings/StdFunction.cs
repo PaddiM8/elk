@@ -40,6 +40,9 @@ public record StdFunction(
             if (lastParameterType.StartsWith("System.Action`"))
                 return lastParameterType[lastParameterType.IndexOf('`') + 1] - '0';
 
+            if (lastParameterType == "System.Action")
+                return 0;
+
             return null;
         }
     }

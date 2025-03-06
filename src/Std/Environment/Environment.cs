@@ -278,7 +278,7 @@ static class Environment
     /// The a human-readable string showing the amount of time it took to evaluate the given closure.
     /// </returns>
     [ElkFunction("time", Reachability.Everywhere)]
-    public static RuntimeString Time(Func<RuntimeObject> closure)
+    public static RuntimeString Time(Action closure)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();

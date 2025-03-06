@@ -335,7 +335,7 @@ public class StdBindingsGenerator : ISourceGenerator
                 additional[0] = "true";
 
             // Closure
-            if (parameter.type.StartsWith("System.Func<") || parameter.type.StartsWith("System.Action<"))
+            if (parameter.type.StartsWith("System.Func<") || parameter.type.StartsWith("System.Action<") || parameter.type == "System.Action")
                 additional[1] = "true";
 
             var additionalString = ", " + string.Join(", ", additional);
@@ -622,7 +622,7 @@ public class StdBindingsGenerator : ISourceGenerator
             }
 
             var unqualifiedTypeName = type.ToString();
-            if (unqualifiedTypeName.StartsWith("Func<") || unqualifiedTypeName.StartsWith("Action<"))
+            if (unqualifiedTypeName.StartsWith("Func<") || unqualifiedTypeName.StartsWith("Action<") || unqualifiedTypeName == "Action")
                 hasClosure = true;
 
             var nullability = unqualifiedTypeName.EndsWith("?")

@@ -1131,6 +1131,13 @@ class InstructionGenerator(
         }
 
         // Action
+        if (closureFuncType == typeof(Action))
+        {
+            return new Action(() =>
+                runtimeFunction.Invoker([], isRoot: true)
+            );
+        }
+
         if (closureFuncType == typeof(Action<RuntimeObject>))
         {
             return new Action<RuntimeObject>(a =>
