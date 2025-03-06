@@ -913,7 +913,9 @@ class Analyser(RootModuleScope rootModule)
         RuntimeObject value = expr.Value.Kind switch
         {
             TokenKind.IntegerLiteral => new RuntimeInteger(ParseInt(expr.Value.Value)),
-            TokenKind.FloatLiteral => new RuntimeFloat(double.Parse(expr.Value.Value)),
+            TokenKind.FloatLiteral => double.TryParse(expr.Value.Value, out var parsed)
+                ? new RuntimeFloat(parsed)
+                : throw new RuntimeException("Invalid number literal"),
             TokenKind.DoubleQuoteStringLiteral or TokenKind.SingleQuoteStringLiteral => new RuntimeString(expr.Value.Value),
             TokenKind.TextArgumentStringLiteral => new RuntimeString(expr.Value.Value)
             {
@@ -943,13 +945,13 @@ class Analyser(RootModuleScope rootModule)
                 return Convert.ToInt32(numberLiteral[2..], 8);
             if (numberLiteral.StartsWith("0b"))
                 return Convert.ToInt32(numberLiteral[2..], 2);
+
+            return long.Parse(numberLiteral);
         }
         catch
         {
             throw new RuntimeException("Invalid number literal");
         }
-
-        return long.Parse(numberLiteral);
     }
 
     private StringInterpolationExpr Visit(StringInterpolationExpr expr)
