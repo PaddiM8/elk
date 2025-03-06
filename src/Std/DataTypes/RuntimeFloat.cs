@@ -29,7 +29,7 @@ public class RuntimeFloat(double value) : RuntimeObject
             _ when toType == typeof(RuntimeFloat)
                 => this,
             _ when toType == typeof(RuntimeInteger)
-                => new RuntimeInteger((int)Value),
+                => new RuntimeInteger((long)Value),
             _ when toType == typeof(RuntimeString)
                 => new RuntimeString(Value.ToString()),
             _ when toType == typeof(RuntimeBoolean)
