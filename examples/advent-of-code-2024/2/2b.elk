@@ -1,0 +1,26 @@
+fn reportIsValid(report) {
+    let diffs = report
+        | iter::window 2
+        | map => pair: pair[0] - pair[1]
+
+    iter::allOf(diffs) => x: x in 1..=3 or
+        iter::allOf(diffs) => x: x in -3..0
+}
+
+fn reportIsValidEnough(report, skipIndex) {
+    while (skipIndex < len(report)) {
+        let modified = report | map => x: x | iter::collect
+        modified | remove(skipIndex) if skipIndex >= 0
+        return true if modified | reportIsValid
+        skipIndex += 1
+    }
+
+    return false
+}
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        line | split(" ") | map => &into::int | iter::collect
+    }
+    | iter::count => &reportIsValidEnough(-1)
+| assertEqual(72)

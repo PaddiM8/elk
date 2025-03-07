@@ -1,0 +1,5 @@
+read ${scriptPath}/input.txt
+    | re::allGroups 'mul\((\d{1,3}),(\d{1,3})\)'
+    | map => groups: groups[1] * groups[2]
+    | math::sum
+    | assertEqual(7548598)

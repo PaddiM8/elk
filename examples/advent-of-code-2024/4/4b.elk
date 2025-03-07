@@ -1,0 +1,16 @@
+let grid = cat ${scriptPath}/input.txt | into::list
+
+let count = 0
+for y in 1..(len(grid) - 1) {
+    for x in 1..(len(grid[y]) - 1) {
+        continue if grid[y][x] != "A"
+        let corners =
+            grid[y - 1][x - 1] + # top left 
+            grid[y - 1][x + 1] + # top right
+            grid[y + 1][x + 1] + # bottom right
+            grid[y + 1][x - 1]   # bottom left
+        count += 1 if corners in ["MSSM", "SMMS", "SSMM", "MMSS"]
+    }
+}
+
+count | assertEqual(1401)

@@ -1,0 +1,29 @@
+let grid = cat ${scriptPath}/input.txt
+    | map => line { line | map => &into::int | iter::collect }
+    | iter::collect
+
+let sum = 0
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        let visited = into::set
+        traverse(x, y, -1, visited) if c == 0
+        sum += visited | iter::count => xy: grid[xy[1]][xy[0]] == 9
+    }
+}
+
+sum | assertEqual(693)
+
+fn traverse(startX, startY, previousHeight, visited) {
+    return if not (startY in 0..len(grid))
+    return if not (startX in 0..len(grid[0]))
+
+    let height = grid[startY][startX]
+    return if previousHeight != height - 1
+    visited | push((startX, startY))
+    return if height == 9
+
+    traverse(startX + 1, startY, height, visited)
+    traverse(startX - 1, startY, height, visited)
+    traverse(startX, startY + 1, height, visited)
+    traverse(startX, startY - 1, height, visited)
+}

@@ -1,0 +1,30 @@
+let stones = read ${scriptPath}/input.txt | split " " | map => &into::int | iter::collect
+
+for i in 0..25 {
+    blink()
+}
+
+stones | len | assertEqual(194782)
+
+fn blink() {
+    let newStones = []
+    for stone in stones {
+        newStones | pushAll(transform(stone))
+    }
+
+    stones = newStones
+}
+
+fn transform(stone) {
+    return [1] if stone == 0
+
+    let numberOfDigits = stone | math::log10 | into::int | op::add(1)
+    if numberOfDigits % 2 == 0 {
+        let factor = 10 ^ (numberOfDigits / 2)
+        let stone1 = stone / factor | into::int
+        let stone2 = stone - (stone1 * factor) | into::int
+        return [stone1, stone2]
+    }
+
+    [stone * 2024]
+}

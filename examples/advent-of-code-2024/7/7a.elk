@@ -1,0 +1,33 @@
+let operators = [&op::add, &op::mul]
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        let (left, right) = line | split ": "
+        let values = right | split " " | map => &into::int
+        (into::int(left), values)
+    }
+    | map => lr: getResultIfValid(lr[0], lr[1])
+    | where => x: x != nil
+    | math::sum
+    | assertEqual(3749)
+
+fn getResultIfValid(expectedResult, values) {
+    operators
+        | iter::product(len(values) - 1)
+        | map => operations {
+            values
+                | iter::zipLongest(operations)
+                | iter::flatten
+                | where => x: x != nil
+                | evaluate
+        }
+        | iter::firstOfOrNil => &op::equals(expectedResult)
+}
+
+fn evaluate(tokens) {
+    [&op::add]
+        | iter::concat(tokens)
+        | iter::chunks(2)
+        | iter::reduce => acc, pair: (nil, call(pair[0], acc[1], pair[1]))
+        | iter::at(1)
+}

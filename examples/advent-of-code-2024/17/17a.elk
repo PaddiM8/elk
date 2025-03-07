@@ -1,0 +1,82 @@
+let numbers = read ${scriptPath}/input.txt | re::findAll('\d+') | map => &into::int
+
+let (regA, regB, regC) = numbers | iter::take(3)
+let instructions = numbers | iter::skip(3) | into::list
+let ip = 0
+let output = []
+let opcodeTable = [
+    &adv,
+    &bxl,
+    &bst,
+    &jnz,
+    &bxc,
+    &out,
+    &bdv,
+    &cdv,
+]
+
+while ip < len(instructions) {
+    try {
+        next()
+    } catch e {
+        throw e if error::value(e) != "end"
+    }
+}
+
+output | join "," | assertEqual("5,1,4,0,5,1,0,2,6")
+
+fn next() {
+    let opcode = eat()
+    opcodeTable[opcode] | call
+}
+
+fn eat() {
+    throw "end" if ip >= len(instructions)
+    let value = instructions[ip]
+    ip += 1
+    value
+}
+
+fn eatCombo() {
+    let value = eat()
+    return value if value <= 3
+    return regA if value == 4
+    return regB if value == 5
+    return regC if value == 6
+}
+
+fn adv() {
+    let denominator = 2 ^ eatCombo()
+    regA = into::int(regA / denominator)
+}
+
+fn bxl() {
+    regB = regB | bitwise::xor(eat())
+}
+
+fn bst() {
+    regB = eatCombo() % 8
+}
+
+fn jnz() {
+    ip = eat() if regA > 0
+}
+
+fn bxc() {
+    regB = regB | bitwise::xor(regC)
+    eat() # ignored
+}
+
+fn out() {
+    output | push(eatCombo() % 8)
+}
+
+fn bdv() {
+    let denominator = 2 ^ eatCombo()
+    regB = into::int(regA / denominator)
+}
+
+fn cdv() {
+    let denominator = 2 ^ eatCombo()
+    regC = into::int(regA / denominator)
+}

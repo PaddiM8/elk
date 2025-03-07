@@ -1,0 +1,73 @@
+let grid = cat ${scriptPath}/input.txt | into::list
+
+let regions = []
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        continue if regions | iter::anyOf => region { (x, y) in region }
+
+        let visited = into::set
+        traverseRegion(x, y, c, visited)
+        regions | push(visited)
+    }
+}
+
+regions
+    | map => region {
+        countSides(region) * len(region)
+    }
+    | math::sum
+    | assertEqual(109352)
+
+fn traverseRegion(x, y, name, visited) {
+    let coords = (x, y)
+    return if not (y in 0..len(grid)) or not (x in 0..len(grid[0]))
+    return if grid[y][x] != name
+    return if coords in visited
+
+    visited | push(coords)
+    traverseRegion(x + 1, y, name, visited)
+    traverseRegion(x - 1, y, name, visited)
+    traverseRegion(x, y + 1, name, visited)
+    traverseRegion(x, y - 1, name, visited)
+}
+
+fn countSides(region) {
+    let perimeters = into::set
+    for (x, y) in region {
+        let name = grid[y][x]
+        perimeters | push((x, y, 0)) if x == 0 or grid[y][x - 1] != name
+        perimeters | push((x, y, 1)) if y == 0 or grid[y - 1][x] != name
+        perimeters | push((x ,y, 2)) if x == len(grid[0]) - 1 or grid[y][x + 1] != name
+        perimeters | push((x ,y, 3)) if y == len(grid) - 1 or grid[y + 1][x] != name
+    }
+
+    let count = 0
+    let visited = into::set
+    for perimeter in perimeters {
+        continue if perimeter in visited
+        count += 1
+        visited | push(perimeter)
+
+        let (x, y, direction) = perimeter
+        let (offsetX, offsetY) = if direction == 0 or direction == 2 {
+            (0, 1)
+        } else {
+            (1, 0)
+        }
+
+        while (x, y, direction) in perimeters {
+            visited | push((x, y, direction))
+            x += offsetX
+            y += offsetY
+        }
+
+        let (x, y, _) = perimeter
+        while (x, y, direction) in perimeters {
+            visited | push((x, y, direction))
+            x -= offsetX
+            y -= offsetY
+        }
+    }
+
+    count
+}

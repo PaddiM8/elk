@@ -1,0 +1,15 @@
+let left = []
+let right = []
+for line in cat ${scriptPath}/input.txt {
+    let (a, b) = line | re::split '\s+'
+    left | push(a)
+    right | push(b)
+    
+}
+
+left
+    | sort::asc
+    | iter::zip(right | sort::asc)
+    | map => pair: math::abs(pair[0] - pair[1])
+    | math::sum
+    | assertEqual(574327)

@@ -1,0 +1,170 @@
+let grid = cat ${scriptPath}/input.txt | into::list
+
+# find the junctions (and the raindeer)
+let raindeerX = 0
+let raindeerY = 0
+let endX = 0
+let endY = 0
+let junctions = into::set
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        if c == "S" {
+            raindeerX = x
+            raindeerY = y
+        }
+
+        if c == "E" {
+            endX = x
+            endY = y
+        }
+
+        junctions | push((x, y)) if isJunction(x, y)
+    }
+}
+
+# find the neighbours of each junction
+let graph = {}
+for junction in junctions {
+    let neighbours = findNeighbours(junction)
+    graph[junction] = neighbours
+}
+
+# find the shortest distance between the start node and every other ndoe
+let allDistances = dijkstra(graph, (raindeerX, raindeerY))
+
+# traverse the distance graph to find the junctions that are apart of any
+# of the shortest paths
+let touchedJunctions = traverse(
+    (raindeerX, raindeerY),
+    0,
+    allDistances[(endX, endY)],
+    [],
+    {}
+) | into::set
+
+# find all the lines in the shortest paths and turn them into individual tiles
+let tiles = into::set
+for junction in touchedJunctions {
+    let neighbours = findNeighbours(junction) | dict::keys
+    for neighbour in neighbours | where => n { n in touchedJunctions } {
+        if neighbour[0] == junction[0] {
+            neighbour[1]..=junction[1]
+                | map => y: (neighbour[0], y)
+                | each => node: push(tiles, node)
+        } else {
+            neighbour[0]..=junction[0]
+                | map => x: (x, neighbour[1])
+                | each => node: push(tiles, node)
+        }
+    }
+}
+
+tiles | len | assertEqual(123)
+
+fn isJunction(x, y) {
+    let c = grid[y][x]
+    return false if c == "#"
+    return true if c == "E" or c == "S"
+
+    let tileCount = 0
+    let up = grid[y - 1][x] == "."
+    let down = grid[y + 1][x] == "."
+    let left = grid[y][x - 1] == "."
+    let right = grid[y][x + 1] == "."
+    let count = [up, down, left, right] | iter::count => x: x
+
+    (up or down) and (left or right) or count >= 3
+}
+
+fn findNeighbours(junction) {
+    let (startX, startY) = junction
+
+    let neighbours = {}
+    for x in (startX + 1)..len(grid[0]) {
+        break if grid[startY][x] == "#"
+        if (x, startY) in junctions {
+            let weight = if (startX, startY) == (raindeerX, raindeerY): 0 else 1000
+            neighbours[(x, startY)] = x - startX + weight
+        }
+    }
+
+    for x in startX..0 {
+        break if grid[startY][x] == "#"
+        if (x, startY) in junctions {
+            neighbours[(x, startY)] = startX - x + 1000
+        }
+    }
+
+    for y in (startY + 1)..len(grid) {
+        break if grid[y][startX] == "#"
+        if (startX, y) in junctions {
+            neighbours[(startX, y)] = y - startY + 1000
+        }
+    }
+
+    for y in startY..0 {
+        break if grid[y][startX] == "#"
+        if (startX, y) in junctions {
+            neighbours[(startX, y)] = startY - y + 1000
+        }
+    }
+
+    neighbours
+}
+
+fn dijkstra(graph, start) {
+    let distances = graph
+        | dict::keys
+        | map => key: (key, int::max(), [])
+        | dict::create
+    distances[start] = 0
+    let visited = into::set
+
+    while len(visited) < len(graph) {
+        let currentNode = nil
+        let currentDistance = int::max
+        for node in distances | dict::keys {
+            continue if node in visited or distances[node] >= currentDistance
+            currentDistance = distances[node]
+            currentNode = node
+        }
+
+        break if currentNode == nil
+        visited | push(currentNode)
+
+        for (neighbour, weight) in graph[currentNode] {
+            continue if neighbour in visited
+            let newDistance = distances[currentNode] + weight
+            if newDistance < distances[neighbour] {
+                distances[neighbour] = newDistance
+            }
+        }
+    }
+
+    distances
+}
+
+fn traverse(node, totalWeight, shortestDistance, path, visited) {
+    return [] if totalWeight > shortestDistance
+    return [] if node in visited and visited[node] < totalWeight
+    if node == (endX, endY) {
+        path | push(node)
+        return path
+    }
+
+    visited[node] = totalWeight
+
+    let allPaths = []
+    for (neighbour, weight) in graph[node] {
+        let result = traverse(
+            neighbour,
+            totalWeight + weight,
+            shortestDistance,
+            path | iter::concat([node]) | iter::collect,
+            visited
+        )
+        allPaths | pushAll(result)
+    }
+
+    allPaths
+}

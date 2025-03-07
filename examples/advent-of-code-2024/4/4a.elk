@@ -1,0 +1,41 @@
+let grid = cat ${scriptPath}/input.txt | into::list
+let word = "XMAS"
+let wordLength = word | len
+let reversedWord = word | iter::reverse | join
+
+let count = 0
+for y in 0..len(grid) {
+    for x in 0..len(grid[y]) {
+        let possibleWords = [
+            getHorizontal(x, y, wordLength),
+            getVertical(x, y, wordLength),
+            getSideways(x, y, wordLength, true),
+            getSideways(x, y, wordLength, false),
+        ]
+        count += possibleWords | iter::count => x { x == word or x == reversedWord }
+    }
+}
+
+count | assertEqual(1875)
+
+fn getHorizontal(x, y, length) {
+    return "" if x < 0 or y < 0
+    grid[y] | iter::skip(x) | iter::take(length) | join ""
+}
+
+fn getVertical(x, y, length) {
+    return "" if x < 0 or y < 0
+    grid | iter::skip(y) | iter::take(length) | map => &iter::at(x) | join
+}
+
+fn getSideways(startX, startY, length, isLeft) {
+    let sidewaysWord = ""
+    for i in 0..length {
+        let line = grid | iter::at(startY + i)
+        let x = if isLeft: startX - i else startX + i
+        return sidewaysWord if line == nil or x < 0
+        sidewaysWord += iter::at(line, x) ?? ""
+    }
+
+    sidewaysWord
+}

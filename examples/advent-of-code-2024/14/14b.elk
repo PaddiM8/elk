@@ -1,0 +1,56 @@
+let width = 101
+let height = 103
+
+struct Robot(px, py, vx, vy)
+module robot {
+    pub fn move(self) {
+        self->px += self->vx
+        self->py += self->vy
+
+        if self->px >= width {
+            self->px -= width
+        } else if self->px < 0 {
+            self->px += width
+        }
+
+        if self->py >= height {
+            self->py -= height
+        } else if self->py < 0 {
+            self->py += height
+        }
+    }
+}
+
+let robots = cat ${scriptPath}/input.txt
+    | map => line {
+        let (px, py, vx, vy) = line
+            | re::findAll '-?\d+'
+            | map => &into::int
+        new Robot(px, py, vx, vy)
+    }
+    | into::list
+
+let result = for second in (1..) {
+    robots | each => &robot::move
+
+    # count quadrants
+    let quadrants = [0, 0, 0, 0]
+    for robot in robots {
+        continue if robot->px == into::int(width / 2) or
+            robot->py == into::int(height / 2)
+
+        if robot->px < width / 2 and robot->py < height / 2 {
+            quadrants[0] += 1
+        } else if robot->px < width / 2 and robot->py > height / 2 {
+            quadrants[2] += 1
+        } else if robot->px > width / 2 and robot->py < height / 2 {
+            quadrants[1] += 1
+        } else if robot->px > width / 2 and robot->py > height / 2 {
+            quadrants[3] += 1
+        }
+    }
+
+    break second if iter::min(quadrants) / iter::max(quadrants) < 0.2
+}
+
+result | assertEqual(291)

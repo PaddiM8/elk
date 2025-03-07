@@ -1,0 +1,17 @@
+read ${scriptPath}/input.txt
+    | split "\n\n"
+    | map => block {
+        let (ax, ay, bx, by, prizeX, prizeY) = block
+            | re::findAll '\d+'
+            | map => &into::int
+        prizeX += 10000000000000
+        prizeY += 10000000000000
+
+        let b = (ay * prizeX - ax * prizeY) / (ay * bx - ax * by)
+        let a = (prizeX - bx * into::int(b)) / ax
+
+        return 0 if math::floor(a) != a or math::floor(b) != b
+        a * 3 + into::int(b)
+    }
+    | math::sum
+    | assertEqual(5881925375239)

@@ -1,0 +1,27 @@
+let stones = read ${scriptPath}/input.txt | split " " | map => &into::int | iter::collect
+let cache = {}
+stones | map => &transform(75) | math::sum | assertEqual(233007586663131)
+
+fn transform(stone, iterationsLeft) {
+    let cacheKey = (stone, iterationsLeft)
+    return cache[cacheKey] if cacheKey in cache
+    return 1 if iterationsLeft == 0
+
+    let numberOfDigits = stone | math::log10 | into::int | op::add(1)
+    let result = if stone == 0 {
+        transform(1, iterationsLeft - 1)
+    } else if numberOfDigits % 2 == 0 {
+        let factor = 10 ^ (numberOfDigits / 2)
+        let stone1 = stone / factor | into::int
+        let stone2 = stone - (stone1 * factor) | into::int
+
+        transform(stone1, iterationsLeft - 1) +
+            transform(stone2, iterationsLeft - 1)
+    } else {
+        transform(stone * 2024, iterationsLeft - 1)
+    }
+
+    cache[cacheKey] = result
+    result
+}
+

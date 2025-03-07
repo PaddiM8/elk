@@ -1,0 +1,29 @@
+let grid = cat ${scriptPath}/input.txt
+    | map => line { line | map => &into::int | iter::collect }
+    | iter::collect
+
+let sum = 0
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        sum += traverse(x, y, -1) if c == 0
+    }
+}
+
+sum | assertEqual(1518)
+
+fn traverse(startX, startY, previousHeight) {
+    return 0 if not (startY in 0..len(grid))
+    return 0 if not (startX in 0..len(grid[0]))
+
+    let height = grid[startY][startX] | into::int
+    return 0 if previousHeight != height - 1
+    return 1 if height == 9
+
+    let score = 0
+    score += traverse(startX + 1, startY, height)
+    score += traverse(startX - 1, startY, height)
+    score += traverse(startX, startY + 1, height)
+    score += traverse(startX, startY - 1, height)
+
+    score
+}

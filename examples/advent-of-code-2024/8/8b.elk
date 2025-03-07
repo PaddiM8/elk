@@ -1,0 +1,36 @@
+let grid = cat ${scriptPath}/input.txt | iter::collect
+let antennasByFrequency = {}
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        continue if c == "."
+        antennasByFrequency[c] ??= []
+        antennasByFrequency[c] | push((x, y))
+    }
+}
+
+let gridRangeX = 0..len(grid[0])
+let gridRangeY = 0..len(grid)
+let antinodes = into::set
+for (frequency, antennas) in antennasByFrequency {
+    for (antenna1, antenna2) in antennas | iter::product(2) {
+        continue if antenna1 == antenna2
+        let (x1, y1) = antenna1
+        let (x2, y2) = antenna2
+        let offsetX = x2 - x1
+        let offsetY = y2 - y1
+
+        while x1 in gridRangeX and y1 in gridRangeY {
+            antinodes | push((x1, y1))
+            x1 -= offsetX
+            y1 -= offsetY
+        }
+
+        while x2 in gridRangeX and y2 in gridRangeY {
+            antinodes | push((x2, y2))
+            x2 += offsetX
+            y2 += offsetY
+        }
+    }
+}
+
+antinodes | len | assertEqual(1280)

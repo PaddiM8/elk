@@ -1,0 +1,25 @@
+let (ruleSection, updateSection) = read ${scriptPath}/input.txt | split "\n\n"
+let ruleMap = ruleSection
+    | str::lines
+    | map => &split '|'
+    | dict::createLookup
+
+updateSection
+    | str::lines
+    | map => &split ','
+    | where => &isValid
+    | map => pages { pages[len(pages) / 2] }
+    | map => &into::int
+    | math::sum
+    | assertEqual(1743)
+
+fn isValid(pages) {
+    for (page, i) in pages | withIndex {
+        for succeedingPage in iter::at(ruleMap, page) ?? [] {
+            let succeedingIndex = iter::indexOf(pages, succeedingPage)
+            return false if succeedingIndex < i and succeedingIndex != -1
+        }
+    }
+
+    true
+}

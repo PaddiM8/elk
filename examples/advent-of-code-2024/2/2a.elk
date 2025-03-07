@@ -1,0 +1,12 @@
+cat ${scriptPath}/input.txt
+    | iter::count => line {
+        let diffs = line
+            | split " "
+            | map => &into::int
+            | iter::window 2
+            | map => pair: pair[0] - pair[1]
+
+        iter::allOf(diffs) => x: x in 1..=3 or
+            iter::allOf(diffs) => x: x in -3..0
+    }
+    | assertEqual(68)

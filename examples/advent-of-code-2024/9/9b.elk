@@ -1,0 +1,51 @@
+struct File(index, length, fileId)
+struct FreeSpace(index, length)
+
+let disk = read ${scriptPath}/input.txt | str::trim | map => &into::int | iter::collect
+let files = []
+let freeSpaces = []
+let blockIndex = 0
+for (digit, i) in disk | withIndex {
+    if i % 2 == 0 {
+        let fileId = i / 2
+        files | push(new File(blockIndex, digit, fileId))
+    } else if digit > 0 {
+        freeSpaces | push(new FreeSpace(blockIndex, digit))
+    }
+
+    blockIndex += digit
+}
+
+let handledFiles = []
+for file in files | iter::reverse {
+    let movedFile = false
+    let originalFileIndex = file->index
+    for freeSpace in freeSpaces {
+        continue if freeSpace->index > file->index
+        let spaceLeft = freeSpace->length - file->length
+        continue if spaceLeft < 0
+
+        file->index = freeSpace->index
+        freeSpace->length = spaceLeft
+        freeSpace->index += file->length
+        movedFile = true
+        break
+    }
+
+    if movedFile {
+        freeSpaces | push(new FreeSpace(originalFileIndex, file->length))
+    }
+
+    handledFiles | push(file)
+}
+
+handledFiles
+    | map => &getFileChecksum
+    | math::sum
+    | assertEqual(62203666)
+
+fn getFileChecksum(file) {
+    file->index..(file->index + file->length)
+        | map => i: i * file->fileId
+        | math::sum
+}

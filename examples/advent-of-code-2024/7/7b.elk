@@ -1,0 +1,36 @@
+let operators = [&op::add, &op::mul, &concat]
+fn concat(a, b) {
+    b + a * 10 ^ (math::log10(b) | math::floor() | op::add(1))
+}
+
+cat ${scriptPath}/input.txt
+    | map => line {
+        let (left, right) = line | split ": "
+        let values = right | split " " | map => &into::int
+        (into::int(left), values)
+    }
+    | map => lr: getResultIfValid(lr[0], lr[1])
+    | math::sum
+    | assertEqual(11387)
+
+fn getResultIfValid(expectedResult, values) {
+    operators
+        | iter::product(len(values) - 1)
+        | map => operations {
+            values
+                | iter::zipLongest(operations)
+                | iter::flatten
+                | where => x: x != nil
+                | evaluate
+        }
+        | iter::firstOfOrNil => &op::equals(expectedResult)
+        | op::coalesce(0)
+}
+
+fn evaluate(tokens) {
+    [&op::add]
+        | iter::concat(tokens)
+        | iter::chunks(2)
+        | iter::reduce => acc, pair: (nil, call(pair[0], acc[1], pair[1]))
+        | iter::at(1)
+}

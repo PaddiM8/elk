@@ -1,0 +1,61 @@
+let (gridText, movements) = read ${scriptPath}/input.txt | split "\n\n"
+let grid = gridText | str::lines | map => &into::list | iter::collect
+
+# find the robot
+let robotX = 0
+let robotY = 0
+for (line, y) in grid | withIndex {
+    let robotIndex = line | iter::indexOf("@")
+    if robotIndex != -1 {
+        robotX = robotIndex
+        robotY = y
+    }
+}
+
+# simulate robot movements
+for movement in movements {
+    continue if movement == "\n"
+    move(robotX, robotY, movement)
+}
+
+# find the boxes
+let sum = 0
+for (line, y) in grid | withIndex {
+    for (c, x) in line | withIndex {
+        sum += 100 * y + x if c == "O"
+    }
+}
+
+sum | assertEqual(494980)
+
+fn move(fromX, fromY, movement) {
+    let toX = fromX
+    let toY = fromY
+    if movement == "<" {
+        toX -= 1
+    } else if movement == ">" {
+        toX += 1
+    } else if movement == "^" {
+        toY -= 1
+    } else if movement == "v" {
+        toY += 1
+    }
+
+    let toChar = grid[toY][toX]
+    return false if toChar == "#"
+
+    if toChar == "O" {
+        let moved = move(toX, toY, movement)
+        return false if not moved
+    }
+
+    let charToMove = grid[fromY][fromX]
+    grid[fromY][fromX] = "."
+    grid[toY][toX] = charToMove
+    if (charToMove == "@") {
+        robotX = toX
+        robotY = toY
+    }
+
+    true
+}

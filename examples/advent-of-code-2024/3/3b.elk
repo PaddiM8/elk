@@ -1,0 +1,16 @@
+let matches = read ${scriptPath}/input.txt
+    | re::allGroups 'mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don\'t\(\)'
+let isActive = true
+let sum = 0
+for groups in matches {
+    if groups[0] == "don't()" {
+        isActive = false
+    } else if groups[0] == "do()" {
+        isActive = true
+    } else if isActive {
+        sum += into::int(groups[1]) * into::int(groups[2])
+    }
+}
+
+sum | assertEqual(6018886)
+

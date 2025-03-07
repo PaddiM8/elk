@@ -1,0 +1,65 @@
+struct BlockSpan(index, length, fileId)
+
+let disk = read ${scriptPath}/input.txt | str::trim | map => &into::int | iter::collect
+let compacted = []
+
+let i = 0
+while i < len(disk) {
+    let length = disk[i]
+
+    # file
+    if i % 2 == 0 {
+        let fileId = i / 2
+        let index = 0
+        if len(compacted) > 0 {
+            let previous = compacted | iter::last
+            index = previous->index + previous->length
+        }
+
+        let span = new BlockSpan(index, length, fileId)
+        compacted | push(span)
+        disk[i] = 0
+        i += 1
+        continue
+    }
+
+    # free space
+    fillSpace(length)
+    i += 1
+}
+
+fn fillSpace(spaceSize) {
+    # remove trailing empty space
+    pop(disk) if len(disk) % 2 == 0
+
+    let fileToMoveId = len(disk) / 2 | into::int
+    let fileToMoveSize = disk | pop | into::int
+    return if fileToMoveSize == 0
+
+    let index = 0
+    if len(compacted) > 0 {
+        let previous = compacted | iter::last
+        index = previous->index + previous->length
+    }
+
+    let spanSize = min(spaceSize, fileToMoveSize)
+    let span = new BlockSpan(index, spanSize, fileToMoveId)
+    compacted | push(span)
+
+    if spaceSize > fileToMoveSize {
+        fillSpace(spaceSize - fileToMoveSize)
+    } else if spaceSize < fileToMoveSize {
+        disk | push(fileToMoveSize - spaceSize)
+    }
+}
+
+compacted
+    | map => &getSpanChecksum
+    | math::sum
+    | assertEqual(55458452)
+
+fn getSpanChecksum(span) {
+    span->index..(span->index + span->length)
+        | map => i: i * span->fileId
+        | math::sum
+}

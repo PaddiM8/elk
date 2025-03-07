@@ -1,0 +1,63 @@
+let mapLines = cat ${scriptPath}/input.txt | map => &into::list | iter::collect
+
+let startY = mapLines | iter::findIndex => &iter::contains("^")
+let startX = mapLines[startY] | iter::indexOf("^")
+
+let (originalIsLoop, originalVisited) = mapResultsInLoop()
+let loopOptionsCount = 0
+loopOptionsCount += 1 if originalIsLoop
+
+let i = -1
+for (x, y) in originalVisited | dict::keys {
+    i += 1
+    let char = mapLines[y][x]
+    continue if char == "#" or char == "^"
+
+    mapLines[y][x] = "#"
+    loopOptionsCount += 1 if mapResultsInLoop()[0]
+    mapLines[y][x] = "."
+}
+
+loopOptionsCount | assertEqual(34)
+
+fn mapResultsInLoop() {
+    let x = startX
+    let y = startY
+    let orientation = (0, -1)
+
+    let visited = {}
+    while x in 0..len(mapLines[0]) and y in 0..len(mapLines) {
+        let pos = (x, y)
+        let orientationsAtPos = iter::at(visited, pos)
+        if orientationsAtPos != nil and orientation in orientationsAtPos:
+            return (true, visited)
+
+        visited[pos] ??= into::set()
+        visited[pos] | push(orientation)
+
+        let nextX = x + orientation[0]
+        let nextY = y + orientation[1]
+
+        let nextLine = mapLines | iter::at(nextY)
+        return (false, visited) if nextLine == nil or nextY < 0
+
+        let nextChar = nextLine | iter::at(nextX)
+        return (false, visited) if nextChar == nil or nextX < 0 
+
+        if nextChar == "#" {
+            orientation = rotate(orientation) if nextChar == "#"
+        } else {
+            x += orientation[0]
+            y += orientation[1]
+        }
+    }
+
+    (false, visited)
+}
+
+fn rotate(orientation) {
+    return (-1, 0) if orientation == (0, 1)
+    return (1, 0) if orientation == (0, -1)
+    return (0, 1) if orientation == (1, 0)
+    return (0, -1) if orientation == (-1, 0)
+}

@@ -1,0 +1,14 @@
+let pairs = cat ${scriptPath}/input.txt
+    | map => &re::split('\s+')
+    | iter::collect
+let leftDict = pairs
+    | map => x: (iter::at(x, 0), 0)
+    | dict::create
+let right = pairs
+    | map => &iter::at(1)
+    | each => x { leftDict[x] += 1 if x in leftDict }
+
+leftDict
+    | map => kv: kv[0] * kv[1]
+    | math::sum
+    | assertEqual(234178)
