@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ARCHITECTURE=x64
-if [ "$(uname -m)" = "aarch64" ]; then
+if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
     ARCHITECTURE=arm64
 elif [ -n "$1" ]; then
     ARCHITECTURE=$1
