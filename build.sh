@@ -1,10 +1,10 @@
 #!/bin/sh
 
 ARCHITECTURE=x64
-if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
-    ARCHITECTURE=arm64
-elif [ -n "$1" ]; then
+if [ -n "$1" ]; then
     ARCHITECTURE=$1
+elif [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
+    ARCHITECTURE=arm64
 fi
 
 TARGET=linux-$ARCHITECTURE

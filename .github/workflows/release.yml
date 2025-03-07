@@ -15,8 +15,8 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Build elk
         run: |
-          ./build.sh x64
           ./build.sh arm64
+          ./build.sh x64
       - uses: actions/upload-artifact@v4
         with:
           name: macOS-x64
@@ -34,14 +34,41 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Install arm toolchain
         run: |
+          cat <<EOF > deb822sources
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: $(lsb_release -sc)
+          Components: main restricted universe
+          Architectures: amd64
+          
+          Types: deb
+          URIs: http://security.ubuntu.com/ubuntu/
+          Suites: $(lsb_release -sc)-security
+          Components: main restricted universe
+          Architectures: amd64
+          
+          Types: deb
+          URIs: http://archive.ubuntu.com/ubuntu/
+          Suites: $(lsb_release -sc)-updates
+          Components: main restricted universe
+          Architectures: amd64
+          
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: $(lsb_release -sc)
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          
+          Types: deb
+          URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+          Suites: $(lsb_release -sc)-updates
+          Components: main restricted multiverse universe
+          Architectures: arm64
+          EOF
+          
+          sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
+          
           sudo dpkg --add-architecture arm64
-          sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc) main restricted
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-updates main restricted
-          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-backports main restricted universe multiverse
-          EOF'
-          sudo sed -i -e 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
-          sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
           sudo apt update
           sudo apt install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
       - name: Build elk
