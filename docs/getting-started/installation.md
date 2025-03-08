@@ -4,6 +4,10 @@
 
 Download the [latest release](https://github.com/PaddiM8/elk/releases/latest/) from GitHub.
 
+### Package managers
+
+* AUR (Arch Linux) - `elk-shell-bin`
+
 ### Linux/macOS
 Extract the archive into `/`:
 ```bash
