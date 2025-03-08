@@ -1,7 +1,10 @@
 # Examples
 
 * [A sokoban game](https://github.com/PaddiM8/elk/tree/main/examples/sokoban)
+* [Parser](https://github.com/PaddiM8/elk/tree/main/examples/parser)
 * [Advent of Code 2022](https://github.com/PaddiM8/elk/tree/main/examples/advent-of-code-2022)
+* [Advent of Code 2023](https://github.com/PaddiM8/elk/tree/main/examples/advent-of-code-2023)
+* [Advent of Code 2024](https://github.com/PaddiM8/elk/tree/main/examples/advent-of-code-2024)
 
 ## Hello World
 
