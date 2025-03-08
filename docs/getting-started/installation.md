@@ -10,14 +10,14 @@ Extract the archive into `/`:
 tar xvf *.tar.xz -C /
 ```
 
-### Windows
+### Windows (unstable)
 Extract the zip file.
 
 ## Manual Compilation
 
 ### Prerequisites
 
-* [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+* [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 
 ### Steps
 
