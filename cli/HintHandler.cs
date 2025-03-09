@@ -31,6 +31,9 @@ class HintHandler(
         _previousHadHistoryMatch = suggestion != null;
         _previousPromptText = promptText;
 
+        if (suggestion == null || promptText.Length >= suggestion.Content.Length)
+            return string.Empty;
+
         return _previousHadHistoryMatch
             ? suggestion!.Content[promptText.Length..]
             : GetFileHint();
