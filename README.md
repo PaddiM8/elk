@@ -26,13 +26,13 @@ is in a context where its value is used, the standard output of the resulting pr
 giving the illusion that program invocations are simply function calls.
 
 ```nim
-# here, 'ls' and 'echo' are program invocations, while 'str::upper' and 
+# here, 'ls' and 'echo' are program invocations, while 'str::upper' and
 # 'len' are calls to standard library functions
 #
 # programs and functions can be called both using bash-like invocation
 # syntax (arguments parsed as pure text) and Python-like parenthesised
 # invocation syntax
-let imageFiles = ls images/*.png | str::upper
+let imageFiles = ls images/*.png | map => &str::upper | iter::collect
 echo(imageFiles[0])
 
 # clean syntax
