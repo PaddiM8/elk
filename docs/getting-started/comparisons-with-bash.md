@@ -7,13 +7,13 @@
 echo hello world > file.txt
 echo appended line >> file.txt
 some-program &> errors.txt
-echo This won't be visible > /dev/null
+echo This wont be visible > /dev/null
 
 # elk
 "hello world" | write file.txt
 "appended line" | append file.txt
 some-program |err write errors.txt
-echo This won't be visible | dispose # disposeErr for errors
+echo This wont be visible | dispose # disposeErr for errors
 ```
 
 ### Conditionals
