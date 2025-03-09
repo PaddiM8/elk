@@ -147,7 +147,7 @@ program's stdout/stderr (depending on if it was piped with `|`, `|err` or
 line, but also buffered inside the object itself in order to make it possible 
 to access these values later. Pipes can be implicitly converted to strings.
 
-::: into
+::: info
 Normally, the content of a Pipe is kept in memory for as long as the Pipe 
 exists. However, when a Pipe object is piped to a program invocation or an std 
 call that consumes it immediately, data is not stored in the Pipe, since it is 
