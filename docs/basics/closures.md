@@ -24,8 +24,8 @@ fn select(container) => closure {
 # Keep in mind that the closure is added *after*
 # any arguments. Eg. a(x) => ...
 let values = ["1", "2", "3"];
-values | select => x: int(x) #=> [1, 2, 3]
-values | select => &int      #=> [1, 2, 3]
+values | map => x: int(x) #=> [1, 2, 3]
+values | map => &int      #=> [1, 2, 3]
 ```
 
 It is also possible to create free-standing closures using the `Fn` function.
