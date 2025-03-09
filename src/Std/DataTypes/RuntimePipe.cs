@@ -41,6 +41,8 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         }
     }
 
+    public bool UseSecondaryEnumerator { get; init; }
+
     public int? ExitCode
         => _processContext.ExitCode;
 
@@ -59,7 +61,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         _processContext = process;
 
         if (!disableRedirectionBuffering)
-            Values = new List<string>();
+            Values = [];
 
         if (automaticStart)
             Start();
@@ -155,6 +157,22 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public override string ToDisplayString()
         => StringFormatting.ToDisplayString(StringValue);
 
+    public RuntimePipe CloneAsSecondary()
+    {
+        var cloned = new RuntimePipe(
+            _processContext,
+            disableRedirectionBuffering: Values == null,
+            automaticStart: false
+        )
+        {
+            UseSecondaryEnumerator = true,
+        };
+
+        cloned.StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, cloned.Values, useSecondary: true);
+
+        return cloned;
+    }
+
     public void Start()
     {
         if (_processContext.HasStarted)
@@ -189,6 +207,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
     public void AllowNonZeroExit()
     {
         _processContext.AllowNonZeroExit();
+    }
+
+    public void EnableSecondaryStreamForStdErr()
+    {
+        _processContext.BufferStdErrSeparately = true;
     }
 
     public int Wait()
@@ -258,12 +281,17 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
     private readonly IList<string>? _values;
     private readonly IEnumerator<string> _processEnumerator;
 
-    public RuntimePipeStreamEnumerator(ProcessContext process, IList<string>? values)
+    public RuntimePipeStreamEnumerator(ProcessContext process, IList<string>? values, bool useSecondary = false)
     {
         _process = process;
         _values = values;
-        process.StartWithRedirect();
-        _processEnumerator = process.GetEnumerator();
+
+        if (!useSecondary)
+            process.StartWithRedirect();
+
+        _processEnumerator = useSecondary
+            ? process.GetSecondaryEnumerator()
+            : process.GetEnumerator();
     }
 
     public bool MoveNext()

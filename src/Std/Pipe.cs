@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Elk.Std.Attributes;
 using Elk.Std.DataTypes;
 
@@ -77,6 +79,31 @@ public static class Pipe
         pipe.Start();
 
         return pipe;
+    }
+
+    /// <summary>
+    /// NOTE: Program must be piped with `|all`. For example, `let (out, err) = program-name |all getOutAndErr`
+    /// </summary>
+    /// <returns>A tuple contain an stdout stream and an stderr stream.</returns>
+    [ElkFunction("getOutAndErr", Reachability.Everywhere, StartsPipeManually = true)]
+    public static RuntimeTuple GetOutAndErr(RuntimePipe pipe)
+    {
+        pipe.EnableSecondaryStreamForStdErr();
+
+        pipe.AllowNonZeroExit();
+        pipe.Start();
+
+        return new RuntimeTuple([pipe, pipe.CloneAsSecondary()]);
+    }
+
+    private static IEnumerable<RuntimeObject> Enumerate(IEnumerator<RuntimeObject> enumerator)
+    {
+        while (enumerator.MoveNext())
+        {
+            yield return enumerator.Current;
+        }
+
+        enumerator.Dispose();
     }
 
     /// <summary>

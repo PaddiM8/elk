@@ -18,19 +18,28 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     public int? ExitCode { get; private set; }
 
+    public bool BufferStdErrSeparately { get; set; }
+
     public bool Success
         => ExitCode == 0 || _allowNonZeroExit;
 
     private Process? _process = process;
-    private readonly BlockingCollection<string> _buffer = new(new ConcurrentQueue<string>());
+    private readonly BlockingCollection<string> _mainBuffer = new(new ConcurrentQueue<string>());
+    private readonly BlockingCollection<string> _secondaryBuffer = new(new ConcurrentQueue<string>());
+    private BlockingCollection<string> _outBuffer = null!;
+    private BlockingCollection<string> _errBuffer = null!;
     private bool _allowNonZeroExit;
     private int _openPipeCount;
     private bool _disposeOutput;
     private bool _disposeError;
     private readonly object _closeProcessLock = new();
+    private bool _waitForExit = waitForExit;
 
     public IEnumerator<string> GetEnumerator()
-        => _buffer.GetConsumingEnumerable().GetEnumerator();
+        => _mainBuffer.GetConsumingEnumerable().GetEnumerator();
+
+    public IEnumerator<string> GetSecondaryEnumerator()
+        => _secondaryBuffer.GetConsumingEnumerable().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
@@ -38,6 +47,13 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
     public int Start()
     {
         HasStarted = true;
+
+        _outBuffer = _mainBuffer;
+        _errBuffer = _mainBuffer;
+        if (BufferStdErrSeparately)
+        {
+            _errBuffer = _secondaryBuffer;
+        }
 
         try
         {
@@ -58,7 +74,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     public void MakeBackground()
     {
-        waitForExit = false;
+        _waitForExit = false;
         _process!.StartInfo.RedirectStandardOutput = false;
         _process!.StartInfo.RedirectStandardError = false;
     }
@@ -67,15 +83,30 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
     {
         HasStarted = true;
 
+        _outBuffer = _mainBuffer;
+        _errBuffer = _mainBuffer;
+        if (BufferStdErrSeparately)
+        {
+            _errBuffer = _secondaryBuffer;
+        }
+
         if (!_disposeOutput)
         {
-            _process!.OutputDataReceived += Process_DataReceived;
+            _process!.OutputDataReceived += (_, e) =>
+            {
+                ProcessOutReceived(e);
+            };
         }
 
         if (!_disposeError)
-            _process!.ErrorDataReceived += Process_DataReceived;
+        {
+            _process!.ErrorDataReceived += (_, e) =>
+            {
+                ProcessErrReceived(e);
+            };
+        }
 
-        if (!waitForExit)
+        if (!_waitForExit)
         {
             _process!.Exited += (_, _) =>
             {
@@ -121,12 +152,15 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         }
 
         if (_openPipeCount == 0)
-            _buffer.CompleteAdding();
+        {
+            _mainBuffer.CompleteAdding();
+            _secondaryBuffer.CompleteAdding();
+        }
 
         if (pipedValue != null)
             Read(pipedValue);
 
-        if (waitForExit)
+        if (_waitForExit)
             CloseProcess(messageOnError: true);
     }
 
@@ -157,16 +191,33 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         return ExitCode ?? 0;
     }
 
-    private void Process_DataReceived(object sender, DataReceivedEventArgs eventArgs)
+    private void ProcessOutReceived(DataReceivedEventArgs eventArgs)
     {
         if (eventArgs.Data == null)
         {
-            if (Interlocked.Decrement(ref _openPipeCount) == 0)
-                _buffer.CompleteAdding();
+            if (Interlocked.Decrement(ref _openPipeCount) == 0 || BufferStdErrSeparately)
+            {
+                _outBuffer.CompleteAdding();
+            }
         }
         else
         {
-            _buffer.TryAdd(eventArgs.Data);
+            _outBuffer.TryAdd(eventArgs.Data);
+        }
+    }
+
+    private void ProcessErrReceived(DataReceivedEventArgs eventArgs)
+    {
+        if (eventArgs.Data == null)
+        {
+            if (Interlocked.Decrement(ref _openPipeCount) == 0 || BufferStdErrSeparately)
+            {
+                _errBuffer.CompleteAdding();
+            }
+        }
+        else
+        {
+            _errBuffer.TryAdd(eventArgs.Data);
         }
     }
 
