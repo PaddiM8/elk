@@ -42,7 +42,7 @@ echo Kernel: ${kernel}
 ```elk
 using ansi
 
-let name = io::input("Name ${$USER}: " | color green) or $USER
+let name = io::input("Name $USER: " | color green) or $USER
 let createFolder = io::input("Create folder? (y/N) " | color green) or "n"
     | str::trim
     | str::lower
