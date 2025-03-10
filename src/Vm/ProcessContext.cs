@@ -61,6 +61,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         }
         catch (Win32Exception)
         {
+            Environment.SetEnvironmentVariable("?", "127");
+
             throw new RuntimeNotFoundException(_process!.StartInfo.FileName);
         }
 
@@ -136,6 +138,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         }
         catch (Win32Exception)
         {
+            Environment.SetEnvironmentVariable("?", "127");
+
             throw new RuntimeNotFoundException(_process.StartInfo.FileName);
         }
 

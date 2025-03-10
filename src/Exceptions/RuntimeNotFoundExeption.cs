@@ -1,9 +1,4 @@
 namespace Elk.Exceptions;
 
-class RuntimeNotFoundException : RuntimeException
-{
-    public RuntimeNotFoundException(string identifier)
-        : base($"No such file/function/variable: {identifier}")
-    {
-    }
-}
+class RuntimeNotFoundException(string identifier)
+    : RuntimeException($"No such file/function/variable: {identifier}");
