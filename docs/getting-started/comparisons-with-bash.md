@@ -50,7 +50,7 @@ done
 # option 1
 cat lines.txt | each => line: echo("Line: ${line}")
 
-# otion 2
+# option 2
 for line in cat("lines.txt"):
    println("Line:", line)
 ```
