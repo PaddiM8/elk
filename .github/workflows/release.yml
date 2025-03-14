@@ -150,9 +150,11 @@ jobs:
           git config --global user.name "GitHub Actions"
   
           mv README.md ..
+          mv .git ..
           rm -rf *
           git clone https://github.com/PaddiM8/elk elk-tmp
           mv ../README.md .
+          mv ../.git .
           cp -r elk-tmp/editors/vim/* .
           rm -rf elk-tmp
           git add .
