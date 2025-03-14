@@ -2,7 +2,7 @@
     "name": "elk-shell",
     "description": "Language integrations for the elk shell programming language",
     "license": "MIT",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "PaddiM8",
     "repository": "https://github.com/PaddiM8/elk",
     "icon": "icon.png",
