@@ -92,17 +92,17 @@ jobs:
           dotnet-version: '9.0.x'
       - run: |
           ./Build.ps1 x64
-          ./Build.ps1 arm64
+          #./Build.ps1 arm64
           Compress-Archive -Path build/win-x64 -Destination build/win-x64/win-x64.zip
-          Compress-Archive -Path build/win-arm64 -Destination build/win-arm64/win-arm64.zip
+          #Compress-Archive -Path build/win-arm64 -Destination build/win-arm64/win-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: win-x64
           path: build/*-x64/*.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: win-arm64
-          path: build/*-arm64/*.zip
+      #- uses: actions/upload-artifact@v4
+      #  with:
+      #    name: win-arm64
+      #    path: build/*-arm64/*.zip
   create-release:
     runs-on: ubuntu-latest
     needs: [linux-binaries, macOS-binaries, windows-binaries]
