@@ -20,7 +20,7 @@ public class EnterHandler : IEnterHandler
         {
             return new EnterHandlerResponse(
                 true,
-                promptText.Insert(caret, "\n"),
+                promptText.Insert(caret, Environment.NewLine),
                 caret + 1
             );
         }

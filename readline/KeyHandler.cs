@@ -6,12 +6,8 @@ using Elk.ReadLine.Render;
 
 namespace Elk.ReadLine;
 
-public readonly struct KeyPress(ConsoleModifiers modifiers, ConsoleKey key)
+public readonly record struct KeyPress(ConsoleModifiers Modifiers, ConsoleKey Key)
 {
-    public ConsoleModifiers Modifiers { get; } = modifiers;
-
-    public ConsoleKey Key { get; } = key;
-
     public KeyPress(ConsoleKey key)
         : this(0, key)
     {
@@ -24,7 +20,7 @@ public class KeyHandler
     public string Text
         => _renderer.Text;
 
-    public char[] WordSeparators = { ' ' };
+    public char[] WordSeparators = [' '];
 
     internal IHistoryHandler? HistoryHandler { get; init; }
 
