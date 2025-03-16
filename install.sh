@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sudo tar -xvf build/*/elk.tar.* -C /
+sudo tar -xvf build/*/*.tar.* -C /
