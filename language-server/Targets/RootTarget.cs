@@ -7,13 +7,20 @@ namespace Elk.LanguageServer.Targets;
 
 class RootTarget : Target
 {
-    public RootTarget()
+    private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly ILogger _logger;
+
+    public RootTarget(CancellationTokenSource cancellationTokenSource, ILogger logger)
     {
+        _cancellationTokenSource = cancellationTokenSource;
+        _logger = logger;
         RegisterMethod("initialize", Initialize);
+        RegisterMethod("shutdown", Shutdown);
         RegisterNotification("initialized", Initialized);
+        RegisterNotification("exit", Exit);
     }
 
-    public static InitializeResult Initialize(JsonNode parameters)
+    public InitializeResult Initialize(JsonNode parameters)
     {
         return new InitializeResult
         {
@@ -42,7 +49,20 @@ class RootTarget : Target
         };
     }
 
-    public static void Initialized(JsonNode parameters)
+    public void Initialized(JsonNode parameters)
     {
+    }
+
+    public object? Shutdown(JsonNode parameters)
+    {
+        _logger.LogInfo("Shutdown request received");
+
+        return null;
+    }
+
+    public void Exit(JsonNode parameters)
+    {
+        _logger.LogInfo("Exit notification received");
+        _cancellationTokenSource.Cancel();
     }
 }

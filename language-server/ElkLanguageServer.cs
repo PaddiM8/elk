@@ -19,12 +19,19 @@ public static class ElkLanguageServer
             ? new ProxyWriteStream(Console.OpenStandardOutput(), logger)
             : Console.OpenStandardOutput();
 
+        var cancellationTokenSource = new CancellationTokenSource();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            cancellationTokenSource.Cancel();
+        };
+
         var rpc = new JsonRpc(outStream, Console.OpenStandardInput(), logger);
         try
         {
-            rpc.RegisterTarget(new RootTarget());
+            rpc.RegisterTarget(new RootTarget(cancellationTokenSource, logger));
             rpc.RegisterTarget(new TextDocumentTarget(rpc));
-            await rpc.StartListeningAsync();
+            await rpc.StartListeningAsync(cancellationTokenSource.Token);
+            logger.LogInfo("Shutting down...");
         }
         catch (Exception ex)
         {

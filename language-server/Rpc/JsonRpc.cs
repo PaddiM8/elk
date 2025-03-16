@@ -52,7 +52,7 @@ public class JsonRpc
             try
             {
                 using var reader = new StreamReader(_receivingStream, Encoding.UTF8);
-                while (!cancellationToken.HasValue || cancellationToken.Value.IsCancellationRequested)
+                while (cancellationToken is not { IsCancellationRequested: true })
                     Receive(reader);
 
                 _sendQueue.CompleteAdding();
@@ -129,9 +129,12 @@ public class JsonRpc
         if (request.Id != null && _methods.TryGetValue(request.Method, out var callback))
         {
             var responseData = callback(request.Parameters ?? new JsonObject());
+            var result = responseData == null
+                ? new JsonObject()
+                : JsonSerializer.SerializeToNode(responseData, SerializerOptions);
             var response = new JsonRpcResponse
             {
-                Result = JsonSerializer.SerializeToNode(responseData ?? new {}, SerializerOptions),
+                Result = result,
                 Id = request.Id,
             };
 
