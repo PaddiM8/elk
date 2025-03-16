@@ -1,23 +1,36 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elk.LanguageServer.Data;
+using Elk.LanguageServer.Lsp.Documents;
+using Elk.LanguageServer.Lsp.Items;
+using Elk.LanguageServer.Lsp.Params;
+using Elk.LanguageServer.Rpc;
 using Elk.Std.Bindings;
 using Elk.Vm;
-using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using StreamJsonRpc;
-using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Elk.LanguageServer.Targets;
 
-class TextDocumentTarget(JsonRpc rpc)
+class TextDocumentTarget : Target
 {
-    [JsonRpcMethod("textDocument/didOpen")]
-    public void DidOpen(JToken token)
-    {
-        var parameters = token.ToObject<DidOpenTextDocumentParams>();
-        if (parameters == null)
-            return;
+    private readonly JsonRpc _rpc;
 
+    public TextDocumentTarget(JsonRpc rpc)
+    {
+        _rpc = rpc;
+        RegisterNotification("textDocument/didOpen", DidOpen);
+        RegisterNotification("textDocument/didClose", DidClose);
+        RegisterNotification("textDocument/didChange", DidChange);
+        RegisterMethod("textDocument/completion", Completion);
+        RegisterMethod("textDocument/semanticTokens/full", SemanticTokensFull);
+        RegisterMethod("textDocument/hover", Hover);
+        RegisterMethod("textDocument/signatureHelp", SignatureHelp);
+        RegisterMethod("textDocument/definition", Definition);
+    }
+
+    public void DidOpen(JsonNode node)
+    {
+        var parameters = node.Deserialize<DidOpenTextDocumentParams>(_rpc.SerializerOptions)!;
         var document = new SemanticDocument(
             parameters.TextDocument.Uri.Path,
             parameters.TextDocument.Text
@@ -26,20 +39,15 @@ class TextDocumentTarget(JsonRpc rpc)
         DocumentStorage.Add(document);
     }
 
-    [JsonRpcMethod("textDocument/didClose")]
-    public void DidClose(JToken token)
+    public void DidClose(JsonNode node)
     {
-        var parameters = token.ToObject<DidOpenTextDocumentParams>()!;
+        var parameters = node.Deserialize<DidOpenTextDocumentParams>(_rpc.SerializerOptions)!;
         DocumentStorage.Remove(parameters.TextDocument.Uri.Path);
     }
 
-    [JsonRpcMethod("textDocument/didChange")]
-    public async Task DidChangeAsync(JToken token)
+    public void DidChange(JsonNode node)
     {
-        var parameters = token.ToObject<DidChangeTextDocumentParams>();
-        if (parameters == null)
-            return;
-
+        var parameters = node.Deserialize<DidChangeTextDocumentParams>(_rpc.SerializerOptions)!;
         var newText = parameters.ContentChanges.FirstOrDefault()?.Text;
         if (newText == null)
             return;
@@ -48,20 +56,19 @@ class TextDocumentTarget(JsonRpc rpc)
         document.Text = newText;
         document.RefreshSemantics();
 
-        await rpc.NotifyWithParameterObjectAsync(
+        _rpc.Notify(
             "textDocument/publishDiagnostics",
             new PublishDiagnosticsParams
             {
                 Uri = parameters.TextDocument.Uri,
-                Diagnostics = new Container<Diagnostic>(document.Diagnostics),
+                Diagnostics = document.Diagnostics,
             }
         );
     }
 
-    [JsonRpcMethod("textDocument/completion")]
-    public CompletionList Completion(JToken token)
+    public CompletionList Completion(JsonNode node)
     {
-        var parameters = token.ToObject<CompletionParams>()!;
+        var parameters = node.Deserialize<CompletionParams>(_rpc.SerializerOptions)!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
         if (document.Ast == null)
             return new CompletionList();
@@ -132,7 +139,8 @@ class TextDocumentTarget(JsonRpc rpc)
         {
             completions = scope
                 .Query(query, includePrivate: modulePath.Length == 1)
-                .Select(CompletionBuilder.FromSymbol);
+                .Select(CompletionBuilder.FromSymbol)
+                .Where(x => x != null)!;
         }
 
         if (modulePath.Length == 1)
@@ -145,21 +153,19 @@ class TextDocumentTarget(JsonRpc rpc)
         return new CompletionList(completions);
     }
 
-    [JsonRpcMethod("textDocument/semanticTokens/full")]
-    public SemanticTokens SemanticTokensFull(JToken token)
+    public SemanticTokens SemanticTokensFull(JsonNode node)
     {
-        var parameters = token.ToObject<SemanticTokensParams>()!;
+        var parameters = node.Deserialize<SemanticTokensParams>(_rpc.SerializerOptions)!;
 
         return DocumentStorage.Get(parameters.TextDocument.Uri.Path).SemanticTokens;
     }
 
-    [JsonRpcMethod("textDocument/hover")]
-    public Hover Hover(JToken token)
+    public Hover? Hover(JsonNode node)
     {
-        var parameters = token.ToObject<HoverParams>()!;
+        var parameters = node.Deserialize<HoverParams>(_rpc.SerializerOptions)!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
         if (document.Ast == null)
-            return new Hover();
+            return null;
 
         var hoverInfo = SymbolInformationProvider.GetInfo(
             document,
@@ -167,23 +173,22 @@ class TextDocumentTarget(JsonRpc rpc)
             parameters.Position.Character
         );
         if (hoverInfo == null)
-            return new Hover();
+            return null;
 
         return new Hover
         {
-            Contents = new MarkedStringsOrMarkupContent(hoverInfo),
+            Contents = hoverInfo,
         };
     }
 
-    [JsonRpcMethod("textDocument/signatureHelp")]
-    public SignatureHelp SignatureHelp(JToken token)
+    public SignatureHelp? SignatureHelp(JsonNode node)
     {
-        var parameters = token.ToObject<SignatureHelpParams>()!;
+        var parameters = node.Deserialize<SignatureHelpParams>(_rpc.SerializerOptions)!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
 
         var lineContent = document.GetLineAtCaret(parameters.Position.Line, parameters.Position.Character);
         if (lineContent == null || document.Ast == null)
-            return new SignatureHelp();
+            return null;
 
         bool IsStartIdentifierChar(char c)
             => char.IsLetterOrDigit(c) || c == '_';
@@ -209,7 +214,7 @@ class TextDocumentTarget(JsonRpc rpc)
         }
 
         if (identifierBuilder == null || identifierBuilder.Length == 0)
-            return new SignatureHelp();
+            return null;
 
         var modulePath = identifierBuilder.ToString().Split("::").ToList();
         var identifier = modulePath.Last();
@@ -240,7 +245,7 @@ class TextDocumentTarget(JsonRpc rpc)
             var stdFunction = StdBindings.GetFunction(identifier, modulePath);
 
             if (stdFunction == null)
-                return new SignatureHelp();
+                return null;
 
             documentation = DocumentationBuilder.BuildSignature(
                 identifier,
@@ -255,25 +260,22 @@ class TextDocumentTarget(JsonRpc rpc)
         var signature = new SignatureInformation
         {
             Label = identifier,
-            Documentation = new StringOrMarkupContent(
-                new MarkupContent
-                {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```elk\n{documentation.Value}\n```",
-                }
-            ),
+            Documentation = new MarkupContent
+            {
+                Kind = MarkupKind.Markdown,
+                Value = $"```elk\n{documentation.Value}\n```",
+            },
         };
 
         return new SignatureHelp
         {
-            Signatures = new Container<SignatureInformation>(signature)
+            Signatures = [signature]
         };
     }
 
-    [JsonRpcMethod("textDocument/definition")]
-    public Location? Definition(JToken token)
+    public Location? Definition(JsonNode node)
     {
-        var parameters = token.ToObject<DefinitionParams>()!;
+        var parameters = node.Deserialize<DefinitionParams>(_rpc.SerializerOptions)!;
         var document = DocumentStorage.Get(parameters.TextDocument.Uri.Path);
         if (document.Ast == null)
             return null;
@@ -288,13 +290,20 @@ class TextDocumentTarget(JsonRpc rpc)
 
         return new Location
         {
-            Uri = position.FilePath,
-            Range = new Range(
-                position.Line - 1,
-                position.Column - 1,
-                position.Line - 1,
-                position.Column - 1
-            ),
+            Uri = DocumentUri.From(position.FilePath),
+            Range = new DocumentRange
+            {
+                Start = new Position
+                {
+                    Line = position.Line - 1,
+                    Character = position.Column - 1,
+                },
+                End = new Position
+                {
+                    Line = position.Line - 1,
+                    Character = position.Column - 1
+                },
+            },
         };
     }
 }

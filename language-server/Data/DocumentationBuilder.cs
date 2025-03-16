@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Elk.LanguageServer.Lsp.Items;
 
 namespace Elk.LanguageServer.Data;
 

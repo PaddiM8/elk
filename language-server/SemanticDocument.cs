@@ -1,8 +1,9 @@
 using Elk.LanguageServer.Data;
+using Elk.LanguageServer.Lsp;
+using Elk.LanguageServer.Lsp.Documents;
+using Elk.LanguageServer.Lsp.Items;
 using Elk.Parsing;
 using Elk.Scoping;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Elk.LanguageServer;
 
@@ -40,12 +41,19 @@ class SemanticDocument(string uri, string text)
         Diagnostics = semanticResult.Diagnostics.Select(x =>
             new Diagnostic
             {
-                Range = new Range(
-                    x.StartPosition.Line - 1,
-                    x.StartPosition.Column - 1,
-                    x.EndPosition.Line - 1,
-                    x.EndPosition.Column - 1
-                ),
+                Range = new DocumentRange
+                {
+                    Start = new Position
+                    {
+                        Line = x.StartPosition.Line - 1,
+                        Character = x.StartPosition.Column - 1,
+                    },
+                    End = new Position
+                    {
+                        Line = x.EndPosition.Line - 1,
+                        Character = x.EndPosition.Column - 1,
+                    },
+                },
                 Message = x.Message,
                 Severity = DiagnosticSeverity.Error,
             }

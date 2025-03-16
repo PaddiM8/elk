@@ -1,41 +1,48 @@
+using System.Text.Json.Nodes;
 using Elk.LanguageServer.Data;
-using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
-using StreamJsonRpc;
+using Elk.LanguageServer.Lsp;
+using Elk.LanguageServer.Lsp.Options;
 
 namespace Elk.LanguageServer.Targets;
 
-class RootTarget
+class RootTarget : Target
 {
-    [JsonRpcMethod("initialize")]
-    public static InitializeResult Initialize(JToken token)
+    public RootTarget()
+    {
+        RegisterMethod("initialize", Initialize);
+        RegisterNotification("initialized", Initialized);
+    }
+
+    public static InitializeResult Initialize(JsonNode parameters)
     {
         return new InitializeResult
         {
             Capabilities = new ServerCapabilities
             {
-                PositionEncoding = PositionEncodingKind.UTF16,
-                TextDocumentSync = new TextDocumentSync(TextDocumentSyncKind.Full),
-                CompletionProvider = new CompletionRegistrationOptions.StaticOptions
+                TextDocumentSync = TextDocumentSyncKind.Full,
+                CompletionProvider = new CompletionOptions
                 {
-                    TriggerCharacters = new Container<string>(":"),
+                    TriggerCharacters = [":"],
                 },
-                SemanticTokensProvider = new SemanticTokensRegistrationOptions.StaticOptions
+                SemanticTokensProvider = new SemanticTokensOptions
                 {
                     Legend = new SemanticTokensLegend
                     {
-                        TokenTypes = TokenBuilder.SemanticTokenTypeLegend,
+                        TokenTypes = TokenBuilder.GetSemanticTokenTypeLegend(),
                     },
                     Full = true,
                 },
-                HoverProvider = new HoverRegistrationOptions.StaticOptions(),
-                SignatureHelpProvider = new SignatureHelpRegistrationOptions.StaticOptions
+                HoverProvider = true,
+                SignatureHelpProvider = new SignatureHelpOptions
                 {
-                    TriggerCharacters = new Container<string>("(", ","),
+                    TriggerCharacters = ["(", ","],
                 },
-                DefinitionProvider = new DefinitionRegistrationOptions.StaticOptions(),
+                DefinitionProvider = true,
             },
         };
+    }
+
+    public static void Initialized(JsonNode parameters)
+    {
     }
 }

@@ -49,6 +49,12 @@ var cliParser = new RuntimeCliParser("elk")
     })
     .AddFlag(new CliFlag
     {
+        Identifier = "stdio",
+        LongName = "stdio",
+        Description = "Use stdout/stdin for language server",
+    })
+    .AddFlag(new CliFlag
+    {
         Identifier = "dump",
         LongName = "dump",
         Description = "Dump instructions",

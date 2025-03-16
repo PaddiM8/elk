@@ -1,11 +1,11 @@
+using Elk.LanguageServer.Lsp.Items;
 using Elk.Scoping;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Elk.LanguageServer.Data;
 
 public static class CompletionBuilder
 {
-    public static CompletionItem FromSymbol(ISymbol symbol)
+    public static CompletionItem? FromSymbol(ISymbol symbol)
     {
         return symbol switch
         {
@@ -29,7 +29,7 @@ public static class CompletionBuilder
                 Label = variableSymbol.Name,
                 Kind = CompletionItemKind.Variable,
             },
-            _ => new CompletionItem(),
+            _ => null,
         };
     }
 }

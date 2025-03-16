@@ -1,6 +1,6 @@
+using Elk.LanguageServer.Lsp.Items;
 using Elk.Lexing;
 using Elk.Parsing;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Elk.LanguageServer.Data;
 

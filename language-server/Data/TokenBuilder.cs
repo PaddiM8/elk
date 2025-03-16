@@ -1,12 +1,16 @@
-using System.Collections.Immutable;
+using Elk.LanguageServer.Lsp.Items;
+using Elk.LanguageServer.Lsp.Options;
 using Elk.Services;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace Elk.LanguageServer.Data;
 
 static class TokenBuilder
 {
-    public static readonly ImmutableArray<SemanticTokenType> SemanticTokenTypeLegend = SemanticTokenType.Defaults.ToImmutableArray();
+    public static IEnumerable<string> GetSemanticTokenTypeLegend()
+    {
+        return Enum.GetValues<SemanticTokenType>()
+            .Select(x => x.ToLspName());;
+    }
 
     public static SemanticTokens BuildSemanticTokens(IEnumerable<SemanticToken> elkTokens)
     {
@@ -81,6 +85,6 @@ static class TokenBuilder
             _ => throw new NotSupportedException(),
         };
 
-        return SemanticTokenTypeLegend.IndexOf(lspType);
+        return (int)lspType;
     }
 }

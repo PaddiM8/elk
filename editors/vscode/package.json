@@ -2,12 +2,12 @@
     "name": "elk-shell",
     "description": "Language integrations for the elk shell programming language",
     "license": "MIT",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "publisher": "PaddiM8",
     "repository": "https://github.com/PaddiM8/elk",
     "icon": "icon.png",
     "engines": {
-        "vscode": "^1.82.0"
+        "vscode": "^1.98.0"
     },
     "categories": [
         "Programming Languages"
@@ -15,7 +15,7 @@
     "activationEvents": [
         "onLanguage:plaintext"
     ],
-    "main": "./out/src/extension",
+    "main": "./out/extension",
     "contributes": {
         "languages": [
             {
@@ -43,7 +43,7 @@
             "type": "object",
             "title": "Elk configuration",
             "properties": {
-                "languageServerExample.trace.server": {
+                "elkShell.trace.server": {
                     "type": "string",
                     "enum": [
                         "off",
@@ -66,7 +66,7 @@
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.2",
         "@types/node": "^20.8.0",
-        "@types/vscode": "^1.82.0",
+        "@types/vscode": "^1.98.0",
         "@vscode/test-electron": "^2.3.4",
         "@vscode/vsce": "^3.0.0",
         "glob": "^10.3.10",

@@ -1,32 +1,81 @@
-﻿using Elk.LanguageServer.Targets;
-using Newtonsoft.Json.Serialization;
-using StreamJsonRpc;
+﻿using System.Diagnostics;
+using System.Text;
+using Elk.LanguageServer.Rpc;
+using Elk.LanguageServer.Targets;
 
 namespace Elk.LanguageServer;
 public static class ElkLanguageServer
 {
     public static async Task StartAsync()
     {
-        var formatter = new JsonMessageFormatter();
-        formatter.JsonSerializer.ContractResolver = new DefaultContractResolver
+        var logger = new FileLogger
         {
-            NamingStrategy = new CamelCaseNamingStrategy()
+            LogLevel = Debugger.IsAttached || Environment.GetEnvironmentVariable("ELK_DEBUG_LSP") == "1"
+                ? LogLevel.Stdio
+                : LogLevel.Error,
         };
 
-        var rpc = new LanguageServerJsonRpc(
-            Console.OpenStandardOutput(),
-            Console.OpenStandardInput(),
-            formatter,
-            null!
-        );
-        var targetOptions = new JsonRpcTargetOptions
-        {
-            UseSingleObjectParameterDeserialization = true,
-        };
+        var outStream = logger.LogLevel == LogLevel.Stdio
+            ? new ProxyWriteStream(Console.OpenStandardOutput(), logger)
+            : Console.OpenStandardOutput();
 
-        rpc.AddLocalRpcTarget(new RootTarget(), targetOptions);
-        rpc.AddLocalRpcTarget(new TextDocumentTarget(rpc), targetOptions);
-        rpc.StartListening();
-        await rpc.Completion;
+        var rpc = new JsonRpc(outStream, Console.OpenStandardInput(), logger);
+        try
+        {
+            rpc.RegisterTarget(new RootTarget());
+            rpc.RegisterTarget(new TextDocumentTarget(rpc));
+            await rpc.StartListeningAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.ToString());
+        }
+    }
+}
+
+class ProxyWriteStream(Stream baseStream, ILogger logger) : Stream
+{
+    public override bool CanRead
+        => false;
+
+    public override bool CanSeek
+        => false;
+
+    public override bool CanWrite
+        => true;
+
+    public override long Length
+        => baseStream.Length;
+
+    public override long Position
+    {
+        get => baseStream.Position;
+        set => baseStream.Position = value;
+    }
+
+    public override void Flush()
+    {
+        baseStream.Flush();
+    }
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void SetLength(long value)
+    {
+        baseStream.SetLength(value);
+    }
+
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        logger.LogOutput(Encoding.UTF8.GetString(buffer));
+        baseStream.Write(buffer, offset, count);
     }
 }

@@ -12,18 +12,13 @@ let client: LanguageClient;
 export async function activate(context: ExtensionContext) {
     const serverOptions: ServerOptions = {
         run: {
-            command: "elk --lsp",
+            command: "elk",
+            args: ["--lsp"],
             transport: TransportKind.stdio,
         },
         debug: {
-            command: "dotnet",
-            args: [
-                "run",
-                "--project",
-                "../../cli/Elk.Cli.csproj",
-                "--",
-                "--lsp"
-            ],
+            command: "elk",
+            args: ["--lsp"],
             transport: TransportKind.stdio,
             runtime: "",
         },
@@ -31,7 +26,6 @@ export async function activate(context: ExtensionContext) {
 
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            "plaintext",
             {
                 pattern: "**/*.elk",
             },
