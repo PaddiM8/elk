@@ -158,5 +158,5 @@ jobs:
           cp -r elk-tmp/editors/vim/* .
           rm -rf elk-tmp
           git add .
-          git commit -m "${{ github.ref_name }}" || echo Didn't commit
+          git commit -m "${{ github.ref_name }}" || echo Did not commit
           git push
