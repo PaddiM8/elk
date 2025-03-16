@@ -117,13 +117,12 @@ fn unstagedFilesHandler(value, state) {
 }
 
 fn stagedFilesHandler(value, state) {
-    let workingDirectory = pwd
     let repoPath = git rev-parse --show-toplevel | disposeErr
     git diff --name-only --cached
         | disposeErr
         | map => x {
-            repoPath
-                | str::path::relative(workingDirectory)
+            $PWD
+                | str::path::relative(repoPath)
                 | str::path::join(x)
         }
 }
