@@ -23,7 +23,9 @@ syn match elkNumber /\v<[+-]=(\d+\.)=\d+>/
 
 syn match elkBraces "[\[\]]"
 syn region elkStringInterp matchgroup=elkBraces start=/\${/ end=/}/ contained contains=ALL
-syn region elkString   start=/["']/ skip=/\\\\\|\\"|\\'/ end=/["']/ contains=elkStringInterp
+syntax region elkString   start=/"/ skip=/\\\\\|\\"/ end=/"/ contains=elkStringInterp
+syntax region elkRawString   start=/'/ skip=/\\\\\|\\'/ end=/'/
+
 
 hi def link elkBraces Delimiter
 hi def link elkKeyword Keyword
