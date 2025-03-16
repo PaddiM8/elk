@@ -9,10 +9,11 @@ public class EnterHandler : IEnterHandler
     {
         if (promptText.TrimEnd().EndsWith('|'))
         {
+            // TODO: This doesn't seem to work on Windows?
             return new EnterHandlerResponse(
                 true,
                 $"{promptText.TrimEnd()[..^1]}{Environment.NewLine}  | ",
-                caret + 4
+                caret + Environment.NewLine.Length + 3
             );
         }
 
@@ -21,7 +22,7 @@ public class EnterHandler : IEnterHandler
             return new EnterHandlerResponse(
                 true,
                 promptText.Insert(caret, Environment.NewLine),
-                caret + 1
+                caret + Environment.NewLine.Length
             );
         }
 
