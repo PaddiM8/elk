@@ -76,6 +76,7 @@ class SearchState : IRenderable
         FocusInputPrompt();
         _renderer.Text = _listing.SelectedItem
             .Replace("\x1b", "")
+            .Replace(Environment.NewLine, " ")
             .Replace("\n", " ");
         _renderer.EndTransaction();
         FocusSearchPrompt();

@@ -19,8 +19,8 @@ public class SetupState
         var promptScript = ResourceProvider.ReadFile(promptScriptPath)!;
         if (BranchSymbol == null)
         {
-            promptScript = Regex.Replace(promptScript, @"[ ]*{{ GIT_BRANCH_VAR }}\n?", "");
-            promptScript = Regex.Replace(promptScript, @"[ ]*{{ GIT_BRANCH_SECTION }}\n?", "");
+            promptScript = Regex.Replace(promptScript, @"[ ]*{{ GIT_BRANCH_VAR }}\r?\n?", "");
+            promptScript = Regex.Replace(promptScript, @"[ ]*{{ GIT_BRANCH_SECTION }}\r?\n?", "");
         }
         else
         {

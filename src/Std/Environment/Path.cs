@@ -25,7 +25,7 @@ public static class Path
     public static void Add(RuntimeString path)
     {
         var absolutePath = ShellEnvironment.GetAbsolutePath(path.Value);
-        System.IO.File.AppendAllText(CommonPaths.PathFile, $"{absolutePath}\n");
+        System.IO.File.AppendAllText(CommonPaths.PathFile, $"{absolutePath}{System.Environment.NewLine}");
 
         // Reload the path variable
         var pathVar = System.Environment.GetEnvironmentVariable("PATH") ?? "";

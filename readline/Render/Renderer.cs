@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Elk.ReadLine.Render.Formatting;
 using Wcwidth;
 
@@ -316,7 +317,7 @@ internal class Renderer : IRenderer
         var movementToStart = IndexToMovement(0);
         var (top, left) = IndexToTopLeft(_text.Length);
         var newLine = top > 0 && left == 0 && _text[^1] != '\n'
-            ? "\n"
+            ? Environment.NewLine
             : "";
         var formattedText = Indent(Highlight(Text, Caret));
 
@@ -372,13 +373,13 @@ internal class Renderer : IRenderer
     }
 
     private string Indent(string text)
-        => text.Replace("\n", Ansi.ClearToEndOfLine() + "\n" + new string(' ', PromptStartLeft));
+        => Regex.Replace(text, "\r?\n", Ansi.ClearToEndOfLine() + Environment.NewLine + new string(' ', PromptStartLeft));
 
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {
         WriteRaw(
             Ansi.HideCursorIf(_transaction == null),
-            "\n",
+            Environment.NewLine,
             Ansi.ClearToEndOfLine(),
             value,
             Ansi.MoveHorizontal(_left - lastLineLength),

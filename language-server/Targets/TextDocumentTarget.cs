@@ -263,7 +263,7 @@ class TextDocumentTarget : Target
             Documentation = new MarkupContent
             {
                 Kind = MarkupKind.Markdown,
-                Value = $"```elk\n{documentation.Value}\n```",
+                Value = $"```elk{Environment.NewLine}{documentation.Value}{Environment.NewLine}```",
             },
         };
 

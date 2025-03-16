@@ -456,13 +456,13 @@ public class RuntimeCliParser(string name) : RuntimeObject
 
         // Arguments
         if (_arguments.Any())
-            builder.AppendLine(Ansi.Bold(Ansi.Underline("\nArguments:")));
+            builder.AppendLine(Ansi.Bold(Ansi.Underline($"{System.Environment.NewLine}Arguments:")));
 
         foreach (var argument in _arguments)
             builder.AppendLine(BuildArgumentHelp(argument));
 
         // Options
-        builder.AppendLine(Ansi.Bold(Ansi.Underline("\nOptions:")));
+        builder.AppendLine(Ansi.Bold(Ansi.Underline($"{System.Environment.NewLine}Options:")));
 
         var helpFlag = new CliFlag
         {

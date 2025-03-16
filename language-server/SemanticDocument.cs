@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Elk.LanguageServer.Data;
 using Elk.LanguageServer.Lsp;
 using Elk.LanguageServer.Lsp.Documents;
@@ -62,7 +63,7 @@ class SemanticDocument(string uri, string text)
 
     public string? GetLineAtCaret(int line, int column)
     {
-        var lineContent = Text.Split('\n').ElementAtOrDefault(line);
+        var lineContent = Regex.Split(Text, Environment.NewLine).ElementAtOrDefault(line);
         if (lineContent == null || column > lineContent.Length)
             return null;
 

@@ -71,7 +71,7 @@ class SearchListing(IRenderer renderer, IHighlightHandler? highlightHandler)
             height - renderedItems.Count
         );
         renderer.WriteLinesOutside(
-            string.Join("\n", renderedItems.Concat(bottomPadding)),
+            string.Join(Environment.NewLine, renderedItems.Concat(bottomPadding)),
             height,
             length
         );

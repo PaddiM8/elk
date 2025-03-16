@@ -105,7 +105,7 @@ class SelectionListing(IRenderer renderer)
             var difference = _lastBottomRowIndex - bottomRowIndex;
             var clearLines = string.Join(
                 "",
-                Enumerable.Repeat("\n" + Ansi.ClearToEndOfLine(), difference)
+                Enumerable.Repeat(Environment.NewLine + Ansi.ClearToEndOfLine(), difference)
             );
             output.Append(clearLines);
             rowCount += difference;

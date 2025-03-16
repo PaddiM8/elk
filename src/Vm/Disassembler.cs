@@ -201,7 +201,7 @@ class Disassembler
             _ip.ToString().PadLeft(_page.Instructions.Count.ToString().Length),
             AnsiForeground.DarkYellow
         );
-        _builder.Append($"\n{ipString}: ");
+        _builder.Append($"{Environment.NewLine}{ipString}: ");
         _builder.Append(kindString);
 
         return kind;
