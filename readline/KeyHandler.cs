@@ -174,7 +174,7 @@ public class KeyHandler
 
         _wasEdited = true;
 
-        if (firstKey.KeyChar != '\0' && firstKey.Key != ConsoleKey.Escape)
+        if (firstKey.KeyChar != '\0' && firstKey.Key != ConsoleKey.Escape && firstKey.KeyChar != '\x1b')
             WriteChar(firstKey.KeyChar);
 
         if (remaining != null)
