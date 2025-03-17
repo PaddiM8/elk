@@ -2,7 +2,7 @@
 description: A general-purpose shell language
 ---
 
-# elk
+# Elk
 
 A general-purpose shell language
 
