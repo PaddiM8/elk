@@ -40,34 +40,34 @@ jobs:
           Suites: $(lsb_release -sc)
           Components: main restricted universe
           Architectures: amd64
-          
+
           Types: deb
           URIs: http://security.ubuntu.com/ubuntu/
           Suites: $(lsb_release -sc)-security
           Components: main restricted universe
           Architectures: amd64
-          
+
           Types: deb
           URIs: http://archive.ubuntu.com/ubuntu/
           Suites: $(lsb_release -sc)-updates
           Components: main restricted universe
           Architectures: amd64
-          
+
           Types: deb
           URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
           Suites: $(lsb_release -sc)
           Components: main restricted multiverse universe
           Architectures: arm64
-          
+
           Types: deb
           URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
           Suites: $(lsb_release -sc)-updates
           Components: main restricted multiverse universe
           Architectures: arm64
           EOF
-          
+
           sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
-          
+
           sudo dpkg --add-architecture arm64
           sudo apt update
           sudo apt install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
@@ -92,9 +92,9 @@ jobs:
           dotnet-version: '9.0.x'
       - run: |
           ./Build.ps1 x64
-          #./Build.ps1 arm64
+          ./Build.ps1 arm64
           Compress-Archive -Path build/win-x64 -Destination build/win-x64/win-x64.zip
-          #Compress-Archive -Path build/win-arm64 -Destination build/win-arm64/win-arm64.zip
+          Compress-Archive -Path build/win-arm64 -Destination build/win-arm64/win-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: win-x64
@@ -148,7 +148,7 @@ jobs:
       - run: |
           git config --global user.email "<>"
           git config --global user.name "GitHub Actions"
-  
+
           mv README.md ..
           mv .git ..
           rm -rf *
