@@ -32,11 +32,4 @@ public static class TextUtils
 
         return indentation + string.Join($"{Environment.NewLine}{indentation}", lines);
     }
-
-    public static string ReplaceBackslashesIfWindows(string input)
-    {
-        return !OperatingSystem.IsWindows()
-            ? input
-            : input.Replace("\\", "/");
-    }
 }

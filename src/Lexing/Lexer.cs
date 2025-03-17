@@ -231,7 +231,7 @@ public class Lexer
         var startIndex = _index;
         var startColumn = _pos.column;
         var value = new StringBuilder();
-        while (char.IsWhiteSpace(Current) && Current != '\n')
+        while (char.IsWhiteSpace(Current) && Current != '\n' && Current != '\r')
             value.Append(Eat());
 
         return Build(

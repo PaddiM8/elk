@@ -174,8 +174,11 @@ public class KeyHandler
 
         _wasEdited = true;
 
-        if (firstKey.KeyChar != '\0' && firstKey.Key != ConsoleKey.Escape && firstKey.KeyChar != '\x1b')
+        if (firstKey.KeyChar != '\0' && firstKey.Key != ConsoleKey.Escape && firstKey.KeyChar != '\x1b' && firstKey.KeyChar != '\r')
             WriteChar(firstKey.KeyChar);
+
+        if (firstKey.Key == ConsoleKey.Enter && remaining?.StartsWith('\r') is true)
+            remaining = remaining[1..];
 
         if (remaining != null)
             _renderer.Insert(remaining, includeHint: false);

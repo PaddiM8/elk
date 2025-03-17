@@ -71,7 +71,7 @@ public static class FileUtils
         path = ExpandPath(path);
         var absolutePath = path.StartsWith('/')
             ? path
-            : Path.Combine(workingDirectory, path);
+            : PathUtils.Combine(workingDirectory, path);
         if (absolutePath == "/")
             return true;
 
@@ -128,7 +128,7 @@ public static class FileUtils
             : path[..lastSlashIndex];
         var fullPath = Path.GetPathRoot(path) == string.Empty
             ? ExpandPath(pathWithoutCompletion)
-            : Path.Combine(workingDirectory, ExpandPath(pathWithoutCompletion));
+            : PathUtils.Combine(workingDirectory, ExpandPath(pathWithoutCompletion));
         if (fullPath == string.Empty)
             fullPath = ShellEnvironment.WorkingDirectory;
 
@@ -145,7 +145,7 @@ public static class FileUtils
             .Where(x => includeHidden || !x!.StartsWith('.'))
             .Where(x => x!.StartsWith(completionTarget))
             .Order()
-            .Select(x => new Completion(Path.Join(pathWithoutCompletion, x), $"{x}/"))
+            .Select(x => new Completion(PathUtils.Join(pathWithoutCompletion, x), $"{x}/"))
             .ToList();
 
         IEnumerable<Completion> files = Array.Empty<Completion>();
@@ -171,7 +171,7 @@ public static class FileUtils
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
-                .Select(x => new Completion(Path.Join(pathWithoutCompletion, x), $"{x}/"))
+                .Select(x => new Completion(PathUtils.Join(pathWithoutCompletion, x), $"{x}/"))
                 .ToList();
 
             if (fileType != FileType.Directory)
@@ -181,7 +181,7 @@ public static class FileUtils
                     .Where(x => x.name.Contains(completionTarget, comparison))
                     .Where(x => fileType != FileType.Executable || FileIsExecutable(x.path))
                     .Order()
-                    .Select(x => new Completion(Path.Join(pathWithoutCompletion, x.name), x.name)
+                    .Select(x => new Completion(PathUtils.Join(pathWithoutCompletion, x.name), x.name)
                     {
                         HasTrailingSpace = true,
                     })
@@ -206,7 +206,7 @@ public static class FileUtils
             combined = combined
                 .Select(x => x with
                 {
-                    CompletionText = x.CompletionText.Replace('\\', '/')
+                    CompletionText = x.CompletionText.Replace('\\', '/'),
                 });
         }
 
@@ -217,7 +217,7 @@ public static class FileUtils
             completions.Insert(
                 0,
                 new Completion(
-                    Path.Join(pathWithoutCompletion, completionTarget),
+                    PathUtils.Join(pathWithoutCompletion, completionTarget),
                     "..."
                 )
             );

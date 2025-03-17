@@ -20,6 +20,6 @@ static class KeyReader
             );
         }
 
-        return (firstKey, remaining?.ToString());
+        return (firstKey, remaining?.ToString().Trim('\n', '\r'));
     }
 }

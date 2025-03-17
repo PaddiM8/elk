@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Elk.ReadLine.Render.Formatting;
@@ -373,7 +374,15 @@ internal class Renderer : IRenderer
     }
 
     private string Indent(string text)
-        => Regex.Replace(text, "\r?\n", Ansi.ClearToEndOfLine() + Environment.NewLine + new string(' ', PromptStartLeft));
+    {
+        // On Windows, the \n have to come first, to avoid the \r
+        // being cleared by Ansi.ClearToEndOfLine
+        var newLine = Environment.NewLine == "\r\n"
+            ? "\n\r"
+            : Environment.NewLine;
+
+        return Regex.Replace(text, "\r?\n", Ansi.ClearToEndOfLine() + newLine + new string(' ', PromptStartLeft));
+    }
 
     public void WriteLinesOutside(string value, int rowCount, int lastLineLength)
     {

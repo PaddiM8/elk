@@ -16,7 +16,7 @@ public static class StringPath
     /// <returns>A path created by concatenating the given paths.</returns>
     [ElkFunction("join")]
     public static RuntimeString Join(RuntimeString path1, RuntimeString path2)
-        => new(TextUtils.ReplaceBackslashesIfWindows(Path.Join(path1.Value, path2.Value)));
+        => new(PathUtils.Join(path1.Value, path2.Value));
 
     [ElkFunction("fileName")]
     public static RuntimeString FileName(RuntimeString path)
@@ -36,7 +36,7 @@ public static class StringPath
             _ => Path.Combine(ShellEnvironment.WorkingDirectory, path.Value),
         };
 
-        return new RuntimeString(TextUtils.ReplaceBackslashesIfWindows(new Uri(absolute).LocalPath));
+        return new RuntimeString(PathUtils.ReplaceBackslashesIfWindows(new Uri(absolute).LocalPath));
     }
 
     [ElkFunction("fuzzyFind")]
@@ -53,7 +53,7 @@ public static class StringPath
             x.Value.Contains(query.Value, StringComparison.OrdinalIgnoreCase)
         );
 
-        return new(exactStart.Union(exactContains).Union(insensitiveContains));
+        return new RuntimeGenerator(exactStart.Union(exactContains).Union(insensitiveContains));
     }
 
     /// <returns>A relative version of 'entirePath' without the base path</returns>
@@ -62,7 +62,7 @@ public static class StringPath
     /// </example>
     [ElkFunction("relative")]
     public static RuntimeString Relative(RuntimeString basePath, RuntimeString entirePath)
-        => new(TextUtils.ReplaceBackslashesIfWindows(Path.GetRelativePath(basePath.Value, entirePath.Value)));
+        => new(PathUtils.ReplaceBackslashesIfWindows(Path.GetRelativePath(basePath.Value, entirePath.Value)));
 
     /// <param name="path"></param>
     /// <returns>The given file name without its extension.</returns>
