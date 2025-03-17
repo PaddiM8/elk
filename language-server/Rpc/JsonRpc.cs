@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Elk.LanguageServer.Lsp.Documents;
 using Elk.LanguageServer.Targets;
 
@@ -146,7 +147,7 @@ public class JsonRpc
         }
         else
         {
-            if (request.Method.StartsWith("$/"))
+            if (request.Method.StartsWith("$/") || request.Id == null)
                 return;
 
             var response = new JsonRpcResponse
