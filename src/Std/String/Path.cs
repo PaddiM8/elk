@@ -11,12 +11,10 @@ namespace Elk.Std.String;
 [ElkModule("str::path")]
 public static class StringPath
 {
-    /// <param name="path1">An absolute or relative path</param>
-    /// <param name="path2">A relative path</param>
     /// <returns>A path created by concatenating the given paths.</returns>
     [ElkFunction("join")]
-    public static RuntimeString Join(RuntimeString path1, RuntimeString path2)
-        => new(PathUtils.Join(path1.Value, path2.Value));
+    public static RuntimeString Join([ElkVariadic] IEnumerable<RuntimeObject> paths)
+        => new(PathUtils.Join(paths.Select(x => x.ToString() ?? "").ToArray()));
 
     [ElkFunction("fileName")]
     public static RuntimeString FileName(RuntimeString path)
