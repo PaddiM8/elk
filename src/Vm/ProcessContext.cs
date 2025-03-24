@@ -55,6 +55,11 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             _errBuffer = _secondaryBuffer;
         }
 
+        if (!_waitForExit)
+        {
+            _process!.Exited += OnProcessExited;
+        }
+
         try
         {
             _process!.Start();
@@ -69,7 +74,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         if (pipedValue != null)
             Read(pipedValue);
 
-        CloseProcess(messageOnError: false);
+        if (_waitForExit)
+            CloseProcess(messageOnError: false);
 
         return ExitCode ?? 0;
     }
@@ -110,17 +116,7 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
         if (!_waitForExit)
         {
-            _process!.Exited += (_, _) =>
-            {
-                try
-                {
-                    CloseProcess(messageOnError: true);
-                }
-                catch
-                {
-                    // How would this be handled?
-                }
-            };
+            _process!.Exited += OnProcessExited;
         }
 
         if (_disposeOutput)
@@ -188,8 +184,28 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         _allowNonZeroExit = true;
     }
 
+    private void OnProcessExited(object? sender, EventArgs e)
+    {
+        try
+        {
+            CloseProcess(messageOnError: true);
+        }
+        catch
+        {
+            // How would this be handled?
+        }
+    }
+
     public int Wait()
     {
+        lock (_closeProcessLock)
+        {
+            if (_process != null)
+            {
+                _process.Exited -= OnProcessExited;
+            }
+        }
+
         CloseProcess(messageOnError: true);
 
         return ExitCode ?? 0;
