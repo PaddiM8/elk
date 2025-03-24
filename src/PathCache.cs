@@ -14,7 +14,13 @@ static class PathCache
 
     public static void RefreshInBackground()
     {
-        Task.Run(() => EnsureUpdated());
+        Task.Run(() =>
+        {
+            lock (_updateLock)
+            {
+                Update();
+            }
+        });
     }
 
     public static bool IsExecutable(string name, bool waitForUpdate = true)
