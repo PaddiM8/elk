@@ -12,7 +12,7 @@ static class PathCache
     private static string? _lastPathValue = null;
     private static object _updateLock = new();
 
-    public static void Init()
+    public static void RefreshInBackground()
     {
         Task.Run(() => EnsureUpdated());
     }

@@ -49,7 +49,7 @@ public class ShellSession
     public void InitInteractive()
     {
         LoadPaths();
-        PathCache.Init();
+        PathCache.RefreshInBackground();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
         Console.OutputEncoding = Encoding.UTF8;
 
@@ -88,6 +88,8 @@ public class ShellSession
 
     public string GetPrompt()
     {
+        PathCache.RefreshInBackground();
+
         var previousExitCode = Environment.GetEnvironmentVariable("?");
 
         // The 'elkPrompt' function should have been created
