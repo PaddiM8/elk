@@ -17,8 +17,11 @@ static class PathCache
         Task.Run(() => EnsureUpdated());
     }
 
-    public static bool IsExecutable(string name)
+    public static bool IsExecutable(string name, bool waitForUpdate = true)
     {
+        if (!waitForUpdate && _lastPathValue == null)
+            return true;
+
         EnsureUpdated();
 
         return _cache.ContainsKey(name);

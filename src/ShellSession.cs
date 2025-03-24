@@ -49,6 +49,7 @@ public class ShellSession
     public void InitInteractive()
     {
         LoadPaths();
+        PathCache.Init();
         Environment.SetEnvironmentVariable("OLDPWD", WorkingDirectory);
         Console.OutputEncoding = Encoding.UTF8;
 
@@ -82,8 +83,8 @@ public class ShellSession
         );
     }
 
-    public bool ProgramExists(string name)
-        => FileUtils.ExecutableExists(name, WorkingDirectory);
+    public bool ProgramExists(string name, bool waitForCache = true)
+        => FileUtils.ExecutableExists(name, WorkingDirectory, waitForCache);
 
     public string GetPrompt()
     {

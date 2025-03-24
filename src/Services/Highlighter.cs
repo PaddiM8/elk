@@ -458,8 +458,9 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         modulePath.RemoveAt(modulePath.Count - 1);
 
         var isFunctionCall = module.FunctionExists(identifier, modulePath);
+        var waitForCache = shell == null;
         var isCallable = isFunctionCall ||
-            modulePath.Count == 0 && (shell?.ProgramExists(identifier) is true || module.AliasExists(identifier));
+            modulePath.Count == 0 && (shell?.ProgramExists(identifier, waitForCache) is true || module.AliasExists(identifier));
         Push(
             isCallable
                 ? SemanticTokenKind.Function
@@ -555,7 +556,8 @@ public class Highlighter(ModuleScope module, ShellSession? shell)
         }
 
         var identifier = identifierBuilder.ToString();
-        var kind = shell?.ProgramExists(identifier) is true
+        var waitForCache = shell == null;
+        var kind = shell?.ProgramExists(identifier, waitForCache) is true
             ? SemanticTokenKind.Function
             : SemanticTokenKind.UnknownSymbol;
         Push(kind, identifier, position);

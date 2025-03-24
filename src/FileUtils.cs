@@ -42,7 +42,7 @@ public static class FileUtils
         ) != 0;
     }
 
-    public static bool ExecutableExists(string name, string workingDirectory)
+    public static bool ExecutableExists(string name, string workingDirectory, bool waitForCache = true)
     {
         var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (name.StartsWith('~'))
@@ -61,7 +61,7 @@ public static class FileUtils
         if (OperatingSystem.IsWindows() && name.ElementAtOrDefault(1) == ':')
             return FileIsExecutable(name);
 
-        return PathCache.IsExecutable(name);
+        return PathCache.IsExecutable(name, waitForCache);
     }
 
     public static bool IsValidStartOfPath(string path, string workingDirectory)
