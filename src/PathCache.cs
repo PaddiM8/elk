@@ -37,10 +37,14 @@ static class PathCache
 
     private static void Update()
     {
+        var isWsl = OperatingSystem.IsLinux() &&
+            File.Exists("/proc/version") &&
+            File.ReadAllText("/proc/version").Contains("-microsoft-");
         var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
         foreach (var path in paths)
         {
-            if (!Directory.Exists(path))
+            // Ignore /mnt/... on WSL since it's super slow to look up
+            if (!Directory.Exists(path) || (isWsl && path.StartsWith("/mnt/")))
                 continue;
 
             foreach (var filePath in Directory.GetFiles(path))
