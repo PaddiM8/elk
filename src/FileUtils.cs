@@ -169,7 +169,7 @@ public static class FileUtils
                 .Select(Path.GetFileName)
                 .Where(x => x!.Contains(completionTarget, comparison))
                 .Order()
-                .Select(x => new Completion(PathUtils.Join(pathWithoutCompletion, x), $"{x}/"))
+                .Select(x => new Completion(PathUtils.Join(pathWithoutCompletion, x!), $"{x}/"))
                 .ToList();
 
             if (fileType != FileType.Directory)

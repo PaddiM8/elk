@@ -524,16 +524,24 @@ static class Iteration
     }
 
     /// <summary>
-    /// Adds all the given items to the container, one by one.
+    /// Adds all the given items to the container (list or set), one by one.
     /// </summary>
     /// <returns></returns>
     [ElkFunction("pushAll", Reachability.Everywhere)]
-    public static RuntimeList PushAll(
-        RuntimeList container,
+    public static RuntimeObject PushAll(
+        RuntimeObject container,
         IEnumerable<RuntimeObject> values)
     {
-        foreach (var value in values)
-            container.Values.Add(value);
+        if (container is RuntimeList list)
+        {
+            foreach (var value in values)
+                list.Values.Add(value);
+        }
+        else if (container is RuntimeSet set)
+        {
+            foreach (var value in values)
+                set.Entries.Add(value);
+        }
 
         return container;
     }
