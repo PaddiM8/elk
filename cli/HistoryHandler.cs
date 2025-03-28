@@ -45,6 +45,8 @@ class HistoryHandler : IHistoryHandler
 
     public void Add(HistoryEntry entry)
     {
+        ResetHistoryMode();
+
         // If the last entry was the same, don't add it again.
         if (_activeEntries.LastOrDefault()?.Content == entry.Content)
         {
@@ -76,11 +78,7 @@ class HistoryHandler : IHistoryHandler
         }
 
         if (_historyMode != HistoryMode.All && caret == 0)
-        {
-            _historyMode = HistoryMode.All;
-            _activeEntries = _allEntries;
-            _currentIndex = _allEntries.Count;
-        }
+            ResetHistoryMode();
 
         if (_currentIndex == 0)
             return null;
@@ -96,13 +94,7 @@ class HistoryHandler : IHistoryHandler
     public string? GetPrevious(string promptText, int caret)
     {
         if (_historyMode != HistoryMode.All && caret == 0)
-        {
-            _historyMode = HistoryMode.All;
-            _activeEntries = _allEntries;
-            _currentIndex = _activeEntries.Count;
-
-            return null;
-        }
+            ResetHistoryMode();
 
         if (_currentIndex == _activeEntries.Count)
             return null;
@@ -112,5 +104,12 @@ class HistoryHandler : IHistoryHandler
         return _currentIndex == _activeEntries.Count
             ? _promptText
             : _activeEntries[_currentIndex].Content;
+    }
+
+    private void ResetHistoryMode()
+    {
+        _historyMode = HistoryMode.All;
+        _activeEntries = _allEntries;
+        _currentIndex = _activeEntries.Count;
     }
 }
