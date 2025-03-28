@@ -186,6 +186,12 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void OnProcessExited(object? sender, EventArgs e)
     {
+        if (!_outBuffer.IsCompleted)
+            _outBuffer.CompleteAdding();
+
+        if (!_errBuffer.IsCompleted)
+            _errBuffer.CompleteAdding();
+
         try
         {
             CloseProcess(messageOnError: true);
@@ -213,32 +219,14 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void ProcessOutReceived(DataReceivedEventArgs eventArgs)
     {
-        if (eventArgs.Data == null)
-        {
-            if (Interlocked.Decrement(ref _openPipeCount) == 0 || BufferStdErrSeparately)
-            {
-                _outBuffer.CompleteAdding();
-            }
-        }
-        else
-        {
+        if (eventArgs.Data != null)
             _outBuffer.TryAdd(eventArgs.Data);
-        }
     }
 
     private void ProcessErrReceived(DataReceivedEventArgs eventArgs)
     {
-        if (eventArgs.Data == null)
-        {
-            if (Interlocked.Decrement(ref _openPipeCount) == 0 || BufferStdErrSeparately)
-            {
-                _errBuffer.CompleteAdding();
-            }
-        }
-        else
-        {
+        if (eventArgs.Data != null)
             _errBuffer.TryAdd(eventArgs.Data);
-        }
     }
 
     private void Read(RuntimeObject value)
@@ -284,6 +272,12 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
                 return;
 
             _process.WaitForExit();
+
+            if (!_outBuffer.IsCompleted)
+                _outBuffer.CompleteAdding();
+
+            if (!_errBuffer.IsCompleted)
+                _errBuffer.CompleteAdding();
 
             ExitCode = _process.ExitCode;
             _process.Dispose();
