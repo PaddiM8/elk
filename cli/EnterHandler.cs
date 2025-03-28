@@ -34,27 +34,15 @@ public class EnterHandler : IEnterHandler
         if (promptText.EndsWith('\\'))
             return true;
 
+        if (promptText.Trim().StartsWith('#'))
+            return false;
+
         var openBraces = 0;
         var singleQuotes = 0;
         var doubleQuotes = 0;
-        var insideComment = false;
         for (var i = 0; i < promptText.Length; i++)
         {
             var c = promptText[i];
-            if (insideComment)
-            {
-                if (c == '\n')
-                    insideComment = false;
-
-                continue;
-            }
-
-            if (c == '#')
-            {
-                insideComment = true;
-                continue;
-            }
-
             if (c == '\\')
             {
                 i++;
