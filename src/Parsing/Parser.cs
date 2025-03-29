@@ -1322,7 +1322,7 @@ internal class Parser
         while (Match(TokenKind.Identifier) && Peek()?.Kind == TokenKind.ColonColon)
         {
             if (modulePath.IsReadOnly)
-                modulePath = new List<Token>();
+                modulePath = [];
 
             modulePath.Add(Eat());
             Eat(); // ::
@@ -1343,10 +1343,10 @@ internal class Parser
             ?? _scope.ModuleScope.FindImportedStdStructModule(identifier.Value);
         if (modulePath.Count == 0 && importedStdModule != null)
         {
-            modulePath = new List<Token>
-            {
+            modulePath =
+            [
                 new(TokenKind.Identifier, importedStdModule, TextPos.Default),
-            };
+            ];
         }
 
         if (Current?.Kind == TokenKind.OpenParenthesis)

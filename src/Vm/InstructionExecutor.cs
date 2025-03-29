@@ -51,7 +51,7 @@ class InstructionExecutor
 
     public RuntimeObject Execute(Page page)
     {
-        PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: false));
+        PushFrame(new Frame(page, null, page.Instructions.Count, 0, IsRoot: true));
 
         if (_vmOptions.DumpInstructions)
         {

@@ -407,15 +407,16 @@ class Analyser(RootModuleScope rootModule)
 
     private IfExpr Visit(IfExpr expr)
     {
+        expr.ThenBranch.IsRoot = expr.IsRoot;
+
         var ifCondition = Next(expr.Condition);
         var thenBranch = Next(expr.ThenBranch);
-        thenBranch.IsRoot = expr.IsRoot;
 
         Expr? elseBranch = null;
         if (expr.ElseBranch != null)
         {
+            expr.ElseBranch.IsRoot = expr.IsRoot;
             elseBranch = Next(expr.ElseBranch);
-            elseBranch.IsRoot = expr.IsRoot;
         }
 
         return new IfExpr(ifCondition, thenBranch, elseBranch, _scope)
@@ -430,8 +431,8 @@ class Analyser(RootModuleScope rootModule)
         foreach (var identifier in expr.IdentifierList)
             expr.Branch.Scope.AddVariable(identifier.Value, RuntimeNil.Value);
 
+        expr.Branch.IsRoot = true;
         var branch = (BlockExpr)Next(expr.Branch);
-        branch.IsRoot = true;
 
         return new ForExpr(expr.IdentifierList, forValue, branch, _scope)
         {
@@ -441,9 +442,10 @@ class Analyser(RootModuleScope rootModule)
 
     private WhileExpr Visit(WhileExpr expr)
     {
+        expr.Branch.IsRoot = true;
+
         var whileCondition = Next(expr.Condition);
         var whileBranch = (BlockExpr)Next(expr.Branch);
-        whileBranch.IsRoot = true;
 
         return new WhileExpr(whileCondition, whileBranch, _scope)
         {
@@ -500,8 +502,8 @@ class Analyser(RootModuleScope rootModule)
         var blockExpressions = new List<Expr>();
         foreach (var analysed in expr.Expressions.Select(Next))
         {
-            // The "IsRoot" value of the last expression
-            // is decided on the fly, in the interpreter.
+            // The "IsRoot" value of the last expression is decided on the fly,
+            // but for now we'll assume it's true
             analysed.IsRoot = true;
             blockExpressions.Add(analysed);
         }
@@ -652,15 +654,13 @@ class Analyser(RootModuleScope rootModule)
         if (stdType == null && userType == null)
             throw new RuntimeNotFoundException(expr.Identifier.Value);
 
-        var newExpr = new TypeExpr(expr.Identifier, _scope)
+        return new TypeExpr(expr.Identifier, _scope)
         {
             RuntimeValue = stdType != null
                 ? new RuntimeType(stdType)
                 : new RuntimeType(userType!),
             IsRoot = expr.IsRoot,
         };
-
-        return newExpr;
     }
 
     private VariableExpr Visit(VariableExpr expr)
@@ -926,13 +926,11 @@ class Analyser(RootModuleScope rootModule)
             _ => RuntimeNil.Value,
         };
 
-        var newExpr = new LiteralExpr(expr.Value, _scope)
+        return new LiteralExpr(expr.Value, _scope)
         {
             RuntimeValue = value,
             IsRoot = expr.IsRoot,
         };
-
-        return newExpr;
     }
 
     private static long ParseInt(string numberLiteral)
@@ -1032,17 +1030,18 @@ class Analyser(RootModuleScope rootModule)
 
     private TryExpr Visit(TryExpr expr)
     {
-        var tryBranch = (BlockExpr)Next(expr.Body);
-        tryBranch.IsRoot = expr.IsRoot;
+        expr.Body.IsRoot = expr.IsRoot;
 
+        var tryBranch = (BlockExpr)Next(expr.Body);
         var catchExpressions = new List<CatchExpr>();
         foreach (var catchExpression in expr.CatchExpressions)
         {
+            catchExpression.Body.IsRoot = expr.IsRoot;
+
             var type = catchExpression.Type == null
                 ? null
                 : (TypeExpr)Next(catchExpression.Type);
             var body = (BlockExpr)Next(catchExpression.Body);
-            body.IsRoot = expr.IsRoot;
 
             var newExpr = new CatchExpr(
                 catchExpression.Identifier,

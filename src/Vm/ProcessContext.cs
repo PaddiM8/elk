@@ -219,13 +219,13 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void ProcessOutReceived(DataReceivedEventArgs eventArgs)
     {
-        if (eventArgs.Data != null)
+        if (eventArgs.Data != null && !_outBuffer.IsAddingCompleted)
             _outBuffer.TryAdd(eventArgs.Data);
     }
 
     private void ProcessErrReceived(DataReceivedEventArgs eventArgs)
     {
-        if (eventArgs.Data != null)
+        if (eventArgs.Data != null && !_errBuffer.IsAddingCompleted)
             _errBuffer.TryAdd(eventArgs.Data);
     }
 

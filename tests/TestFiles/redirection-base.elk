@@ -1,25 +1,33 @@
 #!/usr/bin/env -S dotnet run --project ../../../../../cli/Elk.Cli.csproj
 
-fn f() {
-    echo hello world
+fn f(x) {
+    echo hello world${x}
 }
 
 # this is validated in ./redirection-validation.elk
-f() # don't capture output
-f | assertEqual("hello world") # do capture output
+f(1) # don't capture output
+f(0) | assertEqual("hello world0") # do capture output
 
-fn g() {
+fn g(x) {
     {
-        echo hello world
+        echo hello world${x}
     }
 }
 
-g() # don't capture output
-g | assertEqual("hello world") # do capture output
+g(2) # don't capture output
+g(0) | assertEqual("hello world0") # do capture output
 
-fn h() {
-    f()
+fn h(x) {
+    f(x)
 }
 
-h() # don't capture output
-h | assertEqual("hello world") # do capture output
+h(3) # don't capture output
+h(0) | assertEqual("hello world0") # do capture output
+
+if true {
+    f(4) # don't capture output
+}
+
+if true {
+    f(0) | assertEqual("hello world0") # do capture output
+}
