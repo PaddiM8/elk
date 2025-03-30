@@ -39,7 +39,7 @@ public class JsonRpc
         {
             try
             {
-                foreach (var response in _sendQueue.GetConsumingEnumerable())
+                foreach (var response in _sendQueue.GetConsumingEnumerable(cancellationToken ?? CancellationToken.None))
                     Send(response);
             }
             catch (Exception ex)
