@@ -419,11 +419,11 @@ class InstructionGenerator(
             var last = expr.Expressions.Last();
             if (last is CallExpr call)
             {
-                Visit(call, isMaybeRoot: true);
+                Visit(call, isMaybeRoot: expr.IsRoot);
             }
             else if (last is ClosureExpr closure)
             {
-                Visit(closure, isMaybeRoot: true);
+                Visit(closure, isMaybeRoot: expr.IsRoot);
             }
             else
             {

@@ -502,9 +502,9 @@ class Analyser(RootModuleScope rootModule)
         var blockExpressions = new List<Expr>();
         foreach (var analysed in expr.Expressions.Select(Next))
         {
-            // The "IsRoot" value of the last expression is decided on the fly,
-            // but for now we'll assume it's true
-            analysed.IsRoot = true;
+            if (expr.IsRoot)
+                analysed.IsRoot = true;
+
             blockExpressions.Add(analysed);
         }
 
@@ -558,7 +558,7 @@ class Analyser(RootModuleScope rootModule)
         {
             expr.Right.IsRoot = expr.IsRoot;
 
-            var isProgramCall = left is CallExpr { CallType: CallType.Program };
+            var isProgramCall = left is CallExpr { CallType: CallType.Program or CallType.Unknown };
             if (!isProgramCall && expr.Operator is OperationKind.PipeErr or OperationKind.PipeAll)
             {
                 var pipeString = expr.Operator == OperationKind.PipeErr ? "|err" : "|all";
@@ -837,6 +837,10 @@ class Analyser(RootModuleScope rootModule)
         foreach (var (key, value) in expr.EnvironmentVariables)
         {
             environmentVariables.Add(key, Next(value));
+        }
+
+        if (expr.Identifier.Value == "bat")
+        {
         }
 
         return new CallExpr(

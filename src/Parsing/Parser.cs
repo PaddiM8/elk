@@ -63,7 +63,10 @@ internal class Parser
             {
                 var expr = parser.NextExpr();
                 if (expr != null)
+                {
                     expressions.Add(expr);
+                    expr.IsRoot = true;
+                }
             }
             catch (RuntimeException ex)
             {
@@ -355,6 +358,8 @@ internal class Parser
         }
 
         var block = ParseBlockOrSingle(StructureKind.Function, functionScope);
+        block.IsRoot = true;
+
         var function = new FunctionExpr(
             accessLevel,
             identifier,

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Elk.ReadLine.Render;
 using Elk.ReadLine.Render.Formatting;
 
@@ -32,7 +33,7 @@ public class ReadLinePrompt
     {
         if (OperatingSystem.IsWindows())
             return;
- 
+
         PosixSignalRegistration.Create(PosixSignal.SIGWINCH, HandleResize);
     }
 

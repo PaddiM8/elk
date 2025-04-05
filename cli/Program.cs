@@ -144,4 +144,6 @@ try
 catch (Exception ex)
 {
     ExceptionLogger.Log(ex);
+    Console.WriteLine("Press any key to continue");
+    Console.ReadKey();
 }

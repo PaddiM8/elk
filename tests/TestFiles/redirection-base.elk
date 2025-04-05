@@ -31,3 +31,15 @@ if true {
 if true {
     f(0) | assertEqual("hello world0") # do capture output
 }
+
+fn h(x) {
+    {
+        "hello world${x}\n" | cat
+    }
+}
+
+h(5) # don't capture output
+h(0) | assertEqual("hello world0") # do capture output
+
+{ "hello world0\n" | cat } | assertEqual("hello world0") # do capture output
+{ "hello world6\n" | cat } # don't capture output
