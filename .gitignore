@@ -6,5 +6,8 @@ experiments/
 .DS_Store
 **/.DS_Store
 
+# Nix flake output
+result
+
 # Local Netlify folder
 .netlify
