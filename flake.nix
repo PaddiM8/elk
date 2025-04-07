@@ -24,12 +24,12 @@
 
           # AOT is completely broken under Nix, so we have to work around it
           # Ready to Run is broken without nix-ld, so we're going with a fully JITed build here
-          dotnetFlags = "-p:PublishNativeAot=False -p:PublishAot=False -p:PublishTrimmed=False";
+          dotnetFlags = "-p:PublishNativeAot=False -p:PublishAot=False -p:PublishTrimmed=False -p:PublishSingleFile=true;";
 
           dotnet-sdk = prev.dotnetCorePackages.sdk_9_0;
           dotnet-runtime = prev.dotnetCorePackages.runtime_9_0;
 
- 	  projectFile = "elk.sln";
+ 	  projectFile = "cli/Elk.Cli.csproj";
 
           /**
             Mandatory reading: https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/dotnet.section.md#generating-and-updating-nuget-dependencies-generating-and-updating-nuget-dependencies
@@ -41,7 +41,7 @@
             4. Remove any of the linux-x86 lines from deps.json
                Reason being: Nix cannot use binaries it has not built itself
                therefore breaking the build
-            5. Pray it builds when u run `nix run` 
+            5. Pray it builds when u run `nix run`
           **/
           nugetDeps = ./nuget.json;
 
@@ -75,4 +75,3 @@
         });
     };
 }
-
