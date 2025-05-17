@@ -15,9 +15,9 @@
       },
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "eyIUUqqPy7brzmoV04zabOUm0puEAAjZd3O3vuzan9iTTh0oIPwts8fLxZFoEZCFi63ACFtHbNBs5Y7myB3ZDQ=="
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "bbnlV2PbUmCQ8Ndpx0kJaicLyV28IU+4IzyctQLL57+DxrHurYr2qsJrC8+yD44Q0DyPfv2oM168c1Tk6Bxbmg=="
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
@@ -33,9 +33,9 @@
       },
       "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "x1/F1+/U5Y/8svWShELmsOUl6dFgCbPV/esRTll4JjYbx4u8cB3rZvvgORr0MYVK2OIgaN0xV9gk9E1WS3kx6g=="
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "DHateHlybJeNbTovpDM6QpuZJXBTrMcUUXJSCxdy8TtZGm9CQ2wyViRZz0JwfIOFniVBkNauXeeqZFveovXfFQ=="
       },
       "Glob": {
         "type": "Transitive",

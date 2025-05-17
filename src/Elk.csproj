@@ -6,6 +6,10 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <PropertyGroup>
+    <IlcGenerateMstatFile>true</IlcGenerateMstatFile>
+    <IlcGenerateDgmlFile>true</IlcGenerateDgmlFile>
+  </PropertyGroup>
+  <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>

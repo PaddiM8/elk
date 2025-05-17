@@ -29,17 +29,24 @@ public static class FileUtils
                 return true;
         }
 
-        var fileInfo = new FileInfo(filePath);
-        if (!fileInfo.Exists)
-            return false;
+        try
+        {
+            var fileInfo = new FileInfo(filePath);
+            if (!fileInfo.Exists)
+                return false;
 
-        return (
-            fileInfo.UnixFileMode & (
-                UnixFileMode.OtherExecute |
-                UnixFileMode.GroupExecute |
-                UnixFileMode.UserExecute
-            )
-        ) != 0;
+            return (
+                fileInfo.UnixFileMode & (
+                    UnixFileMode.OtherExecute |
+                    UnixFileMode.GroupExecute |
+                    UnixFileMode.UserExecute
+                )
+            ) != 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static bool ExecutableExists(string name, string workingDirectory, bool waitForCache = true)

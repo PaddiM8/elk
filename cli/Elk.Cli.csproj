@@ -9,6 +9,10 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <PropertyGroup>
+    <IlcGenerateMstatFile>true</IlcGenerateMstatFile>
+    <IlcGenerateDgmlFile>true</IlcGenerateDgmlFile>
+  </PropertyGroup>
+  <PropertyGroup>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
@@ -28,13 +32,13 @@
     <ProjectReference Include="..\src\Elk.csproj" />
     <ProjectReference Include="..\language-server\Elk.LanguageServer.csproj" />
   </ItemGroup>
-  
+
   <Choose>
     <When Condition="$([MSBuild]::IsOSPlatform('windows')) == 'false'">
       <ItemGroup>
-        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="9.0.2" />
+        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="9.0" />
         <PackageReference Include="Microsoft.Net.ILLink.Tasks" Version="9.0.0" />
-        <PackageReference Include="runtime.osx-arm64.Microsoft.DotNet.ILCompiler" Version="9.0.2" />
+        <PackageReference Include="runtime.osx-arm64.Microsoft.DotNet.ILCompiler" Version="9.0" />
       </ItemGroup>
     </When>
   </Choose>
