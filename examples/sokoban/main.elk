@@ -133,7 +133,10 @@ while runGame {
     runGame = mapId != quitId
 
     if runGame and str::isDigit(mapId) {
-        let mapPath = scriptPath() + "/" + maps[into::int(mapId) - 1]
+        let mapName = maps | iter::at(into::int(mapId) - 1)
+        break if mapName == nil
+
+        let mapPath = scriptPath() + "/" + mapName
         startGame(mapPath)
     }
 }
