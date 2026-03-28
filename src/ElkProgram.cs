@@ -21,7 +21,7 @@ public class EvaluationResult
 
     public IEnumerable<SemanticToken>? SemanticTokens { get; set; }
 
-    public IEnumerable<DiagnosticMessage> Diagnostics { get; init;  } = Array.Empty<DiagnosticMessage>();
+    public IEnumerable<DiagnosticMessage> Diagnostics { get; init; } = Array.Empty<DiagnosticMessage>();
 }
 
 public static class ElkProgram
