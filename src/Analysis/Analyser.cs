@@ -500,11 +500,12 @@ class Analyser(RootModuleScope rootModule)
     {
         _scope = expr.Scope;
         var blockExpressions = new List<Expr>();
-        foreach (var analysed in expr.Expressions.Select(Next))
+        foreach (var child in expr.Expressions)
         {
             if (expr.IsRoot)
-                analysed.IsRoot = true;
+                child.IsRoot = true;
 
+            var analysed = Next(child);
             blockExpressions.Add(analysed);
         }
 
@@ -837,10 +838,6 @@ class Analyser(RootModuleScope rootModule)
         foreach (var (key, value) in expr.EnvironmentVariables)
         {
             environmentVariables.Add(key, Next(value));
-        }
-
-        if (expr.Identifier.Value == "bat")
-        {
         }
 
         return new CallExpr(
