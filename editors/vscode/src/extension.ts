@@ -15,12 +15,14 @@ export async function activate(context: ExtensionContext) {
             command: "elk",
             args: ["--lsp"],
             transport: TransportKind.stdio,
+            options: { shell: true }
         },
         debug: {
             command: "elk",
             args: ["--lsp"],
             transport: TransportKind.stdio,
             runtime: "",
+            options: { shell: true }
         },
     };
 
