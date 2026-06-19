@@ -33,7 +33,7 @@ class VirtualMachine(RootModuleScope rootModule, VirtualMachineOptions options)
         if (!options.DumpInstructions)
             return page;
 
-        foreach (var function in ast.Expressions.Where(x => x is FunctionExpr).Cast<FunctionExpr>())
+        foreach (var function in ast.Expressions.OfType<FunctionExpr>())
         {
             var symbol = function.Module.FindFunction(function.Identifier.Value, lookInImports: false)!;
             var functionPage = _functions.Get(symbol);
