@@ -34,13 +34,13 @@
     <ProjectReference Include="..\language-server\Elk.LanguageServer.csproj" />
   </ItemGroup>
 
-  <Choose>
+  <!--<Choose>
     <When Condition="$([MSBuild]::IsOSPlatform('windows')) == 'false'">
       <ItemGroup>
-        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="9.0" />
-        <PackageReference Include="Microsoft.Net.ILLink.Tasks" Version="9.0.0" />
-        <PackageReference Include="runtime.osx-arm64.Microsoft.DotNet.ILCompiler" Version="9.0" />
+        <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="10.0" />
+        <PackageReference Include="Microsoft.Net.ILLink.Tasks" Version="10.0.0" />
+        <PackageReference Include="runtime.osx-arm64.Microsoft.DotNet.ILCompiler" Version="10.0" />
       </ItemGroup>
     </When>
-  </Choose>
+  </Choose>-->
 </Project>

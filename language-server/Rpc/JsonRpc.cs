@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Elk.LanguageServer.Lsp.Documents;
 using Elk.LanguageServer.Targets;
 
@@ -33,28 +32,28 @@ public class JsonRpc
         SerializerOptions.Converters.Add(new DocumentUriConverter());
     }
 
-    public async Task StartListeningAsync(CancellationToken? cancellationToken = default)
+    public async Task StartListeningAsync(CancellationToken cancellationToken)
     {
         var sendTask = Task.Run(() =>
         {
             try
             {
-                foreach (var response in _sendQueue.GetConsumingEnumerable(cancellationToken ?? CancellationToken.None))
+                foreach (var response in _sendQueue.GetConsumingEnumerable(cancellationToken))
                     Send(response);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.ToString());
             }
-        });
+        }, cancellationToken);
 
-        var receiveTask = Task.Run(() =>
+        var receiveTask = Task.Run(async () =>
         {
             try
             {
                 using var reader = new StreamReader(_receivingStream, Encoding.UTF8);
-                while (cancellationToken is not { IsCancellationRequested: true })
-                    Receive(reader);
+                while (!cancellationToken.IsCancellationRequested)
+                    await ReceiveAsync(reader, cancellationToken);
 
                 _sendQueue.CompleteAdding();
             }
@@ -62,7 +61,7 @@ public class JsonRpc
             {
                 _logger.LogError(ex.ToString());
             }
-        });
+        }, cancellationToken);
 
         await Task.WhenAll(sendTask, receiveTask);
     }
@@ -85,12 +84,12 @@ public class JsonRpc
         });
     }
 
-    private void Receive(StreamReader reader)
+    private async Task ReceiveAsync(StreamReader reader, CancellationToken cancellationToken)
     {
         int? contentLength = null;
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            var line = reader.ReadLine();
+            var line = await reader.ReadLineAsync(cancellationToken);
             if (line == null)
                 return;
 
