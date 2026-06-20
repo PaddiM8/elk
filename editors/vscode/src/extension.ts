@@ -28,14 +28,13 @@ export async function activate(context: ExtensionContext) {
 
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            {
-                pattern: "**/*.elk",
-            },
+            { scheme: "file", language: "elk" },
+            { scheme: "untitled", language: "elk" },
         ],
         progressOnInitialization: true,
         synchronize: {
             configurationSection: "elk-vscode",
-            fileEvents: workspace.createFileSystemWatcher("**/*.elk"),
+            fileEvents: workspace.createFileSystemWatcher("**/*"),
         },
     };
 
