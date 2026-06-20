@@ -148,6 +148,21 @@ static class Environment
     [ElkFunction("hostname")]
     public static RuntimeString Hostname()
         => new(System.Environment.MachineName);
+    
+    // <returns>Whether the standard error of the script is being redirected</returns>
+    [ElkFunction("isErrorRedirected")]
+    public static RuntimeBoolean IsErrorRedirected()
+        => RuntimeBoolean.From(Console.IsErrorRedirected);
+    
+    // <returns>Whether the standard input of the script is being redirected</returns>
+    [ElkFunction("isInputRedirected")]
+    public static RuntimeBoolean IsInputRedirected()
+        => RuntimeBoolean.From(Console.IsInputRedirected);
+
+    // <returns>Whether the standard output of the script is being redirected</returns>
+    [ElkFunction("isOutputRedirected")]
+    public static RuntimeBoolean IsOutputRedirected()
+        => RuntimeBoolean.From(Console.IsOutputRedirected);
 
     /// <returns>Whether the operating system is Unix-based.</returns>
     [ElkFunction("isUnix")]
