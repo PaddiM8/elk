@@ -23,9 +23,10 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
     public bool Success
         => ExitCode == 0 || _allowNonZeroExit;
 
-    private Process? _process = process;
     private readonly BlockingCollection<string> _mainBuffer = new(new ConcurrentQueue<string>());
     private readonly BlockingCollection<string> _secondaryBuffer = new(new ConcurrentQueue<string>());
+    private Process? _process = process;
+    private RuntimeObject? _pipedValue = pipedValue;
     private BlockingCollection<string> _outBuffer = null!;
     private BlockingCollection<string> _errBuffer = null!;
     private bool _allowNonZeroExit;
@@ -71,13 +72,18 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             throw new RuntimeNotFoundException(_process!.StartInfo.FileName);
         }
 
-        if (pipedValue != null)
-            Read(pipedValue);
+        if (_pipedValue != null)
+            Read(_pipedValue);
 
         if (_waitForExit)
             CloseProcess(messageOnError: false);
 
         return ExitCode ?? 0;
+    }
+
+    public void OverridePipedValue(RuntimeObject input)
+    {
+        _pipedValue = input;
     }
 
     public void MakeBackground()
@@ -157,8 +163,8 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             _secondaryBuffer.CompleteAdding();
         }
 
-        if (pipedValue != null)
-            Read(pipedValue);
+        if (_pipedValue != null)
+            Read(_pipedValue);
 
         if (_waitForExit)
             CloseProcess(messageOnError: true);

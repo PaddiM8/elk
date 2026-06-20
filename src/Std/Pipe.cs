@@ -153,4 +153,15 @@ public static class Pipe
         foreach (var pipe in pipes)
             pipe.As<RuntimePipe>().Wait();
     }
+
+    /// <summary>
+    /// Sends the given text into the standard input of the pipe.
+    /// Useful in combination with the `exec` built-in.
+    /// </summary>
+    [ElkFunction("withInput")]
+    public static RuntimePipe WithInput(RuntimePipe pipe, RuntimeObject input)
+    {
+        // Handled in the analyser since special handling is needed due to it being a built-in
+        return pipe;
+    }
 }

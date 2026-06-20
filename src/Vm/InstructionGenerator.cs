@@ -1233,6 +1233,10 @@ class InstructionGenerator(
         // Program reference
         Next(expr.Arguments.First());
         Emit(InstructionKind.BuildProgramCallReference);
+        
+        // Piped value
+        if (expr.PipedToProgram != null)
+            Next(expr.PipedToProgram);
 
         // CallProgram [props] [environmentVariableCount]
         var kind = (expr.IsRoot, isMaybeRoot) switch
@@ -1242,8 +1246,16 @@ class InstructionGenerator(
             _ => InstructionKind.CallProgram,
         };
 
+        // Props
+        var props = ProgramCallProps.None;
+        if (!expr.AutomaticStart)
+            props |= ProgramCallProps.NoAutomaticStart;
+
+        if (expr.PipedToProgram != null)
+            props |= ProgramCallProps.HasPipedValue;
+
         Emit(kind);
-        Emit((ushort)ProgramCallProps.None);
+        Emit((ushort)props);
         Emit((byte)0);
     }
 

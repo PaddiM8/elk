@@ -825,6 +825,11 @@ class Analyser(RootModuleScope rootModule)
                 stdFunction?.ConsumesPipe is true;
         }
 
+        // Need special handling for the pipe::withInput function used in combination with the `exec` built-in
+        // since built-ins normally don't allow standard input (for obvious reasons)
+        if (pipedValue is CallExpr { CallType: CallType.BuiltInExec } execCall && stdFunction is { ModuleName: "pipe", Name: "withInput" })
+            execCall.PipedToProgram = evaluatedArguments.ElementAtOrDefault(1);
+
         if (stdFunction?.StartsPipeManually is true)
         {
             foreach (var argument in evaluatedArguments)

@@ -181,6 +181,11 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
     }
 
+    public void OverridePipedValue(RuntimeObject input)
+    {
+        _processContext.OverridePipedValue(input);
+    }
+
     public void MakeBackground()
     {
         if (_processContext.HasStarted)

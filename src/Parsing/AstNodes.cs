@@ -476,7 +476,7 @@ public class CallExpr(
 
     public StdFunction? StdFunction { get; init; }
 
-    public Expr? PipedToProgram { get; init; }
+    public Expr? PipedToProgram { get; set; }
 
     public RedirectionKind RedirectionKind { get; set; }
 

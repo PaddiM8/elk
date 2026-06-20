@@ -502,9 +502,8 @@ public class StdBindingsGenerator : ISourceGenerator
         var startsPipeManually = false;
         if (attributeArguments.Count > 1)
         {
-            var reachabilityExpr = (MemberAccessExpressionSyntax)attributeArguments[1].Expression;
-            var reachability = reachabilityExpr.Name.Identifier.Text;
-            reachableEverywhere = reachability == "Everywhere";
+            reachableEverywhere = attributeArguments
+                .Any(x => x.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Everywhere" });
             consumesPipe = attributeArguments
                 .FirstOrDefault(x => x.NameEquals?.Name.Identifier.Text == "ConsumesPipe")?
                 .Expression
