@@ -81,11 +81,6 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
         return ExitCode ?? 0;
     }
 
-    public void OverridePipedValue(RuntimeObject input)
-    {
-        _pipedValue = input;
-    }
-
     public void MakeBackground()
     {
         _waitForExit = false;
@@ -242,8 +237,9 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
             using var streamWriter = _process!.StandardInput;
             if (value is RuntimePipe runtimePipe)
             {
-                while (runtimePipe.StreamEnumerator.MoveNext())
-                    streamWriter.WriteLine(runtimePipe.StreamEnumerator.Current);
+                using var enumerator = runtimePipe.GetEnumerator();
+                while (enumerator.MoveNext())
+                    streamWriter.WriteLine(enumerator.Current);
             }
             else if (value is RuntimeString)
             {

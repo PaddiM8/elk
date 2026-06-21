@@ -181,11 +181,6 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
     }
 
-    public void OverridePipedValue(RuntimeObject input)
-    {
-        _processContext.OverridePipedValue(input);
-    }
-
     public void MakeBackground()
     {
         if (_processContext.HasStarted)
@@ -245,30 +240,36 @@ class RuntimePipeEnumerator(IEnumerator<string> streamEnumerator, IList<string>?
         => Current;
 
     private int _valuesIndex;
+    private readonly IEnumerator<string> _streamEnumerator = streamEnumerator;
+    private readonly IList<string>? _values = values;
 
     public bool MoveNext()
     {
-        if (_valuesIndex < values?.Count)
+        if (_valuesIndex < _values?.Count)
         {
-            Current = new RuntimeString(values[_valuesIndex]);
+            Current = new RuntimeString(_values[_valuesIndex]);
             _valuesIndex++;
 
             return true;
         }
 
-        if (streamEnumerator.MoveNext())
+        if (_streamEnumerator.MoveNext())
         {
-            Current = new RuntimeString(streamEnumerator.Current);
+            Current = new RuntimeString(_streamEnumerator.Current);
             _valuesIndex++;
 
             return true;
         }
+
+        Reset();
 
         return false;
     }
 
     public void Reset()
-        => streamEnumerator.Reset();
+    {
+        _valuesIndex = 0;
+    }
 
     public void Dispose()
     {
@@ -284,15 +285,26 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
     private readonly ProcessContext _process;
     private readonly IList<string>? _values;
-    private readonly IEnumerator<string> _processEnumerator;
+    private readonly bool _useSecondary;
+    private IEnumerator<string> _processEnumerator;
 
     public RuntimePipeStreamEnumerator(ProcessContext process, IList<string>? values, bool useSecondary = false)
     {
         _process = process;
         _values = values;
+        _useSecondary = useSecondary;
 
         if (!useSecondary)
-            process.StartWithRedirect();
+        {
+            if (values == null)
+            {
+                process.Start();
+            }
+            else
+            {
+                process.StartWithRedirect();
+            }
+        }
 
         _processEnumerator = useSecondary
             ? process.GetSecondaryEnumerator()
@@ -301,19 +313,24 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
     public bool MoveNext()
     {
+        if (_values == null)
+            return false;
+
         var result = _processEnumerator.MoveNext();
-        if (result)
-        {
-            Current = _processEnumerator.Current;
-            _values?.Add(Current);
-        }
+        if (!result)
+            return result;
+
+        Current = _processEnumerator.Current;
+        _values.Add(Current);
 
         return result;
     }
 
     public void Reset()
     {
-        _processEnumerator.Reset();
+        _processEnumerator = _useSecondary
+            ? _process.GetSecondaryEnumerator()
+            : _process.GetEnumerator();
     }
 
     public void Stop()

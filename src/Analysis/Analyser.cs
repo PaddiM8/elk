@@ -815,20 +815,31 @@ class Analyser(RootModuleScope rootModule)
             );
         }
 
-        if (pipedValue is CallExpr { CallType: CallType.Program } pipedCall)
+        if (pipedValue is CallExpr { CallType: CallType.Program or CallType.BuiltInExec } pipedCall)
         {
             // Don't buffer stdout/stderr if it's piped straight to a program's stdin
             // or piped to an std function that expects a Pipe. Std functions that
             // explicitly expect Pipes will handle them properly and not pass them
             // around more.
-            pipedCall.DisableRedirectionBuffering = callType == CallType.Program ||
-                stdFunction?.ConsumesPipe is true;
-        }
+            pipedCall.DisableRedirectionBuffering = callType == CallType.Program;
 
-        // Need special handling for the pipe::withInput function used in combination with the `exec` built-in
-        // since built-ins normally don't allow standard input (for obvious reasons)
-        if (pipedValue is CallExpr { CallType: CallType.BuiltInExec } execCall && stdFunction is { ModuleName: "pipe", Name: "withInput" })
-            execCall.PipedToProgram = evaluatedArguments.ElementAtOrDefault(1);
+            if (stdFunction?.ConsumesPipe is true && expr.IsRoot)
+            {
+                pipedCall.IsRoot = true;
+                pipedCall.ForcePipeCreation = true;
+                pipedCall.DisableRedirectionBuffering = true;
+            }
+
+            // Need special handling for the pipe::withInput function so that the correct bytecode can be generated
+            if (stdFunction is { ModuleName: "pipe", Name: "withInput" })
+            {
+                if (evaluatedArguments.Count != 2)
+                    throw new RuntimeWrongNumberOfArgumentsException("withInput", 2, evaluatedArguments.Count);
+
+                pipedCall.PipedToProgram = evaluatedArguments[1];
+                evaluatedArguments[1] = new LiteralExpr(new Token(TokenKind.Nil, "nil", TextPos.Default), _scope);
+            }
+        }
 
         if (stdFunction?.StartsPipeManually is true)
         {

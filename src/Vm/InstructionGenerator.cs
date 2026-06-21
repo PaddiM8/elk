@@ -1251,8 +1251,14 @@ class InstructionGenerator(
         if (!expr.AutomaticStart)
             props |= ProgramCallProps.NoAutomaticStart;
 
+        if (expr.DisableRedirectionBuffering)
+            props |= ProgramCallProps.DisableRedirectionBuffering;
+
         if (expr.PipedToProgram != null)
             props |= ProgramCallProps.HasPipedValue;
+
+        if (expr.ForcePipeCreation)
+            props |= ProgramCallProps.ForcePipeCreation;
 
         Emit(kind);
         Emit((ushort)props);
@@ -1315,6 +1321,9 @@ class InstructionGenerator(
         var props = ProgramCallProps.None;
         if (expr.PipedToProgram != null)
             props |= ProgramCallProps.HasPipedValue;
+
+        if (expr.ForcePipeCreation)
+            props |= ProgramCallProps.ForcePipeCreation;
 
         if (expr.DisableRedirectionBuffering)
             props |= ProgramCallProps.DisableRedirectionBuffering;

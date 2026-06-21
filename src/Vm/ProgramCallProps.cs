@@ -11,4 +11,5 @@ enum ProgramCallProps : ushort
     NoAutomaticStart = 4,
     RedirectOutput = 8,
     RedirectError = 16,
+    ForcePipeCreation = 32,
 }

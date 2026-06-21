@@ -486,6 +486,12 @@ public class CallExpr(
 
     public bool IsReference { get; set; }
 
+    /// <summary>
+    /// Some special standard library functions take a pipe without redirecting the standard output.
+    /// In these cases, a RuntimePipe should be created even if the std function call has IsRoot = true.
+    /// </summary>
+    public bool ForcePipeCreation { get; set; }
+
     public Dictionary<string, Expr> EnvironmentVariables { get; init; } = new();
 
     public FunctionExpr? EnclosingClosureProvidingFunction { get; init; }

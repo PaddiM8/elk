@@ -158,10 +158,10 @@ public static class Pipe
     /// Sends the given text into the standard input of the pipe.
     /// Useful in combination with the `exec` built-in.
     /// </summary>
-    [ElkFunction("withInput")]
+    [ElkFunction("withInput", ConsumesPipe = true)]
     public static RuntimePipe WithInput(RuntimePipe pipe, RuntimeObject input)
     {
-        // Handled in the analyser since special handling is needed due to it being a built-in
+        // Handled in the analyser since special flags need to be set during bytecode generation to enable stdin
         return pipe;
     }
 }

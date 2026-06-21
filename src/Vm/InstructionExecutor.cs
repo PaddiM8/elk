@@ -807,7 +807,7 @@ class InstructionExecutor
             pipedValue,
             waitForExit: !props.HasFlag(ProgramCallProps.DisableRedirectionBuffering)
         );
-        if (!shouldRedirectOutput && !props.HasFlag(ProgramCallProps.RedirectError))
+        if (!shouldRedirectOutput && !props.HasFlag(ProgramCallProps.RedirectError) && !props.HasFlag(ProgramCallProps.ForcePipeCreation))
         {
             processContext.Start();
             _stack.Push(RuntimeNil.Value);
