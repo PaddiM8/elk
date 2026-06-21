@@ -827,7 +827,6 @@ class Analyser(RootModuleScope rootModule)
             {
                 pipedCall.IsRoot = true;
                 pipedCall.ForcePipeCreation = true;
-                pipedCall.DisableRedirectionBuffering = true;
             }
 
             // Need special handling for the pipe::withInput function so that the correct bytecode can be generated

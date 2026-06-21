@@ -943,8 +943,30 @@ class InstructionGenerator(
             }
         }
 
-        foreach (var argument in arguments.AsEnumerable().Reverse())
+        int? consumedPipeIndex = null;
+        if (expr.StdFunction?.ConsumesPipe is true)
+        {
+            var (pipeIndex, pipeParameter) = expr
+                .StdFunction
+                .Parameters
+                .Index()
+                .FirstOrDefault(x => x.Item.Type == typeof(RuntimePipe));
+            if (pipeParameter != null)
+            {
+                consumedPipeIndex = pipeIndex;
+            }
+        }
+
+        foreach (var (index, argument) in arguments.AsEnumerable().Index().Reverse())
+        {
+            if (index == consumedPipeIndex && argument is CallExpr argumentAsCall)
+            {
+                Visit(argumentAsCall, isMaybeRoot: true);
+                continue;
+            }
+            
             Next(argument);
+        }
 
         return arguments.Count + (variadicArguments == null ? 0 : 1);
     }
