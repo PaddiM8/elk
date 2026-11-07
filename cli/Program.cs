@@ -59,6 +59,13 @@ var cliParser = new RuntimeCliParser("elk")
         LongName = "dump",
         Description = "Dump instructions",
     })
+    .AddFlag(new CliFlag
+    {
+        Identifier = "interactive",
+        ShortName = "i",
+        LongName = "interactive",
+        Description = "Does not do anything at the moment. Exists for compatibility reasons.",
+    })
     .SetAction(result =>
     {
         var vmOptions = new VirtualMachineOptions
