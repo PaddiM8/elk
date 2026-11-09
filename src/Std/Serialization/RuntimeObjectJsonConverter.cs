@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Elk.Std.DataTypes;
 using Elk.Std.Table;
@@ -76,6 +77,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
             RuntimeBoolean boolean => new JValue(boolean.IsTrue),
             RuntimeFloat floatValue => new JValue(floatValue.Value),
             RuntimeInteger integerValue => new JValue(integerValue.Value),
+            RuntimeDateTime dateTime => new JValue(dateTime.Value),
             RuntimeNil => JValue.CreateNull(),
             _ => new JValue(value?.ToString() ?? ""),
         };
@@ -128,6 +130,7 @@ public class RuntimeObjectJsonConverter : JsonConverter<RuntimeObject>
             JTokenType.Null => RuntimeNil.Value,
             JTokenType.Undefined => RuntimeNil.Value,
             JTokenType.String => new RuntimeString(data.ToObject<string>()!),
-            _ => new RuntimeString(data.ToString()),
+            JTokenType.Date => new RuntimeDateTime(data.ToObject<System.DateTime>()!),
+            _ => new RuntimeString(data.ToString(CultureInfo.InvariantCulture)),
         };
 }
