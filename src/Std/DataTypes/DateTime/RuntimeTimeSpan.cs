@@ -19,8 +19,10 @@ public class RuntimeTimeSpan(TimeSpan value) : RuntimeObject
                 => new RuntimeString(ToString()),
             _ when toType == typeof(RuntimeTimeSpan)
                 => this,
+            _ when toType == typeof(RuntimeBoolean)
+                => RuntimeBoolean.From(Value != TimeSpan.Zero),
             _
-                => throw new RuntimeCastException<RuntimeError>(toType),
+                => throw new RuntimeCastException<RuntimeTimeSpan>(toType),
         };
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)

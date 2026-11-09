@@ -22,8 +22,10 @@ public class RuntimeDateTime(System.DateTime value) : RuntimeObject
                 => new RuntimeInteger(((DateTimeOffset)Value).ToUnixTimeSeconds()),
             _ when toType == typeof(RuntimeDateTime)
                 => this,
+            _ when toType == typeof(RuntimeBoolean)
+                => RuntimeBoolean.True,
             _
-                => throw new RuntimeCastException<RuntimeError>(toType),
+                => throw new RuntimeCastException<RuntimeDateTime>(toType),
         };
 
     public override RuntimeObject Operation(OperationKind kind, RuntimeObject other)
