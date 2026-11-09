@@ -55,10 +55,12 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         => GetEnumerator();
 
     private readonly ProcessContext _processContext;
+    private readonly bool _shouldRedirect;
 
-    public RuntimePipe(ProcessContext process, bool disableRedirectionBuffering, bool automaticStart)
+    public RuntimePipe(ProcessContext process, bool disableRedirectionBuffering, bool shouldRedirect, bool automaticStart)
     {
         _processContext = process;
+        _shouldRedirect = shouldRedirect;
 
         if (!disableRedirectionBuffering)
             Values = [];
@@ -162,13 +164,14 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         var cloned = new RuntimePipe(
             _processContext,
             disableRedirectionBuffering: Values == null,
+            shouldRedirect: _shouldRedirect,
             automaticStart: false
         )
         {
             UseSecondaryEnumerator = true,
         };
 
-        cloned.StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, cloned.Values, useSecondary: true);
+        cloned.StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, cloned.Values, _shouldRedirect, useSecondary: true);
 
         return cloned;
     }
@@ -178,7 +181,7 @@ public class RuntimePipe : RuntimeObject, IEnumerable<RuntimeObject>, IIndexable
         if (_processContext.HasStarted)
             return;
 
-        StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values);
+        StreamEnumerator = new RuntimePipeStreamEnumerator(_processContext, Values, _shouldRedirect);
     }
 
     public void MakeBackground()
@@ -288,7 +291,7 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
     private readonly bool _useSecondary;
     private IEnumerator<string> _processEnumerator;
 
-    public RuntimePipeStreamEnumerator(ProcessContext process, IList<string>? values, bool useSecondary = false)
+    public RuntimePipeStreamEnumerator(ProcessContext process, IList<string>? values, bool shouldRedirect, bool useSecondary = false)
     {
         _process = process;
         _values = values;
@@ -296,7 +299,7 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
         if (!useSecondary)
         {
-            if (values == null)
+            if (values == null && !shouldRedirect)
             {
                 process.Start();
             }
@@ -313,15 +316,12 @@ class RuntimePipeStreamEnumerator : IEnumerator<string>
 
     public bool MoveNext()
     {
-        if (_values == null)
-            return false;
-
         var result = _processEnumerator.MoveNext();
         if (!result)
             return result;
 
         Current = _processEnumerator.Current;
-        _values.Add(Current);
+        _values?.Add(Current);
 
         return result;
     }

@@ -142,14 +142,14 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
         if (_process?.StartInfo.RedirectStandardOutput is true && !_disposeOutput)
         {
-            _process?.BeginOutputReadLine();
             _openPipeCount++;
+            _process?.BeginOutputReadLine();
         }
 
         if (_process?.StartInfo.RedirectStandardError is true && !_disposeError)
         {
-            _process?.BeginErrorReadLine();
             _openPipeCount++;
+            _process?.BeginErrorReadLine();
         }
 
         if (_openPipeCount == 0)
@@ -187,12 +187,6 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void OnProcessExited(object? sender, EventArgs e)
     {
-        if (!_outBuffer.IsCompleted)
-            _outBuffer.CompleteAdding();
-
-        if (!_errBuffer.IsCompleted)
-            _errBuffer.CompleteAdding();
-
         try
         {
             CloseProcess(messageOnError: true);
@@ -220,12 +214,30 @@ public class ProcessContext(Process process, RuntimeObject? pipedValue, bool wai
 
     private void ProcessOutReceived(DataReceivedEventArgs eventArgs)
     {
+        if (eventArgs.Data == null)
+        {
+            if (Interlocked.Decrement(ref _openPipeCount) == 0)
+            {
+                _outBuffer.CompleteAdding();
+                _errBuffer.CompleteAdding();
+            }
+        }
+
         if (eventArgs.Data != null && !_outBuffer.IsAddingCompleted)
             _outBuffer.TryAdd(eventArgs.Data);
     }
 
     private void ProcessErrReceived(DataReceivedEventArgs eventArgs)
     {
+        if (eventArgs.Data == null)
+        {
+            if (Interlocked.Decrement(ref _openPipeCount) == 0)
+            {
+                _outBuffer.CompleteAdding();
+                _errBuffer.CompleteAdding();
+            }
+        }
+
         if (eventArgs.Data != null && !_errBuffer.IsAddingCompleted)
             _errBuffer.TryAdd(eventArgs.Data);
     }

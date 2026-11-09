@@ -818,6 +818,7 @@ class InstructionExecutor
         var pipe = new RuntimePipe(
             processContext,
             props.HasFlag(ProgramCallProps.DisableRedirectionBuffering),
+            shouldRedirectOutput,
             !props.HasFlag(ProgramCallProps.NoAutomaticStart)
         );
         _stack.Push(pipe);
