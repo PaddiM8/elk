@@ -167,9 +167,10 @@ public class JsonRpc
     {
         var serialized = JsonSerializer.Serialize(response, SerializerOptions);
 
-        var header = $"Content-Length: {serialized.Length}\r\n\r\n";
-        _sendingStream.Write(Encoding.UTF8.GetBytes(header), 0, header.Length);
-        _sendingStream.Write(Encoding.UTF8.GetBytes(serialized), 0, serialized.Length);
+        var body = Encoding.UTF8.GetBytes(serialized);
+        var header = Encoding.ASCII.GetBytes($"Content-Length: {body.Length}\r\n\r\n");
+        _sendingStream.Write(header, 0, header.Length);
+        _sendingStream.Write(body, 0, body.Length);
         _sendingStream.Flush();
     }
 }
