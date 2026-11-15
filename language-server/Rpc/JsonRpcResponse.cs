@@ -8,11 +8,10 @@ public class JsonRpcResponse
     [JsonPropertyName("jsonrpc")]
     public string JsonRpc { get; set; } = "2.0";
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    // A successful response must always contain a result, even if it is null
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public JsonNode? Result { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonRpcError? Error { get; set; }
-
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public JsonNode? Id { get; set; }
 }

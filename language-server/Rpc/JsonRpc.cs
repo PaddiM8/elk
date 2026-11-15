@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
 using Elk.LanguageServer.Lsp.Documents;
 using Elk.LanguageServer.Targets;
@@ -28,6 +29,7 @@ public class JsonRpc
         {
             TypeInfoResolver = RpcJsonContext.Default,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
         SerializerOptions.Converters.Add(new DocumentUriConverter());
     }
@@ -130,7 +132,7 @@ public class JsonRpc
         {
             var responseData = callback(request.Parameters ?? new JsonObject());
             var result = responseData == null
-                ? new JsonObject()
+                ? null
                 : JsonSerializer.SerializeToNode(responseData, SerializerOptions);
             var response = new JsonRpcResponse
             {
@@ -149,7 +151,7 @@ public class JsonRpc
             if (request.Method.StartsWith("$/") || request.Id == null)
                 return;
 
-            var response = new JsonRpcResponse
+            var response = new JsonRpcErrorResponse
             {
                 Error = new JsonRpcError
                 {

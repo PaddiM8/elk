@@ -6,9 +6,13 @@ using Elk.LanguageServer.Lsp.Params;
 
 namespace Elk.LanguageServer.Rpc;
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+)]
 [JsonSerializable(typeof(JsonRpcRequest))]
 [JsonSerializable(typeof(JsonRpcResponse))]
+[JsonSerializable(typeof(JsonRpcErrorResponse))]
 [JsonSerializable(typeof(InitializeResult))]
 [JsonSerializable(typeof(CompletionParams))]
 [JsonSerializable(typeof(DefinitionParams))]
