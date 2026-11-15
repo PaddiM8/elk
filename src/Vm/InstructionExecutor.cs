@@ -747,7 +747,8 @@ class InstructionExecutor
     private void CallProgram(
         ProgramCallProps props,
         byte environmentVariableCount,
-        bool isRoot = false)
+        bool isRoot = false
+    )
     {
         // Environment variables
         var environmentVariables = environmentVariableCount > 0
@@ -768,7 +769,8 @@ class InstructionExecutor
             : null;
 
         // Program name
-        var fileName = ((RuntimeProgramFunction)_stack.Pop()).ProgramName;
+        var functionReference =(RuntimeProgramFunction)_stack.Pop();
+        var fileName = functionReference.ProgramName;
         var process = new Process();
         var shouldRedirectOutput = props.HasFlag(ProgramCallProps.RedirectOutput) || !isRoot;
         fileName = fileName.StartsWith("./")
@@ -797,9 +799,16 @@ class InstructionExecutor
         }
 
         // Arguments
-        var arguments = ((RuntimeList)_stack.Pop())
-            .Select(x => x.ToString() ?? "");
-        foreach (var arg in prefixArguments.Concat(arguments))
+        var arguments = ((RuntimeList)_stack.Pop()).ToList();
+        if (functionReference.IsExec && arguments.Count == 1 && arguments[0] is RuntimeList list)
+        {
+            arguments = list.ToList();
+        }
+
+        var stringifiedArguments = arguments
+            .Select(x => x.ToString() ?? "")
+            .ToList();
+        foreach (var arg in prefixArguments.Concat(stringifiedArguments))
             process.StartInfo.ArgumentList.Add(arg);
 
         var processContext = new ProcessContext(
@@ -1182,6 +1191,7 @@ class InstructionExecutor
             ParameterCount = 1,
             DefaultParameters = [],
             VariadicStart = 0,
+            IsExec = true,
         };
 
         _stack.Push(function);

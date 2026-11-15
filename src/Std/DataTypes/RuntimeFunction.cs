@@ -118,6 +118,7 @@ internal class RuntimeProgramFunction(
 {
     public string ProgramName { get; } = programName;
 
+    public bool IsExec { get; init; }
     public override int GetHashCode()
         => ProgramName.GetHashCode();
 

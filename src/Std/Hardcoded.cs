@@ -17,8 +17,9 @@ public class HardCoded
     /// Executes a program.
     /// </summary>
     /// <param name="programName">The name of the program to execute.</param>
+    /// <param name="arguments">The arguments to pass to the program. If a list is provided, the containing items are used as arguments.</param>
     [ElkFunction("exec", Reachability.Everywhere)]
-    public static RuntimeObject Exec(RuntimeString programName)
+    public static RuntimeObject Exec(RuntimeString programName, [ElkVariadic] IEnumerable<RuntimeObject> arguments)
         => throw new NotSupportedException();
 
     /// <summary>
